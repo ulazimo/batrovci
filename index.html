@@ -101,6 +101,77 @@
             opacity: 0;
         }
 
+        /* Booster Area */
+        .booster-container {
+            position: absolute;
+            bottom: 180px; /* Above the tray */
+            right: 20px;
+            display: flex;
+            flex-direction: row; /* Horizontal layout */
+            gap: 15px;
+            align-items: flex-end;
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .booster-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .booster-btn {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s;
+        }
+
+        .booster-btn.shake {
+            background: radial-gradient(circle at 30% 30%, #9b59b6, #8e44ad);
+        }
+
+        .booster-btn:active {
+            transform: scale(0.9);
+        }
+
+        .booster-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        .booster-label {
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 5px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
         /* Overlay Screens */
         .screen {
             position: absolute;
@@ -250,6 +321,28 @@
             <div id="level-display">Level 1</div>
             <div id="timer">02:00</div>
         </div>
+        
+        <!-- Booster UI -->
+        <div class="booster-container">
+            <!-- Shake Booster -->
+            <div class="booster-item">
+                <div class="booster-btn shake" id="shake-btn" onclick="activateShakeBooster()">
+                    🎲
+                    <div class="booster-badge" id="shake-count">3</div>
+                </div>
+                <div class="booster-label">SHUFFLE</div>
+            </div>
+
+            <!-- Fan Booster -->
+            <div class="booster-item">
+                <div class="booster-btn" id="fan-btn" onclick="activateFanBooster()">
+                    🌪️
+                    <div class="booster-badge" id="fan-count">3</div>
+                </div>
+                <div class="booster-label">AUTO</div>
+            </div>
+        </div>
+
         <div id="combo-text">MATCH!</div>
         <div class="tray-container">
             <!-- 7 Slots Visuals -->
@@ -344,6 +437,10 @@
         let draggedObject = null;
         let pointerStartPos = new THREE.Vector2();
         let pointerStartTime = 0;
+
+        // Booster Globals
+        let fanCount = 3;
+        let shakeCount = 3;
 
         // --- INIT ---
         function init() {
@@ -544,6 +641,11 @@
             tray = [];
             updateTrayUI();
 
+            // Reset Boosters
+            fanCount = 3;
+            shakeCount = 3;
+            updateBoostersUI();
+
             // Difficulty: Start with 6 categories (18 items). Add 2 categories (6 items) per level.
             // Cap at total available themes.
             const numThemes = Math.min(4 + (lvl * 2), THEMES.length);
@@ -628,6 +730,113 @@
                 inTray: false,
                 isDocked: false,
                 pendingRemoval: false 
+            });
+        }
+
+        // --- BOOSTER LOGIC ---
+
+        function updateBoostersUI() {
+            // Update Fan
+            document.getElementById('fan-count').innerText = fanCount;
+            document.getElementById('fan-btn').style.opacity = fanCount <= 0 ? '0.5' : '1';
+            
+            // Update Shake
+            document.getElementById('shake-count').innerText = shakeCount;
+            document.getElementById('shake-btn').style.opacity = shakeCount <= 0 ? '0.5' : '1';
+        }
+
+        function activateFanBooster() {
+            if (!gameActive || fanCount <= 0) return;
+
+            // 1. Identify counts in tray to prioritize clearing them
+            const trayCounts = {};
+            tray.forEach(o => {
+                if (!o.pendingRemoval) {
+                    trayCounts[o.typeId] = (trayCounts[o.typeId] || 0) + 1;
+                }
+            });
+
+            let targetTypeId = -1;
+
+            // Strategy A: Find a match that clears space (completes a set currently in tray)
+            const trayTypeIds = Object.keys(trayCounts).map(Number);
+            trayTypeIds.sort((a, b) => trayCounts[b] - trayCounts[a]);
+
+            for (let id of trayTypeIds) {
+                const totalAvailable = objects.filter(o => o.typeId === id && !o.pendingRemoval).length;
+                if (totalAvailable >= 3) {
+                    targetTypeId = id;
+                    break;
+                }
+            }
+
+            // Strategy B: If tray is empty or no partials can be completed, pick random from board
+            if (targetTypeId === -1) {
+                const allCounts = {};
+                objects.forEach(o => {
+                    if (!o.pendingRemoval) {
+                        allCounts[o.typeId] = (allCounts[o.typeId] || 0) + 1;
+                    }
+                });
+                
+                const possibleTypes = Object.keys(allCounts).map(Number).filter(id => allCounts[id] >= 3);
+                if (possibleTypes.length > 0) {
+                    targetTypeId = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+                }
+            }
+
+            if (targetTypeId !== -1) {
+                fanCount--;
+                updateBoostersUI();
+
+                const allOfTarget = objects.filter(o => o.typeId === targetTypeId && !o.pendingRemoval);
+                
+                allOfTarget.sort((a, b) => {
+                    if (a.inTray && !b.inTray) return -1;
+                    if (!a.inTray && b.inTray) return 1;
+                    return 0;
+                });
+
+                const itemsToMatch = allOfTarget.slice(0, 3);
+
+                itemsToMatch.forEach(obj => {
+                    if (!obj.inTray) {
+                        obj.body.velocity.set(0, 10, 0); 
+                        setTimeout(() => moveToTray(obj), 100); 
+                    }
+                });
+                
+                if (itemsToMatch.every(o => o.inTray)) {
+                    checkMatches();
+                }
+            }
+        }
+
+        function activateShakeBooster() {
+            if (!gameActive || shakeCount <= 0) return;
+            
+            shakeCount--;
+            updateBoostersUI();
+            
+            objects.forEach(obj => {
+                if (!obj.inTray && !obj.isDocked && !obj.pendingRemoval && obj.body) {
+                    // Apply random upward and side force to shuffle
+                    // Reduced impulse by ~20%
+                    obj.body.velocity.set(
+                        (Math.random() - 0.5) * 24, // X kick (was 30)
+                        13 + Math.random() * 13,    // Y up kick (was 16+16)
+                        (Math.random() - 0.5) * 24  // Z kick (was 30)
+                    );
+                    
+                    // Random rotation spin
+                    obj.body.angularVelocity.set(
+                        Math.random() * 8,
+                        Math.random() * 8,
+                        Math.random() * 8
+                    );
+                    
+                    obj.body.wakeUp();
+                }
             });
         }
 
