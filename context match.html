@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mind Match 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: auto;
+        }
+
+        /* The Tray Area */
+        .tray-container {
+            width: 100%;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding-bottom: 20px; /* Space for mobile home bar */
+            pointer-events: auto; 
+        }
+
+        .tray-slot {
+            width: 12vw;
+            max-width: 70px;
+            height: 12vw;
+            max-height: 70px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            margin: 0 4px;
+            border: 2px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Overlay Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 62, 80, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+            transition: opacity 0.3s;
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            color: #f1c40f;
+            font-size: 48px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #f1c40f;
+            text-align: center;
+        }
+
+        p {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        button {
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+            border: none;
+            padding: 15px 40px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            transition: transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.green {
+            background: linear-gradient(to bottom, #2ecc71, #27ae60);
+        }
+
+        #timer {
+            color: #e74c3c;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        #level-display {
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        
+        /* Combo Text */
+        #combo-text {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #f1c40f, 0 0 10px #e67e22;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+            white-space: nowrap;
+        }
+        
+        .pop-anim {
+            animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            40% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+        }
+
+    </style>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Cannon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+
+    <!-- Game UI -->
+    <div id="game-ui">
+        <div class="header">
+            <div id="level-display">Level 1</div>
+            <div id="timer">02:00</div>
+        </div>
+        <div id="combo-text">MATCH!</div>
+        <div class="tray-container">
+            <!-- 7 Slots Visuals -->
+            <div class="tray-slot"></div>
+            <div class="tray-slot"></div>
+            <div class="tray-slot"></div>
+            <div class="tray-slot"></div>
+            <div class="tray-slot"></div>
+            <div class="tray-slot"></div>
+            <div class="tray-slot"></div>
+        </div>
+    </div>
+
+    <!-- Screens -->
+    <div id="start-screen" class="screen">
+        <h1>MIND MATCH 3D</h1>
+        <p>Match items by CATEGORY, not looks!<br>e.g. 🐶 + 🐱 + 🐭 = Animal Match</p>
+        <button onclick="startGame()">PLAY</button>
+    </div>
+
+    <div id="game-over-screen" class="screen hidden">
+        <h1 style="color: #e74c3c">OUT OF SPACE!</h1>
+        <p>The tray is full.</p>
+        <button onclick="restartLevel()">TRY AGAIN</button>
+    </div>
+
+    <div id="win-screen" class="screen hidden">
+        <h1 style="color: #2ecc71">LEVEL CLEARED!</h1>
+        <p>Great job!</p>
+        <button class="green" onclick="nextLevel()">NEXT LEVEL</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const TRAY_SIZE = 7;
+        
+        // Contextual Matching Groups
+        const THEMES = [
+            ['🐶', '🐱', '🐭'], // Pets
+            ['🍎', '🍌', '🍇'], // Fruit
+            ['⚽', '🏀', '🏈'], // Sport Balls
+            ['🚗', '✈️', '🚀'], // Vehicles
+            ['🍔', '🍕', '🍟'], // Fast Food
+            ['🔨', '🔧', '🪛'], // Tools
+            ['☀️', '☁️', '❄️'], // Weather
+            ['🎸', '🎹', '🎺'], // Instruments
+            ['⌚', '📱', '💻'], // Gadgets
+            ['👕', '👖', '👗'], // Clothes
+            ['🌹', '🌻', '🌷'], // Flowers
+            ['🦁', '🐯', '🐻']  // Wild Animals
+        ];
+
+        // --- GLOBALS ---
+        let scene, camera, renderer;
+        let world; // Physics world
+        let raycaster, mouse;
+        let timeStep = 1 / 60;
+        
+        let gameActive = false;
+        let level = 1;
+        let timerInterval;
+        let timeLeft = 120;
+        
+        let objects = []; // Contains { mesh, body, id, type }
+        let tray = []; // Objects currently in tray
+        
+        // --- INIT ---
+        function init() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x2c3e50);
+            scene.fog = new THREE.Fog(0x2c3e50, 20, 50);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 18, 22);
+            camera.lookAt(0, 0, 0);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+            
+            // Rim light for aesthetics
+            const rimLight = new THREE.PointLight(0x00aaff, 0.5);
+            rimLight.position.set(-10, 10, -10);
+            scene.add(rimLight);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Physics World
+            world = new CANNON.World();
+            world.gravity.set(0, -15, 0); 
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 10;
+
+            const physicsMaterial = new CANNON.Material("groundMaterial");
+            const physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial, physicsMaterial, {
+                friction: 0.5,
+                restitution: 0.1 // Low bounce
+            });
+            world.addContactMaterial(physicsContactMaterial);
+
+            createEnvironment();
+
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Events
+            window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('pointerdown', onPointerDown, false);
+
+            animate();
+        }
+
+        function createEnvironment() {
+            // Physics Floor
+            const groundBody = new CANNON.Body({
+                mass: 0, 
+                shape: new CANNON.Plane()
+            });
+            groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+            world.addBody(groundBody);
+
+            // Visual Grid
+            const gridHelper = new THREE.GridHelper(50, 50, 0x34495e, 0x34495e);
+            scene.add(gridHelper);
+
+            // Invisible Walls to keep objects in view
+            const wallShape = new CANNON.Box(new CANNON.Vec3(10, 10, 1));
+            
+            const wallN = new CANNON.Body({ mass: 0 });
+            wallN.addShape(wallShape);
+            wallN.position.set(0, 5, -8);
+            world.addBody(wallN);
+
+            const wallS = new CANNON.Body({ mass: 0 });
+            wallS.addShape(wallShape);
+            wallS.position.set(0, 5, 8);
+            world.addBody(wallS);
+
+            const wallW = new CANNON.Body({ mass: 0 });
+            wallW.addShape(wallShape);
+            wallW.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+            wallW.position.set(-8, 5, 0);
+            world.addBody(wallW);
+
+            const wallE = new CANNON.Body({ mass: 0 });
+            wallE.addShape(wallShape);
+            wallE.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+            wallE.position.set(8, 5, 0);
+            world.addBody(wallE);
+        }
+        
+        // --- TEXTURE HELPER ---
+        function createEmojiTexture(emoji) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // Tile Background
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(0, 0, 256, 256);
+            
+            // Inner Border
+            ctx.strokeStyle = '#bdc3c7';
+            ctx.lineWidth = 15;
+            ctx.strokeRect(10, 10, 236, 236);
+            
+            // Emoji
+            ctx.font = '150px Segoe UI Emoji, Apple Color Emoji, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Slight shadow
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.shadowBlur = 10;
+            ctx.fillText(emoji, 128, 138);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            return tex;
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.add('hidden');
+            
+            level = 1;
+            setupLevel(level);
+        }
+
+        function nextLevel() {
+            document.getElementById('win-screen').classList.add('hidden');
+            level++;
+            setupLevel(level);
+        }
+
+        function restartLevel() {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            setupLevel(level);
+        }
+
+        function setupLevel(lvl) {
+            gameActive = true;
+            document.getElementById('level-display').innerText = `Level ${lvl}`;
+            
+            // Clean up old objects
+            objects.forEach(obj => {
+                scene.remove(obj.mesh);
+                world.remove(obj.body);
+            });
+            objects = [];
+            tray = [];
+
+            // Difficulty Logic
+            // Level 1: 3 themes (9 items)
+            const numThemes = Math.min(2 + lvl, THEMES.length);
+            
+            // Shuffle themes to get random categories
+            const shuffledThemes = [...THEMES].sort(() => 0.5 - Math.random());
+            const selectedThemes = shuffledThemes.slice(0, numThemes);
+
+            // Spawn items for selected themes
+            selectedThemes.forEach((themeGroup, themeIndex) => {
+                // themeGroup is array of 3 emojis e.g. ['🐶', '🐱', '🐭']
+                // We use the themeIndex (relative to this level) plus a random offset or just unique ID per game?
+                // Actually, checkMatches needs to group by ID.
+                // Let's use a unique ID for the Group.
+                
+                const groupID = themeIndex; // 0, 1, 2...
+                
+                themeGroup.forEach(emoji => {
+                    createObject({
+                        emoji: emoji,
+                        matchId: groupID
+                    });
+                });
+            });
+
+            // Start Timer
+            timeLeft = 60 + (lvl * 20); 
+            updateTimerDisplay();
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if(!gameActive) return;
+                timeLeft--;
+                updateTimerDisplay();
+                if(timeLeft <= 0) gameOver();
+            }, 1000);
+        }
+
+        function createObject(data) {
+            // Tile Shape
+            const width = 1.3;
+            const height = 1.3;
+            const depth = 0.3;
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+
+            // Texture
+            const texture = createEmojiTexture(data.emoji);
+            
+            // Materials: Sides darker, Front/Back with Emoji
+            const sideMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6 });
+            const faceMat = new THREE.MeshStandardMaterial({ map: texture });
+            
+            // BoxGeometry material index: 0,1=x, 2,3=y, 4,5=z
+            const materials = [
+                sideMat, sideMat, 
+                sideMat, sideMat, 
+                faceMat, faceMat 
+            ];
+            
+            const mesh = new THREE.Mesh(geometry, materials);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            const range = 5;
+            const x = (Math.random() - 0.5) * range;
+            const y = 8 + Math.random() * 10;
+            const z = (Math.random() - 0.5) * range;
+            
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+            
+            scene.add(mesh);
+
+            // Physics
+            const shape = new THREE.BoxGeometry(width, height, depth);
+            // Cannon Box takes half-extents
+            const bodyShape = new CANNON.Box(new CANNON.Vec3(width/2, height/2, depth/2));
+
+            const body = new CANNON.Body({
+                mass: 5,
+                shape: bodyShape,
+                linearDamping: 0.5,
+                angularDamping: 0.5
+            });
+            body.position.copy(mesh.position);
+            body.quaternion.copy(mesh.quaternion);
+            
+            body.angularVelocity.set(Math.random(), Math.random(), Math.random());
+
+            world.addBody(body);
+
+            objects.push({
+                mesh: mesh,
+                body: body,
+                typeId: data.matchId, // Used for matching logic
+                isMovingToTray: false,
+                inTray: false
+            });
+        }
+
+        function onPointerDown(event) {
+            if(!gameActive) return;
+            if(tray.length >= TRAY_SIZE) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const interactableMeshes = objects
+                .filter(o => !o.inTray && !o.isMovingToTray)
+                .map(o => o.mesh);
+
+            const intersects = raycaster.intersectObjects(interactableMeshes);
+
+            if (intersects.length > 0) {
+                const selectedMesh = intersects[0].object;
+                const objData = objects.find(o => o.mesh === selectedMesh);
+                
+                if(objData) {
+                    moveToTray(objData);
+                }
+            }
+        }
+
+        function moveToTray(objData) {
+            world.remove(objData.body);
+            objData.isMovingToTray = true;
+            objData.inTray = true;
+            tray.push(objData);
+            checkMatches();
+        }
+
+        function getTrayPosition(index) {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            const slotEl = document.querySelectorAll('.tray-slot')[index];
+            if(!slotEl) return new THREE.Vector3();
+
+            const rect = slotEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const ndcX = (centerX / screenWidth) * 2 - 1;
+            const ndcY = -(centerY / screenHeight) * 2 + 1;
+
+            const vector = new THREE.Vector3(ndcX, ndcY, 0.5);
+            vector.unproject(camera);
+            
+            const dir = vector.sub(camera.position).normalize();
+            const distance = 15; 
+            const targetPos = camera.position.clone().add(dir.multiplyScalar(distance));
+            
+            return targetPos;
+        }
+
+        function checkMatches() {
+            const counts = {};
+            tray.forEach(obj => {
+                counts[obj.typeId] = (counts[obj.typeId] || 0) + 1;
+            });
+
+            let matchFoundId = null;
+            for(const id in counts) {
+                if(counts[id] >= 3) {
+                    matchFoundId = parseInt(id);
+                    break;
+                }
+            }
+
+            if (matchFoundId !== null) {
+                setTimeout(() => {
+                    const toRemove = tray.filter(obj => obj.typeId === matchFoundId).slice(0, 3);
+                    showCombo();
+
+                    toRemove.forEach(obj => {
+                        const scaleUp = 1.2;
+                        obj.mesh.scale.set(scaleUp, scaleUp, scaleUp);
+                        let s = scaleUp;
+                        const shrinkInterval = setInterval(() => {
+                            s -= 0.1;
+                            obj.mesh.scale.set(s,s,s);
+                            obj.mesh.rotation.y += 0.5;
+                            if(s <= 0) {
+                                clearInterval(shrinkInterval);
+                                scene.remove(obj.mesh);
+                            }
+                        }, 30);
+
+                        const idx = objects.indexOf(obj);
+                        if(idx > -1) objects.splice(idx, 1);
+                    });
+
+                    tray = tray.filter(obj => !toRemove.includes(obj));
+
+                    if(objects.length === 0) {
+                        setTimeout(() => {
+                            gameActive = false;
+                            document.getElementById('win-screen').classList.remove('hidden');
+                            clearInterval(timerInterval);
+                        }, 1000);
+                    }
+                }, 400); 
+            } else {
+                if(tray.length === TRAY_SIZE) {
+                    setTimeout(() => {
+                        if(tray.length === TRAY_SIZE) {
+                            gameActive = false;
+                            document.getElementById('game-over-screen').classList.remove('hidden');
+                            clearInterval(timerInterval);
+                        }
+                    }, 600);
+                }
+            }
+        }
+        
+        function showCombo() {
+            const el = document.getElementById('combo-text');
+            el.classList.remove('pop-anim');
+            void el.offsetWidth;
+            el.classList.add('pop-anim');
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').innerText = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            clearInterval(timerInterval);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameActive) {
+                world.step(timeStep);
+                objects.forEach(obj => {
+                    if (!obj.inTray) {
+                        obj.mesh.position.copy(obj.body.position);
+                        obj.mesh.quaternion.copy(obj.body.quaternion);
+                        if(obj.mesh.position.y < -10) {
+                            obj.body.position.set(0, 15, 0);
+                            obj.body.velocity.set(0,0,0);
+                        }
+                    } else {
+                        const trayIndex = tray.indexOf(obj);
+                        if (trayIndex > -1) {
+                            const targetPos = getTrayPosition(trayIndex);
+                            obj.mesh.position.lerp(targetPos, 0.1);
+                            obj.mesh.rotation.x = THREE.MathUtils.lerp(obj.mesh.rotation.x, 0, 0.1); // Face flat
+                            obj.mesh.rotation.y = THREE.MathUtils.lerp(obj.mesh.rotation.y, 0, 0.1);
+                            obj.mesh.rotation.z = THREE.MathUtils.lerp(obj.mesh.rotation.z, 0, 0.1);
+                        }
+                    }
+                });
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Boot
+        init();
+
+    </script>
+</body>
+</html>
