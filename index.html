@@ -108,10 +108,15 @@
             right: 20px;
             display: flex;
             flex-direction: row; /* Horizontal layout */
-            gap: 15px;
+            gap: 12px;
             align-items: flex-end;
             pointer-events: auto;
             z-index: 20;
+            /* Allow wrapping if screen is narrow, though right alignment implies growing left */
+            flex-wrap: wrap-reverse; 
+            justify-content: flex-end;
+            max-width: 100%;
+            padding-right: 10px;
         }
 
         .booster-item {
@@ -121,8 +126,8 @@
         }
 
         .booster-btn {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
             border-radius: 50%;
             border: 3px solid #fff;
@@ -130,15 +135,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 30px;
+            font-size: 26px;
             cursor: pointer;
             position: relative;
             transition: transform 0.1s;
         }
 
-        .booster-btn.shake {
-            background: radial-gradient(circle at 30% 30%, #9b59b6, #8e44ad);
-        }
+        .booster-btn.shake { background: radial-gradient(circle at 30% 30%, #9b59b6, #8e44ad); }
+        .booster-btn.fan { background: radial-gradient(circle at 30% 30%, #e67e22, #d35400); }
+        .booster-btn.spring { background: radial-gradient(circle at 30% 30%, #2ecc71, #27ae60); }
+        .booster-btn.ice { background: radial-gradient(circle at 30% 30%, #3498db, #2980b9); }
 
         .booster-btn:active {
             transform: scale(0.9);
@@ -150,20 +156,20 @@
             right: -5px;
             background: #e74c3c;
             color: white;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             border: 2px solid white;
         }
 
         .booster-label {
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             margin-top: 5px;
             text-shadow: 0 1px 3px rgba(0,0,0,0.8);
@@ -246,6 +252,12 @@
             border-radius: 20px;
             font-variant-numeric: tabular-nums;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+
+        #timer.frozen {
+            background: #3498db;
+            box-shadow: 0 0 15px #3498db;
         }
 
         #level-display {
@@ -324,6 +336,24 @@
         
         <!-- Booster UI -->
         <div class="booster-container">
+            <!-- Spring (Undo) -->
+            <div class="booster-item">
+                <div class="booster-btn spring" id="spring-btn" onclick="activateSpringBooster()">
+                    ↩️
+                    <div class="booster-badge" id="spring-count">3</div>
+                </div>
+                <div class="booster-label">UNDO</div>
+            </div>
+
+            <!-- Icegun (Freeze Time) -->
+            <div class="booster-item">
+                <div class="booster-btn ice" id="ice-btn" onclick="activateIcegunBooster()">
+                    ❄️
+                    <div class="booster-badge" id="ice-count">3</div>
+                </div>
+                <div class="booster-label">FREEZE</div>
+            </div>
+
             <!-- Shake Booster -->
             <div class="booster-item">
                 <div class="booster-btn shake" id="shake-btn" onclick="activateShakeBooster()">
@@ -335,7 +365,7 @@
 
             <!-- Fan Booster -->
             <div class="booster-item">
-                <div class="booster-btn" id="fan-btn" onclick="activateFanBooster()">
+                <div class="booster-btn fan" id="fan-btn" onclick="activateFanBooster()">
                     🌪️
                     <div class="booster-badge" id="fan-count">3</div>
                 </div>
@@ -425,6 +455,7 @@
         let level = 1;
         let timerInterval;
         let timeLeft = 120;
+        let isTimeFrozen = false;
         
         let objects = []; // Contains { mesh, body, id, type }
         let tray = []; // Objects currently in tray
@@ -441,6 +472,8 @@
         // Booster Globals
         let fanCount = 3;
         let shakeCount = 3;
+        let springCount = 3;
+        let iceCount = 3;
 
         // --- INIT ---
         function init() {
@@ -644,6 +677,10 @@
             // Reset Boosters
             fanCount = 3;
             shakeCount = 3;
+            springCount = 3;
+            iceCount = 3;
+            isTimeFrozen = false;
+            document.getElementById('timer').classList.remove('frozen');
             updateBoostersUI();
 
             // Difficulty: Start with 6 categories (18 items). Add 2 categories (6 items) per level.
@@ -668,7 +705,7 @@
             updateTimerDisplay();
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
-                if(!gameActive) return;
+                if(!gameActive || isTimeFrozen) return;
                 timeLeft--;
                 updateTimerDisplay();
                 if(timeLeft <= 0) gameOver();
@@ -743,6 +780,14 @@
             // Update Shake
             document.getElementById('shake-count').innerText = shakeCount;
             document.getElementById('shake-btn').style.opacity = shakeCount <= 0 ? '0.5' : '1';
+
+            // Update Spring
+            document.getElementById('spring-count').innerText = springCount;
+            document.getElementById('spring-btn').style.opacity = springCount <= 0 ? '0.5' : '1';
+
+            // Update Ice
+            document.getElementById('ice-count').innerText = iceCount;
+            document.getElementById('ice-btn').style.opacity = iceCount <= 0 ? '0.5' : '1';
         }
 
         function activateFanBooster() {
@@ -821,11 +866,10 @@
             objects.forEach(obj => {
                 if (!obj.inTray && !obj.isDocked && !obj.pendingRemoval && obj.body) {
                     // Apply random upward and side force to shuffle
-                    // Reduced impulse by ~20%
                     obj.body.velocity.set(
-                        (Math.random() - 0.5) * 24, // X kick (was 30)
-                        13 + Math.random() * 13,    // Y up kick (was 16+16)
-                        (Math.random() - 0.5) * 24  // Z kick (was 30)
+                        (Math.random() - 0.5) * 24, // X kick
+                        13 + Math.random() * 13,    // Y up kick
+                        (Math.random() - 0.5) * 24  // Z kick
                     );
                     
                     // Random rotation spin
@@ -838,6 +882,61 @@
                     obj.body.wakeUp();
                 }
             });
+        }
+
+        function activateSpringBooster() {
+            if (!gameActive || springCount <= 0 || tray.length === 0) return;
+
+            // Find the last added item that isn't pending removal
+            const undoItem = tray[tray.length - 1];
+            if (!undoItem || undoItem.pendingRemoval) return;
+
+            springCount--;
+            updateBoostersUI();
+
+            // Logic to undock
+            tray.pop(); // Remove from tray array
+            
+            undoItem.inTray = false;
+            undoItem.isDocked = false;
+            undoItem.isMovingToTray = false;
+            
+            // Re-enable 3D
+            undoItem.mesh.visible = true;
+            
+            // Respawn above the center of the board, but lower so it stays in view
+            // Height reduced from 18 to 10
+            undoItem.body.position.set(0, 10, 0); 
+            undoItem.body.velocity.set(
+                (Math.random() - 0.5) * 2, // Slight random horizontal drift
+                -5,                        // Stronger downward push to get it back in play fast
+                (Math.random() - 0.5) * 2
+            );
+            undoItem.body.angularVelocity.set(Math.random(), Math.random(), Math.random());
+            
+            // Re-add physics
+            world.addBody(undoItem.body);
+            undoItem.body.wakeUp();
+
+            updateTrayUI();
+        }
+
+        function activateIcegunBooster() {
+            if (!gameActive || iceCount <= 0 || isTimeFrozen) return;
+
+            iceCount--;
+            updateBoostersUI();
+            isTimeFrozen = true;
+            
+            const timerEl = document.getElementById('timer');
+            timerEl.classList.add('frozen');
+
+            setTimeout(() => {
+                isTimeFrozen = false;
+                if(document.getElementById('timer')) {
+                    document.getElementById('timer').classList.remove('frozen');
+                }
+            }, 10000);
         }
 
         // --- INTERACTION ---
