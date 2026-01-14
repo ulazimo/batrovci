@@ -266,7 +266,14 @@
     <!-- Screens -->
     <div id="start-screen" class="screen">
         <h1>MIND MATCH 3D</h1>
-        <p>Find items that belong together!<br><br>🐶 + 🐱 + 🐭 = Pets<br>🍎 + 🍌 + 🍇 = Fruits</p>
+        <p>
+            <strong>THE RULES</strong><br><br>
+            Match 3 items by <u>CATEGORY</u>.<br>
+            <span style="font-size: 0.9em; opacity: 0.8">(Don't look for identical copies!)</span><br><br>
+            ✅ 🐶+🐱+🐭 (Animals)<br>
+            ✅ 🍎+🍌+🍇 (Fruit)<br><br>
+            Clear the pile before time runs out!
+        </p>
         <button onclick="startGame()">PLAY NOW</button>
     </div>
 
@@ -286,7 +293,7 @@
         // --- CONFIGURATION ---
         const TRAY_SIZE = 7;
         
-        // Contextual Matching Groups
+        // Expanded Contextual Matching Groups (24 Categories)
         const THEMES = [
             ['🐶', '🐱', '🐭'], // Pets
             ['🍎', '🍌', '🍇'], // Fruit
@@ -299,7 +306,20 @@
             ['⌚', '📱', '💻'], // Gadgets
             ['👕', '👖', '👗'], // Clothes
             ['🌹', '🌻', '🌷'], // Flowers
-            ['🦁', '🐯', '🐻']  // Wild Animals
+            ['🦁', '🐯', '🐻'], // Wild Animals
+            // Expanded
+            ['😀', '😂', '😎'], // Faces
+            ['❤️', '💙', '💚'], // Hearts
+            ['👍', '👎', '✌️'], // Hands
+            ['🌙', '⭐', '🪐'], // Space
+            ['🐙', '🐬', '🐠'], // Ocean
+            ['🐝', '🐞', '🦋'], // Bugs
+            ['🍩', '🍪', '🍫'], // Sweets
+            ['☕', '🍺', '🍷'], // Drinks
+            ['🥦', '🥕', '🌽'], // Veggies
+            ['🚲', '🛵', '🛴'], // Bikes
+            ['📎', '📏', '✂️'], // Office
+            ['🥇', '🥈', '🥉']  // Medals
         ];
 
         // --- GLOBALS ---
@@ -524,7 +544,9 @@
             tray = [];
             updateTrayUI();
 
-            const numThemes = Math.min(2 + lvl, THEMES.length);
+            // Difficulty: Start with 6 categories (18 items). Add 2 categories (6 items) per level.
+            // Cap at total available themes.
+            const numThemes = Math.min(4 + (lvl * 2), THEMES.length);
             
             const shuffledThemes = [...THEMES].sort(() => 0.5 - Math.random());
             const selectedThemes = shuffledThemes.slice(0, numThemes);
@@ -539,7 +561,8 @@
                 });
             });
 
-            timeLeft = 60 + (lvl * 20); 
+            // Adjust timer for increased difficulty (more time for more items)
+            timeLeft = 60 + (lvl * 25); 
             updateTimerDisplay();
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
@@ -575,7 +598,8 @@
             const rangeZ = 4;
             
             const x = (Math.random() - 0.5) * rangeX;
-            const y = 8 + Math.random() * 10;
+            // Increased drop height range for higher levels to prevent physics explosion
+            const y = 8 + Math.random() * 20; 
             const z = (Math.random() - 0.5) * rangeZ;
             
             mesh.position.set(x, y, z);
