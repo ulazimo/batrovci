@@ -1,0 +1,564 @@
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { RefreshCw, Trophy, RotateCcw, HelpCircle, X, Heart, Play, ArrowRight } from 'lucide-react';
+
+// --- Types ---
+
+type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+type Point = { r: number; c: number };
+
+interface Block {
+  id: string;
+  row: number; // Head/Anchor row
+  col: number; // Head/Anchor col
+  dir: Direction;
+  // Relative coordinates from (row, col). (0,0) is usually the head.
+  shape: Point[]; 
+  state: 'idle' | 'flying' | 'blocked';
+  colorHue?: number; // For visual variety
+}
+
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color: string;
+}
+
+// --- Constants ---
+
+const GRID_SIZE = 10;
+const MAX_LIVES = 5;
+
+// Base Shapes (Defined as if arrow is pointing RIGHT at (0,0))
+// The body extends to the LEFT (negative c) or UP/DOWN
+const SHAPE_TEMPLATES: Point[][] = [
+  // Straight
+  [{r:0,c:0}, {r:0,c:-1}, {r:0,c:-2}], // I3
+  [{r:0,c:0}, {r:0,c:-1}, {r:0,c:-2}, {r:0,c:-3}], // I4
+  // Corners
+  [{r:0,c:0}, {r:0,c:-1}, {r:1,c:-1}], // L3 (Down turn)
+  [{r:0,c:0}, {r:0,c:-1}, {r:-1,c:-1}], // J3 (Up turn)
+  [{r:0,c:0}, {r:0,c:-1}, {r:1,c:-1}, {r:0,c:-2}], // L4 Long
+  // Square-ish
+  [{r:0,c:0}, {r:0,c:-1}, {r:1,c:0}, {r:1,c:-1}], // O4 (Square)
+  // T-Shape
+  [{r:0,c:0}, {r:0,c:-1}, {r:-1,c:-1}, {r:1,c:-1}], // T4
+  // ZigZag
+  [{r:0,c:0}, {r:0,c:-1}, {r:1,c:-1}, {r:1,c:-2}], // S4
+];
+
+// --- Logic Helpers ---
+
+const getDelta = (dir: Direction) => {
+  switch (dir) {
+    case 'UP': return { dr: -1, dc: 0 };
+    case 'DOWN': return { dr: 1, dc: 0 };
+    case 'LEFT': return { dr: 0, dc: -1 };
+    case 'RIGHT': return { dr: 0, dc: 1 };
+  }
+};
+
+// Rotate a point 90 degrees clockwise
+const rotatePoint = (p: Point): Point => ({ r: p.c, c: -p.r });
+
+// Transform a template shape based on direction
+// Templates are defined for RIGHT. We rotate them to match target dir.
+const transformShape = (template: Point[], dir: Direction): Point[] => {
+  let points = [...template];
+  let rotations = 0;
+  if (dir === 'DOWN') rotations = 1;
+  if (dir === 'LEFT') rotations = 2;
+  if (dir === 'UP') rotations = 3;
+
+  for (let i = 0; i < rotations; i++) {
+    points = points.map(rotatePoint);
+  }
+  return points;
+};
+
+// Get absolute grid coordinates for all cells in a block
+const getOccupiedCells = (block: Block | Omit<Block, 'id' | 'state' | 'colorHue'>) => {
+  return block.shape.map(p => ({
+    r: block.row + p.r,
+    c: block.col + p.c
+  }));
+};
+
+// Check if path is clear for the ENTIRE shape
+const isPathClear = (block: Block, allBlocks: Block[], gridSize: number): boolean => {
+  const { dr, dc } = getDelta(block.dir);
+  
+  // We need to simulate the movement of the entire shape step-by-step
+  // until every part of the shape is off the board.
+  // Actually, we just need to verify that the path in front of *every* cell 
+  // until the edge of the board is clear of *other* blocks.
+  
+  const myCells = getOccupiedCells(block);
+  
+  // For each cell in the block, trace its ray
+  for (const cell of myCells) {
+    let r = cell.r + dr;
+    let c = cell.c + dc;
+
+    while (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
+      // Is this spot (r,c) occupied by another block?
+      // We must exclude 'self' cells from the check (collision with self is impossible since it's a rigid body)
+      // And exclude 'flying' blocks
+      
+      const isBlocked = allBlocks.some(other => {
+        if (other.id === block.id) return false;
+        if (other.state === 'flying') return false;
+
+        const otherCells = getOccupiedCells(other);
+        return otherCells.some(oc => oc.r === r && oc.c === c);
+      });
+
+      if (isBlocked) return false;
+
+      r += dr;
+      c += dc;
+    }
+  }
+  return true;
+};
+
+const isSolvable = (blocks: Block[], size: number): boolean => {
+  let remaining = [...blocks];
+  let moved = true;
+  
+  while (moved && remaining.length > 0) {
+    moved = false;
+    const toRemove: string[] = [];
+    
+    for (const block of remaining) {
+      if (isPathClear(block, remaining, size)) {
+        toRemove.push(block.id);
+        moved = true;
+      }
+    }
+    
+    if (moved) {
+      remaining = remaining.filter(b => !toRemove.includes(b.id));
+    }
+  }
+  
+  return remaining.length === 0;
+};
+
+// --- Generator ---
+
+const generateLevel = (size: number) => {
+  let attempts = 0;
+  
+  while (attempts < 200) {
+    const blocks: Block[] = [];
+    let idCounter = 0;
+    const occupiedSet = new Set<string>(); // "r-c"
+
+    // Target fill rate ~35-40% since blocks are complex
+    const targetCells = Math.floor(size * size * 0.35);
+    let currentCells = 0;
+
+    for (let i = 0; i < 100; i++) { // Max placement attempts
+      if (currentCells >= targetCells) break;
+
+      // Random Dir
+      const dirs: Direction[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+      const dir = dirs[Math.floor(Math.random() * dirs.length)];
+
+      // Random Shape Template
+      const template = SHAPE_TEMPLATES[Math.floor(Math.random() * SHAPE_TEMPLATES.length)];
+      const shape = transformShape(template, dir);
+      
+      // Random Position
+      const r = Math.floor(Math.random() * size);
+      const c = Math.floor(Math.random() * size);
+
+      // Validate
+      const candidateCells = shape.map(p => ({ r: r + p.r, c: c + p.c }));
+      
+      // 1. Bounds check
+      const inBounds = candidateCells.every(cell => cell.r >= 0 && cell.r < size && cell.c >= 0 && cell.c < size);
+      if (!inBounds) continue;
+
+      // 2. Overlap check
+      const overlap = candidateCells.some(cell => occupiedSet.has(`${cell.r}-${cell.c}`));
+      if (overlap) continue;
+
+      // Add block
+      blocks.push({
+        id: `b-${idCounter++}`,
+        row: r,
+        col: c,
+        dir,
+        shape,
+        state: 'idle',
+        colorHue: Math.floor(Math.random() * 360) // Assign random color
+      });
+
+      candidateCells.forEach(cell => occupiedSet.add(`${cell.r}-${cell.c}`));
+      currentCells += candidateCells.length;
+    }
+
+    if (blocks.length > 3 && isSolvable(blocks, size)) {
+      return blocks;
+    }
+    attempts++;
+  }
+  
+  // Fallback simple level
+  return [
+    { id: 'f1', row: 4, col: 4, dir: 'RIGHT', shape: transformShape(SHAPE_TEMPLATES[0], 'RIGHT'), state: 'idle' },
+    { id: 'f2', row: 2, col: 2, dir: 'DOWN', shape: transformShape(SHAPE_TEMPLATES[2], 'DOWN'), state: 'idle' },
+  ] as Block[];
+};
+
+export default function ArrowEscape() {
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [lives, setLives] = useState(MAX_LIVES);
+  const [levelNum, setLevelNum] = useState(1);
+  const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
+  const [showRules, setShowRules] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  // Sound/Combo refs
+  const comboCount = useRef(0);
+  const lastMoveTime = useRef(0);
+
+  const startLevel = useCallback((level: number) => {
+    const newBlocks = generateLevel(GRID_SIZE);
+    setBlocks(newBlocks);
+    setGameState('playing');
+    if (level === 1) setLives(MAX_LIVES); 
+  }, []);
+
+  useEffect(() => {
+    startLevel(1);
+  }, [startLevel]);
+
+  // Particle Loop
+  useEffect(() => {
+    if (particles.length === 0) return;
+    const interval = setInterval(() => {
+      setParticles(prev => prev.map(p => ({
+        ...p,
+        x: p.x + p.vx,
+        y: p.y + p.vy,
+        life: p.life - 0.05,
+        vy: p.vy + 0.5 
+      })).filter(p => p.life > 0));
+    }, 16);
+    return () => clearInterval(interval);
+  }, [particles.length]);
+
+  const spawnParticles = (x: number, y: number, color: string) => {
+    const newParticles: Particle[] = [];
+    for (let i = 0; i < 12; i++) {
+      newParticles.push({
+        id: Math.random(),
+        x, y,
+        vx: (Math.random() - 0.5) * 15,
+        vy: (Math.random() - 0.5) * 15,
+        life: 1.0,
+        color
+      });
+    }
+    setParticles(prev => [...prev, ...newParticles]);
+  };
+
+  const handleBlockClick = (id: string) => {
+    if (gameState !== 'playing') return;
+
+    setBlocks(prev => {
+      const block = prev.find(b => b.id === id);
+      if (!block || block.state !== 'idle') return prev;
+
+      const clear = isPathClear(block, prev, GRID_SIZE);
+
+      if (clear) {
+        // Success
+        const now = Date.now();
+        if (now - lastMoveTime.current < 1500) comboCount.current++;
+        else comboCount.current = 1;
+        lastMoveTime.current = now;
+
+        return prev.map(b => b.id === id ? { ...b, state: 'flying' } : b);
+      } else {
+        // Failure
+        setLives(l => Math.max(0, l - 1));
+        comboCount.current = 0;
+        return prev.map(b => b.id === id ? { ...b, state: 'blocked' } : b);
+      }
+    });
+
+    setTimeout(() => {
+      setBlocks(prev => prev.map(b => b.id === id && b.state === 'blocked' ? { ...b, state: 'idle' } : b));
+    }, 400);
+  };
+
+  useEffect(() => {
+    const flyingBlocks = blocks.filter(b => b.state === 'flying');
+    if (flyingBlocks.length > 0) {
+      const timer = setTimeout(() => {
+        setBlocks(prev => prev.filter(b => b.state !== 'flying'));
+      }, 700); 
+      return () => clearTimeout(timer);
+    }
+  }, [blocks]);
+
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    if (lives === 0) setGameState('lost');
+    else if (blocks.length === 0) setGameState('won');
+  }, [blocks.length, lives, gameState]);
+
+  // --- Render Logic ---
+
+  // Helper to check if a specific relative point exists in the shape
+  const hasPoint = (shape: Point[], r: number, c: number) => {
+    return shape.some(p => p.r === r && p.c === c);
+  };
+
+  const getRotation = (dir: Direction) => {
+    switch (dir) {
+      case 'UP': return '-90deg';
+      case 'DOWN': return '90deg';
+      case 'LEFT': return '180deg';
+      case 'RIGHT': return '0deg';
+    }
+  };
+
+  const getFlyStyle = (block: Block): React.CSSProperties => {
+     if (block.state !== 'flying') return {};
+     const flyDist = '120vh'; 
+     let transform = '';
+     if (block.dir === 'UP') transform = `translateY(-${flyDist})`;
+     if (block.dir === 'DOWN') transform = `translateY(${flyDist})`;
+     if (block.dir === 'LEFT') transform = `translateX(-${flyDist})`;
+     if (block.dir === 'RIGHT') transform = `translateX(${flyDist})`;
+     
+     return {
+         transform,
+         opacity: 0,
+         transition: 'all 0.6s cubic-bezier(0.5, 0, 0.2, 1)'
+     };
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden flex flex-col relative select-none">
+      
+      {/* Particles */}
+      {particles.map(p => (
+        <div 
+          key={p.id}
+          className="absolute w-2 h-2 rounded-full pointer-events-none z-50"
+          style={{ left: p.x, top: p.y, backgroundColor: p.color, opacity: p.life }}
+        />
+      ))}
+
+      {/* Header */}
+      <div className="pt-6 pb-2 px-6 w-full max-w-md mx-auto flex justify-between items-end z-10">
+        <div>
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Level {levelNum}</div>
+          <h1 className="text-2xl font-black text-white tracking-tight leading-none">
+            BLOCK <span className="text-indigo-500">AWAY</span>
+          </h1>
+        </div>
+        <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
+          <Heart className={`w-4 h-4 ${lives < 2 ? 'text-rose-500 animate-pulse' : 'text-rose-500'}`} fill="currentColor" />
+          <span className={`font-bold ${lives < 2 ? 'text-rose-400' : 'text-white'}`}>{lives}</span>
+        </div>
+      </div>
+
+      {/* Game Area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4 w-full max-w-lg mx-auto relative">
+        
+        {/* Progress */}
+        <div className="w-full h-1 bg-slate-800 rounded-full mb-6 overflow-hidden">
+          <div 
+            className="h-full bg-indigo-500 transition-all duration-500"
+            style={{ width: `${Math.max(0, 100 - (blocks.length / (GRID_SIZE * GRID_SIZE * 0.1)) * 100)}%` }}
+          />
+        </div>
+
+        {/* Board Container */}
+        <div className="relative p-2 rounded-xl bg-slate-900/50 border border-slate-800 w-full aspect-square shadow-2xl">
+          
+          {/* Overlays */}
+          {gameState !== 'playing' && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 rounded-xl backdrop-blur-sm animate-in fade-in duration-300">
+              {gameState === 'won' ? (
+                <>
+                  <Trophy className="text-yellow-400 mb-4 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" size={64} strokeWidth={1.5} />
+                  <h2 className="text-3xl font-black text-white mb-1">CLEARED!</h2>
+                  <button 
+                    onClick={() => { setLevelNum(l => l + 1); startLevel(levelNum + 1); }}
+                    className="mt-8 px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                  >
+                    NEXT LEVEL <Play size={18} fill="currentColor"/>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="relative mb-4">
+                     <Heart className="text-rose-500 opacity-20" size={80} fill="currentColor" />
+                     <X className="text-rose-500 absolute inset-0 m-auto" size={48} strokeWidth={3} />
+                  </div>
+                  <h2 className="text-3xl font-black text-white mb-6">OUT OF MOVES</h2>
+                  <button 
+                    onClick={() => startLevel(levelNum)}
+                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <RotateCcw size={18} /> TRY AGAIN
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Grid Container */}
+          <div className="w-full h-full relative">
+            {/* Floor Grid - faint */}
+            <div 
+              className="absolute inset-0 grid gap-0.5 opacity-30"
+              style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`, gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)` }}
+            >
+               {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => (
+                 <div key={i} className="bg-slate-800 rounded-sm" />
+               ))}
+            </div>
+
+            {/* Blocks */}
+            {blocks.map(block => {
+              const isBlocked = block.state === 'blocked';
+              // Use block ID for deterministic but random-looking color if Hue not set
+              const hue = block.colorHue || parseInt(block.id.split('-')[1]) * 137 % 360; 
+              
+              const baseColor = isBlocked ? 'bg-rose-500' : `bg-indigo-500`;
+              const shadowColor = isBlocked ? 'bg-rose-700' : `bg-indigo-700`;
+
+              return (
+                <div
+                  key={block.id}
+                  onClick={(e) => {
+                    if (block.state === 'idle') {
+                        // Approximate center of the mass for particles
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        spawnParticles(e.clientX, e.clientY, isBlocked ? '#f43f5e' : '#6366f1');
+                        handleBlockClick(block.id);
+                    }
+                  }}
+                  className={`absolute top-0 left-0 w-full h-full pointer-events-none transition-transform duration-200 ${isBlocked ? 'animate-shake' : ''}`}
+                  style={{ 
+                      zIndex: block.state === 'flying' ? 50 : 20,
+                      ...getFlyStyle(block)
+                  }}
+                >
+                    {/* Render each cell of the shape */}
+                    {block.shape.map((pt, idx) => {
+                        const cellTop = (block.row + pt.r) * (100 / GRID_SIZE);
+                        const cellLeft = (block.col + pt.c) * (100 / GRID_SIZE);
+                        const size = 100 / GRID_SIZE;
+
+                        // Check neighbors for styling (to fuse blocks)
+                        const hasTop = hasPoint(block.shape, pt.r - 1, pt.c);
+                        const hasBottom = hasPoint(block.shape, pt.r + 1, pt.c);
+                        const hasLeft = hasPoint(block.shape, pt.r, pt.c - 1);
+                        const hasRight = hasPoint(block.shape, pt.r, pt.c + 1);
+
+                        const isHead = pt.r === 0 && pt.c === 0;
+
+                        return (
+                            <div
+                                key={`${idx}`}
+                                className={`absolute pointer-events-auto cursor-pointer`}
+                                style={{
+                                    top: `${cellTop}%`,
+                                    left: `${cellLeft}%`,
+                                    width: `${size}%`,
+                                    height: `${size}%`,
+                                    padding: '1px' // Gap between different blocks
+                                }}
+                            >
+                                <div 
+                                    className={`
+                                        w-full h-full flex items-center justify-center
+                                        ${isBlocked ? 'bg-rose-500' : 'bg-indigo-500 hover:bg-indigo-400'}
+                                        transition-colors duration-200
+                                        shadow-sm
+                                    `}
+                                    style={{
+                                        // Dynamic Border Radius to fuse shapes
+                                        borderTopLeftRadius: (hasTop || hasLeft) ? '0' : '0.5rem',
+                                        borderTopRightRadius: (hasTop || hasRight) ? '0' : '0.5rem',
+                                        borderBottomLeftRadius: (hasBottom || hasLeft) ? '0' : '0.5rem',
+                                        borderBottomRightRadius: (hasBottom || hasRight) ? '0' : '0.5rem',
+                                        // Remove borders between connected cells
+                                        borderTop: hasTop ? 'none' : undefined,
+                                        borderBottom: hasBottom ? 'none' : undefined,
+                                        borderLeft: hasLeft ? 'none' : undefined,
+                                        borderRight: hasRight ? 'none' : undefined,
+                                        // 3D Effect border
+                                        boxShadow: isBlocked ? 'inset 0 0 10px rgba(0,0,0,0.2)' : 'inset 0 0 10px rgba(0,0,0,0.1)'
+                                    }}
+                                >
+                                    {isHead && (
+                                        <ArrowRight 
+                                            size={20} 
+                                            className="text-white/90 drop-shadow-md relative z-10" 
+                                            strokeWidth={4} 
+                                            style={{ transform: `rotate(${getRotation(block.dir)})` }}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 flex gap-4">
+           <button onClick={() => startLevel(levelNum)} className="p-3 bg-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 shadow-lg transition-colors">
+             <RotateCcw size={20} />
+           </button>
+           <button onClick={() => setShowRules(true)} className="p-3 bg-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 shadow-lg transition-colors">
+             <HelpCircle size={20} />
+           </button>
+        </div>
+      </div>
+
+      {/* Rules Modal */}
+      {showRules && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-800 sm:rounded-2xl rounded-t-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-700">
+            <h2 className="text-xl font-black text-white mb-4">HOW TO PLAY</h2>
+            <div className="space-y-3 text-slate-300 text-sm">
+              <p>Tap blocks to fly them off screen.</p>
+              <p>Blocks now come in <strong className="text-indigo-400">Complex Shapes</strong> (L, T, Square)!</p>
+              <p>Clear the path for the ENTIRE shape.</p>
+            </div>
+            <button onClick={() => setShowRules(false)} className="mt-6 w-full py-3 bg-white text-slate-900 font-bold rounded-xl shadow-lg">GOT IT</button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-3px) rotate(-1deg); }
+          75% { transform: translateX(3px) rotate(1deg); }
+        }
+        .animate-shake {
+          animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+        }
+      `}</style>
+    </div>
+  );
+}
