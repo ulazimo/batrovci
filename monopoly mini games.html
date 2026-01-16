@@ -128,6 +128,13 @@
         const Flag = (p) => <LucideIcon name="Flag" {...p} />;
         const Lock = (p) => <LucideIcon name="Lock" {...p} />;
         const Unlock = (p) => <LucideIcon name="Unlock" {...p} />;
+        const Brain = (p) => <LucideIcon name="Brain" {...p} />;
+        const Ghost = (p) => <LucideIcon name="Ghost" {...p} />;
+        const Crosshair = (p) => <LucideIcon name="Crosshair" {...p} />;
+        const ArrowBigDown = (p) => <LucideIcon name="ArrowBigDown" {...p} />;
+        const Layers = (p) => <LucideIcon name="Layers" {...p} />;
+        const Terminal = (p) => <LucideIcon name="Terminal" {...p} />;
+        const Cpu = (p) => <LucideIcon name="Cpu" {...p} />;
 
 
         // --- Constants ---
@@ -713,6 +720,412 @@
           );
         };
 
+        const MemoryGame = ({ onComplete, level }) => {
+            const [cards, setCards] = useState([]);
+            const [flipped, setFlipped] = useState([]);
+            const [matched, setMatched] = useState([]);
+            const [locked, setLocked] = useState(false);
+            const [message, setMessage] = useState("Find all pairs!");
+            
+            useEffect(() => {
+                const symbols = ['gem', 'skull', 'zap', 'coins', 'trophy', 'ghost'];
+                // Create pairs - 12 cards total
+                const deck = [...symbols, ...symbols]
+                .sort(() => Math.random() - 0.5)
+                .map((symbol, id) => ({ id, symbol }));
+                setCards(deck);
+            }, []);
+
+            const handleClick = (id) => {
+                if (locked || flipped.includes(id) || matched.includes(id)) return;
+                
+                const newFlipped = [...flipped, id];
+                setFlipped(newFlipped);
+
+                if (newFlipped.length === 2) {
+                setLocked(true);
+                const [id1, id2] = newFlipped;
+                const card1 = cards.find(c => c.id === id1);
+                const card2 = cards.find(c => c.id === id2);
+
+                if (card1.symbol === card2.symbol) {
+                    setMatched([...matched, id1, id2]);
+                    setFlipped([]);
+                    setLocked(false);
+                    // Check win
+                    if (matched.length + 2 === cards.length) {
+                        setMessage("BRAIN POWER! ALL MATCHED!");
+                        setTimeout(() => onComplete(50000 * level), 1500);
+                    }
+                } else {
+                    setTimeout(() => {
+                    setFlipped([]);
+                    setLocked(false);
+                    }, 1000);
+                }
+                }
+            };
+
+            const getIcon = (symbol) => {
+                switch(symbol) {
+                    case 'gem': return <Gem className="text-purple-500" size={32} />;
+                    case 'skull': return <Skull className="text-slate-800" size={32} />;
+                    case 'zap': return <Zap className="text-yellow-500" size={32} />;
+                    case 'coins': return <Coins className="text-yellow-600" size={32} />;
+                    case 'trophy': return <Trophy className="text-orange-500" size={32} />;
+                    case 'ghost': return <Ghost className="text-slate-400" size={32} />;
+                    default: return null;
+                }
+            };
+
+            return (
+                <div className="flex flex-col items-center">
+                   <div className="bg-pink-100 w-full p-2 rounded-lg mb-4 text-center">
+                       <p className="text-xs font-bold text-pink-500 uppercase tracking-wider">PRIZE</p>
+                       <p className="text-2xl font-black text-pink-600">${(50000 * level).toLocaleString()}</p>
+                   </div>
+                   <p className="text-center font-bold text-sm mb-4 text-slate-400 uppercase tracking-wider animate-pulse">{message}</p>
+                   <div className="grid grid-cols-4 gap-3 w-full">
+                      {cards.map((card) => {
+                          const isFlipped = flipped.includes(card.id) || matched.includes(card.id);
+                          return (
+                              <button 
+                                key={card.id}
+                                onClick={() => handleClick(card.id)}
+                                className={`aspect-square rounded-xl shadow-sm transition-all duration-300 transform ${isFlipped ? 'rotate-y-180 bg-white border-b-4 border-slate-200' : 'bg-pink-500 border-b-4 border-pink-700 hover:bg-pink-400'} flex items-center justify-center`}
+                              >
+                                  {isFlipped ? <div className="animate-in zoom-in">{getIcon(card.symbol)}</div> : <Brain className="text-pink-200 opacity-50" size={24} />}
+                              </button>
+                          )
+                      })}
+                   </div>
+                </div>
+            );
+        };
+
+        const GhostHunterGame = ({ onComplete, level }) => {
+            const [score, setScore] = useState(0);
+            const [timeLeft, setTimeLeft] = useState(15);
+            const [ghostPos, setGhostPos] = useState(null);
+            const [isActive, setIsActive] = useState(false);
+            const [lastHit, setLastHit] = useState(null);
+            
+            useEffect(() => {
+                setIsActive(true);
+                // Timer Countdown
+                const timer = setInterval(() => {
+                    setTimeLeft((t) => {
+                        if (t <= 1) {
+                            clearInterval(timer);
+                            setIsActive(false);
+                            setTimeout(() => onComplete(score * 5000 * level), 1500);
+                            return 0;
+                        }
+                        return t - 1;
+                    });
+                }, 1000);
+
+                // Auto-move ghost every 700ms if not clicked
+                const mover = setInterval(() => {
+                    if (isActive) setGhostPos(Math.floor(Math.random() * 9));
+                }, 700);
+
+                return () => { clearInterval(timer); clearInterval(mover); };
+            }, [isActive]); 
+
+            // Initial pos
+            useEffect(() => { setGhostPos(Math.floor(Math.random() * 9)); }, []);
+
+            const handleTap = (idx) => {
+                if (!isActive || idx !== ghostPos) return;
+                setScore(s => s + 1);
+                
+                // Trigger Hit Effect
+                const hitId = Date.now();
+                setLastHit({ idx, id: hitId });
+                // Clear effect after 500ms so it doesn't persist
+                setTimeout(() => setLastHit(curr => (curr && curr.id === hitId ? null : curr)), 500);
+
+                // Move immediately on hit for responsiveness
+                setGhostPos(Math.floor(Math.random() * 9));
+            };
+
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="flex justify-between w-full mb-4 px-2">
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">Time</span>
+                            <span className={`text-2xl font-black ${timeLeft < 5 ? 'text-red-500 animate-pulse' : 'text-slate-700'}`}>{timeLeft}s</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">Score</span>
+                            <span className="text-2xl font-black text-green-600">{score}</span>
+                        </div>
+                    </div>
+                    
+                    <div className="bg-slate-800 p-3 rounded-2xl shadow-inner relative overflow-hidden w-full max-w-[280px]">
+                        <div className="grid grid-cols-3 gap-2">
+                            {Array(9).fill(0).map((_, i) => (
+                                <button 
+                                    key={i}
+                                    onClick={() => handleTap(i)}
+                                    className={`relative aspect-square rounded-xl flex items-center justify-center transition-all active:scale-95 border-b-4 ${i === ghostPos ? 'bg-indigo-600 border-indigo-800 shadow-[0_0_15px_rgba(99,102,241,0.5)] cursor-crosshair' : 'bg-slate-700 border-slate-900'}`}
+                                >
+                                    {i === ghostPos && <Ghost className="text-white animate-bounce" size={32} />}
+                                    
+                                    {/* Hit Feedback Overlay */}
+                                    {lastHit?.idx === i && (
+                                        <div key={lastHit.id} className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                                            <span className="text-green-400 font-black text-3xl animate-ping opacity-75">+1</span>
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Overlay when done */}
+                        {!isActive && timeLeft === 0 && (
+                            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center animate-in fade-in z-10">
+                                <span className="text-white font-bold text-xl mb-1">TIME'S UP!</span>
+                                <span className="text-green-400 font-black text-2xl">+${(score * 5000 * level).toLocaleString()}</span>
+                            </div>
+                        )}
+                    </div>
+                    <p className="mt-4 text-xs text-slate-400 font-bold uppercase tracking-widest">TAP THE GHOSTS!</p>
+                </div>
+            );
+        };
+
+        const CardSharkGame = ({ onComplete, level }) => {
+            const [currentCard, setCurrentCard] = useState(getRandomInt(2, 13)); 
+            const [nextCard, setNextCard] = useState(null);
+            const [streak, setStreak] = useState(0);
+            const [gameOver, setGameOver] = useState(false);
+            const [message, setMessage] = useState("Higher or Lower?");
+            const [animating, setAnimating] = useState(false);
+
+            const getCardLabel = (val) => {
+                if (val === 11) return 'J';
+                if (val === 12) return 'Q';
+                if (val === 13) return 'K';
+                if (val === 14) return 'A';
+                return val;
+            };
+
+            const handleGuess = (guessHigh) => {
+                if (gameOver || animating) return;
+                setAnimating(true);
+                
+                // Draw next card (ensure not same)
+                let next = getRandomInt(2, 14);
+                while(next === currentCard) next = getRandomInt(2, 14);
+                
+                setNextCard(next);
+                
+                const isCorrect = (guessHigh && next > currentCard) || (!guessHigh && next < currentCard);
+                
+                setTimeout(() => {
+                    if (isCorrect) {
+                        const newStreak = streak + 1;
+                        setStreak(newStreak);
+                        setCurrentCard(next);
+                        setNextCard(null);
+                        setAnimating(false);
+                        
+                        if (newStreak === 3) {
+                            setMessage("JACKPOT! 3 IN A ROW!");
+                            setGameOver(true);
+                            setTimeout(() => onComplete(150000 * level), 1500);
+                        } else {
+                            setMessage("CORRECT! Keep going!");
+                        }
+                    } else {
+                        setMessage("WRONG! Game Over.");
+                        setGameOver(true);
+                        setTimeout(() => onComplete(10000 * level * streak), 1500);
+                    }
+                }, 1000);
+            };
+
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <div className="flex justify-between w-full mb-6 px-4">
+                       <div className="flex flex-col items-center">
+                           <span className="text-[10px] text-slate-400 font-bold uppercase">Streak</span>
+                           <div className="flex gap-1">
+                               <div className={`w-3 h-3 rounded-full ${streak >= 1 ? 'bg-cyan-400 shadow-[0_0_10px_cyan]' : 'bg-slate-700'}`}></div>
+                               <div className={`w-3 h-3 rounded-full ${streak >= 2 ? 'bg-cyan-400 shadow-[0_0_10px_cyan]' : 'bg-slate-700'}`}></div>
+                               <div className={`w-3 h-3 rounded-full ${streak >= 3 ? 'bg-cyan-400 shadow-[0_0_10px_cyan]' : 'bg-slate-700'}`}></div>
+                           </div>
+                       </div>
+                       <div className="flex flex-col items-end">
+                           <span className="text-[10px] text-slate-400 font-bold uppercase">Prize</span>
+                           <span className="text-xl font-black text-cyan-500">${(streak * 20000 * level).toLocaleString()}</span>
+                       </div>
+                    </div>
+
+                    <div className="flex gap-4 items-center mb-8 h-40">
+                         {/* Current Card */}
+                         <div className="w-24 h-36 bg-white rounded-xl shadow-xl flex flex-col items-center justify-center relative border-4 border-slate-200">
+                             <span className={`text-4xl font-black ${currentCard % 2 === 0 ? 'text-red-500' : 'text-slate-900'}`}>{getCardLabel(currentCard)}</span>
+                             <div className="absolute top-2 left-2 text-xs font-bold text-slate-300">CURRENT</div>
+                         </div>
+                         
+                         {/* Next Card Placeholder / Reveal */}
+                         <div className={`w-24 h-36 rounded-xl flex items-center justify-center transition-all duration-500 transform ${nextCard ? 'bg-white rotate-y-0 border-4 border-slate-200' : 'bg-cyan-600 rotate-y-180 border-4 border-cyan-800 shadow-inner'}`}>
+                             {nextCard ? (
+                                 <span className={`text-4xl font-black ${nextCard % 2 === 0 ? 'text-red-500' : 'text-slate-900'}`}>{getCardLabel(nextCard)}</span>
+                             ) : (
+                                 <Layers className="text-cyan-800/50 w-12 h-12" />
+                             )}
+                         </div>
+                    </div>
+
+                    <div className="text-sm font-bold text-slate-400 mb-4 h-6">{message}</div>
+
+                    {!gameOver && (
+                        <div className="flex gap-4 w-full px-4">
+                            <button 
+                                onClick={() => handleGuess(false)}
+                                disabled={animating}
+                                className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg border-b-4 border-red-800 active:scale-95 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50"
+                            >
+                                <ArrowBigDown size={24} fill="currentColor" />
+                                <span className="text-xs font-black uppercase">Lower</span>
+                            </button>
+                            <button 
+                                onClick={() => handleGuess(true)}
+                                disabled={animating}
+                                className="flex-1 py-4 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-lg border-b-4 border-green-800 active:scale-95 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50"
+                            >
+                                <ArrowBigUp size={24} fill="currentColor" />
+                                <span className="text-xs font-black uppercase">Higher</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const CyberBreachGame = ({ onComplete, level }) => {
+            const [sequence, setSequence] = useState([]);
+            const [playerInput, setPlayerInput] = useState([]);
+            const [isPlayingSequence, setIsPlayingSequence] = useState(false);
+            const [activeNode, setActiveNode] = useState(null); // The node currently lit up
+            const [round, setRound] = useState(1);
+            const [status, setStatus] = useState("INITIALIZING...");
+            const [gameWon, setGameWon] = useState(false);
+
+            const NODES = [
+                { id: 0, color: 'bg-red-500', active: 'bg-red-400 shadow-[0_0_20px_#f87171]' },
+                { id: 1, color: 'bg-blue-500', active: 'bg-blue-400 shadow-[0_0_20px_#60a5fa]' },
+                { id: 2, color: 'bg-green-500', active: 'bg-green-400 shadow-[0_0_20px_#4ade80]' },
+                { id: 3, color: 'bg-yellow-500', active: 'bg-yellow-300 shadow-[0_0_20px_#fde047]' },
+            ];
+
+            // Start game
+            useEffect(() => {
+                startRound(1);
+            }, []);
+
+            const startRound = (currentRound) => {
+                setStatus(`SEQUENCE LOADING...`);
+                setIsPlayingSequence(true);
+                setPlayerInput([]);
+                
+                // Generate sequence based on round
+                const newSequence = [];
+                const length = currentRound + 2; // Round 1 = 3 items, Round 2 = 4 items...
+                for (let i = 0; i < length; i++) {
+                    newSequence.push(getRandomInt(0, 3));
+                }
+                setSequence(newSequence);
+
+                // Play sequence
+                let i = 0;
+                const interval = setInterval(() => {
+                    setActiveNode(newSequence[i]);
+                    setTimeout(() => setActiveNode(null), 400); // Flash duration
+
+                    i++;
+                    if (i >= newSequence.length) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            setIsPlayingSequence(false);
+                            setStatus("REPEAT SEQUENCE");
+                        }, 500);
+                    }
+                }, 800); // Time between flashes
+            };
+
+            const handleNodeClick = (id) => {
+                if (isPlayingSequence || gameWon) return;
+
+                // Visual feedback
+                setActiveNode(id);
+                setTimeout(() => setActiveNode(null), 200);
+
+                const newInput = [...playerInput, id];
+                setPlayerInput(newInput);
+
+                // Check correctness immediately
+                const currentIndex = newInput.length - 1;
+                if (newInput[currentIndex] !== sequence[currentIndex]) {
+                    setStatus("BREACH FAILED!");
+                    setTimeout(() => onComplete(10000 * level), 1000); // Consolation
+                    return;
+                }
+
+                // Check if sequence complete
+                if (newInput.length === sequence.length) {
+                    if (round < 3) {
+                        setStatus("ACCESS GRANTED. NEXT LAYER...");
+                        setTimeout(() => {
+                            setRound(r => r + 1);
+                            startRound(round + 1);
+                        }, 1000);
+                    } else {
+                        setGameWon(true);
+                        setStatus("SYSTEM HACKED! JACKPOT!");
+                        setTimeout(() => onComplete(200000 * level), 1500);
+                    }
+                }
+            };
+
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <div className="w-full bg-slate-900 border-2 border-green-500/50 p-3 rounded-lg mb-6 font-mono">
+                        <div className="flex justify-between text-[10px] text-green-500 mb-1">
+                            <span>FIREWALL: Lvl {round}/3</span>
+                            <span>STATUS: {isPlayingSequence ? 'LOCKED' : 'OPEN'}</span>
+                        </div>
+                        <div className={`text-center font-bold text-lg tracking-widest ${status.includes('FAILED') ? 'text-red-500 animate-pulse' : 'text-green-400'}`}>
+                            {status}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        {NODES.map((node) => (
+                            <button
+                                key={node.id}
+                                onClick={() => handleNodeClick(node.id)}
+                                disabled={isPlayingSequence}
+                                className={`w-24 h-24 rounded-2xl border-b-8 transition-all active:scale-95 duration-100 ${
+                                    activeNode === node.id 
+                                        ? `${node.active} border-transparent scale-95` 
+                                        : `${node.color} border-black/20 opacity-90`
+                                }`}
+                            />
+                        ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">
+                        <Cpu size={14} />
+                        <span>Memory Matrix</span>
+                    </div>
+                </div>
+            );
+        };
+
         const MonopolyGoClone = () => {
           const [money, setMoney] = useState(100000);
           const [dice, setDice] = useState(50);
@@ -781,6 +1194,18 @@
             // Add Safe at 14 and 26
             if (index === 14 || index === 26) return 'safe';
 
+            // Add Memory Game at 9 and 29
+            if (index === 9 || index === 29) return 'memory';
+
+            // Add Ghost Hunter at 6 and 36
+            if (index === 6 || index === 36) return 'ghost';
+
+            // Add Card Shark at 16 and 34
+            if (index === 16 || index === 34) return 'cards';
+
+            // Add Cyber Breach at 4 and 24
+            if (index === 4 || index === 24) return 'cyber';
+
             if ([2, 7, 17, 22, 33].includes(index)) return 'chance'; 
             return 'property';
           };
@@ -799,6 +1224,10 @@
             else if (type === 'slots') setTimeout(() => setModal({ type: 'slots' }), 500);
             else if (type === 'wheel') setTimeout(() => setModal({ type: 'wheel' }), 500);
             else if (type === 'safe') setTimeout(() => setModal({ type: 'safe' }), 500);
+            else if (type === 'memory') setTimeout(() => setModal({ type: 'memory' }), 500);
+            else if (type === 'ghost') setTimeout(() => setModal({ type: 'ghost' }), 500);
+            else if (type === 'cards') setTimeout(() => setModal({ type: 'cards' }), 500);
+            else if (type === 'cyber') setTimeout(() => setModal({ type: 'cyber' }), 500);
             else if (type === 'chance') {
               const outcomes = [
                 { type: 'money', val: 50000 * level, text: 'Bank Error! +$' },
@@ -875,6 +1304,18 @@
               } else if (type === 'safe') {
                  colorClass = "bg-slate-200";
                  content = <span className="text-2xl">🔐</span>;
+              } else if (type === 'memory') {
+                 colorClass = "bg-pink-100";
+                 content = <span className="text-2xl">🧠</span>;
+              } else if (type === 'ghost') {
+                 colorClass = "bg-indigo-100";
+                 content = <span className="text-2xl">👻</span>;
+              } else if (type === 'cards') {
+                 colorClass = "bg-cyan-100";
+                 content = <span className="text-2xl">🃏</span>;
+              } else if (type === 'cyber') {
+                 colorClass = "bg-green-100";
+                 content = <span className="text-2xl">📟</span>;
               } else if (type === 'chance') {
                  colorClass = "bg-orange-50";
                  content = <span className="text-2xl font-bold">❓</span>;
@@ -933,6 +1374,10 @@
               {modal.type === 'slots' && <Modal title="JACKPOT SLOTS" headerColor="bg-red-600" onClose={() => setModal({ type: null })}><SlotsGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`SLOTS WIN! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
               {modal.type === 'wheel' && <Modal title="LUCKY WHEEL" headerColor="bg-blue-600" onClose={() => setModal({ type: null })}><WheelGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`WHEEL SPIN: +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
               {modal.type === 'safe' && <Modal title="SAFE CRACKER" headerColor="bg-slate-700" onClose={() => setModal({ type: null })}><SafeGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`SAFE CRACKED! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+              {modal.type === 'memory' && <Modal title="BRAIN TRAINER" headerColor="bg-pink-500" onClose={() => setModal({ type: null })}><MemoryGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`MEMORY MASTER! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+              {modal.type === 'ghost' && <Modal title="GHOST HUNTER" headerColor="bg-indigo-600" onClose={() => setModal({ type: null })}><GhostHunterGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`GHOSTS BUSTED! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+              {modal.type === 'cards' && <Modal title="CARD SHARK" headerColor="bg-cyan-600" onClose={() => setModal({ type: null })}><CardSharkGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`CARD SHARK! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+              {modal.type === 'cyber' && <Modal title="CYBER BREACH" headerColor="bg-slate-900" onClose={() => setModal({ type: null })}><CyberBreachGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`SYSTEM HACKED! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
               {modal.type === 'levelup' && <Modal title="BOARD COMPLETED!"><div className="text-center"><div className="flex justify-center mb-4"><Trophy className="w-20 h-20 text-yellow-400 drop-shadow-lg" /></div><p className="text-gray-600 mb-6 font-bold text-sm">You've finished {currentCity}! Ready for the next destination?</p><button onClick={completeLevel} className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-lg shadow-lg transform transition active:scale-95">TRAVEL</button></div></Modal>}
             </div>
           );
