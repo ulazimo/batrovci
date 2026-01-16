@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Directory</title>
+    <title>Mladen's Prototype Lab</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,10 +11,10 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Orbitron (Headers) & Rajdhani (Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -22,242 +22,350 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
                     },
                     colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
+                        cyber: {
+                            bg: '#0B0E14',
+                            card: '#151923',
+                            border: '#2A303C',
+                            primary: '#00F0FF', // Neon Cyan
+                            secondary: '#7000FF', // Neon Purple
+                            text: '#E0E6ED',
+                            muted: '#94A3B8'
                         }
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(to right, rgba(42, 48, 60, 0.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(42, 48, 60, 0.3) 1px, transparent 1px)",
                     }
                 }
             }
         }
     </script>
     <style>
+        body {
+            background-color: #0B0E14;
+        }
+        
+        .bg-grid {
+            background-size: 40px 40px;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: transparent; 
+            background: #0B0E14; 
         }
         ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #475569; 
+            background: #2A303C; 
+            border-radius: 0px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
+            background: #00F0FF; 
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         
-        .card-hover {
-            transition: all 0.3s ease;
+        .card-hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 0%, rgba(0, 240, 255, 0.05) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
         }
+
+        .card-hover:hover::before {
+            transform: translateX(100%);
+        }
+
         .card-hover:hover {
-            transform: translateY(-4px);
+            transform: translateY(-5px);
+            border-color: #00F0FF;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+        
+        /* New styling for featured cards */
+        .card-featured {
+            border-color: rgba(245, 158, 11, 0.5); /* Amber-500 */
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+        }
+        .card-featured:hover {
+            border-color: #F59E0B;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0, 240, 255, 0.02) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100px; }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col">
+<body class="text-cyber-text min-h-screen flex flex-col font-sans antialiased overflow-x-hidden">
+    
+    <!-- Background Grid -->
+    <div class="fixed inset-0 bg-grid-pattern bg-grid pointer-events-none z-0"></div>
+    <div class="scanline fixed inset-0 pointer-events-none z-0"></div>
 
     <!-- Header -->
-    <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10 transition-colors duration-300">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i data-lucide="folder-open" class="text-brand-600 dark:text-brand-500 w-6 h-6"></i>
-                <h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-                    Djomla's Projects
-                </h1>
+    <header class="border-b border-cyber-border bg-cyber-bg/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="absolute -inset-1 bg-cyber-primary rounded-full blur opacity-25"></div>
+                    <i data-lucide="gamepad-2" class="text-cyber-primary w-8 h-8 relative z-10"></i>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-xl font-display font-bold tracking-wider text-white uppercase neon-text">
+                        Mladen Dulanovic
+                    </h1>
+                    <span class="text-xs text-cyber-primary font-mono tracking-[0.2em] uppercase">Prototype Lab</span>
+                </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-                    <i data-lucide="github" class="w-5 h-5"></i>
+            <div class="flex items-center gap-6">
+                <!-- LinkedIn Button -->
+                <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" 
+                   class="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-700/20 border border-blue-500/50 hover:bg-blue-600/30 hover:border-blue-400 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] text-blue-100 rounded-sm transition-all duration-300 group">
+                    <i data-lucide="linkedin" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-display text-sm font-semibold tracking-wide">LinkedIn</span>
                 </a>
-                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
-                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
-                </button>
+
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-cyber-muted hover:text-cyber-primary transition-colors">
+                    <i data-lucide="github" class="w-6 h-6"></i>
+                </a>
             </div>
         </div>
     </header>
 
+    <!-- Hero Section -->
+    <div class="relative z-10 border-b border-cyber-border bg-cyber-card/30">
+        <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-green-500 font-mono text-xs uppercase tracking-widest">System Online</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-white mb-4">
+                    Game <span class="text-cyber-primary">Prototypes</span>
+                </h2>
+                <p class="text-cyber-muted max-w-2xl text-lg">
+                    A collection of experimental mechanics, gameplay loops, and tech demos.
+                    <br class="hidden md:block">Ready to play directly in browser.
+                </p>
+            </div>
+            
+            <!-- Stats Decoration -->
+            <div class="hidden md:flex gap-8 font-mono text-sm text-cyber-muted border-l border-cyber-border pl-8">
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Build Ver</span>
+                    <span>v2.0.24</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Engine</span>
+                    <span>HTML5/JS</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Status</span>
+                    <span>Stable</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
-    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full relative z-10">
         
         <!-- Search and Filter Section -->
-        <div class="mb-10 space-y-4">
-            <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
-                <div class="relative w-full sm:max-w-md group">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i data-lucide="search" class="w-5 h-5 text-gray-400 group-focus-within:text-brand-500 transition-colors"></i>
+        <div class="mb-12 space-y-6">
+            <div class="flex flex-col md:flex-row gap-6 justify-between items-end">
+                <!-- Search -->
+                <div class="relative w-full md:max-w-md group">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-cyber-primary to-cyber-secondary rounded opacity-20 group-hover:opacity-60 transition duration-500 blur"></div>
+                    <div class="relative flex items-center bg-cyber-bg border border-cyber-border group-focus-within:border-cyber-primary/50 transition-colors">
+                        <div class="pl-4 text-cyber-muted group-focus-within:text-cyber-primary">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                        </div>
+                        <input type="text" id="search-input" 
+                            class="block w-full px-4 py-3 bg-transparent text-white placeholder-cyber-muted/50 focus:outline-none font-mono text-sm"
+                            placeholder="SEARCH_DATABASE...">
                     </div>
-                    <input type="text" id="search-input" 
-                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg leading-5 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all shadow-sm"
-                        placeholder="Search projects...">
                 </div>
                 
-                <div class="flex gap-2 overflow-x-auto pb-1 w-full sm:w-auto no-scrollbar" id="category-filters">
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2" id="category-filters">
                     <!-- Categories injected by JS -->
                 </div>
             </div>
             
-            <p class="text-sm text-gray-500 dark:text-gray-400" id="result-count">
-                Showing all projects
+            <div class="h-px w-full bg-cyber-border"></div>
+            
+            <p class="font-mono text-xs text-cyber-primary/70 tracking-widest uppercase" id="result-count">
+                // INITIALIZING_LIST...
             </p>
         </div>
 
         <!-- Grid -->
-        <div id="projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Cards injected by JS -->
         </div>
 
         <!-- Empty State -->
-        <div id="empty-state" class="hidden text-center py-20">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800 mb-4">
-                <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
+        <div id="empty-state" class="hidden text-center py-20 border border-dashed border-cyber-border rounded-lg bg-cyber-card/20">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-cyber-border/50 mb-6">
+                <i data-lucide="search-x" class="w-10 h-10 text-cyber-muted"></i>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">No projects found</h3>
-            <p class="text-gray-500 dark:text-gray-400 mt-2">Try adjusting your search or filters.</p>
+            <h3 class="text-xl font-display font-bold text-white mb-2">NO DATA FOUND</h3>
+            <p class="text-cyber-muted font-mono text-sm">Query returned 0 results. Adjust search parameters.</p>
         </div>
 
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 mt-auto">
-        <div class="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                &copy; <span id="year"></span> Project Directory. Hosted on GitHub Pages.
-            </p>
-            <div class="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <a href="#" class="hover:text-brand-600 dark:hover:text-brand-400">About</a>
-                <a href="#" class="hover:text-brand-600 dark:hover:text-brand-400">Contact</a>
+    <footer class="border-t border-cyber-border bg-cyber-bg z-10 relative">
+        <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-center md:text-left">
+                <p class="font-display font-bold text-lg text-white mb-1">Mladen Dulanovic</p>
+                <p class="text-sm text-cyber-muted font-mono">
+                    &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
+                </p>
+            </div>
+            <div class="flex gap-6 text-sm font-mono text-cyber-muted">
+                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">STATUS</a>
+                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LOGS</a>
+                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">CONTACT</a>
             </div>
         </div>
     </footer>
 
     <script>
         // ==========================================
-        // CONFIGURATION: ADD YOUR FILES HERE
+        // CONFIGURATION
         // ==========================================
         const projects = [
             {
                 title: "Block Away",
-                file: "block away.html", // The actual filename in this folder
+                file: "block away.html",
                 description: "Clear board by clicking on objects that fly away in the direction of the arrow.",
-                category: "Game",
+                category: "Puzzle",
                 date: "2026-01-15",
-                featured: true
+                featured: true,
+                version: "1.0"
             },
             {
-                title: "Mind match 3D",
-                file: "mind match 3d.html", // The actual filename in this folder
-                description: "Match objects by context.",
-                category: "Game",
+                title: "Mind Match 3D",
+                file: "mind match 3d.html",
+                description: "Match objects by context in a 3D environment.",
+                category: "Puzzle",
                 date: "2026-01-15",
-                featured: true
+                featured: true,
+                version: "1.0"
             },
             {
-                title: "Monopoly mini games",
-                file: "monopoly mini games.html", // The actual filename in this folder
-                description: "Throw dice and play mini games.",
-                category: "Game",
+                title: "Monopoly Mini Games",
+                file: "monopoly mini games.html",
+                description: "Collection of dice-based mini games with board mechanics.",
+                category: "Board",
                 date: "2026-01-15",
-                featured: false
+                featured: false,
+                version: "1.0"
             },
             {
-                title: "Pixel",
-                file: "pixel.html", // The actual filename in this folder
-                description: "Destroy pixels.",
-                category: "Game",
+                title: "Pixel Destroyer",
+                file: "pixel.html",
+                description: "Arcade style pixel destruction mechanics test.",
+                category: "Arcade",
                 date: "2026-01-15",
-                featured: false
+                featured: false,
+                version: "1.0"
             },
             {
-                title: "Dice roller",
-                file: "dice-roller.html", // The actual filename in this folder
-                description: "Random dice",
-                category: "Game",
+                title: "Dice Roller",
+                file: "dice-roller.html",
+                description: "Physics-based random dice generation utility.",
+                category: "Tool",
                 date: "2026-01-15",
-                featured: false
-            },
-            // Add more objects here...
+                featured: false,
+                version: "1.0"
+            }
         ];
 
         // ==========================================
-        // APPLICATION LOGIC
+        // LOGIC
         // ==========================================
 
         document.getElementById('year').textContent = new Date().getFullYear();
 
-        // State
         let activeCategory = 'All';
         let searchQuery = '';
 
-        // DOM Elements
         const grid = document.getElementById('projects-grid');
         const emptyState = document.getElementById('empty-state');
         const searchInput = document.getElementById('search-input');
         const categoryContainer = document.getElementById('category-filters');
         const resultCount = document.getElementById('result-count');
-        const themeToggle = document.getElementById('theme-toggle');
-
-        // Theme Logic
-        const userTheme = localStorage.getItem('theme');
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (userTheme === 'dark' || (!userTheme && systemTheme)) {
-            document.documentElement.classList.add('dark');
-        }
-
-        themeToggle.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            if (document.documentElement.classList.contains('dark')) {
-                localStorage.setItem('theme', 'dark');
-            } else {
-                localStorage.setItem('theme', 'light');
-            }
-        });
 
         // Unique Categories
         const categories = ['All', ...new Set(projects.map(p => p.category).filter(Boolean))];
 
-        // Initialize
         function init() {
             renderCategories();
             renderProjects();
             lucide.createIcons();
+            animateText();
         }
 
-        // Render Categories
+        function animateText() {
+            // Simple type-in effect for the search placeholder on load could go here
+        }
+
         function renderCategories() {
             categoryContainer.innerHTML = categories.map(cat => `
                 <button 
                     onclick="setCategory('${cat}')"
-                    class="px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap
+                    class="px-5 py-2 clip-path-polygon font-display font-semibold text-sm tracking-wider uppercase transition-all duration-200 border border-cyber-border
                     ${activeCategory === cat 
-                        ? 'bg-brand-600 text-white shadow-md' 
-                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}"
+                        ? 'bg-cyber-primary text-cyber-bg border-cyber-primary shadow-[0_0_15px_rgba(0,240,255,0.4)]' 
+                        : 'bg-cyber-card text-cyber-muted hover:text-white hover:border-cyber-primary/50'}"
+                    style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);"
                 >
                     ${cat}
                 </button>
             `).join('');
         }
 
-        // Global function for onclick
         window.setCategory = (cat) => {
             activeCategory = cat;
             renderCategories();
             renderProjects();
         };
 
-        // Render Projects
         function renderProjects() {
             const filtered = projects.filter(p => {
                 const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -266,10 +374,8 @@
                 return matchesSearch && matchesCategory;
             });
 
-            // Update count text
-            resultCount.textContent = `Showing ${filtered.length} project${filtered.length !== 1 ? 's' : ''}`;
+            resultCount.innerHTML = `// FOUND_${filtered.length}_ENTRIES`;
 
-            // Empty State
             if (filtered.length === 0) {
                 grid.classList.add('hidden');
                 emptyState.classList.remove('hidden');
@@ -278,64 +384,96 @@
                 emptyState.classList.add('hidden');
             }
 
-            // Generate Cards
             grid.innerHTML = filtered.map(project => {
-                // Determine icon based on category (simple logic)
-                let iconName = 'file-code';
+                let iconName = 'gamepad-2';
                 const catLower = (project.category || '').toLowerCase();
-                if (catLower.includes('game')) iconName = 'gamepad-2';
-                else if (catLower.includes('tool') || catLower.includes('app')) iconName = 'wrench';
-                else if (catLower.includes('ui') || catLower.includes('design')) iconName = 'layout';
-                else if (catLower.includes('web')) iconName = 'globe';
+                if (catLower.includes('tool')) iconName = 'cpu';
+                if (catLower.includes('puzzle')) iconName = 'box-select';
+                if (catLower.includes('board')) iconName = 'dice-5';
+
+                // Random stat bar width for visual flair (NOT REAL DATA)
+                const statWidth = Math.floor(Math.random() * 40) + 60;
+                // Random ID for visual flair (NOT REAL DATA)
+                const randomId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+
+                // Featured Styling logic
+                const containerClass = project.featured 
+                    ? 'card-featured bg-cyber-card' 
+                    : 'bg-cyber-card border border-cyber-border';
+                
+                const iconContainerClass = project.featured
+                    ? 'bg-amber-500/10 border border-amber-500/50 text-amber-500 group-hover:bg-amber-500 group-hover:text-black group-hover:shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+                    : 'bg-cyber-bg border border-cyber-border text-cyber-primary group-hover:text-white group-hover:bg-cyber-primary group-hover:shadow-[0_0_15px_rgba(0,240,255,0.6)]';
 
                 return `
-                <a href="${project.file}" class="block group relative">
-                    <div class="h-full bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 card-hover shadow-sm hover:shadow-lg dark:shadow-slate-900/50 flex flex-col">
+                <a href="${project.file}" class="group block h-full">
+                    <div class="h-full ${containerClass} p-0 card-hover flex flex-col relative transition-all duration-300">
                         
                         ${project.featured ? `
-                        <div class="absolute top-4 right-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100">
-                                Featured
-                            </span>
+                        <div class="absolute -top-px -right-px z-10">
+                            <div class="bg-amber-500 text-black text-[10px] font-display font-bold uppercase px-3 py-1 tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                                ★ Featured
+                            </div>
                         </div>
                         ` : ''}
 
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="p-3 bg-brand-50 dark:bg-slate-700/50 rounded-lg text-brand-600 dark:text-brand-400 group-hover:scale-110 transition-transform duration-300">
-                                <i data-lucide="${iconName}" class="w-6 h-6"></i>
+                        <!-- Card Header -->
+                        <div class="p-6 pb-4 border-b border-cyber-border/50 bg-gradient-to-b from-white/5 to-transparent">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="p-3 rounded-sm ${iconContainerClass} transition-all duration-300">
+                                    <i data-lucide="${iconName}" class="w-8 h-8"></i>
+                                </div>
+                                <span class="font-mono text-xs text-cyber-muted opacity-50">#${randomId}</span>
+                            </div>
+                            
+                            <h3 class="text-xl font-display font-bold text-white group-hover:text-cyber-primary transition-colors truncate">
+                                ${project.title}
+                            </h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="w-1.5 h-1.5 rounded-full ${project.featured ? 'bg-amber-500' : 'bg-cyber-secondary'}"></span>
+                                <span class="text-xs font-mono text-cyber-muted uppercase">${project.category}</span>
                             </div>
                         </div>
-
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                            ${project.title}
-                        </h3>
                         
-                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-6 flex-grow line-clamp-2">
-                            ${project.description}
-                        </p>
+                        <!-- Card Body -->
+                        <div class="p-6 flex-grow flex flex-col">
+                            <p class="text-cyber-muted text-sm leading-relaxed mb-6 line-clamp-2 font-sans font-light">
+                                ${project.description}
+                            </p>
 
-                        <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500 mt-auto pt-4 border-t border-gray-100 dark:border-slate-700">
-                            <span>${project.date || 'No date'}</span>
-                            <span class="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                View Project <i data-lucide="arrow-right" class="w-3 h-3"></i>
-                            </span>
+                            <div class="mt-auto space-y-4">
+                                <!-- Fake Stat Bar -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-[10px] font-mono text-cyber-muted uppercase">
+                                        <span>Completion</span>
+                                        <span>${statWidth}%</span>
+                                    </div>
+                                    <div class="h-1 w-full bg-cyber-bg rounded-full overflow-hidden">
+                                        <div class="h-full bg-cyber-border ${project.featured ? 'group-hover:bg-amber-500' : 'group-hover:bg-cyber-primary'} transition-colors duration-500" style="width: ${statWidth}%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="pt-4 border-t border-cyber-border/50 flex items-center justify-between">
+                                    <span class="font-mono text-xs text-cyber-muted">v${project.version || '1.0'}</span>
+                                    <span class="flex items-center gap-2 text-sm font-display font-semibold text-white group-hover:text-cyber-primary transition-colors">
+                                        INITIALIZE <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </a>
                 `;
             }).join('');
 
-            // Re-initialize icons for new DOM elements
             lucide.createIcons();
         }
 
-        // Search Listener
         searchInput.addEventListener('input', (e) => {
             searchQuery = e.target.value;
             renderProjects();
         });
 
-        // Run
         init();
 
     </script>
