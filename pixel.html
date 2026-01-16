@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Pixel Piggy Flow</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
@@ -20,6 +22,7 @@
             overflow: hidden;
             touch-action: none;
             user-select: none;
+            -webkit-user-select: none;
         }
 
         #game-container {
@@ -76,13 +79,15 @@
             justify-content: center;
             z-index: 20;
             color: white;
+            /* Ensure touches pass to button */
+            pointer-events: auto; 
         }
 
         .btn {
             background: #ff6b6b;
             border: none;
-            padding: 15px 40px;
-            font-size: 24px;
+            padding: 20px 50px; /* Larger hit area for mobile */
+            font-size: 28px;
             color: white;
             font-family: 'Fredoka One', cursive;
             border-radius: 50px;
@@ -91,6 +96,7 @@
             transition: transform 0.1s;
             pointer-events: auto;
             margin-top: 20px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn:active {
@@ -103,6 +109,7 @@
             color: #f1c40f;
             text-shadow: 4px 4px 0 #e67e22;
             margin-bottom: 10px;
+            text-align: center;
         }
 
         p {
@@ -114,7 +121,7 @@
         
         #instruction {
             position: absolute;
-            bottom: 265px; /* Moved up to clear larger inventory */
+            bottom: 265px; 
             width: 100%;
             text-align: center;
             color: #7f8c8d;
@@ -137,7 +144,7 @@
             width: 100%;
             height: 100%;
             background: rgba(192, 57, 43, 0.95);
-            display: none; /* Hidden by default */
+            display: none; 
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -193,28 +200,24 @@
         let buttons = []; // clickable areas
         
         // New Inventory System
-        // Structure: Array of Arrays. inventoryGrid[0] is the first column stack.
         let inventoryGrid = []; 
-        const INVENTORY_COLS = 4; // Constrained to 4 columns
+        const INVENTORY_COLS = 4; 
         
         // Track/Grid Geometry
         let trackBounds = { x: 0, y: 0, w: 0, h: 0 };
         let trackPadding = 60; 
         
-        // UPDATED: High Contrast, Solid Color Palette
-        // No gradients, distinct hues to avoid confusion (e.g. Green vs Cyan)
         const COLORS = {
             'R': '#D32F2F', // Strong Red
-            'G': '#388E3C', // Forest Green (Distinct from Cyan)
-            'B': '#1976D2', // Strong Blue (Distinct from Cyan)
+            'G': '#388E3C', // Forest Green
+            'B': '#1976D2', // Strong Blue
             'Y': '#FBC02D', // Golden Yellow
             'P': '#7B1FA2', // Deep Purple
             'O': '#F57C00', // Solid Orange
-            'C': '#4DD0E1', // Light Cyan (Distinct from Dark Blue/Green)
+            'C': '#4DD0E1', // Light Cyan
             'M': '#C2185B'  // Magenta/Dark Pink
         };
         
-        // Pigs use the exact same solid colors for consistency
         const PIG_COLORS = {
             'R': '#D32F2F',
             'G': '#388E3C',
@@ -239,7 +242,7 @@
                 "BBBBBBBBGGYBBBBBBB",
                 "BBBBBBBGGGGBBBBBBB",
                 "BBBBBBGGRRGGBBBBBB",
-                "BBBBBGGGRRRGGBBBBB", // Fixed 'Q' to 'G'
+                "BBBBBGGGRRRGGBBBBB", 
                 "BBBBGGYYRRRRGBBBBB",
                 "BBBGGYYYRRRRBBBBBB",
                 "BBGGYYYYBRRRBBBBBB",
@@ -276,7 +279,7 @@
                 ".MMMMMMPMMOMMCMMM.",
                 ".MMMMMMMMMMMMMMMM.",
                 ".OOOOOOOOOOOOOOOO.",
-                ".OROGOBOMOPOCOMOO.", // Fixed 'H' typo to 'M'
+                ".OROGOBOMOPOCOMOO.",
                 ".OOOOOOOOOOOOOOOO.",
                 ".OOOOOOOOOOOOOOOO.",
                 ".CCCCCCCCCCCCCCCC.",
@@ -325,8 +328,6 @@
                 "MMCC OOPP BBYY GGRR",
                 "RGYB POCM RGYB POCM",
                 "MCOP BYGR MCOP BYGR",
-                "RGYB POCM RGYB POCM",
-                "MCOP BYGR MCOP BYGR",
                 "RRGG YYBB PPOO CCMM",
                 "MMCC OOPP BBYY GGRR",
                 "RGYB POCM RGYB POCM",
@@ -352,12 +353,11 @@
             }
             
             // Solid Base Color
-            // Explicitly set alpha to 1 to ensure solid color
             ctx.globalAlpha = 1.0; 
             ctx.fillStyle = color || "#7f8c8d";
             ctx.fill();
 
-            // Dark Rim/Edge (Keeps it distinct from background)
+            // Dark Rim/Edge
             ctx.strokeStyle = "#2c3e50";
             ctx.lineWidth = 3;
             ctx.stroke();
@@ -404,10 +404,9 @@
         class Pig {
             constructor(colorCode, startingAmmo) {
                 this.colorCode = colorCode;
-                // Strict check: if color is missing from PIG_COLORS, use fallback Grey
                 this.color = PIG_COLORS[colorCode] || "#7f8c8d"; 
                 this.speed = 225; // Pixels per second
-                this.dist = 0; // Distance traveled on perimeter
+                this.dist = 0; 
                 this.ammo = startingAmmo; 
                 this.state = 'running'; 
                 this.fireCooldown = 0;
@@ -423,7 +422,6 @@
             update(dt) {
                 if (this.state === 'finished') return true;
 
-                // Handle Ammo Depletion
                 if (this.ammo <= 0) {
                     this.scale -= 4 * dt; 
                     if (this.scale <= 0) {
@@ -431,7 +429,6 @@
                     }
                 }
 
-                // Move
                 this.dist += this.speed * dt;
                 
                 const t = trackBounds;
@@ -441,7 +438,6 @@
                 const leftLen = t.h;
                 this.totalLength = topLen + rightLen + bottomLen + leftLen;
 
-                // Infinite loop
                 if (this.dist >= this.totalLength) {
                     this.dist = this.dist % this.totalLength;
                 }
@@ -559,22 +555,19 @@
 
             draw() {
                 ctx.save();
-                // SAFETY RESET
                 ctx.globalAlpha = 1.0;
                 ctx.shadowBlur = 0;
-                ctx.shadowColor = 'transparent'; // Reset shadow
+                ctx.shadowColor = 'transparent'; 
                 ctx.globalCompositeOperation = 'source-over'; 
                 
                 ctx.translate(this.visualX, this.visualY);
                 ctx.scale(this.scale, this.scale);
 
-                // 1. Draw The Cube
+                // Draw The Cube
                 drawRoundedCube(ctx, this.color, 50, this.rotation);
 
-                // 2. Draw Ammo (Isolated State)
+                // Draw Ammo (Isolated State)
                 ctx.save();
-                // Remove rotation for text (face user)
-                // ctx.rotate(this.rotation); 
                 
                 ctx.fillStyle = "#fff";
                 ctx.strokeStyle = "#2c3e50"; 
@@ -588,8 +581,8 @@
                 ctx.strokeText(this.ammo, 0, 0);
                 ctx.fillText(this.ammo, 0, 0);
                 
-                ctx.restore(); // Restore from Text State
-                ctx.restore(); // Restore from Pig State
+                ctx.restore(); 
+                ctx.restore(); 
             }
         }
 
@@ -771,7 +764,7 @@
             layoutGrid();
 
             // 1. GATHER ALL PIGS NEEDED FOR THE LEVEL
-            let allPigs = []; // Initialized here properly
+            let allPigs = []; 
             
             for (let col in neededColors) {
                 let totalPixels = neededColors[col];
@@ -909,7 +902,6 @@
             ctx.clearRect(0, 0, width, height);
             
             // FIX: GLOBAL RESET to prevent "washed out" board
-            // Ensure every frame starts with full opacity, regardless of what inventory/particles did last frame.
             ctx.globalAlpha = 1.0; 
 
             // Draw Track
@@ -1038,8 +1030,10 @@
         }
 
         function handleInput(e) {
-            e.preventDefault();
+            // FIX: Allow default behavior (clicks) if game is not running
             if (!isGameRunning) return;
+
+            e.preventDefault(); 
 
             let clientX, clientY;
             if (e.changedTouches) {
