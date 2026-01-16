@@ -1,0 +1,849 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles, Trophy, DollarSign, ArrowBigUp, Zap, X, Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, GripVertical, Ban, Pyramid, Gem, Skull, CookingPot, FlaskConical, Check, Coins, Disc, TrainFront, HelpCircle, Car, Siren, Flag, Lock, Unlock } from 'lucide-react';
+
+// --- Constants ---
+const BOARD_SIZE = 40; // 10 per side (Standard Board)
+const CITIES = ['New York', 'London', 'Paris', 'Tokyo', 'Venice', 'Dubai', 'Sydney', 'Rome'];
+
+const BUILDING_COST_BASE = 5000;
+
+// --- Helper Functions ---
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+// --- CSS Styles for 3D Animation ---
+const styles = `
+  @keyframes tumble {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    25% { transform: rotateX(90deg) rotateY(180deg) rotateZ(45deg); }
+    50% { transform: rotateX(180deg) rotateY(360deg) rotateZ(90deg); }
+    75% { transform: rotateX(270deg) rotateY(540deg) rotateZ(135deg); }
+    100% { transform: rotateX(360deg) rotateY(720deg) rotateZ(180deg); }
+  }
+  .dice-container {
+    perspective: 1000px;
+  }
+  .dice-cube {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 1s ease-out;
+  }
+  .dice-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.15);
+    backface-visibility: hidden;
+  }
+  .rolling .dice-cube {
+    animation: tumble 0.6s linear infinite;
+  }
+`;
+
+// --- Components ---
+
+const DiceFaceIcon = ({ value, className }) => {
+  const icons = [null, Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
+  const Icon = icons[value] || Dice1;
+  return <Icon className={className} />;
+};
+
+const Dice3D = ({ value, rolling }) => {
+  const getRotation = (val) => {
+    switch(val) {
+      case 1: return 'rotateX(0deg) rotateY(0deg)';
+      case 6: return 'rotateX(180deg) rotateY(0deg)';
+      case 2: return 'rotateX(90deg) rotateY(0deg)'; 
+      case 5: return 'rotateX(-90deg) rotateY(0deg)';
+      case 3: return 'rotateY(-90deg)';
+      case 4: return 'rotateY(90deg)';
+      default: return 'rotateX(0deg) rotateY(0deg)';
+    }
+  };
+
+  return (
+    <div className={`dice-container w-20 h-20 ${rolling ? 'rolling' : ''}`}>
+       <div 
+         className="dice-cube"
+         style={{ transform: rolling ? undefined : getRotation(value) }}
+       >
+          <div className="dice-face" style={{ transform: 'translateZ(40px)' }}><DiceFaceIcon value={1} className="w-full h-full text-slate-800 p-2" /></div>
+          <div className="dice-face" style={{ transform: 'rotateY(180deg) translateZ(40px)' }}><DiceFaceIcon value={6} className="w-full h-full text-slate-800 p-2" /></div>
+          <div className="dice-face" style={{ transform: 'rotateY(90deg) translateZ(40px)' }}><DiceFaceIcon value={3} className="w-full h-full text-slate-800 p-2" /></div>
+          <div className="dice-face" style={{ transform: 'rotateY(-90deg) translateZ(40px)' }}><DiceFaceIcon value={4} className="w-full h-full text-slate-800 p-2" /></div>
+          <div className="dice-face" style={{ transform: 'rotateX(90deg) translateZ(40px)' }}><DiceFaceIcon value={5} className="w-full h-full text-slate-800 p-2" /></div>
+          <div className="dice-face" style={{ transform: 'rotateX(-90deg) translateZ(40px)' }}><DiceFaceIcon value={2} className="w-full h-full text-slate-800 p-2" /></div>
+       </div>
+    </div>
+  );
+};
+
+const Modal = ({ children, onClose, title, headerColor = "bg-orange-500" }) => (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border-4 border-slate-100 transform scale-100 transition-all">
+      <div className={`${headerColor} p-4 flex justify-between items-center shadow-md`}>
+        <h2 className="text-white font-black text-xl uppercase tracking-wider">{title}</h2>
+        {onClose && (
+          <button onClick={onClose} className="bg-white/20 p-2 rounded-full hover:bg-white/40 text-white transition">
+            <X size={20} />
+          </button>
+        )}
+      </div>
+      <div className="p-6">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+const HeistGame = ({ onComplete, level }) => {
+  const [grid, setGrid] = useState(Array(9).fill(null));
+  const [revealed, setRevealed] = useState(Array(9).fill(false));
+  
+  const lootTable = [
+    { type: 'coin', value: 50000 * level, count: 0, icon: '💰' }, 
+    { type: 'money', value: 150000 * level, count: 0, icon: '💵' }, 
+    { type: 'ring', value: 500000 * level, count: 0, icon: '💍' }, 
+  ];
+  const [currentLoot, setCurrentLoot] = useState(lootTable);
+
+  useEffect(() => {
+    const items = [
+      'coin', 'coin', 'coin', 'coin',
+      'money', 'money', 'money', 'money',
+      'ring', 'ring', 'ring', 'ring'
+    ].sort(() => Math.random() - 0.5).slice(0, 9);
+    setGrid(items);
+  }, []);
+
+  const handleReveal = (index) => {
+    if (revealed[index]) return;
+
+    const newRevealed = [...revealed];
+    newRevealed[index] = true;
+    setRevealed(newRevealed);
+
+    const itemType = grid[index];
+    const newLoot = [...currentLoot];
+    const lootIndex = newLoot.findIndex(l => l.type === itemType);
+    newLoot[lootIndex].count += 1;
+    setCurrentLoot(newLoot);
+
+    if (newLoot[lootIndex].count === 3) {
+      setTimeout(() => onComplete(newLoot[lootIndex].value), 800);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <p className="text-gray-500 mb-4 font-bold text-center text-sm">Find 3 hidden treasures!</p>
+      <div className="grid grid-cols-3 gap-2 w-full mb-4">
+        {grid.map((item, idx) => (
+          <button
+            key={idx}
+            disabled={revealed[idx]}
+            onClick={() => handleReveal(idx)}
+            className={`
+              aspect-square rounded-xl flex items-center justify-center text-3xl shadow-md transition-all transform active:scale-95
+              ${revealed[idx] ? 'bg-orange-100 rotate-y-180 border-2 border-orange-300' : 'bg-slate-800 border-b-4 border-slate-950'}
+            `}
+          >
+            {revealed[idx] ? (
+              <span className="animate-bounce">
+                {item === 'coin' && '💰'}
+                {item === 'money' && '💵'}
+                {item === 'ring' && '💍'}
+              </span>
+            ) : <span className="text-slate-600 font-bold text-lg">?</span>}
+          </button>
+        ))}
+      </div>
+      <div className="flex justify-between w-full text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+        {currentLoot.map((l) => (
+           <div key={l.type} className={`flex flex-col items-center ${l.count === 3 ? 'text-green-600 scale-110' : ''}`}>
+             <span>{l.icon}</span>
+             <span>{l.count}/3</span>
+           </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TempleGame = ({ onComplete, level }) => {
+  const [grid, setGrid] = useState(Array(12).fill(null));
+  const [revealed, setRevealed] = useState(Array(12).fill(false));
+  const [isFinished, setIsFinished] = useState(false);
+  const [winnings, setWinnings] = useState(0);
+  const [message, setMessage] = useState("Tap tiles to find treasure!");
+
+  useEffect(() => {
+    const items = [
+      'idol', 'skull', 'skull', 'skull',
+      'cash', 'cash', 'cash', 'cash', 'cash', 'cash', 'cash', 'cash'
+    ].sort(() => Math.random() - 0.5);
+    setGrid(items);
+  }, []);
+
+  const handleReveal = (index) => {
+    if (revealed[index] || isFinished) return;
+
+    const newRevealed = [...revealed];
+    newRevealed[index] = true;
+    setRevealed(newRevealed);
+
+    const item = grid[index];
+    
+    if (item === 'idol') {
+        const jackpot = 1000000 * level;
+        setWinnings(w => w + jackpot);
+        setMessage("JACKPOT! GOLDEN IDOL FOUND!");
+        setIsFinished(true);
+        setTimeout(() => onComplete(winnings + jackpot), 1500);
+    } else if (item === 'skull') {
+        setMessage("TRAP! ESCAPING WITH LOOT...");
+        setIsFinished(true);
+        setTimeout(() => onComplete(winnings), 1500);
+    } else {
+        const cash = getRandomInt(10, 50) * 1000 * level;
+        setWinnings(w => w + cash);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="bg-slate-100 w-full p-2 rounded-lg mb-4 text-center">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Winnings</p>
+          <p className="text-2xl font-black text-green-600">${winnings.toLocaleString()}</p>
+      </div>
+      <p className={`text-center font-bold text-sm mb-4 ${isFinished ? 'text-orange-500 animate-pulse' : 'text-slate-400'}`}>
+          {message}
+      </p>
+      <div className="grid grid-cols-4 gap-2 w-full mb-2">
+        {grid.map((item, idx) => (
+          <button
+            key={idx}
+            disabled={revealed[idx] || isFinished}
+            onClick={() => handleReveal(idx)}
+            className={`
+              aspect-square rounded-lg flex items-center justify-center text-2xl shadow-sm transition-all transform active:scale-95 border-b-4
+              ${revealed[idx] ? 'bg-amber-100 border-amber-200 rotate-y-180' : 'bg-stone-600 border-stone-800 hover:bg-stone-500'}
+            `}
+          >
+            {revealed[idx] ? (
+              <span className="animate-in zoom-in duration-300">
+                {item === 'idol' && <Gem className="text-purple-600 fill-purple-400 w-8 h-8 drop-shadow-lg" />}
+                {item === 'skull' && <Skull className="text-stone-800 w-8 h-8" />}
+                {item === 'cash' && <span className="text-green-600 text-lg">💰</span>}
+              </span>
+            ) : <Pyramid className="text-stone-400 w-6 h-6 opacity-50" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const CauldronGame = ({ onComplete, level }) => {
+  const POTIONS = [
+    { id: 'red', color: 'bg-red-500' },
+    { id: 'blue', color: 'bg-blue-500' },
+    { id: 'green', color: 'bg-green-500' },
+    { id: 'yellow', color: 'bg-yellow-400' },
+    { id: 'purple', color: 'bg-purple-600' },
+  ];
+  const SLOTS = 3;
+  const [secretCode, setSecretCode] = useState([]);
+  const [guess, setGuess] = useState([null, null, null]);
+  const [results, setResults] = useState([null, null, null]); 
+  const [brewing, setBrewing] = useState(false);
+  const [winnings, setWinnings] = useState(0);
+
+  useEffect(() => {
+    const code = [];
+    for(let i=0; i<SLOTS; i++) {
+        const randomPotion = POTIONS[Math.floor(Math.random() * POTIONS.length)];
+        code.push(randomPotion.id);
+    }
+    setSecretCode(code);
+  }, []);
+
+  const handleSelectPotion = (potionId) => {
+    if (brewing || results[0]) return;
+    const firstEmptyIndex = guess.findIndex(p => p === null);
+    if (firstEmptyIndex !== -1) {
+        const newGuess = [...guess];
+        newGuess[firstEmptyIndex] = potionId;
+        setGuess(newGuess);
+    }
+  };
+
+  const handleClearSlot = (index) => {
+    if (brewing || results[0]) return;
+    const newGuess = [...guess];
+    newGuess[index] = null;
+    setGuess(newGuess);
+  };
+
+  const handleBrew = () => {
+    if (guess.includes(null) || brewing) return;
+    setBrewing(true);
+    let currentWinnings = 0;
+    const newResults = [...results];
+    let allCorrect = true;
+    guess.forEach((g, idx) => {
+        if (g === secretCode[idx]) {
+            newResults[idx] = 'correct';
+            currentWinnings += 25000 * level; 
+        } else {
+            newResults[idx] = 'incorrect';
+            allCorrect = false;
+        }
+    });
+    if (allCorrect) currentWinnings += 100000 * level;
+
+    setTimeout(() => {
+        setResults(newResults);
+        setWinnings(currentWinnings);
+        setBrewing(false);
+        setTimeout(() => {
+            onComplete(currentWinnings);
+        }, 3500); 
+    }, 1500); 
+  };
+
+  const isFull = !guess.includes(null);
+
+  return (
+    <div className="flex flex-col items-center">
+       <div className="bg-slate-100 w-full p-2 rounded-lg mb-6 text-center h-16 flex items-center justify-center">
+          {brewing ? (
+              <span className="text-green-600 font-bold animate-pulse flex items-center gap-2">
+                 <CookingPot className="animate-bounce" /> BREWING...
+              </span>
+          ) : results[0] ? (
+             <div className="flex flex-col animate-in slide-in-from-bottom-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL WIN</span>
+                <span className="text-2xl font-black text-green-600">+${winnings.toLocaleString()}</span>
+             </div>
+          ) : <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">GUESS THE FORMULA</span>}
+       </div>
+
+       <div className="flex gap-4 mb-8">
+          {Array(SLOTS).fill(0).map((_, idx) => {
+              const potionId = guess[idx];
+              const potionConfig = POTIONS.find(p => p.id === potionId);
+              const result = results[idx];
+              return (
+                  <button 
+                    key={idx}
+                    onClick={() => handleClearSlot(idx)}
+                    disabled={brewing || !!result}
+                    className={`w-16 h-16 rounded-2xl border-4 flex items-center justify-center relative transition-all ${result === 'correct' ? 'border-green-500 bg-green-100' : ''} ${result === 'incorrect' ? 'border-red-500 bg-red-100' : ''} ${!result && potionId ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-50 border-dashed'}`}
+                  >
+                      {potionConfig && <div className={`w-10 h-10 rounded-full ${potionConfig.color} shadow-sm flex items-center justify-center`}><FlaskConical className="text-white w-6 h-6 opacity-80" /></div>}
+                      {result === 'correct' && <div className="absolute -top-3 -right-3 bg-green-500 text-white rounded-full p-1 shadow-lg"><Check size={14} strokeWidth={4} /></div>}
+                      {result === 'incorrect' && <div className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow-lg"><X size={14} strokeWidth={4} /></div>}
+                  </button>
+              );
+          })}
+       </div>
+
+       {results[0] && (
+          <div className="mb-6 flex flex-col items-center animate-in fade-in duration-500 bg-slate-50 p-3 rounded-xl border border-slate-200 w-full">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">THE SECRET RECIPE WAS</span>
+            <div className="flex gap-3">
+              {secretCode.map((id, i) => {
+                 const p = POTIONS.find(pot => pot.id === id);
+                 return <div key={i} className={`w-10 h-10 rounded-full ${p.color} shadow-sm flex items-center justify-center ring-2 ring-white`}><FlaskConical className="text-white w-5 h-5 opacity-90" /></div>
+              })}
+            </div>
+          </div>
+       )}
+
+       {!results[0] && (
+           <button onClick={handleBrew} disabled={!isFull || brewing} className={`w-full py-3 rounded-xl font-black text-white uppercase tracking-wider mb-6 shadow-lg transition-all ${isFull && !brewing ? 'bg-green-500 hover:bg-green-600 active:scale-95' : 'bg-slate-300 cursor-not-allowed'}`}>
+             {brewing ? "MIXING..." : "BREW POTION"}
+           </button>
+       )}
+
+       <div className="grid grid-cols-5 gap-2 w-full">
+         {POTIONS.map((pot) => (
+             <button key={pot.id} onClick={() => handleSelectPotion(pot.id)} disabled={brewing || results[0]} className={`aspect-square rounded-xl flex items-center justify-center transition-transform active:scale-90 shadow-sm border-b-4 border-black/10 ${pot.color} ${brewing || results[0] ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}`}>
+                <FlaskConical className="text-white/80 w-6 h-6" />
+             </button>
+         ))}
+       </div>
+    </div>
+  );
+};
+
+const SlotsGame = ({ onComplete, level }) => {
+  const [reels, setReels] = useState(['❓','❓','❓']);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [winMessage, setWinMessage] = useState("");
+  const SYMBOLS = ['🍒', '🍋', '🍇', '💎', '7️⃣'];
+  
+  const spin = async () => {
+    setIsSpinning(true);
+    setWinMessage("");
+    const duration = 2000;
+    const interval = 100;
+    const steps = duration / interval;
+    
+    for(let i=0; i<steps; i++) {
+        setReels([SYMBOLS[getRandomInt(0, SYMBOLS.length-1)], SYMBOLS[getRandomInt(0, SYMBOLS.length-1)], SYMBOLS[getRandomInt(0, SYMBOLS.length-1)]]);
+        await new Promise(r => setTimeout(r, interval));
+    }
+    
+    const finalReels = [SYMBOLS[getRandomInt(0, SYMBOLS.length-1)], SYMBOLS[getRandomInt(0, SYMBOLS.length-1)], SYMBOLS[getRandomInt(0, SYMBOLS.length-1)]];
+    const rand = Math.random();
+    if(rand > 0.7 && rand < 0.95) finalReels[1] = finalReels[0]; 
+    else if (rand >= 0.95) { finalReels[1] = finalReels[0]; finalReels[2] = finalReels[0]; }
+
+    setReels(finalReels);
+    setIsSpinning(false);
+    
+    const [r1, r2, r3] = finalReels;
+    let multiplier = 0;
+    let msg = "NO WIN";
+    
+    if (r1 === r2 && r2 === r3) {
+        if (r1 === '7️⃣') { multiplier = 50; msg = "JACKPOT!"; }
+        else if (r1 === '💎') { multiplier = 20; msg = "MEGA WIN!"; }
+        else { multiplier = 10; msg = "BIG WIN!"; }
+    } else if (r1 === r2 || r2 === r3 || r1 === r3) {
+        multiplier = 2; msg = "SMALL WIN";
+    }
+    
+    const winAmount = 10000 * level * multiplier;
+    setWinMessage(winAmount > 0 ? `${msg} +$${winAmount.toLocaleString()}` : "NO WIN");
+    setTimeout(() => onComplete(Math.max(winAmount, 1000 * level)), 1500); 
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+        <div className="flex gap-2 bg-slate-800 p-4 rounded-xl border-4 border-yellow-500 shadow-xl mb-6">
+            {reels.map((s, i) => (
+                <div key={i} className="w-16 h-24 bg-white rounded-lg flex items-center justify-center text-4xl border-b-4 border-slate-300">{s}</div>
+            ))}
+        </div>
+        {winMessage && <div className="text-2xl font-black text-yellow-500 mb-4 animate-bounce">{winMessage}</div>}
+        <button onClick={spin} disabled={isSpinning || winMessage} className={`px-8 py-4 bg-gradient-to-b from-red-500 to-red-700 text-white font-black text-xl rounded-full shadow-lg border-b-4 border-red-900 active:scale-95 transition-all ${isSpinning ? 'opacity-50' : ''}`}>
+            {isSpinning ? "SPINNING..." : "SPIN!"}
+        </button>
+    </div>
+  );
+};
+
+const WheelGame = ({ onComplete, level }) => {
+  const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [prizeMsg, setPrizeMsg] = useState("");
+
+  const SEGMENTS = [
+    { label: 'JACKPOT', val: 500000, color: '#fbbf24' }, // yellow
+    { label: '$20k', val: 20000, color: '#f87171' }, // red
+    { label: '50 DICE', val: 0, dice: 50, color: '#60a5fa' }, // blue
+    { label: '$10k', val: 10000, color: '#4ade80' }, // green
+    { label: '$100k', val: 100000, color: '#c084fc' }, // purple
+    { label: 'NO LUCK', val: 1000, color: '#94a3b8' }, // grey
+    { label: '$50k', val: 50000, color: '#f472b6' }, // pink
+    { label: '20 DICE', val: 0, dice: 20, color: '#22d3ee' }, // cyan
+  ];
+
+  const handleSpin = () => {
+    if (spinning || prizeMsg) return;
+    setSpinning(true);
+    const segmentIndex = Math.floor(Math.random() * SEGMENTS.length);
+    // 360/8 = 45deg per segment. 22.5 is half width.
+    // Subtracting 22.5 centers the segment at the 12 o'clock pointer
+    const targetRotation = 3600 + (360 - (segmentIndex * 45) - 22.5); 
+    setRotation(targetRotation);
+
+    setTimeout(() => {
+        const prize = SEGMENTS[segmentIndex];
+        let msg = "";
+        let cash = 0;
+        if (prize.dice) {
+            msg = `WON ${prize.dice} DICE!`;
+            cash = prize.dice * 1000 * level; 
+        } else {
+            cash = prize.val * level;
+            msg = `WON $${cash.toLocaleString()}!`;
+        }
+        setPrizeMsg(msg);
+        setTimeout(() => onComplete(cash), 1500);
+    }, 4000); 
+  };
+
+  return (
+    <div className="flex flex-col items-center overflow-hidden">
+        <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-red-600 relative z-10 drop-shadow-md mb-[-10px]"></div>
+        <div 
+            className="w-64 h-64 rounded-full border-8 border-slate-800 shadow-2xl relative transition-transform duration-[4000ms] cubic-bezier(0.2, 0.8, 0.2, 1)"
+            style={{ 
+                transform: `rotate(${rotation}deg)`,
+                background: `conic-gradient(${SEGMENTS.map((s, i) => `${s.color} ${i * 12.5}% ${(i + 1) * 12.5}%`).join(', ')})`
+            }}
+        >
+            {SEGMENTS.map((s, i) => (
+                <div 
+                    key={i}
+                    className="absolute top-0 left-1/2 h-1/2 w-0 origin-bottom flex flex-col items-center pt-2"
+                    style={{ transform: `rotate(${i * 45 + 22.5}deg)` }}
+                >
+                    <span 
+                        className="text-white text-[10px] font-black uppercase tracking-wider drop-shadow-md whitespace-nowrap"
+                        style={{ transform: 'translateY(10px) rotate(90deg)' }}
+                    >
+                        {s.label}
+                    </span>
+                </div>
+            ))}
+            <div className="absolute inset-0 m-auto w-12 h-12 bg-slate-800 rounded-full border-4 border-slate-600 shadow-inner flex items-center justify-center">
+               <div className="w-8 h-8 bg-slate-900 rounded-full"></div>
+            </div>
+        </div>
+        {prizeMsg ? <div className="mt-8 text-2xl font-black text-green-500 animate-bounce">{prizeMsg}</div> : <button onClick={handleSpin} disabled={spinning} className={`mt-8 px-10 py-4 bg-gradient-to-b from-blue-500 to-blue-700 text-white font-black text-xl rounded-full shadow-lg border-b-4 border-blue-900 active:scale-95 transition-all ${spinning ? 'opacity-50' : ''}`}>{spinning ? "SPINNING..." : "SPIN!"}</button>}
+    </div>
+  );
+};
+
+// --- SAFE CRACKER MINI GAME ---
+const SafeGame = ({ onComplete, level }) => {
+  const [securityLevel, setSecurityLevel] = useState(1);
+  const [cursorPos, setCursorPos] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [targetZone, setTargetZone] = useState({ start: 30, width: 40 }); // Easy start
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [resultMsg, setResultMsg] = useState("");
+  const [totalWin, setTotalWin] = useState(0);
+  
+  const speed = useRef(1);
+  const requestRef = useRef();
+
+  useEffect(() => {
+    // Reset based on level
+    if (securityLevel === 1) { speed.current = 1.5; setTargetZone({start: 30, width: 40}); }
+    if (securityLevel === 2) { speed.current = 2.5; setTargetZone({start: 40, width: 20}); }
+    if (securityLevel === 3) { speed.current = 4.0; setTargetZone({start: 45, width: 10}); }
+    
+    setCursorPos(0);
+    setIsPlaying(true);
+    
+    const animate = () => {
+      setCursorPos(prev => {
+        let next = prev + speed.current * direction; // Use current direction
+        if (next >= 100) { next = 100; setDirection(-1); }
+        if (next <= 0) { next = 0; setDirection(1); }
+        return next;
+      });
+      requestRef.current = requestAnimationFrame(animate);
+    };
+    
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [securityLevel, direction]); // Re-run when level changes
+
+  const handleUnlock = () => {
+    cancelAnimationFrame(requestRef.current);
+    setIsPlaying(false);
+    
+    // Check Hit
+    const hit = cursorPos >= targetZone.start && cursorPos <= (targetZone.start + targetZone.width);
+    
+    if (hit) {
+       const win = 25000 * level * securityLevel;
+       setTotalWin(w => w + win);
+       if (securityLevel < 3) {
+           setResultMsg("UNLOCKED!");
+           setTimeout(() => {
+               setResultMsg("");
+               setSecurityLevel(l => l + 1);
+           }, 1000);
+       } else {
+           setResultMsg(`VAULT CRACKED! +$${(totalWin + win).toLocaleString()}`);
+           setTimeout(() => onComplete(totalWin + win), 1500);
+       }
+    } else {
+       setResultMsg("FAILED!");
+       setTimeout(() => onComplete(totalWin), 1500); // Take what you got
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full px-4">
+        <div className="flex justify-between w-full mb-2 text-xs font-bold text-slate-400 uppercase">
+           <span>Security Lvl {securityLevel}</span>
+           <span>Prize: ${totalWin.toLocaleString()}</span>
+        </div>
+        
+        {/* Safe Display */}
+        <div className="relative w-48 h-48 bg-slate-800 rounded-3xl border-8 border-slate-600 shadow-2xl flex items-center justify-center mb-8">
+            <div className={`w-32 h-32 rounded-full border-4 border-dashed ${isPlaying ? 'border-slate-500 animate-spin-slow' : 'border-green-500'} flex items-center justify-center`}>
+               {resultMsg === "UNLOCKED!" ? <Unlock size={48} className="text-green-500" /> : <Lock size={48} className="text-slate-400" />}
+            </div>
+            <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+        </div>
+
+        {/* Progress Bar Game */}
+        <div className="relative w-full h-8 bg-slate-900 rounded-full border-2 border-slate-700 overflow-hidden mb-6">
+            {/* Target Zone */}
+            <div 
+               className="absolute top-0 bottom-0 bg-green-500/80"
+               style={{ left: `${targetZone.start}%`, width: `${targetZone.width}%` }}
+            ></div>
+            {/* Cursor */}
+            <div 
+               className="absolute top-0 bottom-0 w-2 bg-white shadow-[0_0_10px_white]"
+               style={{ left: `${cursorPos}%` }}
+            ></div>
+        </div>
+
+        {resultMsg && resultMsg !== "UNLOCKED!" ? (
+            <div className="h-14 flex items-center text-2xl font-black text-yellow-500 animate-bounce">{resultMsg}</div>
+        ) : (
+            <button 
+                onClick={handleUnlock} 
+                disabled={!isPlaying}
+                className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xl rounded-xl shadow-lg border-b-4 border-red-900 active:scale-95 transition-all"
+            >
+                {resultMsg === "UNLOCKED!" ? "NEXT LOCK..." : "UNLOCK"}
+            </button>
+        )}
+    </div>
+  );
+};
+
+export default function MonopolyGoClone() {
+  const [money, setMoney] = useState(100000);
+  const [dice, setDice] = useState(50);
+  const [level, setLevel] = useState(1);
+  const [playerPos, setPlayerPos] = useState(0);
+  const [buildings, setBuildings] = useState([0, 0, 0]); 
+  const [isMoving, setIsMoving] = useState(false);
+  const [isRolling, setIsRolling] = useState(false);
+  const [diceValues, setDiceValues] = useState([1, 1]);
+  const [showDice, setShowDice] = useState(false); 
+  const [riggedInput, setRiggedInput] = useState(''); 
+  const [modal, setModal] = useState({ type: null });
+  const [feedback, setFeedback] = useState([]);
+  const currentCity = CITIES[(level - 1) % CITIES.length];
+
+  const addFeedback = (text) => {
+    const id = Date.now() + Math.random(); 
+    setFeedback(prev => [...prev, { text, id }]);
+    setTimeout(() => setFeedback(prev => prev.filter(f => f.id !== id)), 2000);
+  };
+
+  const handleRoll = async () => {
+    if (isMoving || isRolling || dice <= 0 || modal.type) return;
+    setDice(d => d - 1);
+    let d1, d2;
+    const riggedSum = parseInt(riggedInput);
+    if (!isNaN(riggedSum) && riggedSum >= 2 && riggedSum <= 12) {
+      d1 = Math.ceil(riggedSum / 2);
+      d2 = riggedSum - d1;
+    } else {
+      d1 = getRandomInt(1, 6);
+      d2 = getRandomInt(1, 6);
+    }
+    const totalRoll = d1 + d2;
+    setDiceValues([d1, d2]);
+    setShowDice(true);
+    setIsRolling(true);
+    await new Promise(r => setTimeout(r, 1000));
+    setIsRolling(false);
+    await new Promise(r => setTimeout(r, 1200));
+    setShowDice(false);
+    setIsMoving(true);
+    let currentPos = playerPos;
+    for (let i = 0; i < totalRoll; i++) {
+      await new Promise(r => setTimeout(r, 100)); 
+      currentPos = (currentPos + 1) % BOARD_SIZE;
+      if (currentPos === 0) {
+        const bonus = 20000 * level;
+        setMoney(m => m + bonus);
+        addFeedback(`GO! +$${bonus.toLocaleString()}`);
+      }
+      setPlayerPos(currentPos);
+    }
+    setIsMoving(false);
+    handleTileLanding(currentPos);
+  };
+
+  const getTileType = (index) => {
+    if (index % 10 === 0) return 'corner'; 
+    if (index === 5 || index === 15 || index === 25 || index === 35) return 'railroad';
+    if (index === 12 || index === 28) return 'temple';
+    if (index === 8 || index === 32) return 'cauldron';
+    if (index === 3 || index === 23) return 'slots';
+    if (index === 18 || index === 38) return 'wheel';
+    
+    // Add Safe at 14 and 26
+    if (index === 14 || index === 26) return 'safe';
+
+    if ([2, 7, 17, 22, 33].includes(index)) return 'chance'; 
+    return 'property';
+  };
+
+  const handleTileLanding = (pos) => {
+    const type = getTileType(pos);
+    if (type === 'property') {
+      const rent = 2000 * level * (1 + (pos / 10)); 
+      const rentAmount = Math.floor(rent);
+      setMoney(m => m + rentAmount);
+      addFeedback(`Rent! +$${rentAmount.toLocaleString()}`);
+    } 
+    else if (type === 'railroad') setTimeout(() => setModal({ type: 'heist' }), 500);
+    else if (type === 'temple') setTimeout(() => setModal({ type: 'temple' }), 500);
+    else if (type === 'cauldron') setTimeout(() => setModal({ type: 'cauldron' }), 500);
+    else if (type === 'slots') setTimeout(() => setModal({ type: 'slots' }), 500);
+    else if (type === 'wheel') setTimeout(() => setModal({ type: 'wheel' }), 500);
+    else if (type === 'safe') setTimeout(() => setModal({ type: 'safe' }), 500);
+    else if (type === 'chance') {
+      const outcomes = [
+        { type: 'money', val: 50000 * level, text: 'Bank Error! +$' },
+        { type: 'dice', val: 5, text: 'Free Dice! +' },
+        { type: 'tax', val: -10000 * level, text: 'Speeding Fine! -$' }
+      ];
+      const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+      if (outcome.type === 'money') setMoney(m => m + outcome.val);
+      if (outcome.type === 'dice') setDice(d => d + outcome.val);
+      if (outcome.type === 'tax') setMoney(m => Math.max(0, m + outcome.val));
+      addFeedback(`${outcome.text}${Math.abs(outcome.val).toLocaleString()}`);
+    }
+    else if (pos === 30) { 
+       addFeedback("Busted!");
+       setTimeout(() => { setPlayerPos(10); }, 500);
+    }
+  };
+
+  const handleUpgrade = (buildingIndex) => {
+    const cost = Math.floor(BUILDING_COST_BASE * Math.pow(1.5, buildings[buildingIndex]) * level);
+    if (money >= cost) {
+      setMoney(m => m - cost);
+      const newBuildings = [...buildings];
+      newBuildings[buildingIndex]++;
+      setBuildings(newBuildings);
+      addFeedback("Upgraded!");
+      if (newBuildings.every(b => b >= 5)) setTimeout(() => setModal({ type: 'levelup' }), 500);
+    }
+  };
+
+  const completeLevel = () => {
+    setLevel(l => l + 1);
+    setBuildings([0, 0, 0]);
+    setMoney(m => m + 100000); 
+    setDice(d => d + 50); 
+    setModal({ type: null });
+    addFeedback(`WELCOME TO ${CITIES[level % CITIES.length].toUpperCase()}!`);
+  };
+
+  const renderBoard = () => {
+    const tiles = [];
+    for (let i = 0; i <= 10; i++) tiles.push({ idx: i, row: 1, col: i + 1 });
+    for (let i = 11; i <= 20; i++) tiles.push({ idx: i, row: i - 10 + 1, col: 11 }); 
+    for (let i = 21; i <= 30; i++) tiles.push({ idx: i, row: 11, col: 11 - (i - 20) });
+    for (let i = 31; i <= 39; i++) tiles.push({ idx: i, row: 11 - (i - 30), col: 1 });
+
+    return tiles.map(t => {
+      const type = getTileType(t.idx);
+      const isPlayerHere = playerPos === t.idx;
+      let content = null;
+      let colorClass = "bg-white";
+
+      if (type === 'corner') {
+         colorClass = "bg-slate-200";
+         if (t.idx === 0) content = <div className="flex flex-col items-center"><span className="text-2xl">🏁</span><span className="text-[10px] text-slate-600 mt-1">START</span></div>;
+         if (t.idx === 10) content = <div className="flex flex-col items-center"><span className="text-2xl">⛓️</span><span className="text-[9px]">JAIL</span></div>;
+         if (t.idx === 20) content = <div className="flex flex-col items-center"><span className="text-2xl">🅿️</span></div>;
+         if (t.idx === 30) content = <div className="flex flex-col items-center"><span className="text-2xl animate-pulse">👮‍♂️</span></div>;
+      } else if (type === 'railroad') {
+         colorClass = "bg-yellow-50";
+         content = <span className="text-3xl">🚂</span>;
+      } else if (type === 'temple') {
+         colorClass = "bg-purple-50";
+         content = <span className="text-2xl">🛕</span>;
+      } else if (type === 'cauldron') {
+         colorClass = "bg-green-50";
+         content = <span className="text-2xl">🍲</span>;
+      } else if (type === 'slots') {
+         colorClass = "bg-red-50";
+         content = <span className="text-2xl">7️⃣</span>;
+      } else if (type === 'wheel') {
+         colorClass = "bg-blue-50";
+         content = <span className="text-2xl">🎡</span>;
+      } else if (type === 'safe') {
+         colorClass = "bg-slate-200";
+         content = <span className="text-2xl">🔐</span>;
+      } else if (type === 'chance') {
+         colorClass = "bg-orange-50";
+         content = <span className="text-2xl font-bold">❓</span>;
+      } else {
+         const colorGroups = ['bg-red-500', 'bg-red-500', 'bg-red-500', 'bg-blue-500', 'bg-blue-500', 'bg-blue-500', 'bg-green-500', 'bg-green-500', 'bg-green-500', 'bg-purple-500', 'bg-purple-500', 'bg-purple-500'];
+         const groupIdx = Math.floor(t.idx / 10);
+         const barColor = colorGroups[groupIdx] || 'bg-slate-400';
+         colorClass = "bg-white";
+         content = <div className={`w-full h-2 md:h-3 ${barColor} opacity-80 rounded-sm`}></div>
+      }
+
+      return (
+        <div key={t.idx} className={`relative border-[0.5px] border-slate-300 rounded-[2px] flex flex-col items-center justify-center text-[9px] font-bold text-slate-600 shadow-sm overflow-hidden ${colorClass}`} style={{ gridRow: t.row, gridColumn: t.col }}>
+           {type === 'property' && <div className="absolute top-1 w-[80%]">{content}</div>}
+           {type !== 'property' && content}
+           {isPlayerHere && <div className="absolute inset-0 flex items-center justify-center z-10 animate-bounce"><div className="w-6 h-6 bg-red-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center"><ArrowBigUp className="text-white fill-white" size={14} /></div></div>}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div className="h-[100dvh] w-full bg-slate-900 flex flex-col font-sans overflow-hidden select-none">
+      <style>{styles}</style>
+      <div className="flex-none bg-slate-800 p-3 pt-4 flex justify-between items-center text-white shadow-xl z-20 rounded-b-2xl border-b border-slate-700">
+        <div className="flex flex-col"><span className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Net Worth</span><div className="flex items-center gap-1"><DollarSign className="text-green-400" size={14} /><span className="font-black text-lg">{money.toLocaleString()}</span></div></div>
+        <div className="flex flex-col items-end"><span className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Level {level}</span><div className="flex items-center gap-1 bg-slate-700 px-3 py-1 rounded-full border border-slate-600"><Trophy size={12} className="text-yellow-400" /><span className="text-xs font-bold">{currentCity}</span></div></div>
+      </div>
+      <div className="flex-grow relative flex flex-col justify-center items-center w-full overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-full transform -translate-y-full z-50 flex flex-col-reverse items-center gap-2 pointer-events-none px-4">
+          {feedback.map(f => <div key={f.id} className="text-3xl font-black text-stroke-white text-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-5 fade-in duration-300 text-center whitespace-nowrap">{f.text}</div>)}
+        </div>
+        {showDice && <div className="absolute inset-0 z-40 flex items-center justify-center gap-8 bg-black/20 backdrop-blur-[2px]"><Dice3D value={diceValues[0]} rolling={isRolling} /><Dice3D value={diceValues[1]} rolling={isRolling} /></div>}
+        <div className="relative w-[95vw] max-w-[500px] aspect-square grid gap-0.5 bg-slate-800 p-1.5 rounded-xl shadow-2xl border-4 border-slate-700" style={{ gridTemplateColumns: '1.5fr repeat(9, 1fr) 1.5fr', gridTemplateRows: '1.5fr repeat(9, 1fr) 1.5fr' }}>
+          <div className="bg-slate-900/50 rounded-lg flex flex-col items-center justify-center relative overflow-hidden" style={{ gridColumn: '2 / 11', gridRow: '2 / 11' }}>
+             <div className="absolute top-4 w-full text-center"><h3 className="text-slate-500 text-[10px] font-black tracking-[0.2em] uppercase opacity-50">Monopoly Clone</h3><h2 className="text-white/20 text-4xl font-black uppercase mt-2 tracking-widest">{currentCity}</h2></div>
+             <div className="flex justify-center items-end gap-2 md:gap-4 h-24 md:h-32 w-full px-2 mt-4 z-10">
+               {buildings.map((lvl, idx) => (
+                 <div key={idx} className="flex flex-col items-center justify-end h-full gap-1 group relative flex-1">
+                    <div className={`w-full max-w-[40px] bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-md transition-all duration-500 border-x border-t border-white/20 relative shadow-[0_0_15px_rgba(59,130,246,0.3)]`} style={{ height: `${15 + (lvl * 15)}%` }}><div className="absolute -top-3 -right-3"><Sparkles className="text-yellow-400 fill-yellow-400 animate-pulse" size={12}/></div><div className="w-full h-full opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iMiIgaGVpZ2h0PSIyIiBmaWxsPSIjZmZmIiAvPgo8L3N2Zz4=')]"></div></div>
+                    {lvl < 5 && <button onClick={() => handleUpgrade(idx)} className="absolute -bottom-10 bg-green-500 hover:bg-green-400 text-white text-xs md:text-sm px-3 py-2 rounded-full font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-1 w-full max-w-[90px]"><ArrowBigUp size={16} />{(Math.floor(BUILDING_COST_BASE * Math.pow(1.5, lvl) * level / 100) / 10)}k</button>}
+                 </div>
+               ))}
+             </div>
+          </div>
+          {renderBoard()}
+        </div>
+      </div>
+      <div className="flex-none w-full p-4 pb-8 flex items-center justify-center gap-4 relative">
+         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900 to-transparent pointer-events-none -top-10"></div>
+         <div className="relative z-10 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-bold mb-1">FORCE ROLL</span><input type="number" placeholder="?" className="w-12 h-12 rounded-xl bg-slate-800 text-white text-center font-bold border-2 border-slate-700 focus:border-red-500 outline-none" value={riggedInput} onChange={(e) => setRiggedInput(e.target.value)} /></div>
+         <button onClick={handleRoll} disabled={isMoving || isRolling || dice <= 0} className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex flex-col items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.5)] border-[6px] border-white transition-all transform ${isMoving || isRolling || dice <= 0 ? 'bg-slate-600 scale-95 opacity-80' : 'bg-gradient-to-br from-red-500 to-orange-600 hover:scale-105 active:scale-90 cursor-pointer'}`}><span className="text-white font-black text-xl md:text-2xl tracking-tight drop-shadow-md">GO!</span><div className="absolute -top-3 bg-white text-slate-900 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold border border-slate-300 shadow-sm flex items-center gap-1"><Zap size={10} className="fill-purple-500 text-purple-500" />{dice}</div></button>
+      </div>
+      {modal.type === 'heist' && <Modal title="BANK HEIST" onClose={() => setModal({ type: null })}><HeistGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`STOLEN! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+      {modal.type === 'temple' && <Modal title="HIDDEN TEMPLE" headerColor="bg-purple-600" onClose={() => setModal({ type: null })}><TempleGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`TEMPLE RUN: +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+      {modal.type === 'cauldron' && <Modal title="MAGIC CAULDRON" headerColor="bg-green-600" onClose={() => setModal({ type: null })}><CauldronGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`POTION BREWED! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+      {modal.type === 'slots' && <Modal title="JACKPOT SLOTS" headerColor="bg-red-600" onClose={() => setModal({ type: null })}><SlotsGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`SLOTS WIN! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+      {modal.type === 'wheel' && <Modal title="LUCKY WHEEL" headerColor="bg-blue-600" onClose={() => setModal({ type: null })}><WheelGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`WHEEL SPIN: +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+      {modal.type === 'safe' && <Modal title="SAFE CRACKER" headerColor="bg-slate-700" onClose={() => setModal({ type: null })}><SafeGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`SAFE CRACKED! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}
+      {modal.type === 'levelup' && <Modal title="BOARD COMPLETED!"><div className="text-center"><div className="flex justify-center mb-4"><Trophy className="w-20 h-20 text-yellow-400 drop-shadow-lg" /></div><p className="text-gray-600 mb-6 font-bold text-sm">You've finished {currentCity}! Ready for the next destination?</p><button onClick={completeLevel} className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-lg shadow-lg transform transition active:scale-95">TRAVEL</button></div></Modal>}
+    </div>
+  );
+}
