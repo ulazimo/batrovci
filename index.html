@@ -2,1228 +2,336 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#2c3e50">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MindMatch3D">
-    <title>Mind Match 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Directory</title>
     
-    <!-- Simple Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #2c3e50;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none; /* Critical for disabling scroll on mobile */
-        }
-
-        #game-ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            color: white;
-            font-size: 24px;
-            font-weight: 800;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            pointer-events: auto;
-            width: 100%;
-            z-index: 10;
-        }
-
-        /* The Tray Area */
-        .tray-container {
-            width: 100%;
-            height: 160px; /* Slightly taller for mobile thumbs */
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0,0,0,0));
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            padding-bottom: max(20px, env(safe-area-inset-bottom));
-            pointer-events: auto; 
-        }
-
-        .tray-slot {
-            width: 13vw; /* Slightly larger targets */
-            max-width: 65px;
-            height: 13vw;
-            max-height: 65px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            margin: 0 3px;
-            border: 2px solid rgba(255,255,255,0.3);
-            
-            /* Flex for centering Emoji */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px; 
-            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .tray-slot.filled {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.9);
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
-
-        .tray-slot.matched {
-            background: #2ecc71;
-            transform: scale(1.2);
-            opacity: 0;
-        }
-
-        /* Booster Area */
-        .booster-container {
-            position: absolute;
-            bottom: 180px; /* Above the tray */
-            right: 20px;
-            display: flex;
-            flex-direction: row; /* Horizontal layout */
-            gap: 12px;
-            align-items: flex-end;
-            pointer-events: auto;
-            z-index: 20;
-            /* Allow wrapping if screen is narrow, though right alignment implies growing left */
-            flex-wrap: wrap-reverse; 
-            justify-content: flex-end;
-            max-width: 100%;
-            padding-right: 10px;
-        }
-
-        .booster-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .booster-btn {
-            width: 55px;
-            height: 55px;
-            background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
-            border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 26px;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.1s;
-        }
-
-        .booster-btn.shake { background: radial-gradient(circle at 30% 30%, #9b59b6, #8e44ad); }
-        .booster-btn.fan { background: radial-gradient(circle at 30% 30%, #e67e22, #d35400); }
-        .booster-btn.spring { background: radial-gradient(circle at 30% 30%, #2ecc71, #27ae60); }
-        .booster-btn.ice { background: radial-gradient(circle at 30% 30%, #3498db, #2980b9); }
-
-        .booster-btn:active {
-            transform: scale(0.9);
-        }
-
-        .booster-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #e74c3c;
-            color: white;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
-            font-weight: bold;
-            border: 2px solid white;
-        }
-
-        .booster-label {
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 5px;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-            background: rgba(0,0,0,0.3);
-            padding: 2px 6px;
-            border-radius: 10px;
-        }
-
-        /* Overlay Screens */
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(44, 62, 80, 0.98);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            pointer-events: auto;
-            transition: opacity 0.3s;
-            padding: 20px;
-        }
-
-        .hidden {
-            display: none !important;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        h1 {
-            color: #f1c40f;
-            font-size: 42px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
-            text-align: center;
-            line-height: 1.1;
-        }
-
-        p {
-            color: #ecf0f1;
-            font-size: 18px;
-            margin-bottom: 40px;
-            text-align: center;
-            max-width: 300px;
-            line-height: 1.6;
-        }
-
-        button {
-            background: linear-gradient(to bottom, #e74c3c, #c0392b);
-            border: none;
-            padding: 18px 50px;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
-            transition: transform 0.1s;
-            -webkit-tap-highlight-color: transparent;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        button:active {
-            transform: scale(0.96);
-        }
-
-        button.green {
-            background: linear-gradient(to bottom, #2ecc71, #27ae60);
-            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
-        }
-
-        #timer {
-            color: #fff;
-            background: rgba(231, 76, 60, 0.9);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-variant-numeric: tabular-nums;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: background 0.3s;
-        }
-
-        #timer.frozen {
-            background: #3498db;
-            box-shadow: 0 0 15px #3498db;
-        }
-
-        #level-display {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
-        }
-        
-        /* Combo Text */
-        #combo-text {
-            position: absolute;
-            top: 40%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 50px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 20px #f1c40f, 0 0 10px #e67e22;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 50;
-            white-space: nowrap;
-        }
-        
-        .pop-anim {
-            animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        @keyframes popUp {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            40% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
-        }
-
-        /* Landscape Warning */
-        #rotate-warning {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #2c3e50;
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            text-align: center;
-        }
-
-        /* Show warning only on mobile landscape */
-        @media screen and (max-height: 500px) and (orientation: landscape) {
-            #rotate-warning { display: flex; }
-        }
-
-    </style>
-    <!-- Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Cannon.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
-</head>
-<body>
-
-    <!-- Landscape Warning -->
-    <div id="rotate-warning">
-        <div style="font-size: 50px; margin-bottom: 20px;">📱↔️</div>
-        <h2>Please Rotate Device</h2>
-        <p>This game is designed for Portrait mode.</p>
-    </div>
-
-    <!-- Game UI -->
-    <div id="game-ui">
-        <div class="header">
-            <div id="level-display">Level 1</div>
-            <div id="timer">02:00</div>
-        </div>
-        
-        <!-- Booster UI -->
-        <div class="booster-container">
-            <!-- Spring (Undo) -->
-            <div class="booster-item">
-                <div class="booster-btn spring" id="spring-btn" onclick="activateSpringBooster()">
-                    ↩️
-                    <div class="booster-badge" id="spring-count">3</div>
-                </div>
-                <div class="booster-label">UNDO</div>
-            </div>
-
-            <!-- Icegun (Freeze Time) -->
-            <div class="booster-item">
-                <div class="booster-btn ice" id="ice-btn" onclick="activateIcegunBooster()">
-                    ❄️
-                    <div class="booster-badge" id="ice-count">3</div>
-                </div>
-                <div class="booster-label">FREEZE</div>
-            </div>
-
-            <!-- Shake Booster -->
-            <div class="booster-item">
-                <div class="booster-btn shake" id="shake-btn" onclick="activateShakeBooster()">
-                    🎲
-                    <div class="booster-badge" id="shake-count">3</div>
-                </div>
-                <div class="booster-label">SHUFFLE</div>
-            </div>
-
-            <!-- Fan Booster -->
-            <div class="booster-item">
-                <div class="booster-btn fan" id="fan-btn" onclick="activateFanBooster()">
-                    🌪️
-                    <div class="booster-badge" id="fan-count">3</div>
-                </div>
-                <div class="booster-label">AUTO</div>
-            </div>
-        </div>
-
-        <div id="combo-text">MATCH!</div>
-        <div class="tray-container">
-            <!-- 7 Slots Visuals -->
-            <div class="tray-slot" id="slot-0"></div>
-            <div class="tray-slot" id="slot-1"></div>
-            <div class="tray-slot" id="slot-2"></div>
-            <div class="tray-slot" id="slot-3"></div>
-            <div class="tray-slot" id="slot-4"></div>
-            <div class="tray-slot" id="slot-5"></div>
-            <div class="tray-slot" id="slot-6"></div>
-        </div>
-    </div>
-
-    <!-- Screens -->
-    <div id="start-screen" class="screen">
-        <h1>MIND MATCH 3D</h1>
-        <p>
-            <strong>THE RULES</strong><br><br>
-            Match 3 items by <u>CATEGORY</u>.<br>
-            <span style="font-size: 0.9em; opacity: 0.8">(Don't look for identical copies!)</span><br><br>
-            ✅ 🐶+🐱+🐭 (Animals)<br>
-            ✅ 🍎+🍌+🍇 (Fruit)<br><br>
-            Clear the pile before time runs out!
-        </p>
-        <button onclick="startGame()">PLAY NOW</button>
-    </div>
-
-    <div id="game-over-screen" class="screen hidden">
-        <h1 style="color: #e74c3c">TRAY FULL!</h1>
-        <p>You ran out of space.</p>
-        <button onclick="restartLevel()">TRY AGAIN</button>
-    </div>
-
-    <div id="win-screen" class="screen hidden">
-        <h1 style="color: #2ecc71">LEVEL UP!</h1>
-        <p>Excellent matching!</p>
-        <button class="green" onclick="nextLevel()">NEXT LEVEL</button>
-    </div>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-        // --- CONFIGURATION ---
-        const TRAY_SIZE = 7;
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569; 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
         
-        // Expanded Contextual Matching Groups (24 Categories)
-        const THEMES = [
-            ['🐶', '🐱', '🐭'], // Pets
-            ['🍎', '🍌', '🍇'], // Fruit
-            ['⚽', '🏀', '🏈'], // Sport Balls
-            ['🚗', '✈️', '🚀'], // Vehicles
-            ['🍔', '🍕', '🍟'], // Fast Food
-            ['🔨', '🔧', '🪛'], // Tools
-            ['☀️', '☁️', '❄️'], // Weather
-            ['🎸', '🎹', '🎺'], // Instruments
-            ['⌚', '📱', '💻'], // Gadgets
-            ['👕', '👖', '👗'], // Clothes
-            ['🌹', '🌻', '🌷'], // Flowers
-            ['🦁', '🐯', '🐻'], // Wild Animals
-            // Expanded
-            ['😀', '😂', '😎'], // Faces
-            ['❤️', '💙', '💚'], // Hearts
-            ['👍', '👎', '✌️'], // Hands
-            ['🌙', '⭐', '🪐'], // Space
-            ['🐙', '🐬', '🐠'], // Ocean
-            ['🐝', '🐞', '🦋'], // Bugs
-            ['🍩', '🍪', '🍫'], // Sweets
-            ['☕', '🍺', '🍷'], // Drinks
-            ['🥦', '🥕', '🌽'], // Veggies
-            ['🚲', '🛵', '🛴'], // Bikes
-            ['📎', '📏', '✂️'], // Office
-            ['🥇', '🥈', '🥉']  // Medals
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="folder-open" class="text-brand-600 dark:text-brand-500 w-6 h-6"></i>
+                <h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    My Projects
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                    <i data-lucide="github" class="w-5 h-5"></i>
+                </a>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Search and Filter Section -->
+        <div class="mb-10 space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                <div class="relative w-full sm:max-w-md group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400 group-focus-within:text-brand-500 transition-colors"></i>
+                    </div>
+                    <input type="text" id="search-input" 
+                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg leading-5 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all shadow-sm"
+                        placeholder="Search projects...">
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto pb-1 w-full sm:w-auto no-scrollbar" id="category-filters">
+                    <!-- Categories injected by JS -->
+                </div>
+            </div>
+            
+            <p class="text-sm text-gray-500 dark:text-gray-400" id="result-count">
+                Showing all projects
+            </p>
+        </div>
+
+        <!-- Grid -->
+        <div id="projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-20">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800 mb-4">
+                <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">No projects found</h3>
+            <p class="text-gray-500 dark:text-gray-400 mt-2">Try adjusting your search or filters.</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                &copy; <span id="year"></span> Project Directory. Hosted on GitHub Pages.
+            </p>
+            <div class="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <a href="#" class="hover:text-brand-600 dark:hover:text-brand-400">About</a>
+                <a href="#" class="hover:text-brand-600 dark:hover:text-brand-400">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION: ADD YOUR FILES HERE
+        // ==========================================
+        const projects = [
+            {
+                title: "Block Away",
+                file: "block away.html", // The actual filename in this folder
+                description: "A fun little canvas game I built.",
+                category: "Game",
+                date: "2026-01-15",
+                featured: true
+            },
+            {
+                title: "Dashboard Prototype",
+                file: "dashboard.html",
+                description: "Responsive admin dashboard layout with Tailwind.",
+                category: "UI/UX",
+                date: "2023-11-15"
+            },
+            {
+                title: "Calculator App",
+                file: "calc.html",
+                description: "A fully functional scientific calculator.",
+                category: "Tool",
+                date: "2023-09-20"
+            },
+            {
+                title: "Landing Page V1",
+                file: "landing.html",
+                description: "First iteration of the product landing page.",
+                category: "Website",
+                date: "2023-08-05"
+            },
+            {
+                title: "Weather Widget",
+                file: "weather.html",
+                description: "Fetches weather data from an API.",
+                category: "App",
+                date: "2023-12-01"
+            },
+            // Add more objects here...
         ];
 
-        // --- GLOBALS ---
-        let scene, camera, renderer;
-        let world; // Physics world
-        let raycaster, mouse;
-        let timeStep = 1 / 60;
+        // ==========================================
+        // APPLICATION LOGIC
+        // ==========================================
+
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // State
+        let activeCategory = 'All';
+        let searchQuery = '';
+
+        // DOM Elements
+        const grid = document.getElementById('projects-grid');
+        const emptyState = document.getElementById('empty-state');
+        const searchInput = document.getElementById('search-input');
+        const categoryContainer = document.getElementById('category-filters');
+        const resultCount = document.getElementById('result-count');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        // Theme Logic
+        const userTheme = localStorage.getItem('theme');
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
-        let gameActive = false;
-        let level = 1;
-        let timerInterval;
-        let timeLeft = 120;
-        let isTimeFrozen = false;
-        
-        let objects = []; // Contains { mesh, body, id, type }
-        let tray = []; // Objects currently in tray
-        
-        // Interaction Globals
-        let mouseConstraint = null;
-        let mouseBody = null;
-        let dragPlane = new THREE.Plane();
-        let isDragging = false;
-        let draggedObject = null;
-        let pointerStartPos = new THREE.Vector2();
-        let pointerStartTime = 0;
-
-        // Booster Globals
-        let fanCount = 3;
-        let shakeCount = 3;
-        let springCount = 3;
-        let iceCount = 3;
-
-        // --- INIT ---
-        function init() {
-            // Scene Setup
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x2c3e50);
-            // Reduced fog for clearer view on mobile
-            scene.fog = new THREE.Fog(0x2c3e50, 20, 60);
-            
-            // Camera (Adjusted for Portrait/Close-up)
-            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 28, 15);
-            camera.lookAt(0, -2, 0); 
-
-            // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Slightly brighter
-            scene.add(ambientLight);
-            
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(5, 20, 5); 
-            dirLight.castShadow = true;
-            
-            // Optimized Shadow Map for Mobile (1024 instead of 2048)
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 50;
-            scene.add(dirLight);
-            
-            const rimLight = new THREE.PointLight(0x00aaff, 0.5);
-            rimLight.position.set(-10, 10, -10);
-            scene.add(rimLight);
-
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            // Limit pixel ratio to 2 to save battery/performance on high density screens
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            document.body.appendChild(renderer.domElement);
-
-            // Physics World
-            world = new CANNON.World();
-            world.gravity.set(0, -18, 0); 
-            world.broadphase = new CANNON.NaiveBroadphase();
-            world.solver.iterations = 7; // Reduced iterations slightly for mobile CPU
-
-            const physicsMaterial = new CANNON.Material("groundMaterial");
-            const physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial, physicsMaterial, {
-                friction: 0.5,
-                restitution: 0.1 
-            });
-            world.addContactMaterial(physicsContactMaterial);
-
-            // Init Interaction Bodies
-            initPhysicsDrag();
-
-            createEnvironment();
-
-            // Raycaster
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-
-            // Events
-            window.addEventListener('resize', onWindowResize, false);
-            
-            // Pointer Events for Drag/Click (Supports Touch & Mouse)
-            const canvas = renderer.domElement;
-            canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
-            window.addEventListener('pointermove', onPointerMove, { passive: false });
-            window.addEventListener('pointerup', onPointerUp, { passive: false });
-            window.addEventListener('pointercancel', onPointerUp, { passive: false });
-
-            animate();
+        if (userTheme === 'dark' || (!userTheme && systemTheme)) {
+            document.documentElement.classList.add('dark');
         }
 
-        function initPhysicsDrag() {
-            // Kinematic body to represent mouse position in physics world
-            const shape = new CANNON.Sphere(0.1);
-            mouseBody = new CANNON.Body({ mass: 0 }); // Mass 0 = Static/Kinematic
-            mouseBody.addShape(shape);
-            mouseBody.collisionFilterGroup = 0; // Don't collide with normal stuff
-            mouseBody.collisionFilterMask = 0;
-            world.addBody(mouseBody);
-        }
-
-        function createEnvironment() {
-            // Physics Floor
-            const groundBody = new CANNON.Body({
-                mass: 0, 
-                shape: new CANNON.Plane()
-            });
-            groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-            world.addBody(groundBody);
-
-            const gridHelper = new THREE.GridHelper(20, 20, 0x34495e, 0x34495e);
-            scene.add(gridHelper);
-
-            // Walls (Narrowed play area)
-            const wallWidth = 10;
-            const wallHeight = 20;
-            const wallDepth = 1;
-            const wallShape = new CANNON.Box(new CANNON.Vec3(wallWidth, wallHeight, wallDepth));
-            
-            const limitX = 4.5;
-            const limitZ = 6; 
-
-            // North Wall
-            const wallN = new CANNON.Body({ mass: 0 });
-            wallN.addShape(wallShape);
-            wallN.position.set(0, 5, -limitZ);
-            world.addBody(wallN);
-
-            // South Wall
-            const wallS = new CANNON.Body({ mass: 0 });
-            wallS.addShape(wallShape);
-            wallS.position.set(0, 5, limitZ);
-            world.addBody(wallS);
-
-            // West Wall
-            const wallW = new CANNON.Body({ mass: 0 });
-            wallW.addShape(wallShape);
-            wallW.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
-            wallW.position.set(-limitX, 5, 0);
-            world.addBody(wallW);
-
-            // East Wall
-            const wallE = new CANNON.Body({ mass: 0 });
-            wallE.addShape(wallShape);
-            wallE.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
-            wallE.position.set(limitX, 5, 0);
-            world.addBody(wallE);
-        }
-        
-        function createEmojiTexture(emoji) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            
-            // Tile Background
-            ctx.fillStyle = '#ecf0f1';
-            ctx.fillRect(0, 0, 256, 256);
-            
-            // Inner Border
-            ctx.strokeStyle = '#bdc3c7';
-            ctx.lineWidth = 15;
-            ctx.strokeRect(10, 10, 236, 236);
-            
-            // Emoji
-            ctx.font = '150px Segoe UI Emoji, Apple Color Emoji, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.shadowColor = "rgba(0,0,0,0.2)";
-            ctx.shadowBlur = 10;
-            ctx.fillText(emoji, 128, 138);
-            
-            const tex = new THREE.CanvasTexture(canvas);
-            // Improve texture sharpness on angled views
-            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-            return tex;
-        }
-
-        // --- GAME LOGIC ---
-
-        function startGame() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-over-screen').classList.add('hidden');
-            document.getElementById('win-screen').classList.add('hidden');
-            
-            level = 1;
-            setupLevel(level);
-        }
-
-        function nextLevel() {
-            document.getElementById('win-screen').classList.add('hidden');
-            level++;
-            setupLevel(level);
-        }
-
-        function restartLevel() {
-            document.getElementById('game-over-screen').classList.add('hidden');
-            setupLevel(level);
-        }
-
-        function setupLevel(lvl) {
-            gameActive = true;
-            document.getElementById('level-display').innerText = `Level ${lvl}`;
-            
-            objects.forEach(obj => {
-                scene.remove(obj.mesh);
-                if(obj.mesh.geometry) obj.mesh.geometry.dispose();
-                // We reuse materials in cache ideally, but here we let GC handle it
-                world.remove(obj.body);
-            });
-            objects = [];
-            tray = [];
-            updateTrayUI();
-
-            // Reset Boosters
-            fanCount = 3;
-            shakeCount = 3;
-            springCount = 3;
-            iceCount = 3;
-            isTimeFrozen = false;
-            document.getElementById('timer').classList.remove('frozen');
-            updateBoostersUI();
-
-            // Difficulty: Start with 6 categories (18 items). Add 2 categories (6 items) per level.
-            // Cap at total available themes.
-            const numThemes = Math.min(4 + (lvl * 2), THEMES.length);
-            
-            const shuffledThemes = [...THEMES].sort(() => 0.5 - Math.random());
-            const selectedThemes = shuffledThemes.slice(0, numThemes);
-
-            selectedThemes.forEach((themeGroup, themeIndex) => {
-                const groupID = themeIndex;
-                themeGroup.forEach(emoji => {
-                    createObject({
-                        emoji: emoji,
-                        matchId: groupID
-                    });
-                });
-            });
-
-            // Adjust timer for increased difficulty (more time for more items)
-            timeLeft = 60 + (lvl * 25); 
-            updateTimerDisplay();
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if(!gameActive || isTimeFrozen) return;
-                timeLeft--;
-                updateTimerDisplay();
-                if(timeLeft <= 0) gameOver();
-            }, 1000);
-        }
-
-        function createObject(data) {
-            const width = 1.3;
-            const height = 1.3;
-            const depth = 0.3;
-            const geometry = new THREE.BoxGeometry(width, height, depth);
-
-            const texture = createEmojiTexture(data.emoji);
-            
-            const sideMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6 });
-            const faceMat = new THREE.MeshStandardMaterial({ map: texture });
-            
-            const materials = [
-                sideMat, sideMat, 
-                sideMat, sideMat, 
-                faceMat, faceMat 
-            ];
-            
-            const mesh = new THREE.Mesh(geometry, materials);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-
-            const rangeX = 3.5; 
-            const rangeZ = 4;
-            
-            const x = (Math.random() - 0.5) * rangeX;
-            // Increased drop height range for higher levels to prevent physics explosion
-            const y = 8 + Math.random() * 20; 
-            const z = (Math.random() - 0.5) * rangeZ;
-            
-            mesh.position.set(x, y, z);
-            mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
-            
-            scene.add(mesh);
-
-            const bodyShape = new CANNON.Box(new CANNON.Vec3(width/2, height/2, depth/2));
-            const body = new CANNON.Body({
-                mass: 5,
-                shape: bodyShape,
-                linearDamping: 0.5,
-                angularDamping: 0.5
-            });
-            body.position.copy(mesh.position);
-            body.quaternion.copy(mesh.quaternion);
-            body.angularVelocity.set(Math.random(), Math.random(), Math.random());
-            world.addBody(body);
-
-            objects.push({
-                mesh: mesh,
-                body: body,
-                typeId: data.matchId,
-                emoji: data.emoji,
-                isMovingToTray: false,
-                inTray: false,
-                isDocked: false,
-                pendingRemoval: false 
-            });
-        }
-
-        // --- BOOSTER LOGIC ---
-
-        function updateBoostersUI() {
-            // Update Fan
-            document.getElementById('fan-count').innerText = fanCount;
-            document.getElementById('fan-btn').style.opacity = fanCount <= 0 ? '0.5' : '1';
-            
-            // Update Shake
-            document.getElementById('shake-count').innerText = shakeCount;
-            document.getElementById('shake-btn').style.opacity = shakeCount <= 0 ? '0.5' : '1';
-
-            // Update Spring
-            document.getElementById('spring-count').innerText = springCount;
-            document.getElementById('spring-btn').style.opacity = springCount <= 0 ? '0.5' : '1';
-
-            // Update Ice
-            document.getElementById('ice-count').innerText = iceCount;
-            document.getElementById('ice-btn').style.opacity = iceCount <= 0 ? '0.5' : '1';
-        }
-
-        function activateFanBooster() {
-            if (!gameActive || fanCount <= 0) return;
-
-            // 1. Identify counts in tray to prioritize clearing them
-            const trayCounts = {};
-            tray.forEach(o => {
-                if (!o.pendingRemoval) {
-                    trayCounts[o.typeId] = (trayCounts[o.typeId] || 0) + 1;
-                }
-            });
-
-            let targetTypeId = -1;
-
-            // Strategy A: Find a match that clears space (completes a set currently in tray)
-            const trayTypeIds = Object.keys(trayCounts).map(Number);
-            trayTypeIds.sort((a, b) => trayCounts[b] - trayCounts[a]);
-
-            for (let id of trayTypeIds) {
-                const totalAvailable = objects.filter(o => o.typeId === id && !o.pendingRemoval).length;
-                if (totalAvailable >= 3) {
-                    targetTypeId = id;
-                    break;
-                }
-            }
-
-            // Strategy B: If tray is empty or no partials can be completed, pick random from board
-            if (targetTypeId === -1) {
-                const allCounts = {};
-                objects.forEach(o => {
-                    if (!o.pendingRemoval) {
-                        allCounts[o.typeId] = (allCounts[o.typeId] || 0) + 1;
-                    }
-                });
-                
-                const possibleTypes = Object.keys(allCounts).map(Number).filter(id => allCounts[id] >= 3);
-                if (possibleTypes.length > 0) {
-                    targetTypeId = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
-                }
-            }
-
-            if (targetTypeId !== -1) {
-                fanCount--;
-                updateBoostersUI();
-
-                const allOfTarget = objects.filter(o => o.typeId === targetTypeId && !o.pendingRemoval);
-                
-                allOfTarget.sort((a, b) => {
-                    if (a.inTray && !b.inTray) return -1;
-                    if (!a.inTray && b.inTray) return 1;
-                    return 0;
-                });
-
-                const itemsToMatch = allOfTarget.slice(0, 3);
-
-                itemsToMatch.forEach(obj => {
-                    if (!obj.inTray) {
-                        obj.body.velocity.set(0, 10, 0); 
-                        setTimeout(() => moveToTray(obj), 100); 
-                    }
-                });
-                
-                if (itemsToMatch.every(o => o.inTray)) {
-                    checkMatches();
-                }
-            }
-        }
-
-        function activateShakeBooster() {
-            if (!gameActive || shakeCount <= 0) return;
-            
-            shakeCount--;
-            updateBoostersUI();
-            
-            objects.forEach(obj => {
-                if (!obj.inTray && !obj.isDocked && !obj.pendingRemoval && obj.body) {
-                    // Apply random upward and side force to shuffle
-                    obj.body.velocity.set(
-                        (Math.random() - 0.5) * 24, // X kick
-                        13 + Math.random() * 13,    // Y up kick
-                        (Math.random() - 0.5) * 24  // Z kick
-                    );
-                    
-                    // Random rotation spin
-                    obj.body.angularVelocity.set(
-                        Math.random() * 8,
-                        Math.random() * 8,
-                        Math.random() * 8
-                    );
-                    
-                    obj.body.wakeUp();
-                }
-            });
-        }
-
-        function activateSpringBooster() {
-            if (!gameActive || springCount <= 0 || tray.length === 0) return;
-
-            // Find the last added item that isn't pending removal
-            const undoItem = tray[tray.length - 1];
-            if (!undoItem || undoItem.pendingRemoval) return;
-
-            springCount--;
-            updateBoostersUI();
-
-            // Logic to undock
-            tray.pop(); // Remove from tray array
-            
-            undoItem.inTray = false;
-            undoItem.isDocked = false;
-            undoItem.isMovingToTray = false;
-            
-            // Re-enable 3D
-            undoItem.mesh.visible = true;
-            
-            // Respawn above the center of the board, but lower so it stays in view
-            // Height reduced from 18 to 10
-            undoItem.body.position.set(0, 10, 0); 
-            undoItem.body.velocity.set(
-                (Math.random() - 0.5) * 2, // Slight random horizontal drift
-                -5,                        // Stronger downward push to get it back in play fast
-                (Math.random() - 0.5) * 2
-            );
-            undoItem.body.angularVelocity.set(Math.random(), Math.random(), Math.random());
-            
-            // Re-add physics
-            world.addBody(undoItem.body);
-            undoItem.body.wakeUp();
-
-            updateTrayUI();
-        }
-
-        function activateIcegunBooster() {
-            if (!gameActive || iceCount <= 0 || isTimeFrozen) return;
-
-            iceCount--;
-            updateBoostersUI();
-            isTimeFrozen = true;
-            
-            const timerEl = document.getElementById('timer');
-            timerEl.classList.add('frozen');
-
-            setTimeout(() => {
-                isTimeFrozen = false;
-                if(document.getElementById('timer')) {
-                    document.getElementById('timer').classList.remove('frozen');
-                }
-            }, 10000);
-        }
-
-        // --- INTERACTION ---
-
-        function onPointerDown(event) {
-            // Prevent default browser zooming/scrolling on canvas
-            if(event.target === renderer.domElement) event.preventDefault();
-            
-            if(!gameActive) return;
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-
-            // Interactable objects
-            const interactableMeshes = objects
-                .filter(o => !o.inTray && !o.isMovingToTray && o.mesh)
-                .map(o => o.mesh);
-
-            const intersects = raycaster.intersectObjects(interactableMeshes);
-
-            if (intersects.length > 0) {
-                // We hit something
-                const selectedMesh = intersects[0].object;
-                draggedObject = objects.find(o => o.mesh === selectedMesh);
-                
-                if(draggedObject) {
-                    // Start Interaction logic
-                    isDragging = false; // reset
-                    pointerStartPos.set(event.clientX, event.clientY);
-                    pointerStartTime = Date.now();
-                    
-                    const hitPoint = intersects[0].point;
-                    
-                    mouseBody.position.set(hitPoint.x, hitPoint.y, hitPoint.z);
-
-                    const localPivot = new CANNON.Vec3();
-                    const hitPointCannon = new CANNON.Vec3(hitPoint.x, hitPoint.y, hitPoint.z);
-                    draggedObject.body.pointToLocalFrame(hitPointCannon, localPivot);
-
-                    mouseConstraint = new CANNON.PointToPointConstraint(
-                        mouseBody, 
-                        new CANNON.Vec3(0,0,0), 
-                        draggedObject.body, 
-                        localPivot 
-                    );
-                    
-                    world.addConstraint(mouseConstraint);
-
-                    const planeNormal = new THREE.Vector3();
-                    camera.getWorldDirection(planeNormal);
-                    planeNormal.negate(); 
-                    dragPlane.setFromNormalAndCoplanarPoint(planeNormal, hitPoint);
-                }
-            }
-        }
-
-        function onPointerMove(event) {
-            if(event.target === renderer.domElement) event.preventDefault();
-            if(!gameActive) return;
-
-            // Update mouse vector
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            if (draggedObject && mouseConstraint) {
-                const dist = Math.hypot(event.clientX - pointerStartPos.x, event.clientY - pointerStartPos.y);
-                if(dist > 5) {
-                    isDragging = true;
-                }
-
-                raycaster.setFromCamera(mouse, camera);
-                const targetPoint = new THREE.Vector3();
-                raycaster.ray.intersectPlane(dragPlane, targetPoint);
-
-                if(targetPoint) {
-                    mouseBody.position.set(targetPoint.x, targetPoint.y, targetPoint.z);
-                    draggedObject.body.wakeUp();
-                }
-            }
-        }
-
-        function onPointerUp(event) {
-            if(!gameActive) return;
-
-            if (mouseConstraint) {
-                world.removeConstraint(mouseConstraint);
-                mouseConstraint = null;
-            }
-
-            if (draggedObject) {
-                // Click vs Drag logic
-                const duration = Date.now() - pointerStartTime;
-                const dist = Math.hypot(event.clientX - pointerStartPos.x, event.clientY - pointerStartPos.y);
-
-                if (dist < 15 && duration < 400) { // Slight tolerance increase for mobile taps
-                     if (tray.length < TRAY_SIZE) {
-                         moveToTray(draggedObject);
-                     }
-                }
-                
-                draggedObject = null;
-                isDragging = false;
-            }
-        }
-
-        function moveToTray(objData) {
-            world.remove(objData.body); // Disable physics
-            objData.isMovingToTray = true;
-            objData.inTray = true;
-            tray.push(objData);
-            checkMatches();
-        }
-
-        function updateTrayUI() {
-            for(let i = 0; i < TRAY_SIZE; i++) {
-                const slot = document.getElementById(`slot-${i}`);
-                const obj = tray[i];
-                
-                slot.className = 'tray-slot';
-                slot.innerText = '';
-
-                if (obj && obj.isDocked) {
-                    slot.innerText = obj.emoji;
-                    slot.classList.add('filled');
-                }
-            }
-        }
-
-        function getTrayPosition(index) {
-            const slotEl = document.getElementById(`slot-${index}`);
-            if(!slotEl) return new THREE.Vector3();
-
-            const rect = slotEl.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            const ndcX = (centerX / window.innerWidth) * 2 - 1;
-            const ndcY = -(centerY / window.innerHeight) * 2 + 1;
-
-            const vector = new THREE.Vector3(ndcX, ndcY, 0.5);
-            vector.unproject(camera);
-            
-            const dir = vector.sub(camera.position).normalize();
-            const distance = 8; 
-            return camera.position.clone().add(dir.multiplyScalar(distance));
-        }
-
-        function checkMatches() {
-            const counts = {};
-            tray.forEach(obj => {
-                if(!obj.pendingRemoval) {
-                    counts[obj.typeId] = (counts[obj.typeId] || 0) + 1;
-                }
-            });
-
-            let matchFoundId = null;
-            for(const id in counts) {
-                if(counts[id] >= 3) {
-                    matchFoundId = parseInt(id);
-                    break;
-                }
-            }
-
-            if (matchFoundId !== null) {
-                const itemsToRemove = [];
-                let foundCount = 0;
-                
-                for(let i = 0; i < tray.length; i++) {
-                    const obj = tray[i];
-                    if (obj.typeId === matchFoundId && !obj.pendingRemoval) {
-                        obj.pendingRemoval = true; 
-                        itemsToRemove.push(obj);
-                        foundCount++;
-                        if (foundCount >= 3) break;
-                    }
-                }
-                
-                setTimeout(() => {
-                    itemsToRemove.forEach(obj => {
-                        const idx = tray.indexOf(obj);
-                        if (idx > -1) {
-                            const slot = document.getElementById(`slot-${idx}`);
-                            if(slot) slot.classList.add('matched');
-                        }
-                    });
-                    
-                    showCombo();
-
-                    setTimeout(() => {
-                        itemsToRemove.forEach(obj => {
-                            if(obj.mesh) scene.remove(obj.mesh);
-                            const idx = objects.indexOf(obj);
-                            if(idx > -1) objects.splice(idx, 1);
-                        });
-
-                        tray = tray.filter(obj => !itemsToRemove.includes(obj));
-                        updateTrayUI(); 
-
-                        if(objects.length === 0) {
-                            setTimeout(() => {
-                                gameActive = false;
-                                document.getElementById('win-screen').classList.remove('hidden');
-                                clearInterval(timerInterval);
-                            }, 500);
-                        }
-                    }, 300);
-
-                }, 200); 
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
             } else {
-                const pendingCount = tray.filter(o => o.pendingRemoval).length;
-                if(tray.length === TRAY_SIZE && pendingCount === 0) {
-                    setTimeout(() => {
-                        if(tray.length === TRAY_SIZE) {
-                            gameActive = false;
-                            document.getElementById('game-over-screen').classList.remove('hidden');
-                            clearInterval(timerInterval);
-                        }
-                    }, 600);
-                }
+                localStorage.setItem('theme', 'light');
             }
-        }
-        
-        function showCombo() {
-            const el = document.getElementById('combo-text');
-            el.classList.remove('pop-anim');
-            void el.offsetWidth;
-            el.classList.add('pop-anim');
-        }
+        });
 
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            document.getElementById('timer').innerText = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // Unique Categories
+        const categories = ['All', ...new Set(projects.map(p => p.category).filter(Boolean))];
+
+        // Initialize
+        function init() {
+            renderCategories();
+            renderProjects();
+            lucide.createIcons();
         }
 
-        function gameOver() {
-            gameActive = false;
-            document.getElementById('game-over-screen').classList.remove('hidden');
-            clearInterval(timerInterval);
+        // Render Categories
+        function renderCategories() {
+            categoryContainer.innerHTML = categories.map(cat => `
+                <button 
+                    onclick="setCategory('${cat}')"
+                    class="px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap
+                    ${activeCategory === cat 
+                        ? 'bg-brand-600 text-white shadow-md' 
+                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'}"
+                >
+                    ${cat}
+                </button>
+            `).join('');
         }
 
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        // Global function for onclick
+        window.setCategory = (cat) => {
+            activeCategory = cat;
+            renderCategories();
+            renderProjects();
+        };
 
-        function animate() {
-            requestAnimationFrame(animate);
+        // Render Projects
+        function renderProjects() {
+            const filtered = projects.filter(p => {
+                const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    p.description.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+                return matchesSearch && matchesCategory;
+            });
 
-            if (gameActive) {
-                world.step(timeStep);
-                
-                objects.forEach(obj => {
-                    if (!obj || !obj.mesh) return;
+            // Update count text
+            resultCount.textContent = `Showing ${filtered.length} project${filtered.length !== 1 ? 's' : ''}`;
 
-                    if (!obj.inTray) {
-                        obj.mesh.position.copy(obj.body.position);
-                        obj.mesh.quaternion.copy(obj.body.quaternion);
-                        if(obj.mesh.position.y < -10) {
-                            obj.body.position.set(0, 15, 0);
-                            obj.body.velocity.set(0,0,0);
-                        }
-                    } else if (!obj.isDocked) {
-                        const trayIndex = tray.indexOf(obj);
-                        if (trayIndex > -1) {
-                            const targetPos = getTrayPosition(trayIndex);
-                            obj.mesh.position.lerp(targetPos, 0.2); 
-                            obj.mesh.quaternion.slerp(camera.quaternion, 0.2);
-                            
-                            if (obj.mesh.position.distanceTo(targetPos) < 0.5) {
-                                obj.isDocked = true;
-                                obj.mesh.visible = false; 
-                                updateTrayUI(); 
-                                checkMatches(); 
-                            }
-                        }
-                    }
-                });
+            // Empty State
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                grid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
             }
-            renderer.render(scene, camera);
+
+            // Generate Cards
+            grid.innerHTML = filtered.map(project => {
+                // Determine icon based on category (simple logic)
+                let iconName = 'file-code';
+                const catLower = (project.category || '').toLowerCase();
+                if (catLower.includes('game')) iconName = 'gamepad-2';
+                else if (catLower.includes('tool') || catLower.includes('app')) iconName = 'wrench';
+                else if (catLower.includes('ui') || catLower.includes('design')) iconName = 'layout';
+                else if (catLower.includes('web')) iconName = 'globe';
+
+                return `
+                <a href="${project.file}" class="block group relative">
+                    <div class="h-full bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 card-hover shadow-sm hover:shadow-lg dark:shadow-slate-900/50 flex flex-col">
+                        
+                        ${project.featured ? `
+                        <div class="absolute top-4 right-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100">
+                                Featured
+                            </span>
+                        </div>
+                        ` : ''}
+
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="p-3 bg-brand-50 dark:bg-slate-700/50 rounded-lg text-brand-600 dark:text-brand-400 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="${iconName}" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                            ${project.title}
+                        </h3>
+                        
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mb-6 flex-grow line-clamp-2">
+                            ${project.description}
+                        </p>
+
+                        <div class="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500 mt-auto pt-4 border-t border-gray-100 dark:border-slate-700">
+                            <span>${project.date || 'No date'}</span>
+                            <span class="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                View Project <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                `;
+            }).join('');
+
+            // Re-initialize icons for new DOM elements
+            lucide.createIcons();
         }
 
-        // Boot
+        // Search Listener
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderProjects();
+        });
+
+        // Run
         init();
 
     </script>
