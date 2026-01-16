@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Pixel Piggy Flow</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2c3e50;
+            font-family: 'Fredoka One', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            max-height: 800px;
+            background: #f0f3f5;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #score-board {
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            color: #34495e;
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Start Screen Overlay */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 62, 80, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            color: white;
+            /* Ensure touches pass to button */
+            pointer-events: auto; 
+        }
+
+        .btn {
+            background: #ff6b6b;
+            border: none;
+            padding: 20px 50px; /* Larger hit area for mobile */
+            font-size: 28px;
+            color: white;
+            font-family: 'Fredoka One', cursive;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #c0392b;
+            transition: transform 0.1s;
+            pointer-events: auto;
+            margin-top: 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #c0392b;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #f1c40f;
+            text-shadow: 4px 4px 0 #e67e22;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        p {
+            font-size: 18px;
+            max-width: 80%;
+            text-align: center;
+            line-height: 1.4;
+        }
+        
+        #instruction {
+            position: absolute;
+            bottom: 265px; 
+            width: 100%;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 16px;
+            pointer-events: none;
+            opacity: 0.7;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* Game Over Screen */
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(192, 57, 43, 0.95);
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="ui-layer">
+            <div id="score-board">LEVEL 1</div>
+            <div id="instruction">ACTIVE PIGS: (0/5)</div>
+        </div>
+
+        <div id="start-screen">
+            <h1>PIXEL ORBIT</h1>
+            <p>Pigs are shuffled in stacks.</p>
+            <p>Clear top pigs to reach others!</p>
+            <button class="btn" onclick="startGame()">PLAY</button>
+        </div>
+
+        <div id="game-over-screen">
+            <h1>LEVEL FAILED</h1>
+            <p>Out of pigs!</p>
+            <button class="btn" onclick="restartLevel()">TRY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen'); 
+        const scoreBoard = document.getElementById('score-board');
+        const instruction = document.getElementById('instruction'); 
+
+        let width, height;
+        let lastTime = 0;
+        let isGameRunning = false;
+        let isLevelComplete = false; 
+        let level = 1;
+        
+        // Game State
+        let pixels = [];
+        let particles = [];
+        let pigs = []; 
+        let projectiles = [];
+        let buttons = []; // clickable areas
+        
+        // New Inventory System
+        let inventoryGrid = []; 
+        const INVENTORY_COLS = 4; 
+        
+        // Track/Grid Geometry
+        let trackBounds = { x: 0, y: 0, w: 0, h: 0 };
+        let trackPadding = 60; 
+        
+        const COLORS = {
+            'R': '#D32F2F', // Strong Red
+            'G': '#388E3C', // Forest Green
+            'B': '#1976D2', // Strong Blue
+            'Y': '#FBC02D', // Golden Yellow
+            'P': '#7B1FA2', // Deep Purple
+            'O': '#F57C00', // Solid Orange
+            'C': '#4DD0E1', // Light Cyan
+            'M': '#C2185B'  // Magenta/Dark Pink
+        };
+        
+        const PIG_COLORS = {
+            'R': '#D32F2F',
+            'G': '#388E3C',
+            'B': '#1976D2',
+            'Y': '#FBC02D',
+            'P': '#7B1FA2',
+            'O': '#F57C00',
+            'C': '#4DD0E1',
+            'M': '#C2185B'
+        };
+
+        // Levels (Pixel Maps)
+        const LEVELS = [
+            // Level 1: The Weaver (DNA Helix) - 18x16
+            [
+                "BBBBBRRBBBBYYBBBBB",
+                "BBBBRRRBBBYYYBBBBB",
+                "BBBRRRRBBYYYYBBBBB",
+                "BBRRRRGGGYYYYBBBBB",
+                "BBRRBBBGGYYYBBBBBB",
+                "BBRBBBBBGGYYBBBBBB",
+                "BBBBBBBBGGYBBBBBBB",
+                "BBBBBBBGGGGBBBBBBB",
+                "BBBBBBGGRRGGBBBBBB",
+                "BBBBBGGGRRRGGBBBBB", 
+                "BBBBGGYYRRRRGBBBBB",
+                "BBBGGYYYRRRRBBBBBB",
+                "BBGGYYYYBRRRBBBBBB",
+                "BGGYYYYBBRRRBBBBBB",
+                "GGYYYYBBBBRRBBBBBB",
+                "GYYYYBBBBBBRBBBBBB"
+            ],
+             // Level 2: Cyber Circuit - 20x16
+            [
+                "GGGGGGGGGGGGGGGGGGGG",
+                "GYYYGGGGGGGGGGGGYYYY",
+                "GYGYYGGGGGGGGGGYYGGY",
+                "GYGGYYGGGGGGGGYYGGGY",
+                "GYGGGYYGGGGGGYYGGGGY",
+                "GYGGGGYYYYYYYYGGGGGY",
+                "GYGGGGGCCPPCCGGGGGGY",
+                "GYGGGGGCCPPCCGGGGGGY",
+                "GYGGGGGCCPPCCGGGGGGY",
+                "YYYYYYGCCPPCCYYYYYYY",
+                "GYGGGGGCCPPCCGGGGGGY",
+                "GYGGGGGGGGGGGGGGGGGY",
+                "GYGYYYYYYYYYYYYYYGGY",
+                "GYGYGGGGGGGGGGGGYGGY",
+                "GYYGGGGGGGGGGGGGGYYG",
+                "GGGGGGGGGGGGGGGGGGGG"
+            ],
+            // Level 3: Confetti Cake - 18x18
+            [
+                "..................",
+                "..R.G.B.Y.P.O.C.M.",
+                ".MMMMMMMMMMMMMMMM.",
+                ".MMRMMGMMBMMYMMMM.",
+                ".MMMMMMMMMMMMMMMM.",
+                ".MMMMMMPMMOMMCMMM.",
+                ".MMMMMMMMMMMMMMMM.",
+                ".OOOOOOOOOOOOOOOO.",
+                ".OROGOBOMOPOCOMOO.",
+                ".OOOOOOOOOOOOOOOO.",
+                ".OOOOOOOOOOOOOOOO.",
+                ".CCCCCCCCCCCCCCCC.",
+                ".CRCGYCBCCCPCOCMC.",
+                ".CCCCCCCCCCCCCCCC.",
+                ".CCCCCCCCCCCCCCCC.",
+                ".RRRRRRRRRRRRRRRR.",
+                ".RGRBRYRPRORCRMRR.",
+                ".RRRRRRRRRRRRRRRR."
+            ],
+            // Level 4: Warped Checkers - 19x19
+            [
+                "RRRRRRRRRRRRRRRRRRR",
+                "RCMC CMC CMC CMC MR",
+                "RMCM CMC CMC CMC CR",
+                "RCMC CMC CMC CMC MR",
+                "RMCM CMC CMC CMC CR",
+                "OOOOOOOOOOOOOOOOOOO",
+                "OMCM CMC CMC CMC CO",
+                "OCMC CMC CMC CMC MO",
+                "OMCM CMC CMC CMC CO",
+                "OCMC CMC CMC CMC MO",
+                "GGGGGGGGGGGGGGGGGGG",
+                "GMCM CMC CMC CMC CG",
+                "GCMC CMC CMC CMC MG",
+                "GMCM CMC CMC CMC CG",
+                "GCMC CMC CMC CMC MG",
+                "BBBBBBBBBBBBBBBBBBB",
+                "BMCM CMC CMC CMC CB",
+                "BCMC CMC CMC CMC MB",
+                "BBBBBBBBBBBBBBBBBBB"
+            ],
+            // Level 5: TV Glitch - 20x20
+            [
+                "RGYB POCM RGYB POCM",
+                "MCOP BYGR MCOP BYGR",
+                "RGYB POCM RGYB POCM",
+                "MCOP BYGR MCOP BYGR",
+                "RRGG YYBB PPOO CCMM",
+                "MMCC OOPP BBYY GGRR",
+                "RGYB POCM RGYB POCM",
+                "MCOP BYGR MCOP BYGR",
+                "RGYB POCM RGYB POCM",
+                "MCOP BYGR MCOP BYGR",
+                "RRGG YYBB PPOO CCMM",
+                "MMCC OOPP BBYY GGRR",
+                "RGYB POCM RGYB POCM",
+                "MCOP BYGR MCOP BYGR",
+                "RRGG YYBB PPOO CCMM",
+                "MMCC OOPP BBYY GGRR",
+                "RGYB POCM RGYB POCM",
+                "MCOP BYGR MCOP BYGR"
+            ]
+        ];
+
+        // --- Functions for Shapes ---
+        
+        function drawRoundedCube(ctx, color, size, rotation) {
+            let s = size;
+            let r = s * 0.25; // Corner radius
+
+            ctx.save();
+            ctx.rotate(rotation);
+
+            // Draw the Main Face (Front) - Completely Flat
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(-s/2, -s/2, s, s, r); 
+            } else {
+                ctx.rect(-s/2, -s/2, s, s);
+            }
+            
+            // Solid Base Color
+            ctx.globalAlpha = 1.0; 
+            ctx.fillStyle = color || "#7f8c8d";
+            ctx.fill();
+
+            // Dark Rim/Edge
+            ctx.strokeStyle = "#2c3e50";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.restore(); 
+        }
+
+        // --- Classes ---
+
+        class Pixel {
+            constructor(c, r, colorCode) {
+                this.c = c;
+                this.r = r;
+                this.colorCode = colorCode;
+                this.color = COLORS[colorCode];
+                this.x = 0;
+                this.y = 0;
+                this.size = 0;
+                this.active = true;
+                this.targeted = false; 
+                this.scale = 1;
+            }
+
+            draw() {
+                if (!this.active && this.scale <= 0) return;
+                
+                if (!this.active) {
+                    this.scale -= 0.1;
+                    if (this.scale < 0) this.scale = 0;
+                }
+
+                ctx.fillStyle = this.color;
+                
+                let s = this.size * 0.9 * this.scale;
+                let drawX = this.x + (this.size - s) / 2;
+                let drawY = this.y + (this.size - s) / 2;
+                
+                ctx.beginPath();
+                ctx.roundRect(drawX, drawY, s, s, 4);
+                ctx.fill();
+            }
+        }
+
+        class Pig {
+            constructor(colorCode, startingAmmo) {
+                this.colorCode = colorCode;
+                this.color = PIG_COLORS[colorCode] || "#7f8c8d"; 
+                this.speed = 225; // Pixels per second
+                this.dist = 0; 
+                this.ammo = startingAmmo; 
+                this.state = 'running'; 
+                this.fireCooldown = 0;
+                this.lastShotIndex = -1; 
+                this.currentSide = -1;
+                this.scale = 1;
+                this.visualX = 0;
+                this.visualY = 0;
+                this.rotation = 0;
+                this.totalLength = 0; 
+            }
+
+            update(dt) {
+                if (this.state === 'finished') return true;
+
+                if (this.ammo <= 0) {
+                    this.scale -= 4 * dt; 
+                    if (this.scale <= 0) {
+                        return true; 
+                    }
+                }
+
+                this.dist += this.speed * dt;
+                
+                const t = trackBounds;
+                const topLen = t.w;
+                const rightLen = t.h;
+                const bottomLen = t.w;
+                const leftLen = t.h;
+                this.totalLength = topLen + rightLen + bottomLen + leftLen;
+
+                if (this.dist >= this.totalLength) {
+                    this.dist = this.dist % this.totalLength;
+                }
+                
+                let currentDist = this.dist;
+                let x, y, side; 
+
+                if (currentDist < topLen) {
+                    side = 0;
+                    x = t.x + currentDist;
+                    y = t.y;
+                    this.rotation = 0;
+                } else if (currentDist < topLen + rightLen) {
+                    side = 1;
+                    x = t.x + t.w;
+                    y = t.y + (currentDist - topLen);
+                    this.rotation = Math.PI / 2;
+                } else if (currentDist < topLen + rightLen + bottomLen) {
+                    side = 2;
+                    x = t.x + t.w - (currentDist - (topLen + rightLen));
+                    y = t.y + t.h;
+                    this.rotation = Math.PI;
+                } else {
+                    side = 3;
+                    x = t.x;
+                    y = t.y + t.h - (currentDist - (topLen + rightLen + bottomLen));
+                    this.rotation = -Math.PI / 2;
+                }
+
+                if (side !== this.currentSide) {
+                    this.currentSide = side;
+                    this.lastShotIndex = -1;
+                }
+
+                this.visualX = x;
+                this.visualY = y;
+                this.fireCooldown -= dt;
+
+                if (this.fireCooldown <= 0 && this.ammo > 0) {
+                    this.checkFire(x, y, side);
+                }
+
+                return false;
+            }
+
+            checkFire(x, y, side) {
+                let bestTarget = null;
+                let minDist = Infinity;
+                
+                for (let p of pixels) {
+                    if (!p.active || p.targeted) continue;
+                    
+                    const ALIGN_TOLERANCE = p.size * 0.4; 
+
+                    let pCx = p.x + p.size/2;
+                    let pCy = p.y + p.size/2;
+                    let dist = Infinity;
+                    let aligned = false;
+                    
+                    if (side === 0) { 
+                        if (Math.abs(x - pCx) < ALIGN_TOLERANCE && pCy > y) {
+                            dist = pCy - y;
+                            aligned = true;
+                        }
+                    } else if (side === 1) { 
+                        if (Math.abs(y - pCy) < ALIGN_TOLERANCE && pCx < x) {
+                            dist = x - pCx;
+                            aligned = true;
+                        }
+                    } else if (side === 2) { 
+                        if (Math.abs(x - pCx) < ALIGN_TOLERANCE && pCy < y) {
+                            dist = y - pCy;
+                            aligned = true;
+                        }
+                    } else if (side === 3) { 
+                        if (Math.abs(y - pCy) < ALIGN_TOLERANCE && pCx > x) {
+                            dist = pCx - x;
+                            aligned = true;
+                        }
+                    }
+
+                    if (aligned && dist < minDist) {
+                        if (side === 0 || side === 2) {
+                            if (p.c === this.lastShotIndex) continue;
+                        } else {
+                            if (p.r === this.lastShotIndex) continue;
+                        }
+
+                        minDist = dist;
+                        bestTarget = p;
+                    }
+                }
+
+                if (bestTarget && bestTarget.colorCode === this.colorCode) {
+                    this.fire(x, y, bestTarget, side);
+                    this.fireCooldown = 0.03; 
+                }
+            }
+
+            fire(sx, sy, target, side) {
+                let tx = target.x + target.size/2;
+                let ty = target.y + target.size/2;
+                
+                target.targeted = true; 
+                
+                if (side === 0 || side === 2) this.lastShotIndex = target.c;
+                else this.lastShotIndex = target.r;
+
+                projectiles.push(new Projectile(sx, sy, tx, ty, this.color, this.colorCode, target));
+                this.ammo--;
+                
+                this.scale = 0.8; 
+                setTimeout(() => this.scale = 1, 100);
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = 'transparent'; 
+                ctx.globalCompositeOperation = 'source-over'; 
+                
+                ctx.translate(this.visualX, this.visualY);
+                ctx.scale(this.scale, this.scale);
+
+                // Draw The Cube
+                drawRoundedCube(ctx, this.color, 50, this.rotation);
+
+                // Draw Ammo (Isolated State)
+                ctx.save();
+                
+                ctx.fillStyle = "#fff";
+                ctx.strokeStyle = "#2c3e50"; 
+                ctx.lineWidth = 5; 
+                ctx.lineJoin = "round";
+                
+                ctx.font = "900 26px Arial"; 
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                
+                ctx.strokeText(this.ammo, 0, 0);
+                ctx.fillText(this.ammo, 0, 0);
+                
+                ctx.restore(); 
+                ctx.restore(); 
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, tx, ty, color, colorCode, targetPixel) {
+                this.x = x;
+                this.y = y;
+                this.tx = tx;
+                this.ty = ty;
+                this.color = color;
+                this.colorCode = colorCode;
+                this.targetPixel = targetPixel; 
+                this.speed = 1200; 
+                this.active = true;
+                
+                let dx = tx - x;
+                let dy = ty - y;
+                let len = Math.sqrt(dx*dx + dy*dy);
+                this.vx = (dx/len) * this.speed;
+                this.vy = (dy/len) * this.speed;
+            }
+
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                
+                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                    return true;
+                }
+
+                if (this.targetPixel && this.targetPixel.active) {
+                    let tCx = this.targetPixel.x + this.targetPixel.size / 2;
+                    let tCy = this.targetPixel.y + this.targetPixel.size / 2;
+                    
+                    let dx = this.x - tCx;
+                    let dy = this.y - tCy;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist < 40) {
+                        this.targetPixel.active = false;
+                        this.active = false; 
+                        createParticles(tCx, tCy, this.color);
+                        checkWin();
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                let angle = Math.random() * Math.PI * 2;
+                let speed = Math.random() * 100 + 50;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 0.6;
+            }
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.life -= dt * 2;
+                return this.life <= 0;
+            }
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, 5, 5);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // --- Functions ---
+
+        function createParticles(x, y, color) {
+            for(let i=0; i<6; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth > 500 ? 500 : window.innerWidth;
+            height = canvas.height = window.innerHeight > 800 ? 800 : window.innerHeight;
+            layoutGrid();
+            updateButtons(); 
+        }
+
+        function layoutGrid() {
+            if (pixels.length === 0) return;
+            
+            let maxC = 0, maxR = 0;
+            pixels.forEach(p => {
+                if (p.c > maxC) maxC = p.c;
+                if (p.r > maxR) maxR = p.r;
+            });
+
+            let gridW = maxC + 1;
+            let gridH = maxR + 1;
+            
+            // Define UI Areas
+            let topMargin = 80;    // Scoreboard area
+            let bottomMargin = 280; // Inventory area
+            let sideMargin = 80;   // Side safety for pigs
+            
+            // Calculate available space for the TRACK
+            let availTrackWidth = width - sideMargin;
+            let availTrackHeight = height - topMargin - bottomMargin;
+            
+            // Calculate available space for the GRID
+            let availGridWidth = availTrackWidth - (trackPadding * 2);
+            let availGridHeight = availTrackHeight - (trackPadding * 2);
+            
+            if (availGridWidth < 10) availGridWidth = 10; 
+            if (availGridHeight < 10) availGridHeight = 10; 
+
+            // Determine Pixel Size to fit
+            let sizeByW = availGridWidth / gridW;
+            let sizeByH = availGridHeight / gridH;
+
+            let pixelSize = Math.min(sizeByW, sizeByH);
+            
+            let totalGridW = gridW * pixelSize;
+            let totalGridH = gridH * pixelSize;
+            
+            let startX = (width - totalGridW) / 2;
+            let targetTrackBottom = height - 290;
+            let startY = targetTrackBottom - totalGridH - trackPadding;
+            
+            if (startY < topMargin + trackPadding) {
+                startY = topMargin + trackPadding;
+            }
+
+            pixels.forEach(p => {
+                p.x = startX + p.c * pixelSize;
+                p.y = startY + p.r * pixelSize;
+                p.size = pixelSize;
+            });
+
+            trackBounds = {
+                x: startX - trackPadding,
+                y: startY - trackPadding,
+                w: totalGridW + (trackPadding * 2),
+                h: totalGridH + (trackPadding * 2)
+            };
+        }
+
+        function loadLevel(lvlIndex) {
+            isLevelComplete = false; 
+            pixels = [];
+            pigs = [];
+            inventoryGrid = []; 
+            projectiles = [];
+            
+            let map = LEVELS[lvlIndex % LEVELS.length];
+            let neededColors = {};
+
+            map.forEach((row, r) => {
+                row.split('').forEach((char, c) => {
+                    // FIX: Strictly check if the character exists in our COLORS map
+                    // This ignores spaces (' '), dots ('.'), or any typos in the level data
+                    if (COLORS[char]) {
+                        pixels.push(new Pixel(c, r, char));
+                        neededColors[char] = (neededColors[char] || 0) + 1;
+                    }
+                });
+            });
+
+            layoutGrid();
+
+            // 1. GATHER ALL PIGS NEEDED FOR THE LEVEL
+            let allPigs = []; 
+            
+            for (let col in neededColors) {
+                let totalPixels = neededColors[col];
+                const TARGET_AMMO_PER_PIG = 15;
+                let count = Math.ceil(totalPixels / TARGET_AMMO_PER_PIG); 
+                count += 1; 
+                if (count < 2) count = 2; 
+
+                let baseAmmo = Math.floor(totalPixels / count);
+                let remainder = totalPixels % count;
+                
+                for(let i=0; i<count; i++) {
+                    let ammo = (i < remainder) ? baseAmmo + 1 : baseAmmo;
+                    if(ammo < 1) ammo = 1;
+                    allPigs.push({ color: col, ammo: ammo, visualOffset: 0 });
+                }
+            }
+            
+            // 2. SHUFFLE
+            allPigs.sort(() => Math.random() - 0.5);
+            
+            // 3. DISTRIBUTE
+            inventoryGrid = Array.from({ length: INVENTORY_COLS }, () => []);
+            allPigs.forEach((pig, index) => {
+                inventoryGrid[index % INVENTORY_COLS].push(pig);
+            });
+            
+            scoreBoard.innerText = "LEVEL " + (level);
+            updateButtons();
+        }
+
+        function updateButtons() {
+            buttons = []; 
+            let colWidth = 60;
+            let spacing = 10;
+            let totalWidth = INVENTORY_COLS * (colWidth + spacing);
+            if (totalWidth > width - 20) {
+                let scale = (width - 40) / totalWidth;
+                colWidth *= scale;
+                spacing *= scale;
+                totalWidth = INVENTORY_COLS * (colWidth + spacing);
+            }
+            let startX = (width - totalWidth) / 2 + (colWidth/2);
+            let baseY = height - 185; 
+
+            for(let i=0; i<INVENTORY_COLS; i++) {
+                let x = startX + i * (colWidth + spacing);
+                if (inventoryGrid[i] && inventoryGrid[i].length > 0) {
+                    buttons.push({
+                        x: x,
+                        y: baseY,
+                        r: colWidth / 2,
+                        slotIndex: i
+                    });
+                }
+            }
+        }
+
+        function spawnPig(slotIndex) {
+            if (pigs.length >= 5) return;
+
+            let colStack = inventoryGrid[slotIndex];
+            if (!colStack || colStack.length === 0) return;
+
+            if (pigs.length > 0) {
+                 let lastPig = pigs[pigs.length-1];
+                 if (lastPig.dist < 35) return; 
+            }
+
+            let pigConfig = colStack.shift(); 
+            colStack.forEach(p => p.visualOffset += 1);
+
+            let p = new Pig(pigConfig.color, pigConfig.ammo);
+            pigs.push(p);
+            updateButtons();
+        }
+
+        function updateInventoryAnimations(dt) {
+            for(let i=0; i<INVENTORY_COLS; i++) {
+                let stack = inventoryGrid[i];
+                if (!stack) continue;
+                stack.forEach(p => {
+                    if (p.visualOffset > 0) {
+                        p.visualOffset -= dt * 5; 
+                        if (p.visualOffset < 0) p.visualOffset = 0;
+                    }
+                });
+            }
+        }
+
+        function checkWin() {
+            if (pixels.every(p => !p.active)) {
+                isLevelComplete = true; 
+                setTimeout(() => {
+                    level++;
+                    loadLevel(level - 1);
+                }, 1500);
+            }
+        }
+
+        function checkFail() {
+            if (isLevelComplete) return;
+            if (pigs.length > 0 || projectiles.length > 0) return;
+
+            let totalPigsLeft = 0;
+            inventoryGrid.forEach(stack => totalPigsLeft += stack.length);
+            if (totalPigsLeft > 0) return;
+
+            if (pixels.every(p => !p.active)) return;
+
+            failLevel();
+        }
+
+        function failLevel() {
+            isGameRunning = false;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function restartLevel() {
+            gameOverScreen.style.display = 'none';
+            isGameRunning = true;
+            loadLevel(level - 1); 
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop(timestamp) {
+            if (!isGameRunning) return;
+            
+            let dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            instruction.innerText = `ACTIVE PIGS: (${pigs.length}/5)`;
+
+            ctx.clearRect(0, 0, width, height);
+            
+            // FIX: GLOBAL RESET to prevent "washed out" board
+            ctx.globalAlpha = 1.0; 
+
+            // Draw Track
+            if (trackBounds.w > 0) {
+                ctx.strokeStyle = "rgba(0,0,0,0.1)";
+                ctx.lineWidth = 10;
+                ctx.lineJoin = "round";
+                ctx.strokeRect(trackBounds.x, trackBounds.y, trackBounds.w, trackBounds.h);
+                ctx.fillStyle = "rgba(0,0,0,0.1)";
+                ctx.beginPath();
+                ctx.arc(trackBounds.x, trackBounds.y, 10, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            pixels.forEach(p => p.draw());
+
+            pigs = pigs.filter(p => !p.update(dt));
+            pigs.forEach(p => p.draw());
+
+            updateInventoryAnimations(dt);
+            drawInventory();
+
+            projectiles = projectiles.filter(p => !p.update(dt));
+            projectiles.forEach(p => p.draw());
+
+            particles = particles.filter(p => !p.update(dt));
+            particles.forEach(p => p.draw());
+
+            checkFail();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawInventory() {
+            // Background
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.roundRect(10, height - 250, width - 20, 240, 15);
+            ctx.fill();
+            
+            ctx.fillStyle = "#34495e";
+            ctx.font = "16px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("SQUAD", width/2, height - 225);
+
+            let colWidth = 60;
+            let spacing = 10;
+            let totalWidth = INVENTORY_COLS * (colWidth + spacing);
+            if (totalWidth > width - 20) {
+                let scale = (width - 40) / totalWidth;
+                colWidth *= scale;
+                spacing *= scale;
+                totalWidth = INVENTORY_COLS * (colWidth + spacing);
+            }
+            let startX = (width - totalWidth) / 2 + (colWidth/2);
+            let baseY = height - 185; 
+
+            for(let i=0; i<INVENTORY_COLS; i++) {
+                let stack = inventoryGrid[i];
+                if (!stack || stack.length === 0) continue;
+                
+                let cx = startX + i * (colWidth + spacing);
+                let cy = baseY;
+                
+                let pigRadius = colWidth / 2;
+                let verticalSpacing = pigRadius * 2 + 5;
+                
+                let maxDraw = Math.min(stack.length, 3);
+                
+                for(let j=0; j<maxDraw; j++) {
+                    let pigData = stack[j];
+                    let drawX = cx;
+                    let offsetPx = (pigData.visualOffset || 0) * verticalSpacing;
+                    let drawY = cy + (j * verticalSpacing) + offsetPx;
+                    
+                    let isTop = (j === 0);
+                    
+                    if (!isTop) {
+                        ctx.globalAlpha = 0.5; 
+                    } else {
+                        ctx.globalAlpha = 1.0;
+                    }
+
+                    // Inventory draws with -90 rotation (upwards) relative to screen
+                    ctx.save();
+                    ctx.translate(drawX, drawY);
+                    
+                    // Draw Cube
+                    drawRoundedCube(ctx, PIG_COLORS[pigData.color], pigRadius * 2, -Math.PI / 2);
+                    
+                    // Draw Text Badge (Isolated)
+                    ctx.save();
+                    ctx.globalAlpha = 1.0; 
+                    ctx.fillStyle = "#fff";
+                    ctx.strokeStyle = "#2c3e50";
+                    ctx.lineWidth = 5;
+                    ctx.lineJoin = "round";
+
+                    let fontSize = Math.floor(pigRadius * 0.9); 
+                    ctx.font = "900 " + fontSize + "px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    
+                    ctx.strokeText(pigData.ammo, 0, 0);
+                    ctx.fillText(pigData.ammo, 0, 0);
+                    ctx.restore(); // End Text State
+
+                    ctx.restore(); // End Pig State
+                }
+                
+                if (stack.length > 3) {
+                    ctx.globalAlpha = 1.0; 
+                    ctx.fillStyle = "#7f8c8d";
+                    ctx.font = "12px Arial";
+                    ctx.fillText("+" + (stack.length - 3), cx, cy + (3 * verticalSpacing) - 10);
+                }
+            }
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            isGameRunning = true;
+            resize();
+            loadLevel(0);
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handleInput(e) {
+            // FIX: Allow default behavior (clicks) if game is not running
+            if (!isGameRunning) return;
+
+            e.preventDefault(); 
+
+            let clientX, clientY;
+            if (e.changedTouches) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            let rect = canvas.getBoundingClientRect();
+            let x = (clientX - rect.left) * (canvas.width / rect.width);
+            let y = (clientY - rect.top) * (canvas.height / rect.height);
+
+            buttons.forEach(btn => {
+                let dx = x - btn.x;
+                let dy = y - btn.y;
+                if (Math.sqrt(dx*dx + dy*dy) < btn.r + 10) {
+                    spawnPig(btn.slotIndex);
+                }
+            });
+        }
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousedown', handleInput);
+        window.addEventListener('touchstart', handleInput, {passive: false});
+
+        resize();
+
+    </script>
+		
+	    <!-- FIREBASE TRACKING -->
+	    <script type="module">
+	        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+	        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+	        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+	        const firebaseConfig = {
+	            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+	            authDomain: "prototypes-7691b.firebaseapp.com",
+	            projectId: "prototypes-7691b",
+	            storageBucket: "prototypes-7691b.firebasestorage.app",
+	            messagingSenderId: "263652926534",
+	            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+	            measurementId: "G-1X91H99N2G"
+	        };
+
+	        const GAME_ID = 'closet-sort';
+
+	        let db;
+	        let auth;
+	        let currentUser = null;
+
+	        async function initFirebase() {
+	            try {
+	                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+	                    const app = initializeApp(firebaseConfig);
+	                    db = getFirestore(app);
+	                    auth = getAuth(app);
+                    
+	                    // Crucial: Set inMemory persistence for iframe/preview support
+	                    try {
+	                        await setPersistence(auth, inMemoryPersistence);
+	                    } catch (e) {
+	                        console.warn("Persistence set warning", e);
+	                    }
+
+	                    const userCredential = await signInAnonymously(auth);
+	                    currentUser = userCredential.user;
+	                    console.log("Stats tracking active");
+	                }
+	            } catch (e) { console.error("Tracking Error - check console", e); }
+	        }
+
+	        initFirebase();
+
+	        let startTime = Date.now();
+
+	        function saveTime() {
+	            if (!db || !currentUser) return; // Guard check
+	            const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+	            if (timeSpentSeconds > 0) {
+	                const statsRef = doc(db, "game_stats", GAME_ID);
+	                updateDoc(statsRef, {
+	                    timePlayed: increment(timeSpentSeconds)
+	                }).catch(e => console.log("Stats error:", e));
+	                startTime = Date.now();
+	            }
+	        }
+
+	        window.addEventListener("visibilitychange", () => {
+	            if (document.visibilityState === 'hidden') saveTime();
+	            else startTime = Date.now();
+	        });
+	        window.addEventListener("beforeunload", saveTime);
+	    </script>
+</body>
+</html>

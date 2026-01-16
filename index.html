@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mladen's Prototype Lab</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#0B0E14',
+                            card: '#151923',
+                            border: '#2A303C',
+                            primary: '#00F0FF', // Neon Cyan
+                            secondary: '#7000FF', // Neon Purple
+                            text: '#E0E6ED',
+                            muted: '#94A3B8'
+                        }
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(to right, rgba(42, 48, 60, 0.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(42, 48, 60, 0.3) 1px, transparent 1px)",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0B0E14;
+        }
+        
+        .bg-grid {
+            background-size: 40px 40px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0E14; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A303C; 
+            border-radius: 0px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00F0FF; 
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 0%, rgba(0, 240, 255, 0.05) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .card-hover:hover::before {
+            transform: translateX(100%);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            border-color: #00F0FF;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+        
+        /* New styling for featured cards */
+        .card-featured {
+            border-color: rgba(245, 158, 11, 0.5); /* Amber-500 */
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+        }
+        .card-featured:hover {
+            border-color: #F59E0B;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0, 240, 255, 0.02) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100px; }
+        }
+    </style>
+</head>
+<body class="text-cyber-text min-h-screen flex flex-col font-sans antialiased overflow-x-hidden">
+    
+    <!-- Background Grid -->
+    <div class="fixed inset-0 bg-grid-pattern bg-grid pointer-events-none z-0"></div>
+    <div class="scanline fixed inset-0 pointer-events-none z-0"></div>
+
+    <!-- Header -->
+    <header class="border-b border-cyber-border bg-cyber-bg/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="absolute -inset-1 bg-cyber-primary rounded-full blur opacity-25"></div>
+                    <i data-lucide="gamepad-2" class="text-cyber-primary w-8 h-8 relative z-10"></i>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-xl font-display font-bold tracking-wider text-white uppercase neon-text">
+                        Mladen Dulanovic
+                    </h1>
+                    <span class="text-xs text-cyber-primary font-mono tracking-[0.2em] uppercase">Prototype Lab</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <!-- LinkedIn Button -->
+                <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" 
+                   class="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-700/20 border border-blue-500/50 hover:bg-blue-600/30 hover:border-blue-400 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] text-blue-100 rounded-sm transition-all duration-300 group">
+                    <i data-lucide="linkedin" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-display text-sm font-semibold tracking-wide">LinkedIn</span>
+                </a>
+
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-cyber-muted hover:text-cyber-primary transition-colors">
+                    <i data-lucide="github" class="w-6 h-6"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="relative z-10 border-b border-cyber-border bg-cyber-card/30">
+        <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-green-500 font-mono text-xs uppercase tracking-widest">System Online</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-white mb-4">
+                    Game <span class="text-cyber-primary">Prototypes</span>
+                </h2>
+                <p class="text-cyber-muted max-w-2xl text-lg">
+                    A collection of experimental mechanics, gameplay loops, and tech demos.
+                    <br class="hidden md:block">Ready to play directly in browser.
+                </p>
+            </div>
+            
+            <!-- Stats Decoration (Now Dynamic) -->
+            <div class="hidden md:flex gap-8 font-mono text-sm text-cyber-muted border-l border-cyber-border pl-8">
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Total Plays</span>
+                    <span id="global-plays" class="animate-pulse">Loading...</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Total Time</span>
+                    <span id="global-time">Loading...</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Status</span>
+                    <span id="system-status">Stable</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full relative z-10">
+        
+        <!-- Search and Filter Section -->
+        <div class="mb-12 space-y-6">
+            <div class="flex flex-col md:flex-row gap-6 justify-between items-end">
+                <!-- Search -->
+                <div class="relative w-full md:max-w-md group">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-cyber-primary to-cyber-secondary rounded opacity-20 group-hover:opacity-60 transition duration-500 blur"></div>
+                    <div class="relative flex items-center bg-cyber-bg border border-cyber-border group-focus-within:border-cyber-primary/50 transition-colors">
+                        <div class="pl-4 text-cyber-muted group-focus-within:text-cyber-primary">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                        </div>
+                        <input type="text" id="search-input" 
+                            class="block w-full px-4 py-3 bg-transparent text-white placeholder-cyber-muted/50 focus:outline-none font-mono text-sm"
+                            placeholder="SEARCH_DATABASE...">
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2" id="category-filters">
+                    <!-- Categories injected by JS -->
+                </div>
+            </div>
+            
+            <div class="h-px w-full bg-cyber-border"></div>
+            
+            <p class="font-mono text-xs text-cyber-primary/70 tracking-widest uppercase" id="result-count">
+                // INITIALIZING_LIST...
+            </p>
+        </div>
+
+        <!-- Grid -->
+        <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-20 border border-dashed border-cyber-border rounded-lg bg-cyber-card/20">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-cyber-border/50 mb-6">
+                <i data-lucide="search-x" class="w-10 h-10 text-cyber-muted"></i>
+            </div>
+            <h3 class="text-xl font-display font-bold text-white mb-2">NO DATA FOUND</h3>
+            <p class="text-cyber-muted font-mono text-sm">Query returned 0 results. Adjust search parameters.</p>
+        </div>
+
+        <!-- Error Toast -->
+        <div id="error-toast" class="hidden fixed bottom-4 right-4 bg-red-900/90 border border-red-500 text-white px-4 py-3 rounded-lg shadow-lg z-50 max-w-sm">
+            <div class="flex items-start gap-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 mt-0.5"></i>
+                <div class="flex-1">
+                    <h4 class="font-bold text-sm">Connection Error</h4>
+                    <p class="text-xs text-red-200 mt-1" id="error-msg">Could not connect to database.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-cyber-border bg-cyber-bg z-10 relative">
+        <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-center md:text-left">
+                <p class="font-display font-bold text-lg text-white mb-1">Mladen Dulanovic</p>
+                <p class="text-sm text-cyber-muted font-mono">
+                    &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
+                </p>
+            </div>
+            <div class="flex gap-6 text-sm font-mono text-cyber-muted">
+                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">STATUS</a>
+                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LOGS</a>
+                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">CONTACT</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Imports (Module Type Required) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { firebaseConfig } from './firebase-config.js';
+
+        // ==========================================
+        // FIREBASE CONFIGURATION
+        // ==========================================
+        
+        // Initialize Firebase
+        let db;
+        let auth;
+        let currentUser = null;
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    // Crucial fix: Set persistence to inMemory to avoid browser blocking
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence fallback warning:", e);
+                    }
+
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    console.log("Firebase Initialized & Signed In: " + currentUser.uid);
+                    
+                    document.getElementById('system-status').textContent = "Connected";
+                    document.getElementById('system-status').className = "text-green-400";
+                    subscribeToStats();
+                } else {
+                    console.warn("Firebase not configured. Please create firebase-config.js and add your Firebase configuration.");
+                }
+            } catch (e) {
+                console.error("Firebase Error:", e);
+                const errorToast = document.getElementById('error-toast');
+                const errorMsg = document.getElementById('error-msg');
+                const statusEl = document.getElementById('system-status');
+                
+                statusEl.textContent = "Offline";
+                statusEl.className = "text-red-500 animate-pulse";
+                
+                document.getElementById('global-plays').textContent = "---";
+                document.getElementById('global-time').textContent = "---";
+                
+                errorToast.classList.remove('hidden');
+                
+                if (e.code === 'auth/operation-not-allowed') {
+                    errorMsg.textContent = "Enable Anonymous Auth in Firebase Console!";
+                } else if (e.code === 'permission-denied') {
+                    errorMsg.textContent = "Enable Firestore in Cloud Console or Check Security Rules!";
+                } else {
+                    errorMsg.textContent = e.message || "Unknown connection error.";
+                }
+            }
+        }
+
+        // ==========================================
+        // PROJECT DATA
+        // ==========================================
+        // Added 'id' field to map to Firestore documents
+        const projects = [
+            {
+                id: "block-away", 
+                title: "Block Away",
+                file: "block away.html",
+                description: "Clear board by clicking on objects that fly away in the direction of the arrow.",
+                category: "Puzzle",
+                date: "2026-01-15",
+                featured: true,
+                version: "1.0"
+            },
+            {
+                id: "mind-match-3d",
+                title: "Mind Match 3D",
+                file: "mind match 3d.html",
+                description: "Match objects by context in a 3D environment.",
+                category: "Puzzle",
+                date: "2026-01-15",
+                featured: true,
+                version: "1.0"
+            },
+            {
+                id: "closet-sort",
+                title: "Closet Sort",
+                file: "closet sort.html",
+                description: "Organize luxury items on shelves. Match 3 to clear.",
+                category: "Puzzle",
+                date: "2026-01-20",
+                featured: false,
+                version: "1.0"
+            },
+            {
+                id: "monopoly-mini",
+                title: "Monopoly Mini Games",
+                file: "monopoly mini games.html",
+                description: "Collection of dice-based mini games with board mechanics.",
+                category: "Board",
+                date: "2026-01-15",
+                featured: false,
+                version: "1.0"
+            },
+            {
+                id: "pixel-destroyer",
+                title: "Pixel Destroyer",
+                file: "pixel.html",
+                description: "Arcade style pixel destruction mechanics test.",
+                category: "Arcade",
+                date: "2026-01-15",
+                featured: false,
+                version: "1.0"
+            },
+            {
+                id: "dice-roller",
+                title: "Dice Roller",
+                file: "dice-roller.html",
+                description: "Physics-based random dice generation utility.",
+                category: "Tool",
+                date: "2026-01-15",
+                featured: false,
+                version: "1.0"
+            }
+        ];
+
+        // ==========================================
+        // APPLICATION LOGIC
+        // ==========================================
+
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        let activeCategory = 'All';
+        let searchQuery = '';
+        let gameStats = {}; // Stores { gameId: { plays: 0, timePlayed: 0 } }
+
+        const grid = document.getElementById('projects-grid');
+        const emptyState = document.getElementById('empty-state');
+        const searchInput = document.getElementById('search-input');
+        const categoryContainer = document.getElementById('category-filters');
+        const resultCount = document.getElementById('result-count');
+        const globalPlaysEl = document.getElementById('global-plays');
+        const globalTimeEl = document.getElementById('global-time');
+
+        // Unique Categories
+        const categories = ['All', ...new Set(projects.map(p => p.category).filter(Boolean))];
+
+        function init() {
+            renderCategories();
+            renderProjects(); // Initial render with defaults
+            lucide.createIcons();
+            
+            // Listen to Real-time Stats
+            initFirebase();
+        }
+
+        function subscribeToStats() {
+            if (!currentUser) return; // Guard
+
+            // Listen to the 'game_stats' collection
+            const q = collection(db, "game_stats");
+            onSnapshot(q, (querySnapshot) => {
+                let totalPlays = 0;
+                let totalSeconds = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    gameStats[doc.id] = {
+                        plays: data.plays || 0,
+                        timePlayed: data.timePlayed || 0
+                    };
+                    totalPlays += (data.plays || 0);
+                    totalSeconds += (data.timePlayed || 0);
+                });
+
+                // Update Header
+                globalPlaysEl.textContent = totalPlays.toLocaleString();
+                globalTimeEl.textContent = formatTime(totalSeconds);
+
+                // Re-render grid to show new numbers
+                renderProjects();
+            }, (error) => {
+                console.error("Stats subscription error:", error);
+                if (error.code === 'permission-denied') {
+                    const errorToast = document.getElementById('error-toast');
+                    const errorMsg = document.getElementById('error-msg');
+                    errorMsg.textContent = "Missing permissions. Check Security Rules.";
+                    errorToast.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Format seconds into nice string
+        function formatTime(seconds) {
+            if (!seconds) return "0m";
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+
+        // Attach functions to window because of type="module" scope
+        window.setCategory = (cat) => {
+            activeCategory = cat;
+            renderCategories();
+            renderProjects();
+        };
+
+        window.handleGameClick = async (event, gameId, url) => {
+            event.preventDefault(); // Stop navigation temporarily
+
+            if (db && currentUser) {
+                try {
+                    const statsRef = doc(db, "game_stats", gameId);
+                    // Atomically increment the 'plays' counter
+                    await setDoc(statsRef, { 
+                        plays: increment(1) 
+                    }, { merge: true });
+                } catch (e) {
+                    console.error("Error updating stats", e);
+                }
+            }
+
+            // Resume navigation
+            window.location.href = url;
+        };
+
+        function renderCategories() {
+            categoryContainer.innerHTML = categories.map(cat => `
+                <button 
+                    onclick="window.setCategory('${cat}')"
+                    class="px-5 py-2 clip-path-polygon font-display font-semibold text-sm tracking-wider uppercase transition-all duration-200 border border-cyber-border
+                    ${activeCategory === cat 
+                        ? 'bg-cyber-primary text-cyber-bg border-cyber-primary shadow-[0_0_15px_rgba(0,240,255,0.4)]' 
+                        : 'bg-cyber-card text-cyber-muted hover:text-white hover:border-cyber-primary/50'}"
+                    style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);"
+                >
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function renderProjects() {
+            const filtered = projects.filter(p => {
+                const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                    p.description.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+                return matchesSearch && matchesCategory;
+            });
+
+            resultCount.innerHTML = `// FOUND_${filtered.length}_ENTRIES`;
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } else {
+                grid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            }
+
+            grid.innerHTML = filtered.map(project => {
+                let iconName = 'gamepad-2';
+                const catLower = (project.category || '').toLowerCase();
+                if (catLower.includes('tool')) iconName = 'cpu';
+                if (catLower.includes('puzzle')) iconName = 'box-select';
+                if (catLower.includes('board')) iconName = 'dice-5';
+
+                // Get Real Stats or Default to 0
+                const stats = gameStats[project.id] || { plays: 0, timePlayed: 0 };
+                const playTimeStr = formatTime(stats.timePlayed);
+
+                // Featured Styling logic
+                const containerClass = project.featured 
+                    ? 'card-featured bg-cyber-card' 
+                    : 'bg-cyber-card border border-cyber-border';
+                
+                const iconContainerClass = project.featured
+                    ? 'bg-amber-500/10 border border-amber-500/50 text-amber-500 group-hover:bg-amber-500 group-hover:text-black group-hover:shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+                    : 'bg-cyber-bg border border-cyber-border text-cyber-primary group-hover:text-white group-hover:bg-cyber-primary group-hover:shadow-[0_0_15px_rgba(0,240,255,0.6)]';
+
+                return `
+                <a href="${project.file}" onclick="window.handleGameClick(event, '${project.id}', '${project.file}')" class="group block h-full">
+                    <div class="h-full ${containerClass} p-0 card-hover flex flex-col relative transition-all duration-300">
+                        
+                        ${project.featured ? `
+                        <div class="absolute -top-px -right-px z-10">
+                            <div class="bg-amber-500 text-black text-[10px] font-display font-bold uppercase px-3 py-1 tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                                ★ Featured
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Card Header -->
+                        <div class="p-6 pb-4 border-b border-cyber-border/50 bg-gradient-to-b from-white/5 to-transparent">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="p-3 rounded-sm ${iconContainerClass} transition-all duration-300">
+                                    <i data-lucide="${iconName}" class="w-8 h-8"></i>
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <span class="font-mono text-xs text-cyber-muted opacity-50">#${project.id.split('-')[0].toUpperCase()}</span>
+                                </div>
+                            </div>
+                            
+                            <h3 class="text-xl font-display font-bold text-white group-hover:text-cyber-primary transition-colors truncate">
+                                ${project.title}
+                            </h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="w-1.5 h-1.5 rounded-full ${project.featured ? 'bg-amber-500' : 'bg-cyber-secondary'}"></span>
+                                <span class="text-xs font-mono text-cyber-muted uppercase">${project.category}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Card Body -->
+                        <div class="p-6 flex-grow flex flex-col">
+                            <p class="text-cyber-muted text-sm leading-relaxed mb-6 line-clamp-2 font-sans font-light">
+                                ${project.description}
+                            </p>
+
+                            <div class="mt-auto space-y-4">
+                                <!-- Real Stats Display -->
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
+                                        <span class="text-[10px] font-mono text-cyber-muted uppercase">Plays</span>
+                                        <span class="text-sm font-display font-bold text-white">${stats.plays.toLocaleString()}</span>
+                                    </div>
+                                    <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
+                                        <span class="text-[10px] font-mono text-cyber-muted uppercase">Play Time</span>
+                                        <span class="text-sm font-display font-bold text-white">${playTimeStr}</span>
+                                    </div>
+                                </div>
+
+                                <div class="pt-4 border-t border-cyber-border/50 flex items-center justify-between">
+                                    <span class="font-mono text-xs text-cyber-muted">v${project.version || '1.0'}</span>
+                                    <span class="flex items-center gap-2 text-sm font-display font-semibold text-white group-hover:text-cyber-primary transition-colors">
+                                        INITIALIZE <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderProjects();
+        });
+
+        init();
+
+    </script>
+</body>
+</html>

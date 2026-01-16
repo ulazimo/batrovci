@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MindMatch3D">
+    <title>Mind Match 3D</title>
+    
+    <!-- Simple Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #2c3e50;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none; /* Critical for disabling scroll on mobile */
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            color: white;
+            font-size: 24px;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: auto;
+            width: 100%;
+            z-index: 10;
+        }
+
+        /* The Tray Area */
+        .tray-container {
+            width: 100%;
+            height: 160px; /* Slightly taller for mobile thumbs */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0,0,0,0));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            pointer-events: auto; 
+        }
+
+        .tray-slot {
+            width: 13vw; /* Slightly larger targets */
+            max-width: 65px;
+            height: 13vw;
+            max-height: 65px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            margin: 0 3px;
+            border: 2px solid rgba(255,255,255,0.3);
+            
+            /* Flex for centering Emoji */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px; 
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .tray-slot.filled {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        .tray-slot.matched {
+            background: #2ecc71;
+            transform: scale(1.2);
+            opacity: 0;
+        }
+
+        /* Booster Area */
+        .booster-container {
+            position: absolute;
+            bottom: 180px; /* Above the tray */
+            right: 20px;
+            display: flex;
+            flex-direction: row; /* Horizontal layout */
+            gap: 12px;
+            align-items: flex-end;
+            pointer-events: auto;
+            z-index: 20;
+            /* Allow wrapping if screen is narrow, though right alignment implies growing left */
+            flex-wrap: wrap-reverse; 
+            justify-content: flex-end;
+            max-width: 100%;
+            padding-right: 10px;
+        }
+
+        .booster-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .booster-btn {
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle at 30% 30%, #3498db, #2980b9);
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s;
+        }
+
+        .booster-btn.shake { background: radial-gradient(circle at 30% 30%, #9b59b6, #8e44ad); }
+        .booster-btn.fan { background: radial-gradient(circle at 30% 30%, #e67e22, #d35400); }
+        .booster-btn.spring { background: radial-gradient(circle at 30% 30%, #2ecc71, #27ae60); }
+        .booster-btn.ice { background: radial-gradient(circle at 30% 30%, #3498db, #2980b9); }
+
+        .booster-btn:active {
+            transform: scale(0.9);
+        }
+
+        .booster-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        .booster-label {
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 5px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* Overlay Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(44, 62, 80, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+            transition: opacity 0.3s;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            color: #f1c40f;
+            font-size: 42px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        p {
+            color: #ecf0f1;
+            font-size: 18px;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+            border: none;
+            padding: 18px 50px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
+            transition: transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        button.green {
+            background: linear-gradient(to bottom, #2ecc71, #27ae60);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        #timer {
+            color: #fff;
+            background: rgba(231, 76, 60, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-variant-numeric: tabular-nums;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+
+        #timer.frozen {
+            background: #3498db;
+            box-shadow: 0 0 15px #3498db;
+        }
+
+        #level-display {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Combo Text */
+        #combo-text {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 50px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #f1c40f, 0 0 10px #e67e22;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 50;
+            white-space: nowrap;
+        }
+        
+        .pop-anim {
+            animation: popUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popUp {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            40% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+        }
+
+        /* Landscape Warning */
+        #rotate-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #2c3e50;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        /* Show warning only on mobile landscape */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            #rotate-warning { display: flex; }
+        }
+
+    </style>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Cannon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+
+    <!-- Landscape Warning -->
+    <div id="rotate-warning">
+        <div style="font-size: 50px; margin-bottom: 20px;">📱↔️</div>
+        <h2>Please Rotate Device</h2>
+        <p>This game is designed for Portrait mode.</p>
+    </div>
+
+    <!-- Game UI -->
+    <div id="game-ui">
+        <div class="header">
+            <div id="level-display">Level 1</div>
+            <div id="timer">02:00</div>
+        </div>
+        
+        <!-- Booster UI -->
+        <div class="booster-container">
+            <!-- Spring (Undo) -->
+            <div class="booster-item">
+                <div class="booster-btn spring" id="spring-btn" onclick="activateSpringBooster()">
+                    ↩️
+                    <div class="booster-badge" id="spring-count">3</div>
+                </div>
+                <div class="booster-label">UNDO</div>
+            </div>
+
+            <!-- Icegun (Freeze Time) -->
+            <div class="booster-item">
+                <div class="booster-btn ice" id="ice-btn" onclick="activateIcegunBooster()">
+                    ❄️
+                    <div class="booster-badge" id="ice-count">3</div>
+                </div>
+                <div class="booster-label">FREEZE</div>
+            </div>
+
+            <!-- Shake Booster -->
+            <div class="booster-item">
+                <div class="booster-btn shake" id="shake-btn" onclick="activateShakeBooster()">
+                    🎲
+                    <div class="booster-badge" id="shake-count">3</div>
+                </div>
+                <div class="booster-label">SHUFFLE</div>
+            </div>
+
+            <!-- Fan Booster -->
+            <div class="booster-item">
+                <div class="booster-btn fan" id="fan-btn" onclick="activateFanBooster()">
+                    🌪️
+                    <div class="booster-badge" id="fan-count">3</div>
+                </div>
+                <div class="booster-label">AUTO</div>
+            </div>
+        </div>
+
+        <div id="combo-text">MATCH!</div>
+        <div class="tray-container">
+            <!-- 7 Slots Visuals -->
+            <div class="tray-slot" id="slot-0"></div>
+            <div class="tray-slot" id="slot-1"></div>
+            <div class="tray-slot" id="slot-2"></div>
+            <div class="tray-slot" id="slot-3"></div>
+            <div class="tray-slot" id="slot-4"></div>
+            <div class="tray-slot" id="slot-5"></div>
+            <div class="tray-slot" id="slot-6"></div>
+        </div>
+    </div>
+
+    <!-- Screens -->
+    <div id="start-screen" class="screen">
+        <h1>MIND MATCH 3D</h1>
+        <p>
+            <strong>THE RULES</strong><br><br>
+            Match 3 items by <u>CATEGORY</u>.<br>
+            <span style="font-size: 0.9em; opacity: 0.8">(Don't look for identical copies!)</span><br><br>
+            ✅ 🐶+🐱+🐭 (Animals)<br>
+            ✅ 🍎+🍌+🍇 (Fruit)<br><br>
+            Clear the pile before time runs out!
+        </p>
+        <button onclick="startGame()">PLAY NOW</button>
+    </div>
+
+    <div id="game-over-screen" class="screen hidden">
+        <h1 style="color: #e74c3c">TRAY FULL!</h1>
+        <p>You ran out of space.</p>
+        <button onclick="restartLevel()">TRY AGAIN</button>
+    </div>
+
+    <div id="win-screen" class="screen hidden">
+        <h1 style="color: #2ecc71">LEVEL UP!</h1>
+        <p>Excellent matching!</p>
+        <button class="green" onclick="nextLevel()">NEXT LEVEL</button>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const TRAY_SIZE = 7;
+        
+        // Expanded Contextual Matching Groups (24 Categories)
+        const THEMES = [
+            ['🐶', '🐱', '🐭'], // Pets
+            ['🍎', '🍌', '🍇'], // Fruit
+            ['⚽', '🏀', '🏈'], // Sport Balls
+            ['🚗', '✈️', '🚀'], // Vehicles
+            ['🍔', '🍕', '🍟'], // Fast Food
+            ['🔨', '🔧', '🪛'], // Tools
+            ['☀️', '☁️', '❄️'], // Weather
+            ['🎸', '🎹', '🎺'], // Instruments
+            ['⌚', '📱', '💻'], // Gadgets
+            ['👕', '👖', '👗'], // Clothes
+            ['🌹', '🌻', '🌷'], // Flowers
+            ['🦁', '🐯', '🐻'], // Wild Animals
+            // Expanded
+            ['😀', '😂', '😎'], // Faces
+            ['❤️', '💙', '💚'], // Hearts
+            ['👍', '👎', '✌️'], // Hands
+            ['🌙', '⭐', '🪐'], // Space
+            ['🐙', '🐬', '🐠'], // Ocean
+            ['🐝', '🐞', '🦋'], // Bugs
+            ['🍩', '🍪', '🍫'], // Sweets
+            ['☕', '🍺', '🍷'], // Drinks
+            ['🥦', '🥕', '🌽'], // Veggies
+            ['🚲', '🛵', '🛴'], // Bikes
+            ['📎', '📏', '✂️'], // Office
+            ['🥇', '🥈', '🥉']  // Medals
+        ];
+
+        // --- GLOBALS ---
+        let scene, camera, renderer;
+        let world; // Physics world
+        let raycaster, mouse;
+        let timeStep = 1 / 60;
+        
+        let gameActive = false;
+        let level = 1;
+        let timerInterval;
+        let timeLeft = 120;
+        let isTimeFrozen = false;
+        
+        let objects = []; // Contains { mesh, body, id, type }
+        let tray = []; // Objects currently in tray
+        
+        // Interaction Globals
+        let mouseConstraint = null;
+        let mouseBody = null;
+        let dragPlane = new THREE.Plane();
+        let isDragging = false;
+        let draggedObject = null;
+        let pointerStartPos = new THREE.Vector2();
+        let pointerStartTime = 0;
+
+        // Booster Globals
+        let fanCount = 3;
+        let shakeCount = 3;
+        let springCount = 3;
+        let iceCount = 3;
+
+        // --- INIT ---
+        function init() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x2c3e50);
+            // Reduced fog for clearer view on mobile
+            scene.fog = new THREE.Fog(0x2c3e50, 20, 60);
+            
+            // Camera (Adjusted for Portrait/Close-up)
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 28, 15);
+            camera.lookAt(0, -2, 0); 
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Slightly brighter
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 20, 5); 
+            dirLight.castShadow = true;
+            
+            // Optimized Shadow Map for Mobile (1024 instead of 2048)
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 50;
+            scene.add(dirLight);
+            
+            const rimLight = new THREE.PointLight(0x00aaff, 0.5);
+            rimLight.position.set(-10, 10, -10);
+            scene.add(rimLight);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // Limit pixel ratio to 2 to save battery/performance on high density screens
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Physics World
+            world = new CANNON.World();
+            world.gravity.set(0, -18, 0); 
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 7; // Reduced iterations slightly for mobile CPU
+
+            const physicsMaterial = new CANNON.Material("groundMaterial");
+            const physicsContactMaterial = new CANNON.ContactMaterial(physicsMaterial, physicsMaterial, {
+                friction: 0.5,
+                restitution: 0.1 
+            });
+            world.addContactMaterial(physicsContactMaterial);
+
+            // Init Interaction Bodies
+            initPhysicsDrag();
+
+            createEnvironment();
+
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Events
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Pointer Events for Drag/Click (Supports Touch & Mouse)
+            const canvas = renderer.domElement;
+            canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerUp, { passive: false });
+            window.addEventListener('pointercancel', onPointerUp, { passive: false });
+
+            animate();
+        }
+
+        function initPhysicsDrag() {
+            // Kinematic body to represent mouse position in physics world
+            const shape = new CANNON.Sphere(0.1);
+            mouseBody = new CANNON.Body({ mass: 0 }); // Mass 0 = Static/Kinematic
+            mouseBody.addShape(shape);
+            mouseBody.collisionFilterGroup = 0; // Don't collide with normal stuff
+            mouseBody.collisionFilterMask = 0;
+            world.addBody(mouseBody);
+        }
+
+        function createEnvironment() {
+            // Physics Floor
+            const groundBody = new CANNON.Body({
+                mass: 0, 
+                shape: new CANNON.Plane()
+            });
+            groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+            world.addBody(groundBody);
+
+            const gridHelper = new THREE.GridHelper(20, 20, 0x34495e, 0x34495e);
+            scene.add(gridHelper);
+
+            // Walls (Narrowed play area)
+            const wallWidth = 10;
+            const wallHeight = 20;
+            const wallDepth = 1;
+            const wallShape = new CANNON.Box(new CANNON.Vec3(wallWidth, wallHeight, wallDepth));
+            
+            const limitX = 4.5;
+            const limitZ = 6; 
+
+            // North Wall
+            const wallN = new CANNON.Body({ mass: 0 });
+            wallN.addShape(wallShape);
+            wallN.position.set(0, 5, -limitZ);
+            world.addBody(wallN);
+
+            // South Wall
+            const wallS = new CANNON.Body({ mass: 0 });
+            wallS.addShape(wallShape);
+            wallS.position.set(0, 5, limitZ);
+            world.addBody(wallS);
+
+            // West Wall
+            const wallW = new CANNON.Body({ mass: 0 });
+            wallW.addShape(wallShape);
+            wallW.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+            wallW.position.set(-limitX, 5, 0);
+            world.addBody(wallW);
+
+            // East Wall
+            const wallE = new CANNON.Body({ mass: 0 });
+            wallE.addShape(wallShape);
+            wallE.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI / 2);
+            wallE.position.set(limitX, 5, 0);
+            world.addBody(wallE);
+        }
+        
+        function createEmojiTexture(emoji) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // Tile Background
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(0, 0, 256, 256);
+            
+            // Inner Border
+            ctx.strokeStyle = '#bdc3c7';
+            ctx.lineWidth = 15;
+            ctx.strokeRect(10, 10, 236, 236);
+            
+            // Emoji
+            ctx.font = '150px Segoe UI Emoji, Apple Color Emoji, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.shadowBlur = 10;
+            ctx.fillText(emoji, 128, 138);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            // Improve texture sharpness on angled views
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            return tex;
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.add('hidden');
+            
+            level = 1;
+            setupLevel(level);
+        }
+
+        function nextLevel() {
+            document.getElementById('win-screen').classList.add('hidden');
+            level++;
+            setupLevel(level);
+        }
+
+        function restartLevel() {
+            document.getElementById('game-over-screen').classList.add('hidden');
+            setupLevel(level);
+        }
+
+        function setupLevel(lvl) {
+            gameActive = true;
+            document.getElementById('level-display').innerText = `Level ${lvl}`;
+            
+            objects.forEach(obj => {
+                scene.remove(obj.mesh);
+                if(obj.mesh.geometry) obj.mesh.geometry.dispose();
+                // We reuse materials in cache ideally, but here we let GC handle it
+                world.remove(obj.body);
+            });
+            objects = [];
+            tray = [];
+            updateTrayUI();
+
+            // Reset Boosters
+            fanCount = 3;
+            shakeCount = 3;
+            springCount = 3;
+            iceCount = 3;
+            isTimeFrozen = false;
+            document.getElementById('timer').classList.remove('frozen');
+            updateBoostersUI();
+
+            // Difficulty: Start with 6 categories (18 items). Add 2 categories (6 items) per level.
+            // Cap at total available themes.
+            const numThemes = Math.min(4 + (lvl * 2), THEMES.length);
+            
+            const shuffledThemes = [...THEMES].sort(() => 0.5 - Math.random());
+            const selectedThemes = shuffledThemes.slice(0, numThemes);
+
+            selectedThemes.forEach((themeGroup, themeIndex) => {
+                const groupID = themeIndex;
+                themeGroup.forEach(emoji => {
+                    createObject({
+                        emoji: emoji,
+                        matchId: groupID
+                    });
+                });
+            });
+
+            // Adjust timer for increased difficulty (more time for more items)
+            timeLeft = 60 + (lvl * 25); 
+            updateTimerDisplay();
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if(!gameActive || isTimeFrozen) return;
+                timeLeft--;
+                updateTimerDisplay();
+                if(timeLeft <= 0) gameOver();
+            }, 1000);
+        }
+
+        function createObject(data) {
+            const width = 1.3;
+            const height = 1.3;
+            const depth = 0.3;
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+
+            const texture = createEmojiTexture(data.emoji);
+            
+            const sideMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6 });
+            const faceMat = new THREE.MeshStandardMaterial({ map: texture });
+            
+            const materials = [
+                sideMat, sideMat, 
+                sideMat, sideMat, 
+                faceMat, faceMat 
+            ];
+            
+            const mesh = new THREE.Mesh(geometry, materials);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            const rangeX = 3.5; 
+            const rangeZ = 4;
+            
+            const x = (Math.random() - 0.5) * rangeX;
+            // Increased drop height range for higher levels to prevent physics explosion
+            const y = 8 + Math.random() * 20; 
+            const z = (Math.random() - 0.5) * rangeZ;
+            
+            mesh.position.set(x, y, z);
+            mesh.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+            
+            scene.add(mesh);
+
+            const bodyShape = new CANNON.Box(new CANNON.Vec3(width/2, height/2, depth/2));
+            const body = new CANNON.Body({
+                mass: 5,
+                shape: bodyShape,
+                linearDamping: 0.5,
+                angularDamping: 0.5
+            });
+            body.position.copy(mesh.position);
+            body.quaternion.copy(mesh.quaternion);
+            body.angularVelocity.set(Math.random(), Math.random(), Math.random());
+            world.addBody(body);
+
+            objects.push({
+                mesh: mesh,
+                body: body,
+                typeId: data.matchId,
+                emoji: data.emoji,
+                isMovingToTray: false,
+                inTray: false,
+                isDocked: false,
+                pendingRemoval: false 
+            });
+        }
+
+        // --- BOOSTER LOGIC ---
+
+        function updateBoostersUI() {
+            // Update Fan
+            document.getElementById('fan-count').innerText = fanCount;
+            document.getElementById('fan-btn').style.opacity = fanCount <= 0 ? '0.5' : '1';
+            
+            // Update Shake
+            document.getElementById('shake-count').innerText = shakeCount;
+            document.getElementById('shake-btn').style.opacity = shakeCount <= 0 ? '0.5' : '1';
+
+            // Update Spring
+            document.getElementById('spring-count').innerText = springCount;
+            document.getElementById('spring-btn').style.opacity = springCount <= 0 ? '0.5' : '1';
+
+            // Update Ice
+            document.getElementById('ice-count').innerText = iceCount;
+            document.getElementById('ice-btn').style.opacity = iceCount <= 0 ? '0.5' : '1';
+        }
+
+        function activateFanBooster() {
+            if (!gameActive || fanCount <= 0) return;
+
+            // 1. Identify counts in tray to prioritize clearing them
+            const trayCounts = {};
+            tray.forEach(o => {
+                if (!o.pendingRemoval) {
+                    trayCounts[o.typeId] = (trayCounts[o.typeId] || 0) + 1;
+                }
+            });
+
+            let targetTypeId = -1;
+
+            // Strategy A: Find a match that clears space (completes a set currently in tray)
+            const trayTypeIds = Object.keys(trayCounts).map(Number);
+            trayTypeIds.sort((a, b) => trayCounts[b] - trayCounts[a]);
+
+            for (let id of trayTypeIds) {
+                const totalAvailable = objects.filter(o => o.typeId === id && !o.pendingRemoval).length;
+                if (totalAvailable >= 3) {
+                    targetTypeId = id;
+                    break;
+                }
+            }
+
+            // Strategy B: If tray is empty or no partials can be completed, pick random from board
+            if (targetTypeId === -1) {
+                const allCounts = {};
+                objects.forEach(o => {
+                    if (!o.pendingRemoval) {
+                        allCounts[o.typeId] = (allCounts[o.typeId] || 0) + 1;
+                    }
+                });
+                
+                const possibleTypes = Object.keys(allCounts).map(Number).filter(id => allCounts[id] >= 3);
+                if (possibleTypes.length > 0) {
+                    targetTypeId = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+                }
+            }
+
+            if (targetTypeId !== -1) {
+                fanCount--;
+                updateBoostersUI();
+
+                const allOfTarget = objects.filter(o => o.typeId === targetTypeId && !o.pendingRemoval);
+                
+                allOfTarget.sort((a, b) => {
+                    if (a.inTray && !b.inTray) return -1;
+                    if (!a.inTray && b.inTray) return 1;
+                    return 0;
+                });
+
+                const itemsToMatch = allOfTarget.slice(0, 3);
+
+                itemsToMatch.forEach(obj => {
+                    if (!obj.inTray) {
+                        obj.body.velocity.set(0, 10, 0); 
+                        setTimeout(() => moveToTray(obj), 100); 
+                    }
+                });
+                
+                if (itemsToMatch.every(o => o.inTray)) {
+                    checkMatches();
+                }
+            }
+        }
+
+        function activateShakeBooster() {
+            if (!gameActive || shakeCount <= 0) return;
+            
+            shakeCount--;
+            updateBoostersUI();
+            
+            objects.forEach(obj => {
+                if (!obj.inTray && !obj.isDocked && !obj.pendingRemoval && obj.body) {
+                    // Apply random upward and side force to shuffle
+                    obj.body.velocity.set(
+                        (Math.random() - 0.5) * 24, // X kick
+                        13 + Math.random() * 13,    // Y up kick
+                        (Math.random() - 0.5) * 24  // Z kick
+                    );
+                    
+                    // Random rotation spin
+                    obj.body.angularVelocity.set(
+                        Math.random() * 8,
+                        Math.random() * 8,
+                        Math.random() * 8
+                    );
+                    
+                    obj.body.wakeUp();
+                }
+            });
+        }
+
+        function activateSpringBooster() {
+            if (!gameActive || springCount <= 0 || tray.length === 0) return;
+
+            // Find the last added item that isn't pending removal
+            const undoItem = tray[tray.length - 1];
+            if (!undoItem || undoItem.pendingRemoval) return;
+
+            springCount--;
+            updateBoostersUI();
+
+            // Logic to undock
+            tray.pop(); // Remove from tray array
+            
+            undoItem.inTray = false;
+            undoItem.isDocked = false;
+            undoItem.isMovingToTray = false;
+            
+            // Re-enable 3D
+            undoItem.mesh.visible = true;
+            
+            // Respawn above the center of the board, but lower so it stays in view
+            // Height reduced from 18 to 10
+            undoItem.body.position.set(0, 10, 0); 
+            undoItem.body.velocity.set(
+                (Math.random() - 0.5) * 2, // Slight random horizontal drift
+                -5,                        // Stronger downward push to get it back in play fast
+                (Math.random() - 0.5) * 2
+            );
+            undoItem.body.angularVelocity.set(Math.random(), Math.random(), Math.random());
+            
+            // Re-add physics
+            world.addBody(undoItem.body);
+            undoItem.body.wakeUp();
+
+            updateTrayUI();
+        }
+
+        function activateIcegunBooster() {
+            if (!gameActive || iceCount <= 0 || isTimeFrozen) return;
+
+            iceCount--;
+            updateBoostersUI();
+            isTimeFrozen = true;
+            
+            const timerEl = document.getElementById('timer');
+            timerEl.classList.add('frozen');
+
+            setTimeout(() => {
+                isTimeFrozen = false;
+                if(document.getElementById('timer')) {
+                    document.getElementById('timer').classList.remove('frozen');
+                }
+            }, 10000);
+        }
+
+        // --- INTERACTION ---
+
+        function onPointerDown(event) {
+            // Prevent default browser zooming/scrolling on canvas
+            if(event.target === renderer.domElement) event.preventDefault();
+            
+            if(!gameActive) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Interactable objects
+            const interactableMeshes = objects
+                .filter(o => !o.inTray && !o.isMovingToTray && o.mesh)
+                .map(o => o.mesh);
+
+            const intersects = raycaster.intersectObjects(interactableMeshes);
+
+            if (intersects.length > 0) {
+                // We hit something
+                const selectedMesh = intersects[0].object;
+                draggedObject = objects.find(o => o.mesh === selectedMesh);
+                
+                if(draggedObject) {
+                    // Start Interaction logic
+                    isDragging = false; // reset
+                    pointerStartPos.set(event.clientX, event.clientY);
+                    pointerStartTime = Date.now();
+                    
+                    const hitPoint = intersects[0].point;
+                    
+                    mouseBody.position.set(hitPoint.x, hitPoint.y, hitPoint.z);
+
+                    const localPivot = new CANNON.Vec3();
+                    const hitPointCannon = new CANNON.Vec3(hitPoint.x, hitPoint.y, hitPoint.z);
+                    draggedObject.body.pointToLocalFrame(hitPointCannon, localPivot);
+
+                    mouseConstraint = new CANNON.PointToPointConstraint(
+                        mouseBody, 
+                        new CANNON.Vec3(0,0,0), 
+                        draggedObject.body, 
+                        localPivot 
+                    );
+                    
+                    world.addConstraint(mouseConstraint);
+
+                    const planeNormal = new THREE.Vector3();
+                    camera.getWorldDirection(planeNormal);
+                    planeNormal.negate(); 
+                    dragPlane.setFromNormalAndCoplanarPoint(planeNormal, hitPoint);
+                }
+            }
+        }
+
+        function onPointerMove(event) {
+            if(event.target === renderer.domElement) event.preventDefault();
+            if(!gameActive) return;
+
+            // Update mouse vector
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            if (draggedObject && mouseConstraint) {
+                const dist = Math.hypot(event.clientX - pointerStartPos.x, event.clientY - pointerStartPos.y);
+                if(dist > 5) {
+                    isDragging = true;
+                }
+
+                raycaster.setFromCamera(mouse, camera);
+                const targetPoint = new THREE.Vector3();
+                raycaster.ray.intersectPlane(dragPlane, targetPoint);
+
+                if(targetPoint) {
+                    mouseBody.position.set(targetPoint.x, targetPoint.y, targetPoint.z);
+                    draggedObject.body.wakeUp();
+                }
+            }
+        }
+
+        function onPointerUp(event) {
+            if(!gameActive) return;
+
+            if (mouseConstraint) {
+                world.removeConstraint(mouseConstraint);
+                mouseConstraint = null;
+            }
+
+            if (draggedObject) {
+                // Click vs Drag logic
+                const duration = Date.now() - pointerStartTime;
+                const dist = Math.hypot(event.clientX - pointerStartPos.x, event.clientY - pointerStartPos.y);
+
+                if (dist < 15 && duration < 400) { // Slight tolerance increase for mobile taps
+                     if (tray.length < TRAY_SIZE) {
+                         moveToTray(draggedObject);
+                     }
+                }
+                
+                draggedObject = null;
+                isDragging = false;
+            }
+        }
+
+        function moveToTray(objData) {
+            world.remove(objData.body); // Disable physics
+            objData.isMovingToTray = true;
+            objData.inTray = true;
+            tray.push(objData);
+            checkMatches();
+        }
+
+        function updateTrayUI() {
+            for(let i = 0; i < TRAY_SIZE; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                const obj = tray[i];
+                
+                slot.className = 'tray-slot';
+                slot.innerText = '';
+
+                if (obj && obj.isDocked) {
+                    slot.innerText = obj.emoji;
+                    slot.classList.add('filled');
+                }
+            }
+        }
+
+        function getTrayPosition(index) {
+            const slotEl = document.getElementById(`slot-${index}`);
+            if(!slotEl) return new THREE.Vector3();
+
+            const rect = slotEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const ndcX = (centerX / window.innerWidth) * 2 - 1;
+            const ndcY = -(centerY / window.innerHeight) * 2 + 1;
+
+            const vector = new THREE.Vector3(ndcX, ndcY, 0.5);
+            vector.unproject(camera);
+            
+            const dir = vector.sub(camera.position).normalize();
+            const distance = 8; 
+            return camera.position.clone().add(dir.multiplyScalar(distance));
+        }
+
+        function checkMatches() {
+            const counts = {};
+            tray.forEach(obj => {
+                if(!obj.pendingRemoval) {
+                    counts[obj.typeId] = (counts[obj.typeId] || 0) + 1;
+                }
+            });
+
+            let matchFoundId = null;
+            for(const id in counts) {
+                if(counts[id] >= 3) {
+                    matchFoundId = parseInt(id);
+                    break;
+                }
+            }
+
+            if (matchFoundId !== null) {
+                const itemsToRemove = [];
+                let foundCount = 0;
+                
+                for(let i = 0; i < tray.length; i++) {
+                    const obj = tray[i];
+                    if (obj.typeId === matchFoundId && !obj.pendingRemoval) {
+                        obj.pendingRemoval = true; 
+                        itemsToRemove.push(obj);
+                        foundCount++;
+                        if (foundCount >= 3) break;
+                    }
+                }
+                
+                setTimeout(() => {
+                    itemsToRemove.forEach(obj => {
+                        const idx = tray.indexOf(obj);
+                        if (idx > -1) {
+                            const slot = document.getElementById(`slot-${idx}`);
+                            if(slot) slot.classList.add('matched');
+                        }
+                    });
+                    
+                    showCombo();
+
+                    setTimeout(() => {
+                        itemsToRemove.forEach(obj => {
+                            if(obj.mesh) scene.remove(obj.mesh);
+                            const idx = objects.indexOf(obj);
+                            if(idx > -1) objects.splice(idx, 1);
+                        });
+
+                        tray = tray.filter(obj => !itemsToRemove.includes(obj));
+                        updateTrayUI(); 
+
+                        if(objects.length === 0) {
+                            setTimeout(() => {
+                                gameActive = false;
+                                document.getElementById('win-screen').classList.remove('hidden');
+                                clearInterval(timerInterval);
+                            }, 500);
+                        }
+                    }, 300);
+
+                }, 200); 
+            } else {
+                const pendingCount = tray.filter(o => o.pendingRemoval).length;
+                if(tray.length === TRAY_SIZE && pendingCount === 0) {
+                    setTimeout(() => {
+                        if(tray.length === TRAY_SIZE) {
+                            gameActive = false;
+                            document.getElementById('game-over-screen').classList.remove('hidden');
+                            clearInterval(timerInterval);
+                        }
+                    }, 600);
+                }
+            }
+        }
+        
+        function showCombo() {
+            const el = document.getElementById('combo-text');
+            el.classList.remove('pop-anim');
+            void el.offsetWidth;
+            el.classList.add('pop-anim');
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').innerText = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            clearInterval(timerInterval);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameActive) {
+                world.step(timeStep);
+                
+                objects.forEach(obj => {
+                    if (!obj || !obj.mesh) return;
+
+                    if (!obj.inTray) {
+                        obj.mesh.position.copy(obj.body.position);
+                        obj.mesh.quaternion.copy(obj.body.quaternion);
+                        if(obj.mesh.position.y < -10) {
+                            obj.body.position.set(0, 15, 0);
+                            obj.body.velocity.set(0,0,0);
+                        }
+                    } else if (!obj.isDocked) {
+                        const trayIndex = tray.indexOf(obj);
+                        if (trayIndex > -1) {
+                            const targetPos = getTrayPosition(trayIndex);
+                            obj.mesh.position.lerp(targetPos, 0.2); 
+                            obj.mesh.quaternion.slerp(camera.quaternion, 0.2);
+                            
+                            if (obj.mesh.position.distanceTo(targetPos) < 0.5) {
+                                obj.isDocked = true;
+                                obj.mesh.visible = false; 
+                                updateTrayUI(); 
+                                checkMatches(); 
+                            }
+                        }
+                    }
+                });
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Boot
+        init();
+
+    </script>
+
+    <!-- FIREBASE TRACKING -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+
+        const GAME_ID = 'mind-match-3d'; 
+
+        let db;
+        let auth;
+        let currentUser = null;
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    // Crucial: Set inMemory persistence for iframe/preview support
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence set warning", e);
+                    }
+
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    console.log("Stats tracking active");
+                }
+            } catch (e) { console.error("Tracking Error - check console", e); }
+        }
+
+        initFirebase();
+
+        let startTime = Date.now();
+
+        function saveTime() {
+            if (!db || !currentUser) return; // Guard check
+            const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+            if (timeSpentSeconds > 0) {
+                const statsRef = doc(db, "game_stats", GAME_ID);
+                updateDoc(statsRef, {
+                    timePlayed: increment(timeSpentSeconds)
+                }).catch(e => console.log("Stats error:", e));
+                startTime = Date.now();
+            }
+        }
+
+        window.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden') saveTime();
+            else startTime = Date.now();
+        });
+        window.addEventListener("beforeunload", saveTime);
+    </script>
+</body>
+</html>

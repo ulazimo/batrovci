@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Luxe Closet Organizer</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Custom scrollbar hiding for clean mobile look */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        body {
+            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+        }
+    </style>
+</head>
+<body class="bg-[#FDF6F0]">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // --- Icons (Inline SVGs to avoid dependencies) ---
+        
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const Icons = {
+            ShoppingBag: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                    <path d="M3 6h18" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
+                </IconWrapper>
+            ),
+            RotateCcw: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </IconWrapper>
+            ),
+            Trophy: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                </IconWrapper>
+            ),
+            X: (props) => (
+                <IconWrapper {...props}>
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </IconWrapper>
+            ),
+            Move: (props) => (
+                <IconWrapper {...props}>
+                    <path d="m5 9-3 3 3 3" />
+                    <path d="M9 5l3-3 3 3" />
+                    <path d="M9 19l3 3 3-3" />
+                    <path d="m19 9 3 3-3 3" />
+                    <path d="M2 12h20" />
+                    <path d="M12 2v20" />
+                </IconWrapper>
+            ),
+            Sparkles: (props) => (
+                <IconWrapper {...props}>
+                    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                    <path d="M5 3v4" />
+                    <path d="M9 3v4" />
+                    <path d="M3 5h4" />
+                    <path d="M3 9h4" />
+                </IconWrapper>
+            )
+        };
+
+        // --- Data ---
+
+        const ITEM_TYPES = [
+            { id: 'bag_red', icon: '👜', color: 'bg-red-100', name: 'Red Tote' },
+            { id: 'bag_blue', icon: '🎒', color: 'bg-blue-100', name: 'Blue Backpack' },
+            { id: 'bag_clutch', icon: '👛', color: 'bg-pink-100', name: 'Clutch' },
+            { id: 'shoe_heel', icon: '👠', color: 'bg-rose-100', name: 'Stiletto' },
+            { id: 'shoe_sneaker', icon: '👟', color: 'bg-slate-100', name: 'Sneaker' },
+            { id: 'shoe_boot', icon: '👢', color: 'bg-amber-100', name: 'Boot' },
+            { id: 'cos_lipstick', icon: '💄', color: 'bg-red-50', name: 'Lipstick' },
+            { id: 'cos_polish', icon: '💅', color: 'bg-purple-100', name: 'Nail Polish' },
+            { id: 'cos_perfume', icon: '🧴', color: 'bg-yellow-50', name: 'Perfume' },
+            { id: 'acc_ring', icon: '💍', color: 'bg-cyan-50', name: 'Diamond Ring' },
+            { id: 'acc_gem', icon: '💎', color: 'bg-blue-50', name: 'Sapphire' },
+            { id: 'acc_watch', icon: '⌚', color: 'bg-gray-100', name: 'Luxury Watch' },
+            { id: 'acc_glasses', icon: '👓', color: 'bg-orange-50', name: 'Sunnies' },
+            { id: 'top_hat', icon: '🎩', color: 'bg-zinc-100', name: 'Top Hat' },
+            { id: 'crown', icon: '👑', color: 'bg-yellow-100', name: 'Tiara' },
+        ];
+
+        const SHELVES_PER_LEVEL = [
+            { rows: 6, capacity: 3, types: 4 },  // Level 1
+            { rows: 9, capacity: 3, types: 6 },  // Level 2
+            { rows: 12, capacity: 3, types: 9 }, // Level 3
+            { rows: 14, capacity: 3, types: 11 }, // Level 4
+            { rows: 15, capacity: 3, types: 12 }, // Level 5
+        ];
+
+        // --- Logic ---
+
+        const shuffleArray = (array) => {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        };
+
+        const GameButton = ({ onClick, children, className = "", disabled = false }) => (
+            <button
+                onClick={onClick}
+                disabled={disabled}
+                className={`px-6 py-3 rounded-full font-bold shadow-md transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+            >
+                {children}
+            </button>
+        );
+
+        const Modal = ({ title, message, actionLabel, onAction, type = 'neutral' }) => {
+            let bgClass = "bg-white";
+            let titleClass = "text-gray-800";
+            let IconComponent = Icons.ShoppingBag;
+            let iconColor = "text-purple-500";
+            
+            if (type === 'win') {
+                bgClass = "bg-yellow-50";
+                titleClass = "text-yellow-700";
+                IconComponent = Icons.Trophy;
+                iconColor = "text-yellow-500";
+            } else if (type === 'lose') {
+                bgClass = "bg-red-50";
+                titleClass = "text-red-700";
+                IconComponent = Icons.X;
+                iconColor = "text-red-500";
+            }
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+                    <div className={`${bgClass} rounded-2xl p-8 shadow-2xl max-w-sm w-full text-center border-4 border-white transform transition-all scale-100`}>
+                        <div className="mb-4 flex justify-center">
+                            <IconComponent size={48} className={iconColor} />
+                        </div>
+                        <h2 className={`text-3xl font-extrabold mb-2 ${titleClass}`}>{title}</h2>
+                        <p className="text-gray-600 mb-8 text-lg leading-relaxed">{message}</p>
+                        <GameButton 
+                            onClick={onAction} 
+                            className="bg-gray-900 text-white hover:bg-gray-800 w-full"
+                        >
+                            {actionLabel}
+                        </GameButton>
+                    </div>
+                </div>
+            );
+        };
+
+        function App() {
+            const [level, setLevel] = useState(1);
+            const [gameState, setGameState] = useState('menu'); 
+            const [shelves, setShelves] = useState([]);
+            const [selected, setSelected] = useState(null);
+            const [isProcessing, setIsProcessing] = useState(false);
+
+            const startLevel = useCallback((lvlNum) => {
+                const config = SHELVES_PER_LEVEL[Math.min(lvlNum - 1, SHELVES_PER_LEVEL.length - 1)];
+                
+                const availableTypes = shuffleArray([...ITEM_TYPES]).slice(0, config.types);
+                
+                let itemPool = [];
+                availableTypes.forEach(type => {
+                    itemPool.push({...type, uniqueId: Math.random()});
+                    itemPool.push({...type, uniqueId: Math.random()});
+                    itemPool.push({...type, uniqueId: Math.random()});
+                });
+
+                const totalSlots = config.rows * config.capacity;
+                const emptySlotsCount = totalSlots - itemPool.length;
+                
+                let masterList = [...itemPool];
+                for (let i = 0; i < emptySlotsCount; i++) {
+                    masterList.push(null);
+                }
+
+                masterList = shuffleArray(masterList);
+
+                const newShelves = [];
+                for (let r = 0; r < config.rows; r++) {
+                    const start = r * config.capacity;
+                    const end = start + config.capacity;
+                    newShelves.push(masterList.slice(start, end));
+                }
+
+                setShelves(newShelves);
+                setSelected(null);
+                setGameState('playing');
+                setIsProcessing(false);
+            }, []);
+
+            const handleSlotClick = (r, c) => {
+                if (gameState !== 'playing' || isProcessing) return;
+
+                const clickedItem = shelves[r][c];
+
+                if (!selected) {
+                    if (clickedItem) {
+                        setSelected({ r, c });
+                    }
+                    return;
+                }
+
+                if (selected.r === r && selected.c === c) {
+                    setSelected(null);
+                    return;
+                }
+
+                const newShelves = [...shelves.map(row => [...row])];
+                const sourceItem = newShelves[selected.r][selected.c];
+                const targetItem = newShelves[r][c];
+
+                newShelves[selected.r][selected.c] = targetItem;
+                newShelves[r][c] = sourceItem;
+
+                setShelves(newShelves);
+                setSelected(null);
+                
+                setIsProcessing(true);
+                setTimeout(() => {
+                    checkMatches(newShelves, [r, selected.r]);
+                }, 200);
+            };
+
+            const checkMatches = (currentShelves, rowsToCheck) => {
+                let matchFound = false;
+                const uniqueRowsToCheck = [...new Set(rowsToCheck)];
+                const shelvesCopy = currentShelves.map(row => row.map(item => item ? { ...item } : null));
+
+                uniqueRowsToCheck.forEach(rowIndex => {
+                    const row = shelvesCopy[rowIndex];
+                    
+                    const counts = {};
+                    row.forEach(item => {
+                        if (item) {
+                            counts[item.id] = (counts[item.id] || 0) + 1;
+                        }
+                    });
+
+                    const matchId = Object.keys(counts).find(id => counts[id] >= 3);
+                    
+                    if (matchId) {
+                        matchFound = true;
+                        let removed = 0;
+                        for(let i=0; i<row.length; i++) {
+                            if (row[i] && row[i].id === matchId && removed < 3) {
+                                row[i].isMatching = true; 
+                                removed++;
+                            }
+                        }
+                    }
+                });
+
+                if (matchFound) {
+                    setShelves(shelvesCopy); 
+                    
+                    setTimeout(() => {
+                        const cleanShelves = shelvesCopy.map(row => row.map(item => item?.isMatching ? null : item));
+                        setShelves(cleanShelves);
+                        setIsProcessing(false);
+                        checkWin(cleanShelves);
+                    }, 350); 
+                } else {
+                    setIsProcessing(false);
+                }
+            };
+
+            const checkWin = (currentShelves) => {
+                let hasItems = false;
+                currentShelves.forEach(row => {
+                    row.forEach(item => {
+                        if (item) hasItems = true;
+                    });
+                });
+
+                if (!hasItems) {
+                    if (level >= SHELVES_PER_LEVEL.length) {
+                        setGameState('win');
+                    } else {
+                        setGameState('level-complete');
+                    }
+                }
+            };
+
+            const handleNextLevel = () => {
+                const nextLevel = level + 1;
+                setLevel(nextLevel);
+                startLevel(nextLevel);
+            };
+
+            const handleRetry = () => {
+                startLevel(level);
+            };
+
+            const handleResetGame = () => {
+                setLevel(1);
+                startLevel(1);
+            };
+
+            const renderItem = (item) => {
+                if (!item) return null;
+
+                const matchAnim = item.isMatching 
+                    ? 'scale-150 rotate-12 opacity-0 ring-4 ring-yellow-400 z-50 brightness-150 blur-sm' 
+                    : '';
+
+                return (
+                    <div 
+                        className={`
+                            w-full h-full
+                            flex items-center justify-center 
+                            rounded-md shadow-sm border border-black/5 
+                            select-none transition-all duration-300 ease-in-out
+                            text-xl sm:text-3xl
+                            ${item.color}
+                            ${matchAnim}
+                        `}
+                    >
+                        <span className="drop-shadow-sm filter">{item.icon}</span>
+                        {item.isMatching && (
+                            <div className="absolute animate-spin text-yellow-500">
+                                <Icons.Sparkles size={32} />
+                            </div>
+                        )}
+                        <div className="absolute inset-0 bg-white/10 rounded-md pointer-events-none"></div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="h-[100dvh] bg-[#FDF6F0] text-slate-800 font-sans flex flex-col items-center select-none overflow-hidden">
+                    
+                    <header className="w-full max-w-lg px-4 py-3 flex items-center justify-between z-10 bg-[#FDF6F0]/95 backdrop-blur-sm shadow-sm shrink-0">
+                        <div className="flex items-center gap-2">
+                           <div className="bg-pink-500 text-white p-1.5 rounded-lg shadow-lg">
+                             <Icons.ShoppingBag size={20} />
+                           </div>
+                           <div>
+                             <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Luxe</h1>
+                             <p className="text-[10px] font-medium text-pink-600 uppercase tracking-widest leading-none">Organizer</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100 text-sm font-semibold text-slate-600">
+                            Lvl {level}
+                          </div>
+                          <button onClick={handleRetry} className="p-2 bg-white rounded-full hover:bg-slate-100 text-slate-600 transition-colors shadow-sm" title="Restart Level">
+                            <Icons.RotateCcw size={18} />
+                          </button>
+                        </div>
+                    </header>
+
+                    <main className="w-full max-w-md px-2 py-2 flex flex-col justify-start items-center flex-1 overflow-y-auto">
+                        
+                        <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 shadow-xl border border-white/60 w-full mb-4">
+                            <div className="mb-2 flex justify-between items-center text-xs text-slate-500 px-1 font-medium">
+                                <span><Icons.Move size={12} className="inline mr-1"/> Tap to Move</span>
+                                <span>Match 3</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                                {shelves.map((shelf, rIndex) => (
+                                    <div key={rIndex} className="relative group">
+                                        <div className="absolute inset-0 bg-[#E6D5C8] rounded-lg shadow-inner border-[3px] border-[#D4C4B7]"></div>
+                                        
+                                        <div className="relative z-10 flex gap-1 p-2 items-end justify-center h-16 sm:h-20">
+                                            {shelf.map((item, cIndex) => {
+                                                const isSelected = selected?.r === rIndex && selected?.c === cIndex;
+                                                return (
+                                                    <div 
+                                                        key={cIndex}
+                                                        onClick={() => handleSlotClick(rIndex, cIndex)}
+                                                        className={`
+                                                            relative flex-1 aspect-square max-w-[3.5rem]
+                                                            rounded-md transition-all duration-200 cursor-pointer
+                                                            ${!item ? 'bg-black/5 hover:bg-black/10 border border-dashed border-black/10' : ''}
+                                                            ${isSelected ? 'transform -translate-y-1 ring-2 ring-pink-400 z-20 shadow-lg' : 'active:scale-95'}
+                                                        `}
+                                                    >
+                                                        {renderItem(item)}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+                    
+                    <footer className="w-full py-2 bg-slate-50 text-center text-[10px] text-slate-400 shrink-0">
+                       Luxe Closet Organizer
+                    </footer>
+
+                    {gameState === 'menu' && (
+                        <Modal 
+                            title="Closet Organizer" 
+                            message="Time to tidy up! Tap an item to pick it up, then tap an empty spot to move it. Swap items if needed. Gather 3 of the same item on one shelf to clear them!"
+                            actionLabel="Start Organizing" 
+                            onAction={() => startLevel(1)} 
+                        />
+                    )}
+
+                    {gameState === 'level-complete' && (
+                        <Modal 
+                            type="win"
+                            title="Shelf Cleared!" 
+                            message="Perfect organization. The closet looks much better."
+                            actionLabel="Next Closet" 
+                            onAction={handleNextLevel} 
+                        />
+                    )}
+
+                    {gameState === 'win' && (
+                        <Modal 
+                            type="win"
+                            title="Organization Guru!" 
+                            message="You've mastered the art of luxury organization!"
+                            actionLabel="Play Again" 
+                            onAction={handleResetGame} 
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+
+    <!-- FIREBASE TRACKING -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+
+        const GAME_ID = 'closet-sort';
+
+        let db;
+        let auth;
+        let currentUser = null;
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    // Crucial: Set inMemory persistence for iframe/preview support
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence set warning", e);
+                    }
+
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    console.log("Stats tracking active");
+                }
+            } catch (e) { console.error("Tracking Error - check console", e); }
+        }
+
+        initFirebase();
+
+        let startTime = Date.now();
+
+        function saveTime() {
+            if (!db || !currentUser) return; // Guard check
+            const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+            if (timeSpentSeconds > 0) {
+                const statsRef = doc(db, "game_stats", GAME_ID);
+                updateDoc(statsRef, {
+                    timePlayed: increment(timeSpentSeconds)
+                }).catch(e => console.log("Stats error:", e));
+                startTime = Date.now();
+            }
+        }
+
+        window.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden') saveTime();
+            else startTime = Date.now();
+        });
+        window.addEventListener("beforeunload", saveTime);
+    </script>
+</body>
+</html>
