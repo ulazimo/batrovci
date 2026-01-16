@@ -11,7 +11,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Google Fonts: Orbitron (Headers) & Rajdhani (Body) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -181,19 +181,19 @@
                 </p>
             </div>
             
-            <!-- Stats Decoration -->
+            <!-- Stats Decoration (Now Dynamic) -->
             <div class="hidden md:flex gap-8 font-mono text-sm text-cyber-muted border-l border-cyber-border pl-8">
                 <div class="flex flex-col">
-                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Build Ver</span>
-                    <span>v2.0.24</span>
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Total Plays</span>
+                    <span id="global-plays" class="animate-pulse">Loading...</span>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Engine</span>
-                    <span>HTML5/JS</span>
+                    <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Total Time</span>
+                    <span id="global-time">Loading...</span>
                 </div>
                 <div class="flex flex-col">
                     <span class="text-xs uppercase tracking-widest text-cyber-primary mb-1">Status</span>
-                    <span>Stable</span>
+                    <span id="system-status">Stable</span>
                 </div>
             </div>
         </div>
@@ -245,6 +245,17 @@
             <p class="text-cyber-muted font-mono text-sm">Query returned 0 results. Adjust search parameters.</p>
         </div>
 
+        <!-- Error Toast -->
+        <div id="error-toast" class="hidden fixed bottom-4 right-4 bg-red-900/90 border border-red-500 text-white px-4 py-3 rounded-lg shadow-lg z-50 max-w-sm">
+            <div class="flex items-start gap-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 mt-0.5"></i>
+                <div class="flex-1">
+                    <h4 class="font-bold text-sm">Connection Error</h4>
+                    <p class="text-xs text-red-200 mt-1" id="error-msg">Could not connect to database.</p>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- Footer -->
@@ -264,12 +275,85 @@
         </div>
     </footer>
 
-    <script>
+    <!-- Firebase Imports (Module Type Required) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
         // ==========================================
-        // CONFIGURATION
+        // FIREBASE CONFIGURATION
         // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+
+        // Initialize Firebase
+        let db;
+        let auth;
+        let currentUser = null;
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    // Crucial fix: Set persistence to inMemory to avoid browser blocking
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence fallback warning:", e);
+                    }
+
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    console.log("Firebase Initialized & Signed In: " + currentUser.uid);
+                    
+                    document.getElementById('system-status').textContent = "Connected";
+                    document.getElementById('system-status').className = "text-green-400";
+                    subscribeToStats();
+                } else {
+                    console.warn("Firebase not configured.");
+                }
+            } catch (e) {
+                console.error("Firebase Error:", e);
+                const errorToast = document.getElementById('error-toast');
+                const errorMsg = document.getElementById('error-msg');
+                const statusEl = document.getElementById('system-status');
+                
+                statusEl.textContent = "Offline";
+                statusEl.className = "text-red-500 animate-pulse";
+                
+                document.getElementById('global-plays').textContent = "---";
+                document.getElementById('global-time').textContent = "---";
+                
+                errorToast.classList.remove('hidden');
+                
+                if (e.code === 'auth/operation-not-allowed') {
+                    errorMsg.textContent = "Enable Anonymous Auth in Firebase Console!";
+                } else if (e.code === 'permission-denied') {
+                    errorMsg.textContent = "Enable Firestore in Cloud Console or Check Security Rules!";
+                } else {
+                    errorMsg.textContent = e.message || "Unknown connection error.";
+                }
+            }
+        }
+
+        // ==========================================
+        // PROJECT DATA
+        // ==========================================
+        // Added 'id' field to map to Firestore documents
         const projects = [
             {
+                id: "block-away", 
                 title: "Block Away",
                 file: "block away.html",
                 description: "Clear board by clicking on objects that fly away in the direction of the arrow.",
@@ -279,6 +363,7 @@
                 version: "1.0"
             },
             {
+                id: "mind-match-3d",
                 title: "Mind Match 3D",
                 file: "mind match 3d.html",
                 description: "Match objects by context in a 3D environment.",
@@ -288,6 +373,27 @@
                 version: "1.0"
             },
             {
+                id: "closet-sort",
+                title: "Luxe Closet",
+                file: "closet sort.html",
+                description: "Organize luxury items on shelves. Match 3 to clear.",
+                category: "Puzzle",
+                date: "2026-01-20",
+                featured: true,
+                version: "1.0"
+            },
+            {
+                id: "match-factory",
+                title: "Match Factory 3D",
+                file: "factory.html",
+                description: "Physics-based 3D matching game with a moving tray.",
+                category: "Puzzle",
+                date: "2026-01-20",
+                featured: false,
+                version: "1.0"
+            },
+            {
+                id: "monopoly-mini",
                 title: "Monopoly Mini Games",
                 file: "monopoly mini games.html",
                 description: "Collection of dice-based mini games with board mechanics.",
@@ -297,6 +403,7 @@
                 version: "1.0"
             },
             {
+                id: "pixel-destroyer",
                 title: "Pixel Destroyer",
                 file: "pixel.html",
                 description: "Arcade style pixel destruction mechanics test.",
@@ -306,15 +413,7 @@
                 version: "1.0"
             },
             {
-                title: "Closet Sort",
-                file: "closet sort.html",
-                description: "Organise your closet.",
-                category: "Puzzle",
-                date: "2026-01-16",
-                featured: false,
-                version: "1.0"
-            },
-			{
+                id: "dice-roller",
                 title: "Dice Roller",
                 file: "dice-roller.html",
                 description: "Physics-based random dice generation utility.",
@@ -323,42 +422,113 @@
                 featured: false,
                 version: "1.0"
             }
-            
         ];
 
         // ==========================================
-        // LOGIC
+        // APPLICATION LOGIC
         // ==========================================
 
         document.getElementById('year').textContent = new Date().getFullYear();
 
         let activeCategory = 'All';
         let searchQuery = '';
+        let gameStats = {}; // Stores { gameId: { plays: 0, timePlayed: 0 } }
 
         const grid = document.getElementById('projects-grid');
         const emptyState = document.getElementById('empty-state');
         const searchInput = document.getElementById('search-input');
         const categoryContainer = document.getElementById('category-filters');
         const resultCount = document.getElementById('result-count');
+        const globalPlaysEl = document.getElementById('global-plays');
+        const globalTimeEl = document.getElementById('global-time');
 
         // Unique Categories
         const categories = ['All', ...new Set(projects.map(p => p.category).filter(Boolean))];
 
         function init() {
             renderCategories();
-            renderProjects();
+            renderProjects(); // Initial render with defaults
             lucide.createIcons();
-            animateText();
+            
+            // Listen to Real-time Stats
+            initFirebase();
         }
 
-        function animateText() {
-            // Simple type-in effect for the search placeholder on load could go here
+        function subscribeToStats() {
+            if (!currentUser) return; // Guard
+
+            // Listen to the 'game_stats' collection
+            const q = collection(db, "game_stats");
+            onSnapshot(q, (querySnapshot) => {
+                let totalPlays = 0;
+                let totalSeconds = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    gameStats[doc.id] = {
+                        plays: data.plays || 0,
+                        timePlayed: data.timePlayed || 0
+                    };
+                    totalPlays += (data.plays || 0);
+                    totalSeconds += (data.timePlayed || 0);
+                });
+
+                // Update Header
+                globalPlaysEl.textContent = totalPlays.toLocaleString();
+                globalTimeEl.textContent = formatTime(totalSeconds);
+
+                // Re-render grid to show new numbers
+                renderProjects();
+            }, (error) => {
+                console.error("Stats subscription error:", error);
+                if (error.code === 'permission-denied') {
+                    const errorToast = document.getElementById('error-toast');
+                    const errorMsg = document.getElementById('error-msg');
+                    errorMsg.textContent = "Missing permissions. Check Security Rules.";
+                    errorToast.classList.remove('hidden');
+                }
+            });
         }
+
+        // Format seconds into nice string
+        function formatTime(seconds) {
+            if (!seconds) return "0m";
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+
+        // Attach functions to window because of type="module" scope
+        window.setCategory = (cat) => {
+            activeCategory = cat;
+            renderCategories();
+            renderProjects();
+        };
+
+        window.handleGameClick = async (event, gameId, url) => {
+            event.preventDefault(); // Stop navigation temporarily
+
+            if (db && currentUser) {
+                try {
+                    const statsRef = doc(db, "game_stats", gameId);
+                    // Atomically increment the 'plays' counter
+                    await setDoc(statsRef, { 
+                        plays: increment(1) 
+                    }, { merge: true });
+                } catch (e) {
+                    console.error("Error updating stats", e);
+                }
+            }
+
+            // Resume navigation
+            window.location.href = url;
+        };
 
         function renderCategories() {
             categoryContainer.innerHTML = categories.map(cat => `
                 <button 
-                    onclick="setCategory('${cat}')"
+                    onclick="window.setCategory('${cat}')"
                     class="px-5 py-2 clip-path-polygon font-display font-semibold text-sm tracking-wider uppercase transition-all duration-200 border border-cyber-border
                     ${activeCategory === cat 
                         ? 'bg-cyber-primary text-cyber-bg border-cyber-primary shadow-[0_0_15px_rgba(0,240,255,0.4)]' 
@@ -369,12 +539,6 @@
                 </button>
             `).join('');
         }
-
-        window.setCategory = (cat) => {
-            activeCategory = cat;
-            renderCategories();
-            renderProjects();
-        };
 
         function renderProjects() {
             const filtered = projects.filter(p => {
@@ -401,10 +565,9 @@
                 if (catLower.includes('puzzle')) iconName = 'box-select';
                 if (catLower.includes('board')) iconName = 'dice-5';
 
-                // Random stat bar width for visual flair (NOT REAL DATA)
-                const statWidth = Math.floor(Math.random() * 40) + 60;
-                // Random ID for visual flair (NOT REAL DATA)
-                const randomId = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                // Get Real Stats or Default to 0
+                const stats = gameStats[project.id] || { plays: 0, timePlayed: 0 };
+                const playTimeStr = formatTime(stats.timePlayed);
 
                 // Featured Styling logic
                 const containerClass = project.featured 
@@ -416,7 +579,7 @@
                     : 'bg-cyber-bg border border-cyber-border text-cyber-primary group-hover:text-white group-hover:bg-cyber-primary group-hover:shadow-[0_0_15px_rgba(0,240,255,0.6)]';
 
                 return `
-                <a href="${project.file}" class="group block h-full">
+                <a href="${project.file}" onclick="window.handleGameClick(event, '${project.id}', '${project.file}')" class="group block h-full">
                     <div class="h-full ${containerClass} p-0 card-hover flex flex-col relative transition-all duration-300">
                         
                         ${project.featured ? `
@@ -433,7 +596,9 @@
                                 <div class="p-3 rounded-sm ${iconContainerClass} transition-all duration-300">
                                     <i data-lucide="${iconName}" class="w-8 h-8"></i>
                                 </div>
-                                <span class="font-mono text-xs text-cyber-muted opacity-50">#${randomId}</span>
+                                <div class="flex flex-col items-end">
+                                    <span class="font-mono text-xs text-cyber-muted opacity-50">#${project.id.split('-')[0].toUpperCase()}</span>
+                                </div>
                             </div>
                             
                             <h3 class="text-xl font-display font-bold text-white group-hover:text-cyber-primary transition-colors truncate">
@@ -452,14 +617,15 @@
                             </p>
 
                             <div class="mt-auto space-y-4">
-                                <!-- Fake Stat Bar -->
-                                <div class="space-y-1">
-                                    <div class="flex justify-between text-[10px] font-mono text-cyber-muted uppercase">
-                                        <span>Completion</span>
-                                        <span>${statWidth}%</span>
+                                <!-- Real Stats Display -->
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
+                                        <span class="text-[10px] font-mono text-cyber-muted uppercase">Plays</span>
+                                        <span class="text-sm font-display font-bold text-white">${stats.plays.toLocaleString()}</span>
                                     </div>
-                                    <div class="h-1 w-full bg-cyber-bg rounded-full overflow-hidden">
-                                        <div class="h-full bg-cyber-border ${project.featured ? 'group-hover:bg-amber-500' : 'group-hover:bg-cyber-primary'} transition-colors duration-500" style="width: ${statWidth}%"></div>
+                                    <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
+                                        <span class="text-[10px] font-mono text-cyber-muted uppercase">Play Time</span>
+                                        <span class="text-sm font-display font-bold text-white">${playTimeStr}</span>
                                     </div>
                                 </div>
 

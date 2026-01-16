@@ -649,5 +649,71 @@ class Game {
 const game = new Game();
 
 </script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+        authDomain: "prototypes-7691b.firebaseapp.com",
+        projectId: "prototypes-7691b",
+        storageBucket: "prototypes-7691b.firebasestorage.app",
+        messagingSenderId: "263652926534",
+        appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+        measurementId: "G-1X91H99N2G"
+    };
+
+    const GAME_ID = 'block-away'; 
+
+    let db;
+    let auth;
+    let currentUser = null;
+
+    async function initFirebase() {
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Crucial: Set inMemory persistence for iframe/preview support
+                try {
+                    await setPersistence(auth, inMemoryPersistence);
+                } catch (e) {
+                    console.warn("Persistence set warning", e);
+                }
+
+                const userCredential = await signInAnonymously(auth);
+                currentUser = userCredential.user;
+                console.log("Stats tracking active");
+            }
+        } catch (e) { console.error("Tracking Error - check console", e); }
+    }
+
+    initFirebase();
+
+    let startTime = Date.now();
+
+    function saveTime() {
+        if (!db || !currentUser) return; // Guard check
+        const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+        if (timeSpentSeconds > 0) {
+            const statsRef = doc(db, "game_stats", GAME_ID);
+            updateDoc(statsRef, {
+                timePlayed: increment(timeSpentSeconds)
+            }).catch(e => console.log("Stats error:", e));
+            startTime = Date.now();
+        }
+    }
+
+    window.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'hidden') saveTime();
+        else startTime = Date.now();
+    });
+    window.addEventListener("beforeunload", saveTime);
+</script>
 </body>
 </html>
