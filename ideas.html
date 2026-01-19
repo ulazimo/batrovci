@@ -146,8 +146,26 @@
 
         async function loadIdeas() {
             if (!db) return;
-            // Clear placeholders and any loaded ideas
+            const querySnapshot = await getDocs(collection(db, "ideas"));
+            const ideas = [];
+            querySnapshot.forEach((doc) => {
+                ideas.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Clear placeholders
             ideasList.innerHTML = ''; 
+
+            ideas.sort((a,b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+
+            ideas.forEach(idea => {
+                const ideaEl = document.createElement('div');
+                ideaEl.className = "bg-cyber-card/80 border border-cyber-border p-6 rounded-lg";
+                ideaEl.innerHTML = `
+                    <h3 class="text-xl font-display font-bold text-white mb-2">${idea.title}</h3>
+                    <p class="text-cyber-muted">${idea.description}</p>
+                `;
+                ideasList.appendChild(ideaEl);
+            });
         }
 
         ideaForm.addEventListener('submit', async (e) => {
