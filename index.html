@@ -481,15 +481,20 @@
                 let totalPlays = 0;
                 let totalSeconds = 0;
 
-                querySnapshot.forEach((doc) => {
+                querySnapshot.docChanges().forEach((change) => {
+                    const doc = change.doc;
                     const data = doc.data();
                     gameStats[doc.id] = {
                         plays: data.plays || 0,
                         timePlayed: data.timePlayed || 0
                     };
-                    totalPlays += (data.plays || 0);
-                    totalSeconds += (data.timePlayed || 0);
                 });
+
+                // Recalculate totals
+                for (const gameId in gameStats) {
+                    totalPlays += gameStats[gameId].plays;
+                    totalSeconds += gameStats[gameId].timePlayed;
+                }
 
                 // Update Header
                 globalPlaysEl.textContent = totalPlays.toLocaleString();
