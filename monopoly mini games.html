@@ -1403,7 +1403,7 @@
             measurementId: "G-1X91H99N2G"
         };
 
-        const GAME_ID = 'closet-sort';
+        const GAME_ID = 'monopoly-mini';
 
         let db;
         let auth;
@@ -1426,6 +1426,11 @@
                     const userCredential = await signInAnonymously(auth);
                     currentUser = userCredential.user;
                     console.log("Stats tracking active");
+
+                    const statsRef = doc(db, "game_stats", GAME_ID);
+                    updateDoc(statsRef, {
+                        plays: increment(1)
+                    }).catch(e => console.log("Stats error:", e));
                 }
             } catch (e) { console.error("Tracking Error - check console", e); }
         }

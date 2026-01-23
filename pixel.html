@@ -1027,6 +1027,13 @@
             loadLevel(0);
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
+
+            if (db && currentUser) {
+                const statsRef = doc(db, "game_stats", GAME_ID);
+                updateDoc(statsRef, {
+                    plays: increment(1)
+                }).catch(e => console.log("Stats error:", e));
+            }
         }
 
         function handleInput(e) {
@@ -1081,7 +1088,7 @@
 	            measurementId: "G-1X91H99N2G"
 	        };
 
-	        const GAME_ID = 'pixel-destroyer';
+	        const GAME_ID = 'pixel-orbit';
 
 	        let db;
 	        let auth;
