@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Monopoly Mini Games</title>
     
     <!-- React & ReactDOM -->
@@ -59,6 +59,9 @@
         }
         body::-webkit-scrollbar { 
             display: none; 
+        }
+        body {
+            overscroll-behavior-y: none;
         }
     </style>
 </head>
@@ -1338,9 +1341,9 @@
           };
 
           return (
-            <div className="h-[100dvh] w-full bg-slate-900 flex flex-col font-sans overflow-hidden select-none">
+            <div className="h-screen w-full bg-slate-900 flex flex-col font-sans overflow-hidden select-none">
               <div className="flex-none bg-slate-800 p-3 pt-4 flex justify-between items-center text-white shadow-xl z-20 rounded-b-2xl border-b border-slate-700">
-                <div className="flex flex-col"><span className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Net Worth</span><div className="flex items-center gap-1"><DollarSign className="text-green-400" size={14} /><span className="font-black text-lg">{money.toLocaleString()}</span></div></div>
+                <div className="flex flex-col"><span className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Net Worth</span><div className="flex items-center gap-1"><DollarSign className="text-green-400" size={14} /><span className="font-black text-base sm:text-lg">{money.toLocaleString()}</span></div></div>
                 <div className="flex flex-col items-end"><span className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Level {level}</span><div className="flex items-center gap-1 bg-slate-700 px-3 py-1 rounded-full border border-slate-600"><Trophy size={12} className="text-yellow-400" /><span className="text-xs font-bold">{currentCity}</span></div></div>
               </div>
               <div className="flex-grow relative flex flex-col justify-center items-center w-full overflow-hidden">
@@ -1350,7 +1353,7 @@
                 {showDice && <div className="absolute inset-0 z-40 flex items-center justify-center gap-8 bg-black/20 backdrop-blur-[2px]"><Dice3D value={diceValues[0]} rolling={isRolling} /><Dice3D value={diceValues[1]} rolling={isRolling} /></div>}
                 <div className="relative w-[95vw] max-w-[500px] aspect-square grid gap-0.5 bg-slate-800 p-1.5 rounded-xl shadow-2xl border-4 border-slate-700" style={{ gridTemplateColumns: '1.5fr repeat(9, 1fr) 1.5fr', gridTemplateRows: '1.5fr repeat(9, 1fr) 1.5fr' }}>
                   <div className="bg-slate-900/50 rounded-lg flex flex-col items-center justify-center relative overflow-hidden" style={{ gridColumn: '2 / 11', gridRow: '2 / 11' }}>
-                     <div className="absolute top-4 w-full text-center"><h3 className="text-slate-500 text-[10px] font-black tracking-[0.2em] uppercase opacity-50">Monopoly Clone</h3><h2 className="text-white/20 text-4xl font-black uppercase mt-2 tracking-widest">{currentCity}</h2></div>
+                     <div className="absolute top-4 w-full text-center"><h3 className="text-slate-500 text-[8px] sm:text-[10px] font-black tracking-[0.2em] uppercase opacity-50">Monopoly Clone</h3><h2 className="text-white/20 text-3xl sm:text-4xl font-black uppercase mt-2 tracking-widest">{currentCity}</h2></div>
                      <div className="flex justify-center items-end gap-2 md:gap-4 h-24 md:h-32 w-full px-2 mt-4 z-10">
                        {buildings.map((lvl, idx) => (
                          <div key={idx} className="flex flex-col items-center justify-end h-full gap-1 group relative flex-1">
@@ -1363,7 +1366,7 @@
                   {renderBoard()}
                 </div>
               </div>
-              <div className="flex-none w-full p-4 pb-8 flex items-center justify-center gap-4 relative">
+              <div className="flex-none w-full p-2 pb-4 sm:p-4 sm:pb-8 flex items-center justify-center gap-4 relative">
                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900 to-transparent pointer-events-none -top-10"></div>
                  <div className="relative z-10 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-bold mb-1">FORCE ROLL</span><input type="number" placeholder="?" className="w-12 h-12 rounded-xl bg-slate-800 text-white text-center font-bold border-2 border-slate-700 focus:border-red-500 outline-none" value={riggedInput} onChange={(e) => setRiggedInput(e.target.value)} /></div>
                  <button onClick={handleRoll} disabled={isMoving || isRolling || dice <= 0} className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex flex-col items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.5)] border-[6px] border-white transition-all transform ${isMoving || isRolling || dice <= 0 ? 'bg-slate-600 scale-95 opacity-80' : 'bg-gradient-to-br from-red-500 to-orange-600 hover:scale-105 active:scale-90 cursor-pointer'}`}><span className="text-white font-black text-xl md:text-2xl tracking-tight drop-shadow-md">GO!</span><div className="absolute -top-3 bg-white text-slate-900 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold border border-slate-300 shadow-sm flex items-center gap-1"><Zap size={10} className="fill-purple-500 text-purple-500" />{dice}</div></button>
