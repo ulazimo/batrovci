@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hunting Sniper - Pro Leveled Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+            user-select: none;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1e293b;
+        }
+        canvas {
+            background-color: #000;
+            cursor: crosshair;
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+        .ui-panel {
+            position: absolute;
+            pointer-events: none;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            width: 100%;
+            padding: 0 20px;
+        }
+        .top-hud { top: env(safe-area-inset-top, 20px); left: 0; display: flex; justify-content: space-between; align-items: flex-start; }
+        .bottom-hud { bottom: env(safe-area-inset-bottom, 40px); left: 0; text-align: center; }
+        
+        #flash-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.98);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            color: white;
+            display: none;
+            border: 1px solid #475569;
+            z-index: 100;
+            box-shadow: 0 20px 60px rgba(0,0,0,1);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        #feedback-canvas {
+            background: #0f172a;
+            border-radius: 1rem;
+            margin: 1rem auto;
+            border: 1px solid #334155;
+            width: 100%;
+            height: auto;
+        }
+
+        @keyframes pulse-ammo {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #ef4444; }
+            100% { transform: scale(1); }
+        }
+        .low-ammo { animation: pulse-ammo 0.5s infinite; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="flash-overlay"></div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-panel top-hud">
+        <div>
+            <div class="text-[10px] uppercase tracking-widest text-slate-400">Total Score</div>
+            <div class="text-4xl font-black italic" id="score">0</div>
+        </div>
+        <div class="text-right">
+            <div class="text-[10px] uppercase tracking-widest text-slate-400" id="hunt-round">Hunt 1</div>
+            <div class="text-xl font-bold text-green-400" id="hunt-goal">Target: 3</div>
+        </div>
+    </div>
+
+    <div class="ui-panel bottom-hud">
+        <div class="flex justify-center items-end gap-6 mb-2">
+            <div id="ammo-container">
+                <div class="text-[10px] uppercase font-bold text-slate-400">Ammo</div>
+                <div class="text-6xl font-black" id="ammo">10</div>
+            </div>
+            <div class="text-left pb-1">
+                <div class="text-xl font-bold text-blue-400 leading-tight" id="status-text">WAITING...</div>
+                <div class="text-[10px] text-slate-500 uppercase italic">Precision is key</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shot-analysis" class="message-box">
+        <div id="analysis-animal-name" class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">DEER</div>
+        <h3 class="text-2xl font-black text-blue-400 uppercase">IMPACT CONFIRMED</h3>
+        <canvas id="feedback-canvas" width="350" height="250"></canvas>
+        <div id="analysis-result" class="text-3xl font-black mb-1">BODY SHOT</div>
+        <div id="analysis-score" class="text-slate-400 text-sm mb-6 uppercase tracking-widest">+150 Points</div>
+        <button onclick="closeAnalysis()" class="w-full bg-white text-slate-900 font-black py-4 px-8 rounded-xl hover:bg-blue-400 transition-all uppercase tracking-widest shadow-lg text-lg">
+            Continue
+        </button>
+    </div>
+
+    <div id="message-box" class="message-box">
+        <h2 id="msg-title" class="text-5xl font-black mb-2 text-white">HUNT SUCCESS</h2>
+        <p id="msg-sub" class="text-slate-400 mb-6 tracking-widest uppercase">Summary</p>
+        <div class="text-3xl font-bold mb-8 text-green-400" id="msg-body">Score: 0</div>
+        <button id="action-btn" onclick="nextHunt()" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-500 transition-all uppercase tracking-widest shadow-xl">
+            Next Level
+        </button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const fCanvas = document.getElementById('feedback-canvas');
+    const fCtx = fCanvas.getContext('2d');
+    
+    const flash = document.getElementById('flash-overlay');
+    const scoreEl = document.getElementById('score');
+    const ammoEl = document.getElementById('ammo');
+    const ammoContainer = document.getElementById('ammo-container');
+    const huntEl = document.getElementById('hunt-round');
+    const goalEl = document.getElementById('hunt-goal');
+    const statusEl = document.getElementById('status-text');
+    
+    const analysisBox = document.getElementById('shot-analysis');
+    const analysisAnimalName = document.getElementById('analysis-animal-name');
+    const analysisResult = document.getElementById('analysis-result');
+    const analysisScore = document.getElementById('analysis-score');
+    
+    const msgBox = document.getElementById('message-box');
+    const msgTitle = document.getElementById('msg-title');
+    const msgBody = document.getElementById('msg-body');
+    const actionBtn = document.getElementById('action-btn');
+
+    const CANVAS_WIDTH = 600;
+    const CANVAS_HEIGHT = 900;
+    
+    let state = {
+        score: 0,
+        ammo: 10,
+        currentHunt: 1,
+        harvested: 0,
+        goal: 3,
+        gameOver: false,
+        analysisActive: false,
+        isWaitingForAnalysis: false,
+        shake: 0,
+        zoom: 1.0, 
+        targetZoom: 1.0, 
+        animals: [],
+        particles: [],
+        floatingTexts: [],
+        lastTime: 0,
+        mouseX: CANVAS_WIDTH / 2,
+        mouseY: CANVAS_HEIGHT / 2,
+        isAiming: false,
+        landscape: [],
+        currentLevelSpecies: []
+    };
+
+    /**
+     * HEART COORDINATES UPDATED
+     */
+    const ANIMAL_TYPES = {
+        DEER: { name: 'Deer', emoji: '🦌', size: 45, speed: 2.2, points: 150, heartSize: 12, hX: 0.48, hY: 1.14 },
+        ELK: { name: 'Elk', emoji: '🦌', size: 65, speed: 1.8, points: 300, heartSize: 15, hX: 0.38, hY: 1.32 }, // +20 higher (1.01 -> 1.32)
+        WOLF: { name: 'Wolf', emoji: '🐺', size: 38, speed: 3.8, points: 600, heartSize: 10, hX: 0.2, hY: 1.25 },
+        BEAR: { name: 'Bear', emoji: '🐻', size: 85, speed: 1.2, points: 1000, heartSize: 22, hX: -0.14, hY: 1.37 }, // +25 up, 10 back (hX -0.02 -> -0.14, hY 1.08 -> 1.37)
+        BOAR: { name: 'Wild Boar', emoji: '🐗', size: 45, speed: 2.8, points: 400, heartSize: 11, hX: 0.25, hY: 2.05 }, // +25 up (hY 1.5 -> 2.05)
+        EAGLE: { name: 'Eagle', emoji: '🦅', size: 35, speed: 4.8, points: 1500, heartSize: 8, hX: 0.28, hY: 1.06 },
+        MOOSE: { name: 'Moose', emoji: '🫎', size: 90, speed: 1.4, points: 1200, heartSize: 18, hX: 0.18, hY: 1.1 }, // 20 units backward (hX 0.4 -> 0.18)
+        FOX: { name: 'Red Fox', emoji: '🦊', size: 30, speed: 5.5, points: 800, heartSize: 9, hX: -0.36, hY: 2.16 }, // +25 up, 10 back (hX -0.03 -> -0.36, hY 1.33 -> 2.16)
+        BISON: { name: 'Bison', emoji: '🦬', size: 95, speed: 1.1, points: 1300, heartSize: 24, hX: 0.36, hY: 1.07 }, // +20 higher (hY 0.86 -> 1.07)
+        GOAT: { name: 'Mountain Goat', emoji: '🐐', size: 42, speed: 3.2, points: 450, heartSize: 11, hX: 0.3, hY: 1.85 }, // +20 higher (hY 1.37 -> 1.85)
+        COYOTE: { name: 'Coyote', emoji: '🐺', size: 35, speed: 4.5, points: 550, heartSize: 10, hX: 0.2, hY: 1.17 } // +20 higher (hY 0.6 -> 1.17)
+    };
+
+    function init() {
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+        generateLandscape();
+        startHunt(1);
+        requestAnimationFrame(gameLoop);
+    }
+
+    function generateLandscape() {
+        state.landscape = [];
+        for(let i=0; i<4; i++) {
+            state.landscape.push({
+                type: 'mountain',
+                x: i * 200 + Math.random() * 50,
+                h: 200 + Math.random() * 150,
+                w: 300 + Math.random() * 150,
+                color: `hsl(210, 12%, ${10 + Math.random() * 10}%)`
+            });
+        }
+        for(let i=0; i<25; i++) {
+            state.landscape.push({
+                type: 'tree',
+                emoji: Math.random() > 0.5 ? '🌲' : '🌳',
+                x: Math.random() * CANVAS_WIDTH,
+                y: CANVAS_HEIGHT - 60 - Math.random() * 250,
+                s: 30 + Math.random() * 50
+            });
+        }
+    }
+
+    function startHunt(num) {
+        state.currentHunt = num;
+        state.harvested = 0;
+        state.goal = (num === 1) ? 3 : Math.min(5, 3 + Math.floor(num/2));
+        const baseBonus = Math.max(1, 5 - Math.floor(num / 3));
+        state.ammo = state.goal + baseBonus;
+        state.animals = [];
+        state.gameOver = false;
+        state.analysisActive = false;
+        state.isWaitingForAnalysis = false;
+        state.zoom = 1.0;
+        state.targetZoom = 1.0;
+        
+        const allKeys = Object.keys(ANIMAL_TYPES);
+        let poolSize = Math.min(4, allKeys.length);
+        let newPool = [];
+        while (newPool.length < poolSize) {
+            let key = allKeys[Math.floor(Math.random() * allKeys.length)];
+            if (!newPool.includes(key)) newPool.push(key);
+        }
+        state.currentLevelSpecies = newPool;
+
+        huntEl.textContent = `Hunt ${num}`;
+        goalEl.textContent = `Target: ${state.goal}`;
+        updateUI();
+        msgBox.style.display = 'none';
+        analysisBox.style.display = 'none';
+        
+        setTimeout(spawnAnimal, 1000);
+    }
+
+    function spawnAnimal() {
+        if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis || state.harvested >= state.goal) return;
+        if (state.animals.filter(a => !a.dead).length > 0) return;
+
+        const typeKey = state.currentLevelSpecies[Math.floor(Math.random() * state.currentLevelSpecies.length)];
+        const type = ANIMAL_TYPES[typeKey];
+
+        const side = Math.random() > 0.5 ? -1 : 1;
+        let startY = type.emoji === '🦅' ? 100 + (Math.random() * 200) : (type.emoji === '🐗' ? CANVAS_HEIGHT - 80 : CANVAS_HEIGHT - 150 - (Math.random() * 150));
+        let verticalDrift = (Math.random() - 0.5) * 1.0;
+
+        state.animals.push({
+            x: side === -1 ? -120 : CANVAS_WIDTH + 120,
+            y: startY,
+            vy: verticalDrift,
+            type: type,
+            dir: side === -1 ? 1 : -1,
+            dead: false,
+            fallY: 0,
+            alpha: 1,
+            spawnTime: performance.now()
+        });
+        statusEl.textContent = "TARGET SPOTTED";
+        statusEl.className = "text-xl font-bold text-blue-400";
+    }
+
+    function renderEmoji(targetCtx, typeObj, size, dir, isXray) {
+        const s = size;
+        targetCtx.save();
+        const scaleX = dir === 1 ? -1 : 1;
+        targetCtx.scale(scaleX, 1);
+        if (isXray) targetCtx.globalAlpha = 0.25;
+        targetCtx.font = `${s * 2.2}px serif`;
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'middle';
+        targetCtx.fillText(typeObj.emoji, 0, -s);
+        targetCtx.restore();
+    }
+
+    function fire() {
+        if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis || state.ammo <= 0) return;
+
+        state.ammo--;
+        state.shake = 30;
+        state.isWaitingForAnalysis = true;
+        triggerFlash(0.35);
+        updateUI();
+
+        let shotData = { hit: false, tier: 'miss', animal: null, bulletX: state.mouseX, bulletY: state.mouseY };
+
+        state.animals.forEach(animal => {
+            if (animal.dead) return;
+            const bodyY = animal.y - animal.type.size * 0.5;
+            const distBody = Math.hypot(state.mouseX - animal.x, state.mouseY - bodyY);
+            
+            const hx = animal.x + (animal.dir * animal.type.size * animal.type.hX);
+            const hy = animal.y - (animal.type.size * animal.type.hY);
+            const dH = Math.hypot(state.mouseX - hx, state.mouseY - hy);
+
+            if (dH < animal.type.heartSize) {
+                shotData.hit = true;
+                shotData.animal = { ...animal };
+                if (dH < animal.type.heartSize * 0.25) shotData.tier = 'perfect';
+                else if (dH < animal.type.heartSize * 0.6) shotData.tier = 'great';
+                else shotData.tier = 'heart';
+                processHit(animal, shotData.tier);
+            } else if (distBody < animal.type.size) {
+                shotData.hit = true;
+                shotData.animal = { ...animal };
+                shotData.tier = 'body';
+                processHit(animal, 'body');
+            }
+        });
+
+        setTimeout(() => {
+            if (shotData.hit) showShotAnalysis(shotData);
+            else {
+                state.isWaitingForAnalysis = false;
+                statusEl.textContent = "MISSED!";
+                statusEl.className = "text-xl font-bold text-red-500";
+                if (state.animals.filter(a => !a.dead).length === 0) spawnAnimal();
+            }
+        }, 850);
+    }
+
+    function processHit(animal, tier) {
+        animal.dead = true;
+        state.harvested++;
+        let multiplier = 1, label = "BODY SHOT", color = "#fbbf24";
+        if (tier === 'perfect') { multiplier = 10; label = "BULLSEYE!"; color = "#ef4444"; }
+        else if (tier === 'great') { multiplier = 5; label = "GREAT HEART!"; color = "#f87171"; }
+        else if (tier === 'heart') { multiplier = 3; label = "HEART HIT"; color = "#fca5a5"; }
+
+        state.score += animal.type.points * multiplier;
+        createExplosion(animal.x, animal.y, multiplier > 1 ? '#ff0000' : '#ffffff', multiplier * 12);
+        showFloatingText(label, animal.x, animal.y - 80, color);
+    }
+
+    function showShotAnalysis(data) {
+        state.isWaitingForAnalysis = false;
+        state.analysisActive = true;
+        analysisBox.style.display = 'block';
+        const { tier, animal, bulletX, bulletY } = data;
+        
+        if (animal) analysisAnimalName.textContent = animal.type.name;
+        
+        let label = "BODY SHOT", score = animal.type.points;
+        if (tier === 'perfect') { label = "PERFECT BULLSEYE"; score *= 10; }
+        else if (tier === 'great') { label = "GREAT HEART SHOT"; score *= 5; }
+        else if (tier === 'heart') { label = "HEART SHOT"; score *= 3; }
+
+        analysisResult.textContent = label;
+        analysisResult.className = tier === 'body' ? "text-2xl font-black text-yellow-500" : "text-2xl font-black text-red-500";
+        analysisScore.textContent = `+${score} Points`;
+
+        fCtx.clearRect(0, 0, fCanvas.width, fCanvas.height);
+        if (animal) {
+            fCtx.save(); 
+            const s = animal.type.size;
+            
+            // CENTERING RE-CALCULATION
+            // We want the visual center of the emoji (which is at -s vertically)
+            // to be at the center of the canvas + the requested 30 offset.
+            const scale = Math.min(2.0, 200 / (s * 2.2));
+            const centerOffsetY = 30; // Requested shift lower
+            const finalGroundY = fCanvas.height / 2 + (s * scale) + centerOffsetY;
+            
+            fCtx.translate(fCanvas.width/2, finalGroundY);
+            fCtx.scale(scale, scale);
+            renderEmoji(fCtx, animal.type, animal.type.size, animal.dir, true);
+            
+            const hx = animal.dir * s * animal.type.hX;
+            const hy = -s * animal.type.hY;
+            fCtx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+            fCtx.beginPath(); fCtx.arc(hx, hy, animal.type.heartSize, 0, Math.PI*2); fCtx.fill();
+            fCtx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            fCtx.beginPath(); fCtx.arc(hx, hy, animal.type.heartSize * 0.6, 0, Math.PI*2); fCtx.fill();
+            fCtx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+            fCtx.beginPath(); fCtx.arc(hx, hy, animal.type.heartSize * 0.25, 0, Math.PI*2); fCtx.fill();
+            fCtx.restore();
+
+            const relX = (bulletX - animal.x) * (scale) + fCanvas.width/2;
+            const relY = (bulletY - animal.y) * (scale) + finalGroundY;
+            fCtx.strokeStyle = 'white'; fCtx.lineWidth = 3; fCtx.beginPath(); 
+            fCtx.moveTo(relX-15, relY-15); fCtx.lineTo(relX+15, relY+15); 
+            fCtx.moveTo(relX+15, relY-15); fCtx.lineTo(relX-15, relY+15); 
+            fCtx.stroke();
+            fCtx.fillStyle = '#60a5fa'; fCtx.beginPath(); fCtx.arc(relX, relY, 4, 0, Math.PI*2); fCtx.fill();
+        }
+    }
+
+    function closeAnalysis() {
+        state.analysisActive = false;
+        analysisBox.style.display = 'none';
+        updateUI();
+        if (state.harvested >= state.goal) {
+            setTimeout(() => showEndScreen("HUNT SUCCESS", `Tour Score: ${state.score}`, "Next Level"), 300);
+        } else if (state.ammo <= 0 && state.animals.filter(a => !a.dead).length === 0) {
+            setTimeout(() => showEndScreen("HUNT FAILED", "Out of Ammo", "Retry"), 300);
+        } else {
+            spawnAnimal();
+        }
+    }
+
+    function nextHunt() {
+        if (msgTitle.textContent === "HUNT FAILED") { state.score = 0; startHunt(1); }
+        else startHunt(state.currentHunt + 1);
+    }
+
+    function showEndScreen(title, body, btnText) {
+        state.gameOver = true;
+        msgTitle.textContent = title;
+        msgTitle.className = title.includes("FAILED") ? "text-4xl font-black mb-2 text-red-500" : "text-4xl font-black mb-2 text-green-500";
+        msgBody.textContent = body;
+        actionBtn.textContent = btnText;
+        msgBox.style.display = 'block';
+    }
+
+    function triggerFlash(intensity) { flash.style.opacity = intensity; }
+
+    function updateUI() {
+        scoreEl.textContent = state.score.toString();
+        ammoEl.textContent = state.ammo;
+        ammoContainer.className = state.ammo <= 2 ? "low-ammo" : "";
+    }
+
+    function update(dt) {
+        if (state.analysisActive || state.gameOver) return;
+        
+        state.targetZoom = state.isAiming ? 2.5 : 1.0;
+        state.zoom += (state.targetZoom - state.zoom) * 0.15;
+
+        const speedFactor = 1.3 - ((state.zoom - 1.0) / 1.5) * 1.0;
+
+        const currentOpacity = parseFloat(flash.style.opacity) || 0;
+        if (currentOpacity > 0) flash.style.opacity = Math.max(0, currentOpacity - 0.05);
+        if (state.shake > 0) state.shake *= 0.82;
+
+        for (let i = state.animals.length - 1; i >= 0; i--) {
+            const a = state.animals[i];
+            if (!a.dead) {
+                a.x += a.type.speed * a.dir * speedFactor; 
+                a.y += a.vy * speedFactor;
+                if (a.x < -150 || a.x > CANVAS_WIDTH + 150 || a.y < -50 || a.y > CANVAS_HEIGHT + 50) {
+                    state.animals.splice(i, 1);
+                    if (!state.gameOver) spawnAnimal();
+                }
+            } else {
+                a.fallY += 10; a.alpha -= 0.05;
+                if (a.alpha <= 0) {
+                    state.animals.splice(i, 1);
+                    if (!state.analysisActive && state.animals.length === 0 && !state.gameOver) spawnAnimal();
+                }
+            }
+        }
+        state.particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.03;
+            if (p.life <= 0) state.particles.splice(i, 1);
+        });
+        state.floatingTexts.forEach((t, i) => {
+            t.y -= 1.5; t.life -= 0.015;
+            if (t.life <= 0) state.floatingTexts.splice(i, 1);
+        });
+    }
+
+    function draw() {
+        ctx.save();
+        if (state.shake > 0.5) ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
+
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+        skyGrad.addColorStop(0, '#0f172a');
+        skyGrad.addColorStop(0.5, '#1e293b');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath(); ctx.arc(CANVAS_WIDTH * 0.2, 80, 40, 0, Math.PI*2); ctx.fill();
+
+        state.landscape.filter(l => l.type === 'mountain').forEach(m => {
+            ctx.fillStyle = m.color;
+            ctx.beginPath();
+            ctx.moveTo(m.x - m.w/2, CANVAS_HEIGHT * 0.55);
+            ctx.lineTo(m.x, CANVAS_HEIGHT * 0.55 - m.h);
+            ctx.lineTo(m.x + m.w/2, CANVAS_HEIGHT * 0.55);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = '#064e3b';
+        ctx.beginPath();
+        ctx.moveTo(0, CANVAS_HEIGHT * 0.55);
+        ctx.quadraticCurveTo(CANVAS_WIDTH * 0.5, CANVAS_HEIGHT * 0.5, CANVAS_WIDTH, CANVAS_HEIGHT * 0.55);
+        ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.lineTo(0, CANVAS_HEIGHT);
+        ctx.fill();
+
+        ctx.fillStyle = '#065f46';
+        ctx.beginPath();
+        ctx.moveTo(0, CANVAS_HEIGHT * 0.85);
+        ctx.quadraticCurveTo(CANVAS_WIDTH * 0.5, CANVAS_HEIGHT * 0.75, CANVAS_WIDTH, CANVAS_HEIGHT * 0.85);
+        ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.lineTo(0, CANVAS_HEIGHT);
+        ctx.fill();
+
+        if (state.zoom > 1.0) {
+            ctx.translate(state.mouseX, state.mouseY);
+            ctx.scale(state.zoom, state.zoom);
+            ctx.translate(-state.mouseX, -state.mouseY);
+        }
+
+        state.landscape.filter(l => l.type === 'tree').forEach(t => {
+            ctx.font = `${t.s}px serif`;
+            ctx.fillText(t.emoji, t.x, t.y);
+        });
+        
+        state.animals.forEach(a => {
+            ctx.save();
+            ctx.translate(a.x, a.y + a.fallY);
+            ctx.globalAlpha = a.alpha;
+            renderEmoji(ctx, a.type, a.type.size, a.dir, false);
+            ctx.restore();
+        });
+
+        state.particles.forEach(p => {
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+        });
+        ctx.restore(); 
+
+        state.floatingTexts.forEach(t => {
+            ctx.globalAlpha = t.life; ctx.fillStyle = t.color;
+            ctx.font = '900 42px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(t.text, t.x, t.y);
+        });
+        ctx.globalAlpha = 1;
+
+        if (!state.analysisActive) drawCrosshair();
+    }
+
+    function drawCrosshair() {
+        const x = state.mouseX; const y = state.mouseY;
+        ctx.save();
+        
+        if (state.isAiming) {
+            const grad = ctx.createRadialGradient(x, y, 90 * state.zoom, x, y, 400 * state.zoom);
+            grad.addColorStop(0, 'transparent');
+            grad.addColorStop(1, 'rgba(0,0,0,0.92)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        } else {
+            const grad = ctx.createRadialGradient(x, y, 20, x, y, 150);
+            grad.addColorStop(0, 'transparent');
+            grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+
+        ctx.strokeStyle = state.isAiming ? '#f87171' : 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x, y, state.isAiming ? 70 : 45, 0, Math.PI * 2); ctx.stroke();
+        
+        const cS = state.isAiming ? 110 : 65;
+        ctx.beginPath();
+        ctx.moveTo(x - cS, y); ctx.lineTo(x - 15, y);
+        ctx.moveTo(x + cS, y); ctx.lineTo(x + 15, y);
+        ctx.moveTo(x, y - cS); ctx.lineTo(x, y - 15);
+        ctx.moveTo(x, y + cS); ctx.lineTo(x, y + 15);
+        ctx.stroke();
+        
+        ctx.fillStyle = state.isAiming ? 'red' : 'white';
+        ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
+    function gameLoop(timestamp) {
+        update(timestamp - state.lastTime);
+        state.lastTime = timestamp;
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    const updateMouse = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        const scaleX = CANVAS_WIDTH / rect.width;
+        const scaleY = CANVAS_HEIGHT / rect.height;
+        state.mouseX = (clientX - rect.left) * scaleX;
+        state.mouseY = (clientY - rect.top) * scaleY;
+    };
+
+    canvas.addEventListener('mousemove', updateMouse);
+    canvas.addEventListener('mousedown', () => { if(!state.analysisActive && !state.isWaitingForAnalysis) state.isAiming = true; });
+    canvas.addEventListener('mouseup', () => { if(state.isAiming) fire(); state.isAiming = false; });
+    
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); updateMouse(e); if(!state.analysisActive && !state.isWaitingForAnalysis) state.isAiming = true; });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updateMouse(e); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); if(state.isAiming) fire(); state.isAiming = false; });
+
+    function createExplosion(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+            state.particles.push({ x, y, vx: (Math.random() - 0.5) * 18, vy: (Math.random() - 0.5) * 18 - 6, life: 1.0, color: color, size: Math.random() * 5 + 4 });
+        }
+    }
+
+    function showFloatingText(text, x, y, color) { state.floatingTexts.push({ text, x, y, life: 1.0, color }); }
+
+    window.onload = init;
+</script>
+
+    <!-- FIREBASE TRACKING -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+
+        const GAME_ID = 'hunting-sniper'; 
+
+        let db;
+        let auth;
+        let currentUser = null;
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    // Crucial: Set inMemory persistence for iframe/preview support
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence set warning", e);
+                    }
+
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    console.log("Stats tracking active");
+
+                    const statsRef = doc(db, "game_stats", GAME_ID);
+                    updateDoc(statsRef, {
+                        plays: increment(1)
+                    }).catch(e => console.log("Stats error:", e));
+                }
+            } catch (e) { console.error("Tracking Error - check console", e); }
+        }
+
+        initFirebase();
+
+        let startTime = Date.now();
+
+        function saveTime() {
+            if (!db || !currentUser) return; // Guard check
+            const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+            if (timeSpentSeconds > 0) {
+                const statsRef = doc(db, "game_stats", GAME_ID);
+                updateDoc(statsRef, {
+                    timePlayed: increment(timeSpentSeconds)
+                }).catch(e => console.log("Stats error:", e));
+                startTime = Date.now();
+            }
+        }
+
+        window.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden') saveTime();
+            else startTime = Date.now();
+        });
+        window.addEventListener("beforeunload", saveTime);
+    </script>
+</body>
+</html>
