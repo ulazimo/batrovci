@@ -535,10 +535,20 @@
             if (db && currentUser) {
                 try {
                     const statsRef = doc(db, "game_stats", gameId);
-                    // Atomically increment the 'plays' counter
-                    await setDoc(statsRef, { 
-                        plays: increment(1) 
-                    }, { merge: true });
+                    const docSnap = await getDoc(statsRef);
+
+                    if (docSnap.exists()) {
+                        // Document exists, just increment plays
+                        await updateDoc(statsRef, {
+                            plays: increment(1)
+                        });
+                    } else {
+                        // Document does not exist, create it with initial plays and timePlayed
+                        await setDoc(statsRef, {
+                            plays: 1, // Initialize plays to 1 for the first click
+                            timePlayed: 0 // Initialize timePlayed to 0
+                        });
+                    }
                 } catch (e) {
                     console.error("Error updating stats", e);
                 }
