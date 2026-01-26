@@ -136,6 +136,27 @@
             padding: 2px 10px;
             border-radius: 4px;
         }
+
+        @media (max-width: 600px) or (orientation: portrait) {
+            #ui-left, #ui-right {
+                font-size: 18px;
+            }
+            #ui-center {
+                top: 15px;
+            }
+            #wind-container {
+                gap: 8px;
+                padding: 6px 15px;
+                margin-top: 2px;
+            }
+            #wind-arrow {
+                font-size: 28px;
+            }
+            .instructions {
+                font-size: 12px;
+                bottom: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -298,7 +319,7 @@
             
             if (dist < 10) return; 
 
-            const power = Math.min(dist * 0.1, MAX_POWER);
+            const power = Math.min(dist * 0.12, MAX_POWER);
             const angle = Math.atan2(dy, dx);
 
             gameState.ball.vx = Math.cos(angle) * power;
@@ -348,9 +369,13 @@
             gameState.biome = biomeKeys[Math.floor((gameState.holeNumber - 1) / 5) % biomeKeys.length];
             const b = BIOMES[gameState.biome];
 
-            const currentWidth = Math.max(canvas.width, 800);
-            const currentHeight = Math.max(canvas.height, 600);
-            const segmentWidth = currentWidth * 1.5;
+            const currentWidth = canvas.width;
+            const currentHeight = canvas.height;
+            const isPortrait = currentHeight > currentWidth;
+            
+            const segmentWidth = isPortrait 
+                ? currentWidth + currentHeight * 0.75 
+                : currentWidth * 1.5;
             
             const lastPoint = (!firstTime && gameState.terrain.length > 0) 
                 ? gameState.terrain[gameState.terrain.length - 1] 
@@ -394,8 +419,11 @@
             gameState.terrain = firstTime ? newTerrain : [...gameState.terrain, ...newTerrain];
             
             const ballX = firstTime ? 50 : gameState.ball.x;
-            const minHoleX = ballX + currentWidth * 0.5;
-            const maxHoleX = ballX + currentWidth * 0.85;
+            const minHoleMultiplier = isPortrait ? 0.9 : 0.5;
+            const maxHoleMultiplier = isPortrait ? 1.4 : 0.85;
+
+            const minHoleX = ballX + currentWidth * minHoleMultiplier;
+            const maxHoleX = ballX + currentWidth * maxHoleMultiplier;
             const targetHoleX = minHoleX + Math.random() * (maxHoleX - minHoleX);
 
             let closestIdx = 0;
@@ -584,7 +612,7 @@
             gameState.isTransitioning = true;
             gameState.isFillingHole = true;
             gameState.fillProgress = 0;
-            gameState.targetCameraX = gameState.ball.x - 100;
+            gameState.targetCameraX = gameState.ball.x - canvas.width * 0.25;
             generateLevel();
         }
 
