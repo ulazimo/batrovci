@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Desert Golfing Clone</title>
+    <style>
+        :root {
+            --sand: #e6a055;
+            --sky: #f7d5a3;
+            --ball: #ffffff;
+            --text: #ffffff;
+            --bunker: #c47e3a;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--sky);
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--text);
+            font-size: 24px;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        #ui-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: var(--text);
+            font-size: 24px;
+            text-align: right;
+            pointer-events: auto;
+            cursor: pointer;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        #level-input-container {
+            display: none;
+            margin-top: 5px;
+        }
+
+        #level-input {
+            width: 60px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            font-family: inherit;
+            font-size: 16px;
+            padding: 2px 5px;
+            outline: none;
+        }
+
+        #ui-center {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--text);
+            font-size: 18px;
+            text-align: center;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #wind-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 20px;
+            border-radius: 25px;
+            margin-top: 5px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #wind-arrow {
+            font-size: 36px;
+            font-weight: bold;
+            display: inline-block;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #wind-stats {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        #biome-tag {
+            font-size: 11px;
+            opacity: 0.9;
+            letter-spacing: 3px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.15);
+            padding: 2px 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-left">
+        <div id="total-score">0</div>
+    </div>
+
+    <div id="ui-center">
+        <div id="biome-tag">DUNES</div>
+        <div id="wind-container">
+            <span id="wind-arrow">↑</span>
+            <div id="wind-stats">
+                <span>WIND</span>
+                <span id="wind-speed-val">0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-right" onclick="toggleLevelInput(event)">
+        <div id="hole-number">HOLE 1</div>
+        <div id="current-score">+0</div>
+        <div id="level-input-container">
+            <input type="number" id="level-input" placeholder="Go to..." onkeypress="handleLevelKey(event)" onclick="event.stopPropagation()">
+        </div>
+    </div>
+
+    <div class="instructions">Drag and release to shoot</div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const totalScoreEl = document.getElementById('total-score');
+        const holeNumberEl = document.getElementById('hole-number');
+        const currentScoreEl = document.getElementById('current-score');
+        const windArrowEl = document.getElementById('wind-arrow');
+        const windSpeedValEl = document.getElementById('wind-speed-val');
+        const biomeTagEl = document.getElementById('biome-tag');
+        const levelInputContainer = document.getElementById('level-input-container');
+        const levelInput = document.getElementById('level-input');
+
+        // Game Constants
+        const GRAVITY = 0.25;
+        const FRICTION = 0.985;
+        const GROUND_FRICTION_BASE = 0.94;
+        const BUNKER_FRICTION = 0.75; 
+        const BOUNCE = 0.3;
+        const MAX_POWER = 15;
+        const BALL_RADIUS = 4;
+        const HOLE_WIDTH = 25;
+        const TERRAIN_RESOLUTION = 2; 
+
+        // Game State
+        let gameState = {
+            ball: { 
+                x: 100, y: 0, vx: 0, vy: 0, 
+                grounded: false, 
+                rollingTicks: 0,
+                shotCooldown: 0
+            },
+            hole: { x: 0, y: 0 },
+            wind: { x: 0, y: 0, angle: 0, magnitude: 0 }, 
+            biome: 'DUNES',
+            prevHole: null,
+            terrain: [],
+            totalScore: 0,
+            currentScore: 0,
+            holeNumber: 1,
+            isDragging: false,
+            dragStart: { x: 0, y: 0 },
+            dragCurrent: { x: 0, y: 0 },
+            cameraX: 0,
+            targetCameraX: 0,
+            isTransitioning: false,
+            isFillingHole: false,
+            fillProgress: 0,
+            colors: {
+                sand: '#e6a055',
+                sky: '#f7d5a3'
+            }
+        };
+
+        const BIOMES = {
+            DUNES: { slope: 0.25, maxSlope: 1.5, jitter: 0.1, saturation: 55, lightness: 55 },
+            CANYON: { slope: 0.6, maxSlope: 2.2, jitter: 0.4, saturation: 40, lightness: 45 },
+            PLAINS: { slope: 0.1, maxSlope: 0.8, jitter: 0.05, saturation: 65, lightness: 60 }
+        };
+
+        function init() {
+            resize();
+            generateLevel(true);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+
+        function toggleLevelInput(e) {
+            levelInputContainer.style.display = levelInputContainer.style.display === 'block' ? 'none' : 'block';
+            if (levelInputContainer.style.display === 'block') {
+                levelInput.focus();
+            }
+        }
+
+        function handleLevelKey(e) {
+            if (e.key === 'Enter') {
+                const lvl = parseInt(levelInput.value);
+                if (!isNaN(lvl) && lvl > 0) {
+                    gameState.holeNumber = lvl;
+                    gameState.currentScore = 0;
+                    gameState.totalScore = 0;
+                    gameState.terrain = [];
+                    generateLevel(true);
+                    updateUI();
+                    levelInputContainer.style.display = 'none';
+                    levelInput.value = '';
+                }
+            }
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function handleStart(e) {
+            if (gameState.isTransitioning || gameState.ball.shotCooldown > 0) return;
+            
+            const terrainData = getTerrainY(gameState.ball.x);
+            const ty = terrainData.y;
+            const isNearGround = (gameState.ball.y + BALL_RADIUS) >= (ty - 8);
+            
+            if (!isNearGround) return;
+            
+            gameState.isDragging = true;
+            gameState.dragStart = getPos(e);
+            gameState.dragCurrent = gameState.dragStart;
+        }
+
+        function handleMove(e) {
+            if (!gameState.isDragging) return;
+            gameState.dragCurrent = getPos(e);
+        }
+
+        function handleEnd() {
+            if (!gameState.isDragging) return;
+            gameState.isDragging = false;
+
+            const dx = gameState.dragStart.x - gameState.dragCurrent.x;
+            const dy = gameState.dragStart.y - gameState.dragCurrent.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 10) return; 
+
+            const power = Math.min(dist * 0.1, MAX_POWER);
+            const angle = Math.atan2(dy, dx);
+
+            gameState.ball.vx = Math.cos(angle) * power;
+            gameState.ball.vy = Math.sin(angle) * power;
+            gameState.ball.grounded = false;
+            gameState.ball.rollingTicks = 0; 
+            gameState.ball.shotCooldown = 25;
+            
+            gameState.currentScore++;
+            updateUI();
+            
+            if (db && currentUser) {
+                const statsRef = doc(db, "game_stats", GAME_ID);
+                updateDoc(statsRef, {
+                    plays: increment(1)
+                }).catch(e => console.log("Stats error:", e));
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        
+        canvas.addEventListener('touchstart', (e) => { 
+            if (e.target === canvas) e.preventDefault(); 
+            handleStart(e); 
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => { 
+            if (gameState.isDragging) e.preventDefault(); 
+            handleMove(e); 
+        }, { passive: false });
+        window.addEventListener('touchend', (e) => { 
+            handleEnd(); 
+        });
+
+        function updateUI() {
+            totalScoreEl.innerText = gameState.totalScore + gameState.currentScore;
+            holeNumberEl.innerText = `HOLE ${gameState.holeNumber}`;
+            currentScoreEl.innerText = `+${gameState.currentScore}`;
+            windArrowEl.style.transform = `rotate(${gameState.wind.angle}deg)`;
+            windSpeedValEl.innerText = (gameState.wind.magnitude * 100).toFixed(1);
+            biomeTagEl.innerText = gameState.biome;
+        }
+
+        function generateLevel(firstTime = false) {
+            const biomeKeys = Object.keys(BIOMES);
+            gameState.biome = biomeKeys[Math.floor((gameState.holeNumber - 1) / 5) % biomeKeys.length];
+            const b = BIOMES[gameState.biome];
+
+            const currentWidth = Math.max(canvas.width, 800);
+            const currentHeight = Math.max(canvas.height, 600);
+            const segmentWidth = currentWidth * 1.5;
+            
+            const lastPoint = (!firstTime && gameState.terrain.length > 0) 
+                ? gameState.terrain[gameState.terrain.length - 1] 
+                : { x: 0, y: currentHeight * 0.7 };
+
+            let x = lastPoint.x;
+            let y = lastPoint.y;
+            const newTerrain = [];
+            
+            const segmentCount = segmentWidth / TERRAIN_RESOLUTION;
+            let slope = 0;
+
+            const bunkerChance = gameState.holeNumber >= 5 ? 0.35 : 0;
+            let bunkerStartIdx = -1;
+            let bunkerEndIdx = -1;
+
+            if (Math.random() < bunkerChance) {
+                bunkerStartIdx = Math.floor(segmentCount * 0.25);
+                bunkerEndIdx = bunkerStartIdx + 45; 
+            }
+
+            for (let i = 0; i < segmentCount; i++) {
+                slope += (Math.random() - 0.5) * b.slope;
+                slope = Math.max(-b.maxSlope, Math.min(b.maxSlope, slope));
+                let crag = (gameState.biome === 'CANYON') ? (Math.random() - 0.5) * 2.5 : 0;
+                
+                let isBunker = i >= bunkerStartIdx && i <= bunkerEndIdx;
+                if (isBunker) {
+                    y += (slope * TERRAIN_RESOLUTION * 0.15); 
+                } else {
+                    y += (slope * TERRAIN_RESOLUTION) + crag;
+                }
+                
+                if (y < currentHeight * 0.2) { y = currentHeight * 0.2; slope = 0.6; }
+                if (y > currentHeight * 0.9) { y = currentHeight * 0.9; slope = -0.6; }
+                
+                x += TERRAIN_RESOLUTION;
+                newTerrain.push({ x, y, isBunker });
+            }
+
+            gameState.terrain = firstTime ? newTerrain : [...gameState.terrain, ...newTerrain];
+            
+            const ballX = firstTime ? 50 : gameState.ball.x;
+            const minHoleX = ballX + currentWidth * 0.5;
+            const maxHoleX = ballX + currentWidth * 0.85;
+            const targetHoleX = minHoleX + Math.random() * (maxHoleX - minHoleX);
+
+            let closestIdx = 0;
+            let minDiff = Infinity;
+            for (let i = 0; i < gameState.terrain.length; i++) {
+                let diff = Math.abs(gameState.terrain[i].x - targetHoleX);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIdx = i;
+                }
+            }
+
+            if (gameState.terrain[closestIdx]) {
+                gameState.hole.x = gameState.terrain[closestIdx].x;
+                gameState.hole.y = gameState.terrain[closestIdx].y;
+
+                for (let i = -15; i <= 15; i++) {
+                    const idx = closestIdx + i;
+                    if (gameState.terrain[idx]) {
+                        gameState.terrain[idx].y = gameState.hole.y;
+                        gameState.terrain[idx].isBunker = false;
+                    }
+                }
+            }
+
+            const baseStrength = 0.05 + (Math.min(gameState.holeNumber, 50) * 0.0035);
+            const directions = [0, 45, 90, 135, 180, 225, 270, 315];
+            const randomDir = directions[Math.floor(Math.random() * directions.length)];
+            const rad = (randomDir - 90) * (Math.PI / 180); 
+            
+            gameState.wind = {
+                x: Math.cos(rad) * baseStrength,
+                y: Math.sin(rad) * baseStrength,
+                angle: randomDir,
+                magnitude: baseStrength
+            };
+
+            if (firstTime) {
+                gameState.ball.x = 50;
+                gameState.ball.y = getTerrainY(50).y - BALL_RADIUS;
+                gameState.ball.grounded = true;
+                gameState.cameraX = 0;
+            }
+            
+            shiftColors();
+            updateUI();
+        }
+
+        function shiftColors() {
+            const b = BIOMES[gameState.biome];
+            const h = (gameState.holeNumber * 15) % 360;
+            gameState.colors.sand = `hsl(${h}, ${b.saturation}%, ${b.lightness}%)`;
+            gameState.colors.sky = `hsl(${h}, ${b.saturation - 20}%, ${b.lightness + 30}%)`;
+            document.body.style.backgroundColor = gameState.colors.sky;
+        }
+
+        function getTerrainY(x) {
+            if (gameState.terrain.length === 0) return { y: canvas.height, isBunker: false };
+            // Simple optimization: only check visible terrain range roughly
+            for (let i = 0; i < gameState.terrain.length - 1; i++) {
+                if (x >= gameState.terrain[i].x && x <= gameState.terrain[i + 1].x) {
+                    const p1 = gameState.terrain[i];
+                    const p2 = gameState.terrain[i+1];
+                    const t = (x - p1.x) / (p2.x - p1.x);
+                    return {
+                        y: p1.y + (p2.y - p1.y) * t,
+                        isBunker: p1.isBunker
+                    };
+                }
+            }
+            return { y: canvas.height, isBunker: false };
+        }
+
+        function update() {
+            if (gameState.ball.shotCooldown > 0) {
+                gameState.ball.shotCooldown--;
+            }
+
+            // Smoother Hole Filling
+            if (gameState.isFillingHole) {
+                gameState.fillProgress += 0.025;
+                if (gameState.fillProgress >= 1) {
+                    gameState.isFillingHole = false;
+                    gameState.prevHole = null;
+                }
+            }
+
+            // Smoother Transition easing (Exponential decay)
+            if (gameState.isTransitioning) {
+                const ease = 0.065;
+                const diff = gameState.targetCameraX - gameState.cameraX;
+                gameState.cameraX += diff * ease;
+                
+                if (Math.abs(diff) < 0.5) {
+                    gameState.cameraX = gameState.targetCameraX;
+                    gameState.isTransitioning = false;
+                    gameState.terrain = gameState.terrain.filter(p => p.x > gameState.cameraX - canvas.width);
+                }
+                return;
+            }
+
+            const terrainData = getTerrainY(gameState.ball.x);
+            const ty = terrainData.y;
+
+            if (!gameState.ball.grounded) {
+                gameState.ball.vy += GRAVITY;
+                gameState.ball.vx += gameState.wind.x;
+                gameState.ball.vy += gameState.wind.y;
+                gameState.ball.vx *= FRICTION;
+                gameState.ball.vy *= FRICTION;
+                gameState.ball.rollingTicks = 0;
+            } else {
+                gameState.ball.rollingTicks++;
+                let currentFriction = terrainData.isBunker ? BUNKER_FRICTION : GROUND_FRICTION_BASE;
+                if (gameState.ball.rollingTicks > 20) {
+                    const factor = Math.min(1, (gameState.ball.rollingTicks - 20) / 40); 
+                    currentFriction *= (1 - factor * 0.7); 
+                }
+                gameState.ball.vx *= currentFriction;
+                if (gameState.ball.rollingTicks >= 60 || (Math.abs(gameState.ball.vx) < 0.05)) {
+                    gameState.ball.vx = 0;
+                    gameState.ball.vy = 0;
+                }
+            }
+
+            gameState.ball.x += gameState.ball.vx;
+            gameState.ball.y += gameState.ball.vy;
+
+            const leftBound = gameState.cameraX + BALL_RADIUS;
+            const rightBound = gameState.cameraX + canvas.width - BALL_RADIUS;
+            if (gameState.ball.x < leftBound) {
+                gameState.ball.x = leftBound;
+                gameState.ball.vx = Math.abs(gameState.ball.vx) * 0.5;
+            }
+            if (gameState.ball.x > rightBound) {
+                gameState.ball.x = rightBound;
+                gameState.ball.vx = -Math.abs(gameState.ball.vx) * 0.5;
+            }
+
+            if (gameState.ball.y + BALL_RADIUS > ty) {
+                const x1 = gameState.ball.x - 2;
+                const x2 = gameState.ball.x + 2;
+                const y1 = getTerrainY(x1).y;
+                const y2 = getTerrainY(x2).y;
+                const slopeAngle = Math.atan2(y2 - y1, x2 - x1);
+                
+                if (gameState.ball.vy < 2.2) {
+                    gameState.ball.y = ty - BALL_RADIUS;
+                    gameState.ball.vy = 0;
+                    gameState.ball.grounded = true;
+                } else {
+                    // Bounce
+                    gameState.ball.y = ty - BALL_RADIUS;
+                    const incidentAngle = Math.atan2(gameState.ball.vy, gameState.ball.vx);
+                    const reflectionAngle = 2 * slopeAngle - incidentAngle;
+                    const speed = Math.sqrt(gameState.ball.vx**2 + gameState.ball.vy**2);
+                    gameState.ball.vx = Math.cos(reflectionAngle) * speed * BOUNCE;
+                    gameState.ball.vy = Math.sin(reflectionAngle) * speed * BOUNCE;
+                    gameState.ball.grounded = false;
+                }
+            } else {
+                if (gameState.ball.y + BALL_RADIUS < ty - 2) {
+                    gameState.ball.grounded = false;
+                }
+            }
+
+            const distToHole = Math.abs(gameState.ball.x - gameState.hole.x);
+            const inHoleY = Math.abs(gameState.ball.y + BALL_RADIUS - gameState.hole.y) < 14;
+            if (distToHole < HOLE_WIDTH / 2 && inHoleY && Math.abs(gameState.ball.vx) < 3.8) {
+                nextHole();
+            }
+        }
+
+        function nextHole() {
+            gameState.totalScore += gameState.currentScore;
+            gameState.currentScore = 0;
+            gameState.holeNumber++;
+            gameState.prevHole = { x: gameState.hole.x, y: gameState.hole.y };
+            
+            // Visual "drop" into hole
+            gameState.ball.vx = 0;
+            gameState.ball.vy = 0;
+            gameState.ball.x = gameState.hole.x;
+            gameState.ball.y = gameState.hole.y + 4;
+            
+            gameState.isTransitioning = true;
+            gameState.isFillingHole = true;
+            gameState.fillProgress = 0;
+            gameState.targetCameraX = gameState.ball.x - 100;
+            generateLevel();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(-gameState.cameraX, 0);
+
+            if (gameState.terrain.length > 0) {
+                ctx.fillStyle = gameState.colors.sand;
+                ctx.beginPath();
+                ctx.moveTo(gameState.terrain[0].x, canvas.height);
+                for (let p of gameState.terrain) {
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.lineTo(gameState.terrain[gameState.terrain.length - 1].x, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+
+                // Draw Bunkers
+                ctx.fillStyle = 'rgba(0,0,0,0.12)';
+                for (let i = 0; i < gameState.terrain.length - 1; i++) {
+                    if (gameState.terrain[i].isBunker) {
+                        ctx.beginPath();
+                        ctx.moveTo(gameState.terrain[i].x, gameState.terrain[i].y);
+                        ctx.lineTo(gameState.terrain[i+1].x, gameState.terrain[i+1].y);
+                        ctx.lineTo(gameState.terrain[i+1].x, canvas.height);
+                        ctx.lineTo(gameState.terrain[i].x, canvas.height);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // Smoother "Filling" Visual
+            if (gameState.prevHole && gameState.isFillingHole) {
+                const fillAlpha = Math.max(0, 0.8 * (1 - gameState.fillProgress));
+                const fillSize = (HOLE_WIDTH / 2) * (1 - gameState.fillProgress * 0.8);
+                if (fillSize > 0.5) {
+                    ctx.fillStyle = `rgba(0,0,0,${fillAlpha})`;
+                    ctx.beginPath();
+                    ctx.arc(gameState.prevHole.x, gameState.prevHole.y + 2, fillSize, 0, Math.PI, false);
+                    ctx.fill();
+                }
+            }
+
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(gameState.hole.x, gameState.hole.y + 2, HOLE_WIDTH/2, 0, Math.PI, false);
+            ctx.fill();
+
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(gameState.hole.x, gameState.hole.y);
+            ctx.lineTo(gameState.hole.x, gameState.hole.y - 45);
+            ctx.stroke();
+            
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.moveTo(gameState.hole.x, gameState.hole.y - 45);
+            ctx.lineTo(gameState.hole.x + 22, gameState.hole.y - 36);
+            ctx.lineTo(gameState.hole.x, gameState.hole.y - 27);
+            ctx.fill();
+
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(gameState.ball.x, gameState.ball.y, BALL_RADIUS, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (gameState.isDragging) {
+                const dx = gameState.dragStart.x - gameState.dragCurrent.x;
+                const dy = gameState.dragStart.y - gameState.dragCurrent.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const power = Math.min(dist * 0.1, MAX_POWER);
+                const angle = Math.atan2(dy, dx);
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                ctx.setLineDash([4, 4]);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(gameState.ball.x, gameState.ball.y);
+                ctx.lineTo(gameState.ball.x + Math.cos(angle) * power * 8, gameState.ball.y + Math.sin(angle) * power * 8);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        init();
+    </script>
+		
+	    <!-- FIREBASE TRACKING -->
+	    <script type="module">
+	        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+	        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+	        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+	        const firebaseConfig = {
+	            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+	            authDomain: "prototypes-7691b.firebaseapp.com",
+	            projectId: "prototypes-7691b",
+	            storageBucket: "prototypes-7691b.firebasestorage.app",
+	            messagingSenderId: "263652926534",
+	            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+	            measurementId: "G-1X91H99N2G"
+	        };
+
+	        const GAME_ID = 'desert-golf-tribute'; // Updated GAME_ID
+
+	        let db;
+	        let auth;
+	        let currentUser = null;
+
+	        async function initFirebase() {
+	            try {
+	                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+	                    const app = initializeApp(firebaseConfig);
+	                    db = getFirestore(app);
+	                    auth = getAuth(app);
+                    
+	                    // Crucial: Set inMemory persistence for iframe/preview support
+	                    try {
+	                        await setPersistence(auth, inMemoryPersistence);
+	                    } catch (e) {
+	                        console.warn("Persistence set warning", e);
+	                    }
+
+	                    const userCredential = await signInAnonymously(auth);
+	                    currentUser = userCredential.user;
+	                    console.log("Stats tracking active");
+	                }
+	            } catch (e) { console.error("Tracking Error - check console", e); }
+	        }
+
+	        initFirebase();
+
+	        let startTime = Date.now();
+
+	        function saveTime() {
+	            if (!db || !currentUser) return; // Guard check
+	            const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+	            if (timeSpentSeconds > 0) {
+	                const statsRef = doc(db, "game_stats", GAME_ID);
+	                updateDoc(statsRef, {
+	                    timePlayed: increment(timeSpentSeconds)
+	                }).catch(e => console.log("Stats error:", e));
+	                startTime = Date.now();
+	            }
+	        }
+
+	        window.addEventListener("visibilitychange", () => {
+	            if (document.visibilityState === 'hidden') saveTime();
+	            else startTime = Date.now();
+	        });
+	        window.addEventListener("beforeunload", saveTime);
+	    </script>
+</body>
+</html>
