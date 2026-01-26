@@ -419,8 +419,8 @@
             gameState.terrain = firstTime ? newTerrain : [...gameState.terrain, ...newTerrain];
             
             const ballX = firstTime ? 50 : gameState.ball.x;
-            const minHoleMultiplier = isPortrait ? 0.9 : 0.5;
-            const maxHoleMultiplier = isPortrait ? 1.4 : 0.85;
+            const minHoleMultiplier = isPortrait ? 0.4 : 0.5;
+            const maxHoleMultiplier = isPortrait ? 0.7 : 0.85;
 
             const minHoleX = ballX + currentWidth * minHoleMultiplier;
             const maxHoleX = ballX + currentWidth * maxHoleMultiplier;
