@@ -703,3 +703,67 @@
     </script>
 </body>
 </html>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+        authDomain: "prototypes-7691b.firebaseapp.com",
+        projectId: "prototypes-7691b",
+        storageBucket: "prototypes-7691b.firebasestorage.app",
+        messagingSenderId: "263652926534",
+        appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+        measurementId: "G-1X91H99N2G"
+    };
+
+    let db;
+    let auth;
+    let currentUser = null;
+    let timePlayed = 0;
+    const gameId = "football-legendary-league";
+
+    async function initFirebase() {
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                try {
+                    await setPersistence(auth, inMemoryPersistence);
+                } catch (e) {
+                    console.warn("Persistence fallback warning:", e);
+                }
+
+                const userCredential = await signInAnonymously(auth);
+                currentUser = userCredential.user;
+                console.log("Firebase Initialized & Signed In: " + currentUser.uid);
+                
+                setInterval(() => {
+                    timePlayed++;
+                }, 1000);
+            }
+        } catch (e) {
+            console.error("Firebase Error:", e);
+        }
+    }
+
+    async function updateTimePlayed() {
+        if (db && currentUser && timePlayed > 0) {
+            try {
+                const statsRef = doc(db, "game_stats", gameId);
+                await updateDoc(statsRef, {
+                    timePlayed: increment(timePlayed)
+                });
+            } catch (e) {
+                console.error("Error updating time played", e);
+            }
+        }
+    }
+
+    window.addEventListener('beforeunload', updateTimePlayed);
+    
+    initFirebase();
+</script>
