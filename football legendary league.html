@@ -146,7 +146,7 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen pb-16">
+<body class="flex flex-col items-center justify-center h-screen">
 
     <!-- TRANSITION OVERLAY -->
     <div id="transition-overlay" class="fixed inset-0 flex items-center justify-center">
@@ -157,7 +157,7 @@
     </div>
 
     <!-- LEAGUE STANDINGS VIEW -->
-    <div id="view-standings" class="w-full max-w-md h-[90vh] flex flex-col p-4">
+    <div id="view-standings" class="w-full max-w-md flex-1 overflow-y-auto flex flex-col p-4 pb-16">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-red-600">Standings</h1>
             <div class="text-right">
@@ -187,7 +187,7 @@
     </div>
 
     <!-- PUZZLE VIEW -->
-    <div id="view-puzzle" class="w-full max-w-md h-[90vh] flex flex-col p-4 relative view-hidden">
+    <div id="view-puzzle" class="w-full max-w-md flex-1 overflow-y-auto flex flex-col p-4 relative view-hidden pb-16">
         <div class="flex justify-between items-start mb-4">
             <div>
                 <h1 class="text-2xl font-bold uppercase tracking-tighter italic leading-none text-red-500">Match Prep</h1>
@@ -232,7 +232,7 @@
     </div>
 
     <!-- SIMULATION VIEW -->
-    <div id="view-sim" class="w-full max-w-md h-[90vh] flex flex-col p-6 view-hidden">
+    <div id="view-sim" class="w-full max-w-md flex-1 overflow-y-auto flex flex-col p-6 view-hidden pb-16">
         <h2 class="text-xl font-black mb-4 uppercase italic tracking-tighter text-blue-500 text-center">Live Match Engine</h2>
         <div class="w-full flex justify-between items-center mb-6 bg-slate-900/80 p-4 rounded-2xl border border-white/5 shadow-xl">
             <div class="text-center">
