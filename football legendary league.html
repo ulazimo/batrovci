@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soccer Match-3: Liverpool Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Soccer Match-3: Liverpool Squad Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap');
@@ -13,7 +13,7 @@
             background-color: #0f172a;
             color: #f8fafc;
             overflow: hidden;
-            touch-action: manipulation;
+            touch-action: manipulation; 
         }
 
         .tile {
@@ -24,6 +24,7 @@
             aspect-ratio: 1/1;
             z-index: 1;
             padding: 3px;
+            user-select: none;
         }
 
         .tile-inner {
@@ -59,9 +60,9 @@
         .selected .tile-inner {
             outline: 3px solid white;
             outline-offset: -3px;
-            transform: scale(1.05);
+            transform: scale(1.1);
             box-shadow: 0 0 20px rgba(255,255,255,0.4);
-            z-index: 10;
+            z-index: 50;
         }
 
         .grid-container {
@@ -90,7 +91,7 @@
         }
 
         .goal-anim { animation: goalScale 0.6s ease-in-out; }
-        @keyframes goalScale { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: #22c55e; } 100% { transform: scale(1); } }
+        @keyframes goalScale { 0% { transform: scale(1); } 50% { transform: scale(1.5); color: #fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.6); } 100% { transform: scale(1); } }
 
         .stat-indicator {
             position: absolute;
@@ -101,18 +102,33 @@
             font-size: 14px;
             pointer-events: none;
             animation: floatUp 1s ease-out forwards;
-            z-index: 50;
+            z-index: 60;
         }
 
         @keyframes floatUp { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -30px); opacity: 0; } }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shake { animation: shake 0.5s; animation-iteration-count: 2; }
 
         .bg-attack { background-color: #ef4444; } 
         .bg-defense { background-color: #3b82f6; }
         .bg-pass { background-color: #22c55e; }
         .bg-stamina { background-color: #eab308; }
         
-        #sim-logs::-webkit-scrollbar { width: 4px; }
-        #sim-logs::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+        #sim-logs::-webkit-scrollbar, #results-list::-webkit-scrollbar, #standings-list::-webkit-scrollbar { width: 4px; }
+        #sim-logs::-webkit-scrollbar-thumb, #results-list::-webkit-scrollbar-thumb, #standings-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
         .view-hidden { display: none !important; }
 
@@ -121,18 +137,6 @@
             backdrop-filter: blur(4px);
         }
 
-        /* Bottom Nav Styles */
-        .bottom-nav {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-btn.active {
-            color: #ef4444;
-        }
-
-        /* Transition Overlay */
         #transition-overlay {
             background: #0f172a;
             z-index: 200;
@@ -144,326 +148,396 @@
             opacity: 1;
             pointer-events: auto;
         }
+
+        .tab-btn {
+            position: relative;
+            padding-bottom: 4px;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: #ef4444;
+        }
+
+        .player-card.selected {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        #goal-celebration {
+            pointer-events: none;
+            z-index: 300;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #goal-celebration.active {
+            opacity: 1;
+        }
+
+        .app-view {
+            width: 100%;
+            max-width: 28rem; 
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center h-screen">
+<body class="flex items-center justify-center min-h-screen">
+
+    <!-- GOAL CELEBRATION OVERLAY -->
+    <div id="goal-celebration" class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="text-center transform scale-50 transition-transform duration-500 ease-out" id="goal-content">
+            <h3 id="goal-banner-text" class="text-7xl font-black italic uppercase tracking-tighter text-yellow-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]">GOAL!</h3>
+            <p id="goal-scorer-name" class="text-2xl font-bold text-white uppercase tracking-widest mt-2 bg-red-600 px-4 py-1 skew-x-[-12deg] inline-block">M. SALAH</p>
+        </div>
+    </div>
 
     <!-- TRANSITION OVERLAY -->
     <div id="transition-overlay" class="fixed inset-0 flex items-center justify-center">
         <div class="text-center">
             <h2 class="text-4xl font-black italic uppercase tracking-tighter text-red-600 animate-pulse">Match Day</h2>
-            <p class="text-xs uppercase tracking-widest text-slate-500 mt-2">Entering Anfield...</p>
+            <p id="transition-subtitle" class="text-xs uppercase tracking-widest text-slate-500 mt-2">Entering Anfield...</p>
         </div>
     </div>
 
-    <!-- LEAGUE STANDINGS VIEW -->
-    <div id="view-standings" class="w-full max-w-md flex-1 overflow-y-auto flex flex-col p-4 pb-16">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-red-600">Standings</h1>
+    <!-- LEAGUE VIEW -->
+    <div id="view-standings" class="app-view">
+        <div class="flex justify-between items-center mb-4 shrink-0">
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-red-600">Premier League</h1>
             <div class="text-right">
                 <div class="text-[10px] uppercase text-slate-500 font-bold">Season Progress</div>
                 <div class="text-lg font-bold" id="league-round-display">Round 1 / 18</div>
             </div>
         </div>
-
-        <div class="flex-1 bg-slate-900/50 rounded-2xl border border-white/5 overflow-hidden flex flex-col mb-4">
-            <div class="grid grid-cols-9 gap-1 p-3 bg-slate-800/50 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                <div class="col-span-1">#</div>
-                <div class="col-span-3">Team</div>
-                <div class="col-span-1 text-center">MP</div>
-                <div class="col-span-1 text-center">W</div>
-                <div class="col-span-1 text-center">D</div>
-                <div class="col-span-1 text-center">GD</div>
-                <div class="col-span-1 text-center">PTS</div>
-            </div>
-            <div id="standings-list" class="flex-1 overflow-y-auto">
-                <!-- Teams injected here -->
-            </div>
+        <div class="flex gap-6 mb-4 px-1 border-b border-white/5 pb-2 shrink-0">
+            <button onclick="setStandingsTab('table')" id="tab-table" class="tab-btn active text-sm font-black uppercase tracking-widest text-white">Table</button>
+            <button onclick="setStandingsTab('results')" id="tab-results" class="tab-btn text-sm font-black uppercase tracking-widest text-slate-500">Results</button>
         </div>
-
-        <button id="btn-play-match" onclick="startMatchPreparation()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95 mb-4">
+        <div id="subview-table" class="flex-1 bg-slate-900/50 rounded-2xl border border-white/5 overflow-hidden flex flex-col mb-4 min-h-0">
+            <div class="grid grid-cols-9 gap-1 p-3 bg-slate-800/50 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                <div class="col-span-1">#</div><div class="col-span-3">Team</div><div class="col-span-1 text-center">MP</div><div class="col-span-1 text-center">W</div><div class="col-span-1 text-center">D</div><div class="col-span-1 text-center">GD</div><div class="col-span-1 text-center">PTS</div>
+            </div>
+            <div id="standings-list" class="flex-1 overflow-y-auto"></div>
+        </div>
+        <div id="subview-results" class="flex-1 overflow-y-auto space-y-3 mb-4 view-hidden min-h-0"><div id="results-list" class="space-y-3 pb-4"></div></div>
+        <button id="btn-play-match" onclick="startSquadSelection()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95 mb-4 shrink-0">
             Next Match: <span id="next-opp-label">---</span>
         </button>
     </div>
 
+    <!-- SQUAD SELECTION VIEW -->
+    <div id="view-squad" class="app-view view-hidden">
+        <div class="mb-4 shrink-0">
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-red-600">Select Squad</h1>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">Choose 5 players for the match (<span id="selection-count">0</span>/5)</p>
+        </div>
+        <div id="squad-grid" class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1 min-h-0"></div>
+        <div class="flex gap-2 mb-4 shrink-0">
+            <button onclick="switchView('view-standings')" class="bg-slate-800 text-white px-6 rounded-xl font-bold uppercase text-xs">Back</button>
+            <button id="confirm-squad-btn" onclick="startMatchPreparation()" class="flex-1 bg-red-600 opacity-50 pointer-events-none py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">Confirm Lineup</button>
+        </div>
+    </div>
+
     <!-- PUZZLE VIEW -->
-    <div id="view-puzzle" class="w-full max-w-md flex-1 overflow-y-auto flex flex-col p-4 relative view-hidden pb-16">
-        <div class="flex justify-between items-start mb-4">
+    <div id="view-puzzle" class="app-view view-hidden relative">
+        <div class="flex justify-between items-start mb-4 shrink-0">
             <div>
                 <h1 class="text-2xl font-bold uppercase tracking-tighter italic leading-none text-red-500">Match Prep</h1>
                 <p class="text-xs text-slate-400 mt-1 uppercase tracking-wider">Moves: <span id="moves-count" class="text-white font-bold text-lg">15</span></p>
             </div>
             <div class="flex flex-col items-end gap-1">
                 <div class="flex gap-2">
-                     <button onclick="triggerMatchTransition()" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold uppercase shadow-lg hover:bg-blue-500">Skip to Match</button>
+                     <button onclick="triggerMatchTransition()" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold uppercase shadow-lg hover:bg-blue-500">Skip</button>
                      <button onclick="showTutorial()" class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold hover:bg-slate-600 transition-colors shadow-lg border border-white/10">?</button>
                 </div>
                 <div class="text-right">
-                    <div class="text-[10px] uppercase text-slate-500 font-bold">Opponent</div>
-                    <div id="puzzle-opp-name" class="text-lg font-bold text-blue-500 italic leading-none uppercase">---</div>
+                    <div id="puzzle-venue-label" class="text-[10px] uppercase text-slate-500 font-bold">Venue</div>
+                    <div id="puzzle-opp-name" class="text-lg font-bold text-blue-500 italic leading-none uppercase">Opponent</div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-2 mb-4">
-            <div class="stats-card p-2 rounded-xl text-center border-b-4 border-red-500" id="card-attack">
-                <div class="text-[8px] uppercase text-slate-400 font-bold">Attack</div>
-                <div id="hero-atk" class="text-lg font-bold">10</div>
-                <div class="progress-bar mt-1"><div id="bar-attack" class="h-full bg-red-500 transition-all" style="width: 10%"></div></div>
-            </div>
-            <div class="stats-card p-2 rounded-xl text-center border-b-4 border-green-500" id="card-pass">
-                <div class="text-[8px] uppercase text-slate-400 font-bold">Pass</div>
-                <div id="hero-mid" class="text-lg font-bold">10</div>
-                <div class="progress-bar mt-1"><div id="bar-pass" class="h-full bg-green-500 transition-all" style="width: 10%"></div></div>
-            </div>
-            <div class="stats-card p-2 rounded-xl text-center border-b-4 border-blue-500" id="card-defense">
-                <div class="text-[8px] uppercase text-slate-400 font-bold">Defense</div>
-                <div id="hero-def" class="text-lg font-bold">10</div>
-                <div class="progress-bar mt-1"><div id="bar-defense" class="h-full bg-blue-500 transition-all" style="width: 10%"></div></div>
-            </div>
-            <div class="stats-card p-2 rounded-xl text-center border-b-4 border-yellow-500" id="card-stamina">
-                <div class="text-[8px] uppercase text-slate-400 font-bold">Stamina</div>
-                <div id="hero-stam" class="text-lg font-bold">10</div>
-                <div class="progress-bar mt-1"><div id="bar-stamina" class="h-full bg-yellow-500 transition-all" style="width: 10%"></div></div>
-            </div>
-        </div>
-
+        <div id="prep-player-stats" class="grid grid-cols-3 gap-2 mb-4 shrink-0"></div>
         <div id="board" class="grid-container mb-4"></div>
+        <button onclick="startSquadSelection()" class="w-full py-2 text-slate-500 text-[10px] uppercase font-bold tracking-widest hover:text-slate-300 mb-4 shrink-0">Change Lineup</button>
     </div>
 
     <!-- SIMULATION VIEW -->
-    <div id="view-sim" class="w-full max-w-md flex-1 overflow-y-auto flex flex-col p-6 view-hidden pb-16">
-        <h2 class="text-xl font-black mb-4 uppercase italic tracking-tighter text-blue-500 text-center">Live Match Engine</h2>
-        <div class="w-full flex justify-between items-center mb-6 bg-slate-900/80 p-4 rounded-2xl border border-white/5 shadow-xl">
-            <div class="text-center">
-                <div class="w-12 h-12 bg-red-700 rounded-xl flex items-center justify-center mb-1 border border-red-400/30 font-black shadow-lg">LFC</div>
-                <div class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Home</div>
-            </div>
-            <div class="text-4xl font-black italic flex gap-3">
-                <span id="score-home">0</span>
-                <span class="text-slate-700">:</span>
-                <span id="score-away">0</span>
-            </div>
-            <div class="text-center">
-                <div id="opp-crest" class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-1 border border-white/10 font-black shadow-lg text-xs uppercase">
-                    <span id="opp-initials">OPP</span>
+    <div id="view-sim" class="app-view view-hidden">
+        <div id="sim-engine-container" class="flex-1 flex flex-col overflow-hidden">
+            <h2 class="text-xl font-black mb-4 uppercase italic tracking-tighter text-blue-500 text-center shrink-0">Live Match Engine</h2>
+            <div class="w-full flex justify-between items-center mb-4 bg-slate-900/80 p-3 rounded-2xl border border-white/5 shadow-xl shrink-0">
+                <div id="sim-home-team" class="text-center w-24">
+                    <div id="home-crest" class="w-10 h-10 bg-red-700 mx-auto rounded-xl flex items-center justify-center mb-1 border border-red-400/30 font-black shadow-lg text-xs">LFC</div>
+                    <div class="text-[7px] font-bold text-slate-400 uppercase tracking-widest truncate">Home</div>
                 </div>
-                <div class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Away</div>
+                <div class="text-3xl font-black italic flex gap-2">
+                    <span id="score-home">0</span><span class="text-slate-700">:</span><span id="score-away">0</span>
+                </div>
+                <div id="sim-away-team" class="text-center w-24">
+                    <div id="away-crest" class="w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-1 border border-white/10 font-black shadow-lg text-xs uppercase text-white">OPP</div>
+                    <div class="text-[7px] font-bold text-slate-400 uppercase tracking-widest truncate">Away</div>
+                </div>
             </div>
+            <div id="sim-logs" class="w-full bg-slate-950 rounded-2xl p-4 flex-1 overflow-y-auto space-y-5 border border-slate-800 shadow-inner mb-4 min-h-0"></div>
+            <button id="finish-match-btn" class="w-full bg-red-600 py-3 rounded-xl font-black uppercase tracking-widest view-hidden transition-transform active:scale-95 shadow-lg shrink-0 mb-2">Finish Match Day</button>
         </div>
-        <div id="sim-logs" class="w-full bg-slate-950 rounded-2xl p-4 flex-1 overflow-y-auto space-y-5 border border-slate-800 shadow-inner mb-2"></div>
-        <button id="finish-match-btn" class="w-full bg-red-600 py-4 rounded-xl font-black uppercase tracking-widest view-hidden transition-transform active:scale-95 shadow-lg">Finish Match Day</button>
     </div>
-
-    <!-- BOTTOM NAV -->
-    <nav class="fixed bottom-0 left-0 right-0 h-16 bottom-nav flex items-center justify-around z-50">
-        <button onclick="switchView('view-standings')" id="nav-standings" class="nav-btn flex flex-col items-center gap-1 active">
-            <span class="text-xl">📊</span>
-            <span class="text-[10px] font-bold uppercase tracking-widest">Table</span>
-        </button>
-        <button onclick="handleMatchNav()" id="nav-match" class="nav-btn flex flex-col items-center gap-1 text-slate-400">
-            <span class="text-xl">⚽</span>
-            <span class="text-[10px] font-bold uppercase tracking-widest">Match</span>
-        </button>
-    </nav>
 
     <!-- TUTORIAL POPUP -->
     <div id="tutorial-modal" class="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6 view-hidden">
         <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <h3 class="text-2xl font-black italic uppercase tracking-tighter text-red-500 mb-6 text-center border-b border-slate-800 pb-2">Technical Briefing</h3>
-            
             <div class="space-y-6 text-sm text-slate-300">
                 <div class="flex gap-3">
                     <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center shrink-0 font-bold shadow-lg text-white">1</div>
-                    <p><span class="text-white font-bold">Match Prep:</span> Match tiles to build stats. Liverpool's performance is driven by these numbers.</p>
+                    <p><span class="text-white font-bold">Pick Your 5:</span> Select 5 Liverpool stars. Each player is color-coded by their position (Attack, Midfield, Defense).</p>
                 </div>
-
                 <div class="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-2">
-                    <p class="text-xs font-black uppercase text-slate-400 tracking-widest mb-1">Statistical Impact</p>
+                    <p class="text-xs font-black uppercase text-slate-400 tracking-widest mb-1">Color System</p>
                     <ul class="space-y-1.5 text-[12px]">
-                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-400 font-bold uppercase">Attack:</span> Higher chance to score.</li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-400 font-bold uppercase">Attack:</span> Boost goal chance.</li>
                         <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500"></span> <span class="text-green-400 font-bold uppercase">Pass:</span> Win the midfield battle.</li>
-                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <span class="text-blue-400 font-bold uppercase">Defense:</span> Stop opponent goals.</li>
-                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> <span class="text-yellow-400 font-bold uppercase">Stamina:</span> Multiplies all other stats.</li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span> <span class="text-blue-400 font-bold uppercase">Defense:</span> Block opponents.</li>
+                        <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> <span class="text-yellow-400 font-bold uppercase">Stamina:</span> Boost all players.</li>
                     </ul>
                 </div>
-                
                 <div class="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-3">
-                    <p class="text-xs font-black uppercase text-blue-400 tracking-widest">Tactical Boosters</p>
+                    <p class="text-xs font-black uppercase text-blue-400 tracking-widest">Special Balls</p>
                     <div class="flex gap-3 items-center">
                         <div class="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center border border-white/20 text-xs shadow-inner">🚀</div>
-                        <div class="flex-1">
-                            <p class="text-white font-bold text-[11px] uppercase">Rocket Ball (Match 4)</p>
-                            <p class="text-[10px] text-slate-400">Clears the entire row and column.</p>
-                        </div>
+                        <div class="flex-1"><p class="text-white font-bold text-[11px] uppercase">Rocket Ball</p><p class="text-[10px] text-slate-400">Match 4 to clear row/column.</p></div>
                     </div>
                     <div class="flex gap-3 items-center pt-1">
                         <div class="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center border border-yellow-400 text-xs shadow-lg shadow-yellow-900/20">⭐</div>
-                        <div class="flex-1">
-                            <p class="text-yellow-400 font-bold text-[11px] uppercase">Star Boost (Match 5+)</p>
-                            <p class="text-[10px] text-slate-400">Clears every tile of that color.</p>
-                        </div>
+                        <div class="flex-1"><p class="text-yellow-400 font-bold text-[11px] uppercase">Star Boost</p><p class="text-[10px] text-slate-400">Match 5+ to clear ALL tiles of that color.</p></div>
                     </div>
                 </div>
-
-                <div class="flex gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center shrink-0 font-bold shadow-lg text-white">2</div>
-                    <p><span class="text-white font-bold">The Match:</span> Simulation compares your stats vs the opponent in midfield and attack duels.</p>
-                </div>
             </div>
-
-            <button onclick="closeTutorial()" class="mt-8 w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-lg active:scale-95">Up the Reds!</button>
+            <button onclick="closeTutorial()" class="mt-8 w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-red-500 shadow-lg active:scale-95">Up the Reds!</button>
         </div>
     </div>
 
     <script>
-        // LEAGUE DATA
+        // LFC SQUAD DATA
+        const SQUAD = [
+            { id: 's1', name: 'M. Salah', pos: 'attack', color: 'red' },
+            { id: 's2', name: 'L. Diaz', pos: 'attack', color: 'red' },
+            { id: 's3', name: 'D. Jota', pos: 'attack', color: 'red' },
+            { id: 's4', name: 'Mac Allister', pos: 'pass', color: 'green' },
+            { id: 's5', name: 'Szoboszlai', pos: 'pass', color: 'green' },
+            { id: 's6', name: 'Gravenberch', pos: 'pass', color: 'green' },
+            { id: 's7', name: 'C. Jones', pos: 'pass', color: 'green' },
+            { id: 's8', name: 'V. van Dijk', pos: 'defense', color: 'blue' },
+            { id: 's9', name: 'I. Konate', pos: 'defense', color: 'blue' },
+            { id: 's10', name: 'T. Alexander-Arnold', pos: 'defense', color: 'blue' },
+            { id: 's11', name: 'A. Robertson', pos: 'defense', color: 'blue' }
+        ];
+
+        let selectedPlayerIds = [];
         const teamNames = ["Liverpool FC", "Manchester City", "Arsenal FC", "Aston Villa", "Tottenham Hotspur", "Chelsea FC", "Newcastle United", "Manchester United", "West Ham United", "Brighton"];
         let teams = teamNames.map((name, i) => ({
-            id: i,
-            name: name,
-            mp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0,
-            ovr: i === 0 ? 65 : 45 + Math.floor(Math.random() * 35),
-            isPlayer: i === 0
+            id: i, name: name, mp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0,
+            ovr: i === 0 ? 65 : 45 + Math.floor(Math.random() * 35), isPlayer: i === 0
         }));
 
         let currentRound = 1;
         const totalRounds = 18;
         let schedule = [];
+        let history = []; 
         let tutorialShown = false;
-        let gamePhase = 'standings'; // 'standings', 'prep', 'sim'
+        let gamePhase = 'standings';
+        let standingsTab = 'table';
 
         const boardEl = document.getElementById('board');
         const simLogs = document.getElementById('sim-logs');
-
         const TYPES = ['attack', 'defense', 'pass', 'stamina'];
         const GRID_SIZE = 7;
-        let board = [];
-        let tileElements = [];
-        let moves = 15;
-        let selectedTile = null;
-        let isAnimating = false;
-        let stats = { attack: 10, defense: 10, pass: 10, stamina: 10 };
-        let currentOpponent = null;
+        let board = [], tileElements = [], moves = 15, selectedTile = null, isAnimating = false, stats = { attack: 10, defense: 10, pass: 10, stamina: 10 }, currentOpponent = null;
 
-        // --- SCHEDULING (Proper Round Robin Circle Method) ---
         function generateSchedule() {
-            const numTeams = teams.length;
             const teamPool = teams.map(t => t.id);
-            const rounds = numTeams - 1;
-
-            // First Half
-            for (let r = 0; r < rounds; r++) {
+            const numT = teams.length;
+            for (let r = 0; r < numT - 1; r++) {
                 const roundMatches = [];
-                for (let i = 0; i < numTeams / 2; i++) {
-                    const home = teams[teamPool[i]];
-                    const away = teams[teamPool[numTeams - 1 - i]];
-                    roundMatches.push({ home, away });
+                for (let i = 0; i < numT / 2; i++) {
+                    let hIdx = teamPool[i], aIdx = teamPool[numT - 1 - i];
+                    if (i === 0 && r % 2 === 1) [hIdx, aIdx] = [aIdx, hIdx];
+                    roundMatches.push({ home: teams[hIdx], away: teams[aIdx] });
                 }
                 schedule.push(roundMatches);
-                // Rotate pool (keep index 0 fixed)
                 teamPool.splice(1, 0, teamPool.pop());
             }
-
-            // Second Half (Reverse fixtures)
             const secondHalf = schedule.map(round => round.map(match => ({ home: match.away, away: match.home })));
             schedule = schedule.concat(secondHalf);
         }
 
-        // --- NAVIGATION ---
-        function switchView(viewId) {
-            ['view-standings', 'view-puzzle', 'view-sim'].forEach(id => {
-                document.getElementById(id).classList.add('view-hidden');
-            });
-            document.getElementById(viewId).classList.remove('view-hidden');
-            
-            document.getElementById('nav-standings').classList.remove('active', 'text-red-500');
-            document.getElementById('nav-match').classList.remove('active', 'text-red-500');
-            document.getElementById('nav-standings').classList.add('text-slate-400');
-            document.getElementById('nav-match').classList.add('text-slate-400');
-
-            if (viewId === 'view-standings') {
-                document.getElementById('nav-standings').classList.add('active', 'text-red-500');
-                document.getElementById('nav-standings').classList.remove('text-slate-400');
-                gamePhase = 'standings';
-            } else {
-                document.getElementById('nav-match').classList.add('active', 'text-red-500');
-                document.getElementById('nav-match').classList.remove('text-slate-400');
-                gamePhase = viewId === 'view-puzzle' ? 'prep' : 'sim';
-            }
+        function startSquadSelection() {
+            if (currentRound > totalRounds) return alert("Season Over!");
+            selectedPlayerIds = [];
+            updateSquadUI();
+            switchView('view-squad');
         }
 
-        function handleMatchNav() {
-            if (gamePhase === 'standings') {
-                if (currentRound > totalRounds) return alert("Season Finished!");
-                startMatchPreparation();
-            } else if (gamePhase === 'sim') {
-                switchView('view-sim');
-            } else {
-                switchView('view-puzzle');
-            }
+        function updateSquadUI() {
+            const grid = document.getElementById('squad-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            SQUAD.forEach(player => {
+                const isSelected = selectedPlayerIds.includes(player.id);
+                const card = document.createElement('div');
+                card.className = `player-card p-3 rounded-xl border-2 flex justify-between items-center transition-all cursor-pointer ${isSelected ? 'selected border-red-500' : 'border-white/5 bg-slate-900/50'}`;
+                card.onclick = () => togglePlayer(player.id);
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full bg-${player.color}"></div>
+                        <div><div class="text-sm font-bold text-white">${player.name}</div><div class="text-[10px] uppercase text-slate-500">${player.pos}</div></div>
+                    </div>
+                    <div class="text-xs font-black uppercase text-slate-600">${isSelected ? 'IN' : 'PICK'}</div>
+                `;
+                grid.appendChild(card);
+            });
+            document.getElementById('selection-count').innerText = selectedPlayerIds.length;
+            const btn = document.getElementById('confirm-squad-btn');
+            if (selectedPlayerIds.length === 5) btn.classList.remove('opacity-50', 'pointer-events-none');
+            else btn.classList.add('opacity-50', 'pointer-events-none');
+        }
+
+        function togglePlayer(id) {
+            if (selectedPlayerIds.includes(id)) selectedPlayerIds = selectedPlayerIds.filter(pid => pid !== id);
+            else if (selectedPlayerIds.length < 5) selectedPlayerIds.push(id);
+            updateSquadUI();
+        }
+
+        function switchView(viewId) {
+            ['view-standings', 'view-puzzle', 'view-sim', 'view-squad'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('view-hidden');
+            });
+            const target = document.getElementById(viewId);
+            if (target) target.classList.remove('view-hidden');
+            gamePhase = (viewId === 'view-standings') ? 'standings' : (viewId === 'view-sim' ? 'sim' : 'prep');
+            if (viewId === 'view-standings') setStandingsTab(standingsTab);
+        }
+
+        function setStandingsTab(tab) {
+            standingsTab = tab;
+            const tTab = document.getElementById('tab-table');
+            const rTab = document.getElementById('tab-results');
+            const sTable = document.getElementById('subview-table');
+            const sResults = document.getElementById('subview-results');
+
+            if(tTab) tTab.classList.toggle('active', tab === 'table');
+            if(rTab) rTab.classList.toggle('active', tab === 'results');
+            if(sTable) sTable.classList.toggle('view-hidden', tab !== 'table');
+            if(sResults) sResults.classList.toggle('view-hidden', tab !== 'results');
+
+            if (tab === 'table') updateStandingsUI(); else updateResultsUI();
         }
 
         function startMatchPreparation() {
-            if (currentRound > totalRounds) return;
             const playerMatch = schedule[currentRound - 1].find(m => m.home.isPlayer || m.away.isPlayer);
-            currentOpponent = playerMatch.home.isPlayer ? playerMatch.away : playerMatch.home;
-            document.getElementById('puzzle-opp-name').innerText = currentOpponent.name;
+            const isHome = playerMatch.home.isPlayer;
+            currentOpponent = isHome ? playerMatch.away : playerMatch.home;
+            const oName = document.getElementById('puzzle-opp-name');
+            const vLabel = document.getElementById('puzzle-venue-label');
+            if(oName) oName.innerText = currentOpponent.name;
+            if(vLabel) vLabel.innerText = isHome ? "Home vs" : "Away to";
+            
+            const prepGrid = document.getElementById('prep-player-stats');
+            if(prepGrid) {
+                prepGrid.innerHTML = '';
+                const selectedPlayers = SQUAD.filter(p => selectedPlayerIds.includes(p.id));
+                selectedPlayers.forEach(p => {
+                    const colorHex = p.color === 'red' ? '#ef4444' : (p.color === 'blue' ? '#3b82f6' : '#22c55e');
+                    prepGrid.innerHTML += `
+                        <div class="stats-card p-2 rounded-xl text-center border-b-4 shadow-sm" style="border-color: ${colorHex}" data-pos="${p.pos}" id="card-player-${p.id}">
+                            <div class="text-[6px] uppercase text-slate-400 font-bold">${p.pos}</div>
+                            <div class="text-[9px] font-bold truncate text-white leading-tight">${p.name}</div>
+                            <div class="progress-bar mt-1 bg-slate-800"><div class="progress-fill h-full transition-all" style="width: 10%; background-color: ${colorHex}"></div></div>
+                        </div>
+                    `;
+                });
+
+                prepGrid.innerHTML += `
+                    <div class="stats-card p-2 rounded-xl text-center border-b-4 border-yellow-500 shadow-sm" data-pos="stamina" id="card-stamina">
+                        <div class="text-[6px] uppercase text-slate-400 font-bold">LFC</div>
+                        <div class="text-[9px] font-bold text-white leading-tight">Team Stamina</div>
+                        <div class="progress-bar mt-1 bg-slate-800"><div class="progress-fill h-full bg-yellow-500 transition-all" style="width: 10%"></div></div>
+                    </div>
+                `;
+            }
+
             moves = 15; stats = { attack: 10, defense: 10, pass: 10, stamina: 10 };
-            updateUI(); createBoard();
-            switchView('view-puzzle');
+            selectedTile = null; 
+            updateUI(); createBoard(); switchView('view-puzzle');
             if (!tutorialShown) { showTutorial(); tutorialShown = true; }
         }
 
         function updateStandingsUI() {
-            const list = document.getElementById('standings-list');
-            if (!list) return;
+            const list = document.getElementById('standings-list'); if (!list) return;
             list.innerHTML = '';
-            const sorted = [...teams].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+            const sorted = [...teams].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
             sorted.forEach((team, i) => {
-                const el = document.createElement('div');
-                el.className = `grid grid-cols-9 gap-1 p-3 border-b border-white/5 text-[10px] items-center ${team.isPlayer ? 'bg-red-600/10' : ''}`;
-                el.innerHTML = `
-                    <div class="col-span-1 font-bold ${i < 1 ? 'text-yellow-400' : 'text-slate-500'}">${i + 1}</div>
-                    <div class="col-span-3 font-bold ${team.isPlayer ? 'text-red-500' : ''}">${team.name}</div>
-                    <div class="col-span-1 text-center font-mono text-slate-400">${team.mp}</div>
-                    <div class="col-span-1 text-center font-mono">${team.w}</div>
-                    <div class="col-span-1 text-center font-mono">${team.d}</div>
-                    <div class="col-span-1 text-center font-mono">${team.gf - team.ga}</div>
-                    <div class="col-span-1 text-center font-black">${team.pts}</div>
-                `;
-                list.appendChild(el);
+                const row = document.createElement('div');
+                row.className = `grid grid-cols-9 gap-1 p-3 border-b border-white/5 text-[10px] items-center ${team.isPlayer ? 'bg-red-600/10' : ''}`;
+                row.innerHTML = `<div class="col-span-1 font-bold ${i < 1 ? 'text-yellow-400' : 'text-slate-500'}">${i + 1}</div><div class="col-span-3 font-bold ${team.isPlayer ? 'text-red-500' : ''}">${team.name}</div><div class="col-span-1 text-center font-mono text-slate-400">${team.mp}</div><div class="col-span-1 text-center font-mono">${team.w}</div><div class="col-span-1 text-center font-mono">${team.d}</div><div class="col-span-1 text-center font-mono">${team.gf - team.ga}</div><div class="col-span-1 text-center font-black">${team.pts}</div>`;
+                list.appendChild(row);
             });
-            document.getElementById('league-round-display').innerText = `Round ${currentRound} / ${totalRounds}`;
+            const rDisp = document.getElementById('league-round-display');
+            if(rDisp) rDisp.innerText = `Round ${currentRound} / 18`;
             
-            if (currentRound <= totalRounds) {
-                const playerMatch = schedule[currentRound - 1].find(m => m.home.isPlayer || m.away.isPlayer);
-                const nextOpp = playerMatch.home.isPlayer ? playerMatch.away : playerMatch.home;
-                document.getElementById('next-opp-label').innerText = nextOpp.name;
+            const pm = schedule[currentRound - 1]?.find(m => m.home.isPlayer || m.away.isPlayer);
+            if (pm) {
+                const isHome = pm.home.isPlayer;
+                const opp = isHome ? pm.away : pm.home;
+                const nextLabel = document.getElementById('next-opp-label');
+                if(nextLabel) nextLabel.innerText = `${isHome ? '(H)' : '(A)'} ${opp.name}`;
             }
         }
 
-        // --- PUZZLE LOGIC ---
-        function updateUI() {
-            document.getElementById('moves-count').innerText = moves;
-            document.getElementById('hero-atk').innerText = Math.floor(stats.attack);
-            document.getElementById('hero-mid').innerText = Math.floor(stats.pass);
-            document.getElementById('hero-def').innerText = Math.floor(stats.defense);
-            document.getElementById('hero-stam').innerText = Math.floor(stats.stamina);
-            document.getElementById('bar-attack').style.width = Math.min(stats.attack, 100) + "%";
-            document.getElementById('bar-pass').style.width = Math.min(stats.pass, 100) + "%";
-            document.getElementById('bar-defense').style.width = Math.min(stats.defense, 100) + "%";
-            document.getElementById('bar-stamina').style.width = Math.min(stats.stamina, 100) + "%";
+        function updateResultsUI() {
+            const list = document.getElementById('results-list'); if(!list) return;
+            list.innerHTML = '';
+            if (!history.length) { list.innerHTML = '<div class="text-center py-10 text-slate-500 uppercase text-xs tracking-widest italic">No results yet</div>'; return; }
+            const grouped = {}; history.forEach(m => { if(!grouped[m.round]) grouped[m.round] = []; grouped[m.round].push(m); });
+            Object.keys(grouped).sort((a,b)=>b-a).forEach(r => {
+                list.innerHTML += `<div class="text-[10px] font-black uppercase text-slate-500 mt-4 mb-2 tracking-widest border-b border-slate-800 pb-1 px-1">Round ${r}</div>`;
+                grouped[r].forEach(res => {
+                    list.innerHTML += `<div class="p-3 bg-slate-900 rounded-xl flex justify-between items-center text-[11px] border border-white/5 mb-2 ${res.isPlayerMatch ? 'border-red-600/30' : ''}"><div class="w-[40%] text-right font-bold truncate ${res.homeTeam.isPlayer?'text-red-500':''}">${res.homeTeam.name}</div><div class="w-[20%] bg-slate-800 py-1 px-2 rounded-lg text-center font-black italic shadow-inner mx-2">${res.homeGoals}-${res.awayGoals}</div><div class="w-[40%] text-left font-bold truncate ${res.awayTeam.isPlayer?'text-red-500':''}">${res.awayTeam.name}</div></div>`;
+                });
+            });
         }
 
         function spawnStatIndicator(type, amount) {
-            const card = document.getElementById("card-" + type);
-            if (!card) return;
-            const indicator = document.createElement('div');
-            indicator.className = "stat-indicator text-" + type;
-            indicator.innerText = "+" + amount;
-            card.appendChild(indicator);
-            setTimeout(() => indicator.remove(), 1000);
+            const cards = document.querySelectorAll(`.stats-card[data-pos="${type}"]`);
+            cards.forEach(card => {
+                const indicator = document.createElement('div');
+                indicator.className = "stat-indicator text-" + type;
+                indicator.innerText = "+" + amount;
+                card.appendChild(indicator);
+                setTimeout(() => indicator.remove(), 1000);
+            });
+        }
+
+        function updateUI() {
+            const movesDisp = document.getElementById('moves-count');
+            if(movesDisp) movesDisp.innerText = moves;
+            TYPES.forEach(t => { 
+                const cards = document.querySelectorAll(`.stats-card[data-pos="${t}"]`);
+                cards.forEach(card => {
+                    const fill = card.querySelector('.progress-fill');
+                    if (fill) fill.style.width = Math.min(stats[t], 100) + "%";
+                });
+            });
         }
 
         function createTileElement(r, c, type, booster = null) {
@@ -474,61 +548,105 @@
             if (booster === 'rocket') inner.innerHTML = '🚀';
             if (booster === 'bomb') inner.innerHTML = '⭐';
             el.appendChild(inner);
-            el.onclick = () => !isAnimating && handleTileClick(parseInt(el.dataset.r), parseInt(el.dataset.c));
+            
+            el.onclick = (e) => {
+                // Get the current r and c from the element's data attributes
+                const target = e.currentTarget;
+                const currR = parseInt(target.dataset.r);
+                const currC = parseInt(target.dataset.c);
+                handleTileClick(currR, currC);
+            };
+
             updateTilePosition(el, r, c);
-            boardEl.appendChild(el);
             return el;
         }
 
-        function updateTilePosition(el, r, c) {
-            if (!el) return;
-            const step = 100 / GRID_SIZE;
-            el.style.top = (r * step) + "%";
-            el.style.left = (c * step) + "%";
-            el.dataset.r = r;
-            el.dataset.c = c;
-        }
+        async function handleTileClick(r, c) {
+            if (isAnimating) return;
 
-        function createBoard() {
-            if (!boardEl) return;
-            board = []; tileElements = []; boardEl.innerHTML = '';
-            for (let r = 0; r < GRID_SIZE; r++) {
-                board[r] = []; tileElements[r] = [];
-                for (let c = 0; c < GRID_SIZE; c++) {
-                    let type;
-                    do { type = TYPES[Math.floor(Math.random() * TYPES.length)]; } 
-                    while ((r >= 2 && board[r-1][c]?.type === type && board[r-2][c]?.type === type) || (c >= 2 && board[r][c-1]?.type === type && board[r][c-2]?.type === type));
-                    board[r][c] = { type, booster: null };
-                    tileElements[r][c] = createTileElement(r, c, type);
+            if (selectedTile === null) {
+                // First selection
+                selectedTile = { r, c };
+                if (tileElements[r] && tileElements[r][c]) {
+                    tileElements[r][c].classList.add('selected');
+                }
+            } else if (selectedTile.r === r && selectedTile.c === c) {
+                // Clicking the same tile deselects it
+                if (tileElements[r] && tileElements[r][c]) {
+                    tileElements[r][c].classList.remove('selected');
+                }
+                selectedTile = null;
+            } else {
+                // Second selection - check if neighbor
+                const prev = selectedTile;
+                const dist = Math.abs(prev.r - r) + Math.abs(prev.c - c);
+
+                if (dist === 1) {
+                    // Valid neighbor swap
+                    if (tileElements[prev.r] && tileElements[prev.r][prev.c]) {
+                        tileElements[prev.r][prev.c].classList.remove('selected');
+                    }
+                    selectedTile = null;
+                    await performSwap(prev.r, prev.c, r, c);
+                } else {
+                    // Not a neighbor, update selection to the new tile
+                    if (tileElements[prev.r] && tileElements[prev.r][prev.c]) {
+                        tileElements[prev.r][prev.c].classList.remove('selected');
+                    }
+                    selectedTile = { r, c };
+                    if (tileElements[r] && tileElements[r][c]) {
+                        tileElements[r][c].classList.add('selected');
+                    }
                 }
             }
         }
 
-        async function handleTileClick(r, c) {
-            if (selectedTile === null) {
-                selectedTile = { r, c };
-                tileElements[r][c].classList.add('selected');
-            } else {
-                const prev = selectedTile;
-                tileElements[prev.r][prev.c].classList.remove('selected');
-                selectedTile = null;
-                const dist = Math.abs(prev.r - r) + Math.abs(prev.c - c);
-                if (dist === 1) {
-                    isAnimating = true;
-                    moves--; updateUI();
-                    await swapTiles(prev.r, prev.c, r, c);
-                    const matched = await checkMatches(r, c);
-                    if (!matched) await swapTiles(r, c, prev.r, prev.c);
-                    isAnimating = false;
-                    if (moves <= 0) triggerMatchTransition();
+        async function performSwap(r1, c1, r2, c2) {
+            if (isAnimating) return;
+            try {
+                isAnimating = true;
+                moves--;
+                updateUI();
+                await swapTiles(r1, c1, r2, c2);
+                const matched = await checkMatches(r2, c2);
+                if (!matched) {
+                    await swapTiles(r1, c1, r2, c2); // Swap back
+                }
+            } finally {
+                isAnimating = false;
+                if (moves <= 0) triggerMatchTransition();
+            }
+        }
+
+        function updateTilePosition(el, r, c) { 
+            if (!el) return; 
+            const step = 100 / GRID_SIZE; 
+            el.style.top = (r * step) + "%"; 
+            el.style.left = (c * step) + "%"; 
+            el.dataset.r = r; 
+            el.dataset.c = c; 
+        }
+
+        function createBoard() {
+            board = []; tileElements = []; boardEl.innerHTML = '';
+            selectedTile = null; 
+            for (let r = 0; r < GRID_SIZE; r++) {
+                board[r] = []; tileElements[r] = [];
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let type; do { type = TYPES[Math.floor(Math.random() * TYPES.length)]; } while ((r >= 2 && board[r-1][c]?.type === type && board[r-2][c]?.type === type) || (c >= 2 && board[r][c-1]?.type === type && board[r][c-2]?.type === type));
+                    board[r][c] = { type, booster: null };
+                    const el = createTileElement(r, c, type);
+                    tileElements[r][c] = el;
+                    boardEl.appendChild(el);
                 }
             }
         }
 
         async function swapTiles(r1, c1, r2, c2) {
-            const t1 = board[r1][c1], t2 = board[r2][c2];
+            if (r1 < 0 || r2 < 0 || !board[r1] || !board[r2] || !board[r1][c1] || !board[r2][c2]) return;
+            const t1 = board[r1][c1], t2 = board[r2][c2]; 
             board[r1][c1] = t2; board[r2][c2] = t1;
-            const e1 = tileElements[r1][c1], e2 = tileElements[r2][c2];
+            const e1 = tileElements[r1][c1], e2 = tileElements[r2][c2]; 
             tileElements[r1][c1] = e2; tileElements[r2][c2] = e1;
             updateTilePosition(e1, r2, c2); updateTilePosition(e2, r1, c1);
             await new Promise(r => setTimeout(r, 200));
@@ -536,59 +654,33 @@
 
         async function checkMatches(triggerR, triggerC) {
             let matches = new Set();
-            for(let r=0; r<GRID_SIZE; r++) {
-                for(let c=0; c<GRID_SIZE-2; c++) {
-                    let t = board[r][c]?.type;
-                    if(t && board[r][c+1]?.type === t && board[r][c+2]?.type === t) {
-                        matches.add(r+","+c); matches.add(r+","+(c+1)); matches.add(r+","+(c+2));
-                    }
-                }
-            }
-            for(let c=0; c<GRID_SIZE; c++) {
-                for(let r=0; r<GRID_SIZE-2; r++) {
-                    let t = board[r][c]?.type;
-                    if(t && board[r+1][c]?.type === t && board[r+2][c]?.type === t) {
-                        matches.add(r+","+c); matches.add((r+1)+","+c); matches.add((r+2)+","+c);
-                    }
-                }
-            }
-            if(matches.size === 0) return false;
+            for(let r=0; r<GRID_SIZE; r++) for(let c=0; c<GRID_SIZE-2; c++) { let t = board[r][c]?.type; if(t && board[r][c+1]?.type === t && board[r][c+2]?.type === t) { matches.add(r+","+c); matches.add(r+","+(c+1)); matches.add(r+","+(c+2)); } }
+            for(let c=0; c<GRID_SIZE; c++) for(let r=0; r<GRID_SIZE-2; r++) { let t = board[r][c]?.type; if(t && board[r+1][c]?.type === t && board[r+2][c]?.type === t) { matches.add(r+","+c); matches.add((r+1)+","+c); matches.add((r+2)+","+c); } }
+            if(!matches.size) return false;
             if(matches.size === 4 && triggerR !== -1 && board[triggerR] && board[triggerR][triggerC]) board[triggerR][triggerC].nextBooster = 'rocket';
             if(matches.size >= 5 && triggerR !== -1 && board[triggerR] && board[triggerR][triggerC]) board[triggerR][triggerC].nextBooster = 'bomb';
-            const scoreGains = { attack: 0, defense: 0, pass: 0, stamina: 0 };
+            const gains = { attack: 0, defense: 0, pass: 0, stamina: 0 };
             matches.forEach(m => {
-                const [r, c] = m.split(',').map(Number);
-                const tile = board[r][c];
-                if(tile) {
-                    scoreGains[tile.type]++;
-                    if(tile.booster === 'rocket') {
-                        for(let i=0; i<GRID_SIZE; i++) {
-                            if(board[r][i]) { matches.add(r+","+i); scoreGains[board[r][i].type]++; }
-                            if(board[i][c]) { matches.add(i+","+c); scoreGains[board[i][c].type]++; }
-                        }
-                    } else if (tile.booster === 'bomb') {
-                        const targetColor = tile.type;
-                        for(let i=0; i<GRID_SIZE; i++) {
-                            for(let j=0; j<GRID_SIZE; j++) {
-                                if(board[i][j]?.type === targetColor) { matches.add(i+","+j); scoreGains[targetColor]++; }
-                            }
-                        }
-                    }
-                }
+                const [r, c] = m.split(',').map(Number); const tile = board[r][c]; if(!tile) return; gains[tile.type]++;
+                if(tile.booster === 'rocket') for(let i=0; i<GRID_SIZE; i++) { if(board[r][i]){matches.add(r+","+i); gains[board[r][i].type]++;} if(board[i][c]){matches.add(i+","+c); gains[board[i][c].type]++;} }
+                else if (tile.booster === 'bomb') { const tc = tile.type; for(let i=0; i<GRID_SIZE; i++) for(let j=0; j<GRID_SIZE; j++) if(board[i][j]?.type === tc){matches.add(i+","+j); gains[tc]++;} }
             });
-            for(let type in scoreGains) { if(scoreGains[type] > 0) { stats[type] += scoreGains[type] * 2; spawnStatIndicator(type, scoreGains[type] * 2); } }
-            matches.forEach(m => { const [r, c] = m.split(',').map(Number); if(tileElements[r][c]) tileElements[r][c].style.opacity = '0'; });
+            for(let k in gains) if(gains[k]) { stats[k] += gains[k] * 2; spawnStatIndicator(k, gains[k] * 2); }
+            matches.forEach(m => { const [r, c] = m.split(',').map(Number); if(tileElements[r] && tileElements[r][c]) tileElements[r][c].style.opacity = '0'; });
             await new Promise(r => setTimeout(r, 200));
             matches.forEach(m => {
-                const [r, c] = m.split(',').map(Number);
-                const nextB = board[r][c]?.nextBooster;
-                const type = board[r][c]?.type;
-                if(tileElements[r][c]) tileElements[r][c].remove();
-                if(nextB) { board[r][c] = { type, booster: nextB }; tileElements[r][c] = createTileElement(r, c, type, nextB); }
-                else { board[r][c] = null; tileElements[r][c] = null; }
+                const [r, c] = m.split(',').map(Number); const nextB = board[r][c]?.nextBooster, type = board[r][c]?.type; 
+                if(tileElements[r] && tileElements[r][c]) tileElements[r][c].remove();
+                if(nextB) {
+                    board[r][c] = { type, booster: nextB };
+                    const el = createTileElement(r, c, type, nextB);
+                    tileElements[r][c] = el;
+                    boardEl.appendChild(el);
+                } else {
+                    board[r][c] = null; tileElements[r][c] = null;
+                }
             });
-            updateUI(); await applyGravity(); await checkMatches(-1, -1);
-            return true;
+            updateUI(); await applyGravity(); await checkMatches(-1, -1); return true;
         }
 
         async function applyGravity() {
@@ -596,113 +688,124 @@
                 let empty = 0;
                 for (let r = GRID_SIZE - 1; r >= 0; r--) {
                     if (board[r][c] === null) empty++;
-                    else if (empty > 0) {
-                        board[r+empty][c] = board[r][c]; tileElements[r+empty][c] = tileElements[r][c];
-                        board[r][c] = null; tileElements[r][c] = null;
-                        updateTilePosition(tileElements[r+empty][c], r+empty, c);
+                    else if (empty > 0) { 
+                        board[r+empty][c] = board[r][c]; 
+                        tileElements[r+empty][c] = tileElements[r][c]; 
+                        board[r][c] = null; 
+                        tileElements[r][c] = null; 
+                        updateTilePosition(tileElements[r+empty][c], r+empty, c); 
                     }
                 }
                 for (let i = 0; i < empty; i++) {
-                    const r = empty - 1 - i; const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+                    const r = empty - 1 - i, type = TYPES[Math.floor(Math.random() * TYPES.length)];
                     board[r][c] = { type, booster: null };
-                    tileElements[r][c] = createTileElement(-1-i, c, type);
+                    const el = createTileElement(-1-i, c, type);
+                    tileElements[r][c] = el;
+                    boardEl.appendChild(el);
                     setTimeout(() => updateTilePosition(tileElements[r][c], r, c), 50);
                 }
             }
             await new Promise(r => setTimeout(r, 300));
         }
 
-        // --- TRANSITION ---
         function triggerMatchTransition() {
-            const overlay = document.getElementById('transition-overlay');
-            overlay.classList.add('active');
-            setTimeout(() => {
-                startSimulation();
-                setTimeout(() => overlay.classList.remove('active'), 500);
-            }, 600);
+            const pm = schedule[currentRound-1].find(m => m.home.isPlayer || m.away.isPlayer);
+            const subtitleEl = document.getElementById('transition-subtitle');
+            if(subtitleEl) subtitleEl.innerText = pm.home.isPlayer ? "Entering Anfield..." : `Traveling to ${currentOpponent.name}...`;
+            const overlay = document.getElementById('transition-overlay'); if (overlay) overlay.classList.add('active');
+            setTimeout(() => { startSimulation(); setTimeout(() => overlay && overlay.classList.remove('active'), 500); }, 600);
         }
 
-        // --- SIMULATION ---
         async function startSimulation() {
-            switchView('view-sim');
-            if (simLogs) simLogs.innerHTML = '';
-            const homeScoreEl = document.getElementById('score-home');
-            const awayScoreEl = document.getElementById('score-away');
-            const finishBtn = document.getElementById('finish-match-btn');
-            const initialsEl = document.getElementById('opp-initials');
-            if (homeScoreEl) homeScoreEl.innerText = '0';
-            if (awayScoreEl) awayScoreEl.innerText = '0';
-            if (finishBtn) finishBtn.classList.add('view-hidden');
-            const playerMatch = schedule[currentRound - 1].find(m => m.home.isPlayer || m.away.isPlayer);
-            const isHome = playerMatch.home.isPlayer;
-            const oppTeam = currentOpponent;
-            if (initialsEl) initialsEl.innerText = oppTeam.name.substring(0, 3).toUpperCase();
+            switchView('view-sim'); if (simLogs) simLogs.innerHTML = '';
+            const engineContainer = document.getElementById('sim-engine-container');
+            const homeScoreEl = document.getElementById('score-home'), awayScoreEl = document.getElementById('score-away'), hCrest = document.getElementById('home-crest'), aCrest = document.getElementById('away-crest'), hLabel = document.querySelector('#sim-home-team .text-slate-400'), aLabel = document.querySelector('#sim-away-team .text-slate-400'), finishBtn = document.getElementById('finish-match-btn');
+            if (homeScoreEl) homeScoreEl.innerText = '0'; if (awayScoreEl) awayScoreEl.innerText = '0'; if (finishBtn) finishBtn.classList.add('view-hidden');
+            const pm = schedule[currentRound-1].find(m => m.home.isPlayer || m.away.isPlayer), homeTeamObj = pm.home, awayTeamObj = pm.away;
+            if(hCrest) { hCrest.innerText = homeTeamObj.isPlayer ? "LFC" : homeTeamObj.name.substring(0, 3).toUpperCase(); hCrest.style.backgroundColor = homeTeamObj.isPlayer ? "#b91c1c" : "#2563eb"; }
+            if(hLabel) hLabel.innerText = homeTeamObj.name;
+            if(aCrest) { aCrest.innerText = awayTeamObj.isPlayer ? "LFC" : awayTeamObj.name.substring(0, 3).toUpperCase(); aCrest.style.backgroundColor = awayTeamObj.isPlayer ? "#b91c1c" : "#2563eb"; }
+            if(aLabel) aLabel.innerText = awayTeamObj.name;
+
+            const selectedPlayers = SQUAD.filter(p => selectedPlayerIds.includes(p.id));
             const stamMult = 0.5 + (stats.stamina / 50);
             const pStats = { atk: stats.attack * stamMult, def: stats.defense * stamMult, pass: stats.pass * stamMult };
-            let pGoals = 0, oGoals = 0;
-            const segments = [10, 20, 35, 45, 55, 70, 80, 90]; 
-            for(let min of segments) {
-                if (simLogs) {
-                    const eventContainer = document.createElement('div');
-                    eventContainer.className = "p-3 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 shadow-lg";
-                    eventContainer.innerHTML = `<div class="flex items-center gap-2 border-b border-slate-800 pb-2"><span class="bg-red-600 px-1.5 py-0.5 rounded text-[10px] font-black italic shadow-md text-white">${min}'</span><span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Match Breakdown</span></div>`;
-                    simLogs.appendChild(eventContainer);
-                    await new Promise(r => setTimeout(r, 1500)); 
-                    const pPassRoll = Math.floor(Math.random() * pStats.pass);
-                    const oPassRoll = Math.floor(Math.random() * oppTeam.ovr);
-                    const playerAtks = pPassRoll >= oPassRoll;
-                    const midfieldUI = document.createElement('div'); midfieldUI.className = "space-y-3";
-                    midfieldUI.innerHTML = `<div class="flex flex-col gap-1 w-full"><div class="flex justify-between px-1 text-[9px] uppercase font-black"><span class="text-slate-400">Midfield Duel</span><span class="${playerAtks ? 'text-red-500' : 'text-blue-500'}">${playerAtks ? 'LFC Possession' : oppTeam.name.split(' ')[0] + ' Ball'}</span></div><div class="flex items-center gap-2"><span class="font-mono text-red-500 font-black text-xs">${pPassRoll}</span><div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden flex"><div class="bg-red-600 h-full transition-all duration-1000" style="width: ${Math.min((pPassRoll/(pPassRoll+oPassRoll+1))*100, 100)}%"></div><div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${Math.min((oPassRoll/(pPassRoll+oPassRoll+1))*100, 100)}%"></div></div><span class="font-mono text-blue-500 font-black text-xs">${oPassRoll}</span></div></div>`;
-                    eventContainer.appendChild(midfieldUI);
-                    await new Promise(r => setTimeout(r, 1800)); 
-                    let goal = false, outcomeTitle = "", narrative = "", atkVal = 0, defVal = 0;
-                    if(playerAtks) {
-                        atkVal = Math.floor(Math.random() * pStats.atk); defVal = Math.floor(Math.random() * (oppTeam.ovr + 5));
-                        if(atkVal > defVal + 15) { goal = true; pGoals++; outcomeTitle = "Goal!"; narrative = "Liverpool slices through the backline!"; }
-                        else if (atkVal > defVal) { outcomeTitle = "Save"; narrative = "The keeper tips it away."; }
-                        else { outcomeTitle = "Blocked"; narrative = "Opposition defense regroups."; }
-                    } else {
-                        atkVal = Math.floor(Math.random() * oppTeam.ovr); defVal = Math.floor(Math.random() * pStats.def);
-                        if(atkVal > defVal + 15) { goal = true; oGoals++; outcomeTitle = "Goal Conceded"; narrative = oppTeam.name + " finds a pocket of space!"; }
-                        else if (atkVal > defVal) { outcomeTitle = "Close"; narrative = "The ball rattles the post!"; }
-                        else { outcomeTitle = "Intercepted"; narrative = "LFC defense halts the break."; }
+            let hG = 0, aG = 0; const segs = [10, 20, 35, 45, 55, 70, 80, 90]; 
+
+            for(let min of segs) {
+                const event = document.createElement('div'); event.className = "p-3 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 animate-in fade-in duration-500 shadow-lg shrink-0";
+                event.innerHTML = `<div class="flex items-center gap-2 border-b border-slate-800 pb-2"><span class="bg-red-600 px-1.5 py-0.5 rounded text-[10px] font-black italic shadow-md text-white">${min}'</span><span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Match Segment</span></div>`;
+                if (simLogs) simLogs.appendChild(event);
+                await new Promise(r => setTimeout(r, 1200)); 
+
+                const hPass = homeTeamObj.isPlayer ? pStats.pass : homeTeamObj.ovr, aPass = awayTeamObj.isPlayer ? pStats.pass : awayTeamObj.ovr;
+                const hR = Math.floor(Math.random() * hPass), aR = Math.floor(Math.random() * aPass), hAtks = hR >= aR;
+                const winnerLabel = hAtks ? homeTeamObj.name : awayTeamObj.name;
+                const winnerColor = hAtks ? (homeTeamObj.isPlayer ? 'text-red-500' : 'text-blue-500') : (awayTeamObj.isPlayer ? 'text-red-500' : 'text-blue-500');
+
+                event.innerHTML += `<div class="flex flex-col gap-1 w-full"><div class="flex justify-between px-1 text-[9px] uppercase font-black"><span class="text-slate-400">Midfield Duel</span><span class="${winnerColor}">${winnerLabel} Possession</span></div><div class="flex items-center gap-2"><span class="font-mono ${homeTeamObj.isPlayer ? 'text-red-500' : 'text-blue-500'} font-black text-xs">${hR}</span><div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden flex"><div class="${homeTeamObj.isPlayer ? 'bg-red-600' : 'bg-blue-600'} h-full transition-all duration-1000" style="width: ${Math.min((hR/(hR+aR+1))*100, 100)}%"></div><div class="${awayTeamObj.isPlayer ? 'bg-red-600' : 'bg-blue-600'} h-full transition-all duration-1000" style="width: ${Math.min((aR/(hR+aR+1))*100, 100)}%"></div></div><span class="font-mono ${awayTeamObj.isPlayer ? 'text-red-500' : 'text-blue-500'} font-black text-xs">${aR}</span></div></div>`;
+                await new Promise(r => setTimeout(r, 1500)); 
+
+                let g = false, ot = "", nar = "", av = 0, dv = 0, scorerName = "";
+                if(hAtks) {
+                    av = Math.floor(Math.random() * (homeTeamObj.isPlayer ? pStats.atk : homeTeamObj.ovr));
+                    dv = Math.floor(Math.random() * (awayTeamObj.isPlayer ? pStats.def : awayTeamObj.ovr + 5));
+                    if(av > dv + 15) { 
+                        g = true; hG++; ot = "Goal!"; 
+                        const sc = selectedPlayers.filter(p=>p.pos==='attack');
+                        scorerName = homeTeamObj.isPlayer ? (sc[Math.floor(Math.random()*sc.length)]?.name || "LFC") : homeTeamObj.name;
+                        nar = `${scorerName} fires into the net!`;
+                    } else nar = `${homeTeamObj.name} attack repelled.`;
+                } else {
+                    av = Math.floor(Math.random() * (awayTeamObj.isPlayer ? pStats.atk : awayTeamObj.ovr));
+                    dv = Math.floor(Math.random() * (homeTeamObj.isPlayer ? pStats.def : homeTeamObj.ovr + 5));
+                    if(av > dv + 15) { 
+                        g = true; aG++; ot = "Goal!"; 
+                        const sc = selectedPlayers.filter(p=>p.pos==='attack');
+                        scorerName = awayTeamObj.isPlayer ? (sc[Math.floor(Math.random()*sc.length)]?.name || "LFC") : awayTeamObj.name;
+                        nar = `${scorerName} clinical finish!`;
+                    } else nar = "Defense stands firm.";
+                }
+                event.innerHTML += `<div class="p-2 bg-slate-800/40 rounded-xl space-y-2"><div class="flex justify-between items-center px-1"><span class="text-[9px] text-slate-500 uppercase font-black">Final Duel</span><span class="${g ? 'text-green-400' : 'text-white'} font-black text-[10px] uppercase">${g ? ot : 'Cleared'}</span></div><div class="flex items-center gap-2"><span class="font-mono text-[10px] font-black ${homeTeamObj.isPlayer ? 'text-red-500' : 'text-blue-500'}">${av}</span><div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden flex"><div class="${hAtks ? (homeTeamObj.isPlayer ? 'bg-red-500' : 'bg-blue-500') : (homeTeamObj.isPlayer ? 'bg-blue-500' : 'bg-red-500')} h-full transition-all" style="width: ${Math.min((av/(av+dv+1))*100, 100)}%"></div><div class="${!hAtks ? (awayTeamObj.isPlayer ? 'bg-red-500' : 'bg-blue-500') : (awayTeamObj.isPlayer ? 'bg-blue-500' : 'bg-red-500')} h-full transition-all" style="width: ${Math.min((dv/(av+dv+1))*100, 100)}%"></div></div><span class="font-mono text-[10px] font-black ${awayTeamObj.isPlayer ? 'text-red-500' : 'text-blue-500'}">${dv}</span></div><div class="text-[10px] text-slate-400 italic">${nar}</div></div>`;
+                
+                if (g) {
+                    const overlay = document.getElementById('goal-celebration');
+                    const content = document.getElementById('goal-content');
+                    const nameEl = document.getElementById('goal-scorer-name');
+                    const bannerText = document.getElementById('goal-banner-text');
+                    if (overlay && content && nameEl && bannerText) {
+                        nameEl.innerText = scorerName; bannerText.innerText = "GOAL!";
+                        const isLFC = (hAtks && homeTeamObj.isPlayer) || (!hAtks && awayTeamObj.isPlayer);
+                        nameEl.style.backgroundColor = isLFC ? "#b91c1c" : "#2563eb";
+                        overlay.classList.add('active'); content.classList.remove('scale-50'); content.classList.add('scale-100');
+                        if (engineContainer) engineContainer.classList.add('shake'); await new Promise(r => setTimeout(r, 2000));
+                        overlay.classList.remove('active'); content.classList.add('scale-50'); content.classList.remove('scale-100');
+                        if (engineContainer) engineContainer.classList.remove('shake');
                     }
-                    const outcomeUI = document.createElement('div'); outcomeUI.className = "p-2 bg-slate-800/40 rounded-xl border border-slate-700/30 space-y-2";
-                    outcomeUI.innerHTML = `<div class="flex justify-between items-center px-1"><span class="text-[9px] text-slate-500 uppercase font-black">${playerAtks ? 'LFC Attack' : 'Defending'}</span><span class="${goal ? 'text-green-400' : 'text-white'} font-black text-[10px] italic uppercase tracking-tighter">${outcomeTitle}</span></div><div class="flex items-center gap-2"><span class="font-mono text-[10px] font-black ${playerAtks ? 'text-red-500' : 'text-blue-500'}">${atkVal}</span><div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden flex"><div class="${playerAtks ? 'bg-red-500' : 'bg-blue-500'} h-full transition-all" style="width: ${Math.min((atkVal/(atkVal+defVal+1))*100, 100)}%"></div><div class="${playerAtks ? 'bg-blue-500' : 'bg-red-500'} h-full transition-all" style="width: ${Math.min((defVal/(atkVal+defVal+1))*100, 100)}%"></div></div><span class="font-mono text-[10px] font-black ${playerAtks ? 'text-blue-500' : 'text-red-500'}">${defVal}</span></div><div class="text-[10px] text-slate-400 italic">${narrative}</div>`;
-                    eventContainer.appendChild(outcomeUI);
-                    if (homeScoreEl) homeScoreEl.innerText = isHome ? pGoals : oGoals;
-                    if (awayScoreEl) awayScoreEl.innerText = isHome ? oGoals : pGoals;
-                    if(goal) { const sp = isHome ? homeScoreEl : awayScoreEl; sp.classList.add('goal-anim'); setTimeout(() => sp.classList.remove('goal-anim'), 600); }
-                    simLogs.scrollTop = simLogs.scrollHeight;
-                    await new Promise(r => setTimeout(r, 1200));
                 }
+                if (homeScoreEl) homeScoreEl.innerText = hG; if (awayScoreEl) awayScoreEl.innerText = aG;
+                if(g) { const s = hAtks ? homeScoreEl : awayScoreEl; if (s) { s.classList.add('goal-anim'); setTimeout(()=>s.classList.remove('goal-anim'), 600); } }
+                if (simLogs) { simLogs.scrollTop = simLogs.scrollHeight; await new Promise(r => setTimeout(r, 1000)); }
             }
-            const playerTeam = teams[0];
-            updateTeamStats(playerTeam, pGoals, oGoals); updateTeamStats(oppTeam, oGoals, pGoals);
-            schedule[currentRound-1].forEach(m => {
-                if(!m.home.isPlayer && !m.away.isPlayer) {
-                    const hG = Math.floor(Math.random() * (m.home.ovr / 15)), aG = Math.floor(Math.random() * (m.away.ovr / 15));
-                    updateTeamStats(m.home, hG, aG); updateTeamStats(m.away, aG, hG);
-                }
-            });
-            currentRound++;
-            if (finishBtn) { finishBtn.classList.remove('view-hidden'); finishBtn.onclick = () => { updateStandingsUI(); switchView('view-standings'); }; }
+            updateTeamStats(homeTeamObj, hG, aG); updateTeamStats(awayTeamObj, aG, hG);
+            history.push({ round: currentRound, homeTeam: {...homeTeamObj}, awayTeam: {...awayTeamObj}, homeGoals: hG, awayGoals: aG, isPlayerMatch: true });
+            schedule[currentRound-1].forEach(m => { if(!m.home.isPlayer && !m.away.isPlayer) { const h = Math.floor(Math.random()*(m.home.ovr/15)), a = Math.floor(Math.random()*(m.away.ovr/15)); updateTeamStats(m.home, h, a); updateTeamStats(m.away, a, h); history.push({ round: currentRound, homeTeam: {...m.home}, awayTeam: {...m.away}, homeGoals: h, awayGoals: a, isPlayerMatch: false }); } });
+            currentRound++; if (finishBtn) { finishBtn.classList.remove('view-hidden'); finishBtn.onclick = () => { switchView('view-standings'); setStandingsTab('table'); }; }
         }
 
-        function updateTeamStats(team, gf, ga) {
-            team.mp++; team.gf += gf; team.ga += ga;
-            if(gf > ga) { team.w++; team.pts += 3; }
-            else if(gf === ga) { team.d++; team.pts += 1; }
-            else { team.l++; }
+        function updateTeamStats(t, f, a) { t.mp++; t.gf += f; t.ga += a; if(f > a) { t.w++; t.pts += 3; } else if(f === a) { t.d++; t.pts += 1; } else { t.l++; } }
+        function showTutorial() { 
+            const el = document.getElementById('tutorial-modal');
+            if (el) el.classList.remove('view-hidden'); 
         }
-
-        function showTutorial() { document.getElementById('tutorial-modal').classList.remove('view-hidden'); }
-        function closeTutorial() { document.getElementById('tutorial-modal').classList.add('view-hidden'); }
-
+        function closeTutorial() { 
+            const el = document.getElementById('tutorial-modal');
+            if (el) el.classList.add('view-hidden'); 
+        }
         window.onload = () => { generateSchedule(); updateStandingsUI(); };
     </script>
-</body>
-</html>
+
+<!-- FIREBASE TRACKING -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -718,11 +821,11 @@
         measurementId: "G-1X91H99N2G"
     };
 
+    const GAME_ID = 'football-legendary-league'; 
+
     let db;
     let auth;
     let currentUser = null;
-    let timePlayed = 0;
-    const gameId = "football-legendary-league";
 
     async function initFirebase() {
         try {
@@ -731,39 +834,46 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
+                // Crucial: Set inMemory persistence for iframe/preview support
                 try {
                     await setPersistence(auth, inMemoryPersistence);
                 } catch (e) {
-                    console.warn("Persistence fallback warning:", e);
+                    console.warn("Persistence set warning", e);
                 }
 
                 const userCredential = await signInAnonymously(auth);
                 currentUser = userCredential.user;
-                console.log("Firebase Initialized & Signed In: " + currentUser.uid);
-                
-                setInterval(() => {
-                    timePlayed++;
-                }, 1000);
+                console.log("Stats tracking active");
+
+                const statsRef = doc(db, "game_stats", GAME_ID);
+                updateDoc(statsRef, {
+                    plays: increment(1)
+                }).catch(e => console.log("Stats error:", e));
             }
-        } catch (e) {
-            console.error("Firebase Error:", e);
-        }
+        } catch (e) { console.error("Tracking Error - check console", e); }
     }
 
-    async function updateTimePlayed() {
-        if (db && currentUser && timePlayed > 0) {
-            try {
-                const statsRef = doc(db, "game_stats", gameId);
-                await updateDoc(statsRef, {
-                    timePlayed: increment(timePlayed)
-                });
-            } catch (e) {
-                console.error("Error updating time played", e);
-            }
-        }
-    }
-
-    window.addEventListener('beforeunload', updateTimePlayed);
-    
     initFirebase();
+
+    let startTime = Date.now();
+
+    function saveTime() {
+        if (!db || !currentUser) return; // Guard check
+        const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+        if (timeSpentSeconds > 0) {
+            const statsRef = doc(db, "game_stats", GAME_ID);
+            updateDoc(statsRef, {
+                timePlayed: increment(timeSpentSeconds)
+            }).catch(e => console.log("Stats error:", e));
+            startTime = Date.now();
+        }
+    }
+
+    window.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'hidden') saveTime();
+        else startTime = Date.now();
+    });
+    window.addEventListener("beforeunload", saveTime);
 </script>
+</body>
+</html>
