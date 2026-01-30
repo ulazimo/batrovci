@@ -694,6 +694,8 @@ const game = new Game();
                 updateDoc(statsRef, {
                     plays: increment(1)
                 }).catch(e => console.log("Stats error:", e));
+
+                setInterval(saveTime, 30000); // Periodically save time
             }
         } catch (e) { console.error("Tracking Error - check console", e); }
     }

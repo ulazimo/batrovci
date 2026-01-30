@@ -1111,6 +1111,8 @@
 	                    const userCredential = await signInAnonymously(auth);
 	                    currentUser = userCredential.user;
 	                    console.log("Stats tracking active");
+
+                        setInterval(saveTime, 30000); // Periodically save time
 	                }
 	            } catch (e) { console.error("Tracking Error - check console", e); }
 	        }
