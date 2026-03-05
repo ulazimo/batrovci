@@ -173,12 +173,22 @@
         let selectedSquare = null;
         let validMoves = [];
 
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
         function initBoard() {
             board = Array(25).fill(null);
-            // Crni
-            board[0] = 'bR'; board[1] = 'bN'; board[2] = 'bK'; board[3] = 'bB'; board[4] = 'bQ';
-            // Bijeli
-            board[20] = 'wR'; board[21] = 'wN'; board[22] = 'wK'; board[23] = 'wB'; board[24] = 'wQ';
+            const blackPieces = shuffle(['bR', 'bN', 'bK', 'bB', 'bQ']);
+            const whitePieces = shuffle(['wR', 'wN', 'wK', 'wB', 'wQ']);
+            for (let i = 0; i < 5; i++) {
+                board[i] = blackPieces[i];
+                board[20 + i] = whitePieces[i];
+            }
             renderBoard();
         }
 
