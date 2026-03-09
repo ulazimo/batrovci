@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Road Blocks: Car Blast!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-pop': 'bouncePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
+                    },
+                    keyframes: {
+                        bouncePop: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '70%': { transform: 'scale(1.1)', opacity: '1' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Prevent all pull-to-refresh and selection behaviors on mobile */
+        body { overscroll-behavior-y: contain; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; }
+        .grid-cell-inner { border-top: 2px solid rgba(255,255,255,0.3); border-left: 2px solid rgba(255,255,255,0.3); border-bottom: 2px solid rgba(0,0,0,0.3); border-right: 2px solid rgba(0,0,0,0.3); border-radius: inherit; }
+        .block-shape { background-color: currentColor; }
+        
+        /* Dynamic SVG Icons */
+        .icon-star { fill: #facc15; color: #facc15; }
+        .icon-rotate { color: currentColor; }
+        .icon-settings { color: currentColor; }
+        
+        /* Blocker Hazard Pattern */
+        .bg-blocker {
+            background: repeating-linear-gradient(45deg, #111827, #111827 8px, #f97316 8px, #f97316 16px);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 h-[100vh] w-full flex items-center justify-center font-sans overflow-hidden text-slate-900">
+
+    <!-- 1080x1920 HD 9:16 CONTAINER -->
+    <div class="bg-[#6b9ff0] relative w-full h-full sm:w-auto sm:h-[95vh] sm:aspect-[9/16] sm:shadow-2xl flex flex-col p-3 sm:p-6 overflow-hidden">
+        
+        <!-- START SCREEN OVERLAY -->
+        <div id="start-screen" class="absolute inset-0 bg-[#6b9ff0] z-[100] flex flex-col items-center justify-center font-sans">
+            <h1 class="text-[5rem] sm:text-[6.5rem] leading-none font-black text-[#1e293b] tracking-tighter mb-4 text-center">
+                ROAD<br>BLOCKS
+            </h1>
+            <h2 class="text-xl sm:text-2xl font-black text-[#1e293b] tracking-[0.2em] uppercase mb-16">
+                Car Blast!
+            </h2>
+            
+            <button onclick="startGame('roadtrip')" class="w-[70%] max-w-[280px] bg-[#4ade80] hover:bg-[#22c55e] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#166534] active:translate-y-[6px] active:shadow-none transition-all mb-6 uppercase tracking-widest border-4 border-[#166534]">
+                Roadtrip
+            </button>
+            
+            <button onclick="startGame('classic')" class="w-[70%] max-w-[280px] bg-[#facc15] hover:bg-[#eab308] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#a16207] active:translate-y-[6px] active:shadow-none transition-all uppercase tracking-widest border-4 border-[#a16207]">
+                Classic
+            </button>
+        </div>
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-start w-full mb-2 sm:mb-4 mt-1 sm:mt-2">
+            
+            <!-- Left: High Score & Gems -->
+            <div class="flex flex-col gap-1 w-1/3 pt-1 sm:pt-2">
+                <div class="flex items-center gap-2 font-bold text-xl sm:text-2xl">
+                    <svg class="icon-star w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span id="ui-highscore">0</span>
+                </div>
+                <div class="flex items-center gap-2 font-bold text-lg sm:text-xl text-purple-200 drop-shadow-sm transition-opacity duration-300" id="gem-container">
+                    <svg viewBox="0 0 24 24" fill="#a855f7" stroke="#e9d5ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md"><polygon points="12 2 2 7 12 22 22 7 12 2"></polygon><polyline points="2 7 12 11 22 7"></polyline><line x1="12" y1="22" x2="12" y2="11"></line></svg>
+                    <span id="ui-gems">0</span>
+                </div>
+            </div>
+
+            <!-- Center: Level & Current Score -->
+            <div class="flex flex-col items-center justify-center w-1/3">
+                <div id="ui-level" class="text-sm sm:text-base font-bold text-slate-800/60 tracking-widest uppercase mb-[-5px] sm:mb-[-10px] z-10 cursor-pointer hover:text-slate-900 transition-colors pointer-events-auto" title="Click to jump to a specific level">Level 1</div>
+                <div id="ui-score" class="text-5xl sm:text-7xl font-black tracking-tight drop-shadow-sm relative z-0">0</div>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="flex items-center justify-end gap-2 sm:gap-3 w-1/3 pt-1 sm:pt-3">
+                <button onclick="startNewGame()" class="p-2 sm:p-3 bg-black/10 hover:bg-black/20 rounded-full transition text-slate-900">
+                    <svg class="icon-rotate w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                </button>
+                <button onclick="showStartScreen()" class="p-2 sm:p-3 bg-black/10 hover:bg-black/20 rounded-full transition text-slate-900">
+                    <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME BOARD & CARS -->
+        <div class="w-full flex-1 flex flex-col justify-center relative mt-auto">
+            <div id="grid-container" class="grid grid-cols-8 gap-0 border-[3px] border-slate-900 bg-[#7ba8f5] shadow-lg relative w-full rounded-sm aspect-square">
+                <!-- Grid cells injected via JS -->
+            </div>
+            
+            <!-- OVERLAYS: Driving Cars & Combos -->
+            <div id="driving-cars-layer" class="absolute top-0 left-0 w-full aspect-square pointer-events-none z-40"></div>
+            <div id="combo-layer" class="absolute top-0 left-0 w-full aspect-square pointer-events-none z-50 flex items-center justify-center hidden">
+                <div class="flex flex-col items-center justify-center scale-110 animate-bounce-pop">
+                    <span id="combo-text" class="text-4xl sm:text-5xl font-black text-yellow-300 drop-shadow-[0_3px_3px_rgba(0,0,0,0.9)] uppercase tracking-widest mb-1 hidden">Combo!</span>
+                    <span id="combo-multiplier" class="text-7xl sm:text-8xl font-black text-white drop-shadow-[0_5px_5px_rgba(0,0,0,0.9)]">x2</span>
+                </div>
+            </div>
+
+            <!-- CARS ROW -->
+            <div id="cars-row" class="grid grid-cols-8 gap-0 mt-2 sm:mt-4 h-[10%] min-h-[40px] w-full relative">
+                <!-- Parked cars injected via JS -->
+            </div>
+        </div>
+
+        <!-- AVAILABLE SHAPES DOCK -->
+        <div id="shapes-dock" class="flex justify-around items-center w-full mt-1 mb-3 sm:mt-2 sm:mb-5 h-[18%] min-h-[100px] max-h-[160px]">
+            <!-- Shapes injected via JS -->
+        </div>
+
+        <!-- BOTTOM BOOSTERS -->
+        <div id="boosters-container" class="flex justify-around items-end w-full mt-auto pb-4 sm:pb-8 h-[10%] min-h-[60px] max-h-[90px]">
+            <!-- Boosters injected via JS -->
+        </div>
+
+        <!-- FLOATING DRAGGED SHAPE/BOOSTER -->
+        <div id="floating-shape" class="fixed pointer-events-none z-50 flex justify-center opacity-0 transition-opacity duration-150 ease-out" style="left: -1000px; top: -1000px;">
+            <!-- Floating element injected via JS -->
+        </div>
+
+        <!-- MODALS -->
+        <div id="modal-gameover" class="absolute inset-0 bg-black/60 flex items-center justify-center z-[60] flex-col backdrop-blur-sm hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center">
+                <h2 class="text-4xl sm:text-5xl font-black text-slate-800 mb-2">Out of Moves!</h2>
+                <p class="text-slate-500 mb-6 sm:mb-8 text-lg sm:text-2xl">Final Score: <span id="go-score" class="font-bold text-blue-500">0</span></p>
+                <button onclick="startNewGame()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 sm:py-5 sm:px-10 rounded-xl sm:rounded-2xl shadow-[0_6px_0_#2563eb] active:translate-y-[6px] active:shadow-none transition-all text-xl sm:text-2xl w-full">Play Again</button>
+            </div>
+        </div>
+
+        <div id="modal-levelcomplete" class="absolute inset-0 bg-black/60 flex items-center justify-center z-[60] flex-col backdrop-blur-sm hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center">
+                <h2 class="text-4xl sm:text-5xl font-black text-green-500 mb-2 text-center">Level Cleared!</h2>
+                <p class="text-slate-500 mb-6 sm:mb-8 text-lg sm:text-2xl text-center">All cars escaped! Score: <span id="lc-score" class="font-bold text-blue-500">0</span></p>
+                <button onclick="startNextLevel()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 sm:py-5 sm:px-10 rounded-xl sm:rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-[6px] active:shadow-none transition-all text-xl sm:text-2xl w-full">Play Next Level</button>
+            </div>
+        </div>
+
+        <div id="modal-levelswitch" class="absolute inset-0 bg-black/60 flex items-center justify-center z-[70] flex-col backdrop-blur-sm hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center w-[85%] max-w-[340px]">
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-4 text-center">Jump Level</h2>
+                <input type="number" id="level-input" class="w-full text-center text-4xl font-black text-blue-500 p-4 border-4 border-slate-200 rounded-2xl mb-6 outline-none focus:border-blue-400 transition-colors" value="1" min="1">
+                <div class="flex gap-4 w-full">
+                    <button onclick="document.getElementById('modal-levelswitch').classList.add('hidden')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-500 font-bold py-3 sm:py-4 rounded-xl transition-all text-xl">Cancel</button>
+                    <button onclick="confirmLevelSwitch()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 sm:py-4 rounded-xl shadow-[0_6px_0_#2563eb] active:translate-y-[6px] active:shadow-none transition-all text-xl">Go</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- MAIN GAME LOGIC -->
+    <script>
+        // --- CONSTANTS ---
+        const GRID_SIZE = 8;
+        const COLORS = {
+            yellow: 'bg-yellow-400',
+            green: 'bg-green-500',
+            red: 'bg-red-500',
+        };
+        const COLOR_KEYS = Object.keys(COLORS);
+
+        const SHAPES = [
+            { matrix: [[1]] },
+            { matrix: [[1, 1]] },
+            { matrix: [[1], [1]] },
+            { matrix: [[1, 1, 1]] },
+            { matrix: [[1], [1], [1]] },
+            { matrix: [[1, 1], [1, 1]] },
+            { matrix: [[1, 1, 1], [1, 0, 0]] },
+            { matrix: [[1, 1, 1], [0, 0, 1]] },
+            { matrix: [[1, 1, 1], [0, 1, 0]] },
+            { matrix: [[1, 1, 1, 1]] },
+            { matrix: [[1], [1], [1], [1]] },
+        ];
+
+        function getCarSvg(colorClass) {
+            let fillColor = '';
+            let defs = '';
+            if (colorClass === 'hybrid') {
+                fillColor = 'url(#hybridGrad)';
+                defs = `<defs><linearGradient id="hybridGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" /><stop offset="50%" style="stop-color:#facc15;stop-opacity:1" /><stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" /></linearGradient></defs>`;
+            } else {
+                fillColor = colorClass === 'bg-yellow-400' ? '#facc15' : colorClass === 'bg-green-500' ? '#22c55e' : '#ef4444';
+            }
+            return `<svg viewBox="0 0 24 24" class="w-full h-full drop-shadow-md">${defs}<rect x="3" y="4" width="4" height="4" rx="1" fill="#1f2937" /><rect x="17" y="4" width="4" height="4" rx="1" fill="#1f2937" /><rect x="3" y="16" width="4" height="4" rx="1" fill="#1f2937" /><rect x="17" y="16" width="4" height="4" rx="1" fill="#1f2937" /><rect x="5" y="2" width="14" height="20" rx="3" fill="${fillColor}" /><rect x="7" y="6" width="10" height="4" rx="1" fill="#1e3a8a" opacity="0.6" /><rect x="7" y="15" width="10" height="5" rx="1" fill="#1e3a8a" opacity="0.6" /><rect x="6" y="2" width="3" height="2" fill="#fef08a" /><rect x="15" y="2" width="3" height="2" fill="#fef08a" /></svg>`;
+        }
+
+        const svgBoosterArrow = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+        const svgBoosterColor = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.124-.224-.258-.39-.546-.39-.856 0-.644.56-1.122 1.17-1.122h2.308c3.466 0 5.7-2.684 5.7-6.128C22 6.836 17.5 2 12 2z"></path></svg>`;
+        const svgBoosterHybrid = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
+        const svgBoosterBomb = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
+        const svgGem = `<svg viewBox="0 0 24 24" fill="#a855f7" stroke="#e9d5ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full drop-shadow-md"><polygon points="12 2 2 7 12 22 22 7 12 2"></polygon><polyline points="2 7 12 11 22 7"></polyline><line x1="12" y1="22" x2="12" y2="11"></line></svg>`;
+
+        // --- STATE VARIABLES ---
+        let gameMode = 'roadtrip'; // 'roadtrip' or 'classic'
+        let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('blockBlastHighScore') || '0', 10);
+        let level = parseInt(localStorage.getItem('blockBlastLevel') || '1', 10);
+        let gems = parseInt(localStorage.getItem('blockBlastGems') || '0', 10);
+        let gemPosition = null; 
+        let portals = []; // Array of portals: {r, c, type: '+2' or '-1'}
+
+        let cars = [];
+        let availableShapes = [];
+        let isProcessing = false;
+        
+        let boosters = { straightClear: 1, colorChange: 1, hybrid: 1, colorClear: 1 }; 
+
+        let draggedShape = null;
+        let draggedBooster = null; 
+        let dragPos = { x: 0, y: 0 };
+        let hoveredCells = [];
+        let hoveredCarCol = null; 
+        let hoveredGridCell = null; 
+        let animatingCells = [];
+        let clearingRowsCols = [];
+        let cellSize = 40;
+
+        // --- DOM ELEMENTS ---
+        const elScore = document.getElementById('ui-score');
+        const elHighScore = document.getElementById('ui-highscore');
+        const elLevel = document.getElementById('ui-level');
+        const elGems = document.getElementById('ui-gems');
+        const elGemContainer = document.getElementById('gem-container');
+        const elGrid = document.getElementById('grid-container');
+        const elCarsRow = document.getElementById('cars-row');
+        const elShapesDock = document.getElementById('shapes-dock');
+        const elBoostersContainer = document.getElementById('boosters-container');
+        const elFloatingShape = document.getElementById('floating-shape');
+        const elDrivingLayer = document.getElementById('driving-cars-layer');
+        const elComboLayer = document.getElementById('combo-layer');
+        const elComboText = document.getElementById('combo-text');
+        const elComboMulti = document.getElementById('combo-multiplier');
+        const elModalGO = document.getElementById('modal-gameover');
+        const elModalLC = document.getElementById('modal-levelcomplete');
+        const elGoScore = document.getElementById('go-score');
+        const elLcScore = document.getElementById('lc-score');
+        const elStartScreen = document.getElementById('start-screen');
+
+        // --- INITIALIZATION ---
+        function init() {
+            elHighScore.innerText = highScore;
+            elGems.innerText = gems;
+            setupResizeObserver();
+            setupEventListeners();
+            showStartScreen(); 
+        }
+
+        function showStartScreen() {
+            elStartScreen.classList.remove('hidden');
+        }
+
+        function startGame(selectedMode) {
+            gameMode = selectedMode;
+            elStartScreen.classList.add('hidden');
+            startNewGame();
+        }
+
+        function setupResizeObserver() {
+            const observer = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    cellSize = entry.contentRect.width / GRID_SIZE;
+                    if(availableShapes.length > 0) renderShapesDock(); 
+                }
+            });
+            observer.observe(elGrid);
+        }
+
+        function getRandomColor() {
+            return COLOR_KEYS[Math.floor(Math.random() * COLOR_KEYS.length)];
+        }
+
+        // SMART GENERATOR: Guarantees generated batches can be placed on the current grid
+        function generateSmartBatch(carColors, currentGrid) {
+            let tempGrid = currentGrid.map(row => [...row]);
+            let batch = [];
+            
+            for (let i = 0; i < 3; i++) {
+                let validPlacements = [];
+                
+                SHAPES.forEach(shape => {
+                    let placementsForShape = [];
+                    for (let r = 0; r < GRID_SIZE; r++) {
+                        for (let c = 0; c < GRID_SIZE; c++) {
+                            if (isValidPlacement(shape.matrix, r, c, tempGrid)) {
+                                placementsForShape.push({r, c});
+                            }
+                        }
+                    }
+                    if (placementsForShape.length > 0) {
+                        validPlacements.push({ shape, placements: placementsForShape });
+                    }
+                });
+
+                let chosenShapeObj;
+                
+                if (validPlacements.length > 0) {
+                    let chosen = validPlacements[Math.floor(Math.random() * validPlacements.length)];
+                    chosenShapeObj = chosen.shape;
+                    
+                    let placement = chosen.placements[Math.floor(Math.random() * chosen.placements.length)];
+                    chosenShapeObj.matrix.forEach((row, rIdx) => {
+                        row.forEach((val, cIdx) => {
+                            if (val === 1) tempGrid[placement.r + rIdx][placement.c + cIdx] = 'simulated';
+                        });
+                    });
+                    
+                    let { fullRows, fullCols } = findFullRowsCols(tempGrid);
+                    fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) tempGrid[r][c] = null; });
+                    fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) tempGrid[r][c] = null; });
+                } else {
+                    chosenShapeObj = SHAPES[0]; // Gives a 1x1 as a pity block
+                }
+
+                const colorKey = Math.random() > 0.3 && carColors.length > 0
+                    ? carColors[Math.floor(Math.random() * carColors.length)]
+                    : getRandomColor();
+                    
+                batch.push({ ...chosenShapeObj, color: COLORS[colorKey], id: Math.random().toString(36).substr(2, 9) });
+            }
+            
+            return batch;
+        }
+
+        function startNewGame(keepScore = false) {
+            grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+            if (!keepScore) {
+                score = 0;
+                if (gameMode === 'roadtrip') {
+                    level = 1;
+                    localStorage.setItem('blockBlastLevel', level);
+                }
+            }
+            updateScoreUI();
+            isProcessing = false;
+
+            // Handle Map Generation based on Mode
+            if (gameMode === 'roadtrip') {
+                // Spawn Gem on Level 2+
+                if (level >= 2) {
+                    gemPosition = { r: Math.floor(Math.random() * GRID_SIZE), c: Math.floor(Math.random() * GRID_SIZE) };
+                } else {
+                    gemPosition = null;
+                }
+
+                // Spawn Portals
+                portals = [];
+                if (level >= 3) {
+                    let availableSpots = [];
+                    for(let r=0; r<GRID_SIZE - 1; r++){
+                        for(let c=0; c<GRID_SIZE; c++){
+                            if (!gemPosition || gemPosition.r !== r || gemPosition.c !== c) {
+                                availableSpots.push({r, c});
+                            }
+                        }
+                    }
+                    availableSpots.sort(() => Math.random() - 0.5);
+                    
+                    if (level === 3 && availableSpots.length >= 1) {
+                        portals.push({r: availableSpots[0].r, c: availableSpots[0].c, type: '+2'});
+                    } else if (level >= 4 && availableSpots.length >= 2) {
+                        portals.push({r: availableSpots[0].r, c: availableSpots[0].c, type: '+2'});
+                        portals.push({r: availableSpots[1].r, c: availableSpots[1].c, type: '-1'});
+                    }
+                }
+
+                // Spawn Blocker on Level 5+
+                if (level >= 5) {
+                    let availableSpots = [];
+                    for(let r=0; r<GRID_SIZE - 1; r++){
+                        for(let c=0; c<GRID_SIZE; c++){
+                            if ((!gemPosition || gemPosition.r !== r || gemPosition.c !== c) &&
+                                !portals.some(p => p.r === r && p.c === c)) {
+                                availableSpots.push({r, c});
+                            }
+                        }
+                    }
+                    if (availableSpots.length > 0) {
+                        let spot = availableSpots[Math.floor(Math.random() * availableSpots.length)];
+                        grid[spot.r][spot.c] = 'blocker';
+                    }
+                }
+            } else {
+                // Classic Mode gets a totally clean board
+                gemPosition = null;
+                portals = [];
+            }
+            
+            // Replenish boosters at start
+            boosters = { straightClear: 1, colorChange: 1, hybrid: 1, colorClear: 1 };
+            
+            elModalGO.classList.add('hidden');
+            elModalLC.classList.add('hidden');
+            elDrivingLayer.innerHTML = '';
+
+            cars = Array(GRID_SIZE).fill(null).map((_, i) => ({
+                col: i,
+                color: COLORS[getRandomColor()],
+                id: Math.random().toString(36).substr(2, 9)
+            }));
+
+            // Filter out 'undefined' to prevent invisible blocks caused by hybrid cars
+            const carColors = cars.map(c => Object.keys(COLORS).find(k => COLORS[k] === c.color)).filter(k => k !== undefined);
+            availableShapes = generateSmartBatch(carColors, grid);
+
+            renderGrid();
+            renderCarsRow();
+            renderShapesDock();
+            renderBoosters();
+        }
+
+        // Logic for spawning continuous cars in Classic Mode
+        function replaceEscapedCars(count) {
+            if (gameMode !== 'classic') return;
+            let cols = [0,1,2,3,4,5,6,7];
+            for (let i = 0; i < count; i++) {
+                let occupiedCols = cars.map(c => c.col);
+                let availableCols = cols.filter(c => !occupiedCols.includes(c));
+                if (availableCols.length > 0) {
+                    let newCol = availableCols[Math.floor(Math.random() * availableCols.length)];
+                    cars.push({
+                        col: newCol,
+                        color: COLORS[getRandomColor()],
+                        id: Math.random().toString(36).substr(2, 9)
+                    });
+                }
+            }
+        }
+
+        function collectGem() {
+            gems++;
+            localStorage.setItem('blockBlastGems', gems);
+            gemPosition = null; 
+            
+            if (elGemContainer) {
+                elGemContainer.classList.remove('animate-bounce-pop');
+                void elGemContainer.offsetWidth; // force DOM reflow to restart animation
+                elGemContainer.classList.add('animate-bounce-pop');
+            }
+            updateScoreUI();
+        }
+
+        // --- RENDERING ---
+        function renderGrid() {
+            elGrid.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cellColor = grid[r][c];
+                    const isHovered = hoveredCells.some(hc => hc.r === r && hc.c === c);
+                    const isAnimating = animatingCells.some(ac => ac.r === r && ac.c === c);
+                    const isClearing = clearingRowsCols.some(ac => ac.r === r && ac.c === c && grid[r][c] !== 'blocker');
+                    
+                    const isStraightBoosterTarget = draggedBooster === 'straightClear' && hoveredCarCol === c;
+                    const isColorClearTarget = draggedBooster === 'colorClear' && hoveredGridCell && grid[hoveredGridCell.r][hoveredGridCell.c] !== null && grid[hoveredGridCell.r][hoveredGridCell.c] !== 'blocker' && grid[hoveredGridCell.r][hoveredGridCell.c] === cellColor;
+                    
+                    let bgClass = cellColor || 'bg-transparent';
+                    let innerHighlight = false;
+
+                    if (isHovered && draggedShape) {
+                        bgClass = draggedShape.color + ' opacity-95 rounded-md shadow-md z-10';
+                        innerHighlight = true;
+                    } else if (isStraightBoosterTarget) {
+                        bgClass = 'bg-red-500/50 scale-[0.96] opacity-95 rounded-md shadow-[inset_0_0_15px_rgba(239,68,68,0.8)] border border-red-500 z-10';
+                    } else if (isColorClearTarget) {
+                        bgClass = cellColor + ' brightness-150 animate-pulse ring-4 ring-white/80 z-20 scale-[0.95] rounded-md';
+                        innerHighlight = true;
+                    } else if (cellColor === 'blocker') {
+                        bgClass = 'bg-blocker rounded-md shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] z-10 border border-slate-900';
+                        innerHighlight = false;
+                    } else if (cellColor) {
+                        innerHighlight = true;
+                    }
+
+                    if (isAnimating) bgClass += ' brightness-125 animate-pulse z-10 shadow-[0_0_20px_rgba(255,255,255,0.6)] ring-2 ring-white/60';
+                    if (isClearing) bgClass += ' brightness-150 scale-0 transition-transform duration-300';
+
+                    const cell = document.createElement('div');
+                    cell.className = `relative border border-slate-800/30 border-dashed ${bgClass} transition-all duration-150`;
+                    
+                    if (innerHighlight && !isClearing && !isStraightBoosterTarget) {
+                        const inner = document.createElement('div');
+                        inner.className = "absolute inset-0 grid-cell-inner";
+                        cell.appendChild(inner);
+                    }
+
+                    // Render collectible Gem ALWAYS if it exists here, rendering ABOVE any placed blocks
+                    if (gemPosition && gemPosition.r === r && gemPosition.c === c && !isStraightBoosterTarget && !isHovered) {
+                        const gemEl = document.createElement('div');
+                        gemEl.className = "absolute inset-0 flex items-center justify-center z-20 animate-pulse-fast";
+                        gemEl.innerHTML = `<div class="w-[50%] h-[50%]">${svgGem}</div>`;
+                        cell.appendChild(gemEl);
+                    }
+
+                    // Render Portals
+                    let portal = portals.find(p => p.r === r && p.c === c);
+                    if (portal && !isStraightBoosterTarget && !isHovered) {
+                        const portalEl = document.createElement('div');
+                        let colorClasses = portal.type === '+2' 
+                            ? 'bg-cyan-500/50 text-cyan-100 border-cyan-400' 
+                            : 'bg-red-500/50 text-red-100 border-red-500';
+                        portalEl.className = `absolute inset-[4px] flex items-center justify-center z-[15] border-2 border-dashed rounded-lg font-black text-xl sm:text-2xl drop-shadow-md ${colorClasses}`;
+                        portalEl.innerText = portal.type;
+                        cell.appendChild(portalEl);
+                    }
+
+                    elGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderCarsRow() {
+            elCarsRow.innerHTML = '';
+            cars.forEach(car => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-center items-start relative';
+                wrapper.style.gridColumnStart = car.col + 1;
+                wrapper.style.gridRowStart = 1; // FIX: Prevents new out-of-order cars from floating to row 2
+                
+                // Show appropriate aura under the targeted car based on booster type
+                if (draggedBooster === 'straightClear' && hoveredCarCol === car.col) {
+                    wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-red-500/30 blur-sm rounded-full z-0"></div>`;
+                } else if (draggedBooster === 'colorChange' && hoveredCarCol === car.col) {
+                    wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-gradient-to-t from-purple-500/50 to-transparent blur-sm rounded-full z-0"></div>`;
+                } else if (draggedBooster === 'hybrid' && hoveredCarCol === car.col) {
+                    wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-gradient-to-t from-yellow-400/60 via-red-500/60 to-transparent blur-sm rounded-full z-0"></div>`;
+                }
+
+                const isTargeted = draggedBooster && hoveredCarCol === car.col;
+                const iconContainer = document.createElement('div');
+                iconContainer.className = `w-[70%] h-[70%] transition-transform duration-300 ${isTargeted ? 'scale-125 -translate-y-2' : 'hover:scale-110'} z-10`;
+                iconContainer.innerHTML = getCarSvg(car.color);
+                
+                wrapper.appendChild(iconContainer);
+                elCarsRow.appendChild(wrapper);
+            });
+        }
+
+        function buildShapeHTML(shape, blockPxSize, isGhost = false) {
+            if (!shape) return '<div class="w-full h-full"></div>';
+            const maxCols = Math.max(...shape.matrix.map(r => r.length));
+            const maxRows = shape.matrix.length;
+            
+            let html = `<div class="grid gap-[2px] ${isGhost ? 'opacity-50' : ''}" style="grid-template-columns: repeat(${maxCols}, ${blockPxSize}px); grid-template-rows: repeat(${maxRows}, ${blockPxSize}px);">`;
+            
+            shape.matrix.forEach((row, rIdx) => {
+                row.forEach((val, cIdx) => {
+                    html += `<div class="${val ? shape.color : 'bg-transparent'} rounded-[4px] border border-black/20" style="width: ${blockPxSize}px; height: ${blockPxSize}px; visibility: ${val ? 'visible' : 'hidden'}"></div>`;
+                });
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        function renderShapesDock() {
+            elShapesDock.innerHTML = '';
+            availableShapes.forEach((shape, index) => {
+                const slot = document.createElement('div');
+                const isHidden = draggedShape && draggedShape.index === index;
+                slot.className = `flex-1 h-full mx-2 flex justify-center items-center cursor-pointer touch-none ${isHidden ? 'opacity-0' : 'opacity-100'} transition-transform active:scale-95 bg-white/10 rounded-xl sm:rounded-2xl shadow-inner`;
+                
+                slot.innerHTML = buildShapeHTML(shape, cellSize * 0.48);
+                
+                slot.addEventListener('pointerdown', (e) => {
+                    if (shape && !isProcessing && !draggedBooster) handlePointerDown(e, shape, index);
+                });
+                
+                elShapesDock.appendChild(slot);
+            });
+        }
+
+        function renderBoosters() {
+            elBoostersContainer.innerHTML = '';
+            
+            const boosterConfigs = [
+                { id: 'straightClear', svg: svgBoosterArrow, bg: 'bg-[#3b66c4]', activeBg: 'bg-red-500' },
+                { id: 'colorChange', svg: svgBoosterColor, bg: 'bg-[#3b66c4]', activeBg: 'bg-purple-500' },
+                { id: 'hybrid', svg: svgBoosterHybrid, bg: 'bg-[#3b66c4]', activeBg: 'bg-yellow-500' },
+                { id: 'colorClear', svg: svgBoosterBomb, bg: 'bg-[#3b66c4]', activeBg: 'bg-cyan-500' }
+            ];
+
+            for(let i = 0; i < 4; i++) {
+                const slot = document.createElement('div');
+                const conf = boosterConfigs[i];
+                // Check if this specific booster is currently being dragged
+                const isHidden = draggedBooster && conf && draggedBooster === conf.id;
+                
+                slot.className = `h-full aspect-square rounded-full shadow-[0_4px_0_#2a4b99] sm:shadow-[0_6px_0_#2a4b99] transition-all flex justify-center items-center relative select-none touch-none ${isHidden ? 'opacity-0' : 'opacity-100'}`;
+                
+                if (conf) {
+                    slot.classList.add(conf.bg);
+                    const qty = boosters[conf.id];
+                    
+                    if (qty > 0) {
+                        slot.classList.add('cursor-pointer', 'active:translate-y-1', 'active:sm:translate-y-2', 'active:shadow-none');
+                        slot.innerHTML = `
+                            ${conf.svg}
+                            <div class="absolute -top-1 -right-1 ${conf.activeBg} text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#6b9ff0] shadow-md">${qty}</div>
+                        `;
+                        slot.addEventListener('pointerdown', (e) => {
+                            if (!isProcessing && !draggedShape) handleBoosterPointerDown(e, conf.id);
+                        });
+                    } else {
+                        slot.classList.add('opacity-40', 'grayscale');
+                        slot.innerHTML = conf.svg;
+                    }
+                } else {
+                    slot.classList.add('bg-[#3b66c4]'); 
+                }
+                
+                elBoostersContainer.appendChild(slot);
+            }
+        }
+
+        function updateScoreUI() {
+            elScore.innerText = score;
+            elHighScore.innerText = highScore;
+            
+            if (gameMode === 'classic') {
+                elLevel.innerText = 'CLASSIC';
+                elLevel.classList.add('pointer-events-none');
+                elGemContainer.style.opacity = '0';
+            } else {
+                elLevel.innerText = 'LEVEL ' + level;
+                elLevel.classList.remove('pointer-events-none');
+                elGemContainer.style.opacity = '1';
+                elGems.innerText = gems;
+            }
+        }
+
+        function startNextLevel() {
+            level++;
+            localStorage.setItem('blockBlastLevel', level);
+            startNewGame(true);
+        }
+
+        function openLevelSwitch() {
+            if (gameMode !== 'roadtrip') return;
+            document.getElementById('level-input').value = level;
+            document.getElementById('modal-levelswitch').classList.remove('hidden');
+        }
+
+        function confirmLevelSwitch() {
+            let input = document.getElementById('level-input').value;
+            let parsed = parseInt(input, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                level = parsed;
+                localStorage.setItem('blockBlastLevel', level);
+                document.getElementById('modal-levelswitch').classList.add('hidden');
+                startNewGame(true); 
+            }
+        }
+
+        // --- GAME LOGIC & PATHFINDING ---
+        function findCarPaths(currentGrid) {
+            let pathsFound = [];
+            cars.forEach(car => {
+                const startCell = currentGrid[GRID_SIZE - 1][car.col];
+                const canStart = startCell !== null && startCell !== 'blocker' && (car.color === 'hybrid' || startCell === car.color);
+
+                if (canStart) {
+                    let queue = [[GRID_SIZE - 1, car.col]];
+                    let visited = new Set([`${GRID_SIZE - 1},${car.col}`]);
+                    let parent = new Map();
+                    let successPath = null;
+
+                    while (queue.length > 0) {
+                        let [r, c] = queue.shift();
+                        if (r === 0) {
+                            let path = [];
+                            let curr = `${r},${c}`;
+                            while (curr) {
+                                let [pr, pc] = curr.split(',').map(Number);
+                                path.unshift({ r: pr, c: pc });
+                                curr = parent.get(curr);
+                            }
+                            successPath = path;
+                            break;
+                        }
+                        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                        for (let [dr, dc] of dirs) {
+                            let nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                                const neighborCell = currentGrid[nr][nc];
+                                const canTraverse = neighborCell !== null && neighborCell !== 'blocker' && (car.color === 'hybrid' || neighborCell === car.color);
+                                
+                                if (canTraverse && !visited.has(`${nr},${nc}`)) {
+                                    visited.add(`${nr},${nc}`);
+                                    parent.set(`${nr},${nc}`, `${r},${c}`);
+                                    queue.push([nr, nc]);
+                                }
+                            }
+                        }
+                    }
+                    if (successPath) {
+                        successPath.unshift({ r: GRID_SIZE, c: car.col }); // Start off-board
+                        pathsFound.push({ car, path: successPath });
+                    }
+                }
+            });
+            return pathsFound;
+        }
+
+        function findFullRowsCols(currentGrid) {
+            let fullRows = [], fullCols = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                // Row is full if every cell is non-null AND does not contain a blocker
+                if (currentGrid[r].every(cell => cell !== null) && !currentGrid[r].includes('blocker')) {
+                    fullRows.push(r);
+                }
+            }
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let isFull = true;
+                let hasBlocker = false;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (currentGrid[r][c] === null) { isFull = false; break; }
+                    if (currentGrid[r][c] === 'blocker') { hasBlocker = true; }
+                }
+                if (isFull && !hasBlocker) fullCols.push(c);
+            }
+            return { fullRows, fullCols };
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        async function executeDrivingSequence(paths, comboMultiplier) {
+            let animatedCars = paths.map(({car, path}) => ({
+                id: car.id, color: car.color, path: path, step: 0,
+                points: (path.length - 1) * 50 * comboMultiplier,
+                rotation: 0,
+                collectedGem: false 
+            }));
+
+            const maxSteps = Math.max(...paths.map(p => p.path.length));
+            for (let i = 0; i < maxSteps; i++) {
+                elDrivingLayer.innerHTML = '';
+                animatedCars.forEach(dc => {
+                    let step = Math.min(i, dc.path.length - 1);
+                    let cell = dc.path[step];
+                    
+                    if (gemPosition && cell.r === gemPosition.r && cell.c === gemPosition.c) {
+                        collectGem();
+                        dc.collectedGem = true;
+                    }
+
+                    let portalIndex = portals.findIndex(p => p.r === cell.r && p.c === cell.c);
+                    if (portalIndex !== -1) {
+                        let portal = portals[portalIndex];
+                        portals.splice(portalIndex, 1); 
+                        
+                        if (portal.type === '+2') {
+                            dc.points += 200;
+                            if (dc.collectedGem) {
+                                gems += 2;
+                                localStorage.setItem('blockBlastGems', gems);
+                                updateScoreUI();
+                                if (elGemContainer) {
+                                    elGemContainer.classList.remove('animate-bounce-pop');
+                                    void elGemContainer.offsetWidth;
+                                    elGemContainer.classList.add('animate-bounce-pop');
+                                }
+                            }
+                        } else if (portal.type === '-1') {
+                            dc.points -= 200;
+                        }
+                        renderGrid(); 
+                    }
+
+                    let nextCell = dc.path[Math.min(step + 1, dc.path.length - 1)];
+                    
+                    if (nextCell.c > cell.c) dc.rotation = 90;
+                    else if (nextCell.c < cell.c) dc.rotation = -90;
+                    else if (nextCell.r < cell.r) dc.rotation = 0;
+                    else if (nextCell.r > cell.r) dc.rotation = 180;
+
+                    const carEl = document.createElement('div');
+                    carEl.className = 'absolute flex justify-center items-center z-40 transition-all ease-linear';
+                    carEl.style.width = '12.5%'; carEl.style.height = '12.5%';
+                    carEl.style.top = `${cell.r * 12.5}%`; carEl.style.left = `${cell.c * 12.5}%`;
+                    carEl.style.transitionDuration = '60ms';
+                    
+                    carEl.innerHTML = `<div class="w-[75%] h-[75%] transition-transform ease-linear" style="transform: rotate(${dc.rotation}deg); transition-duration: 60ms">${getCarSvg(dc.color)}</div>`;
+                    elDrivingLayer.appendChild(carEl);
+                });
+                await delay(60);
+            }
+
+            elDrivingLayer.innerHTML = '';
+            animatedCars.forEach(dc => {
+                const cell = dc.path[dc.path.length - 1];
+                const popEl = document.createElement('div');
+                popEl.className = 'absolute flex justify-center items-center z-40';
+                popEl.style.width = '12.5%'; popEl.style.height = '12.5%';
+                popEl.style.top = `${cell.r * 12.5}%`; popEl.style.left = `${cell.c * 12.5}%`;
+                
+                const sign = dc.points >= 0 ? '+' : '';
+                const textColorClass = dc.points < 0 ? 'text-red-400' : 'text-white';
+                
+                popEl.innerHTML = `<div class="absolute text-3xl sm:text-4xl font-black ${textColorClass} drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] animate-bounce z-50 whitespace-nowrap">${sign}${dc.points}</div>`;
+                elDrivingLayer.appendChild(popEl);
+            });
+
+            if (comboMultiplier > 1) {
+                elComboText.classList.remove('hidden');
+                elComboMulti.classList.add('text-green-400');
+            } else {
+                elComboText.classList.add('hidden');
+                elComboMulti.classList.remove('text-green-400');
+            }
+            elComboMulti.innerText = `x${comboMultiplier}`;
+            elComboLayer.classList.remove('hidden');
+
+            await delay(800);
+            
+            let pathPoints = 0;
+            paths.forEach(({ path }) => {
+                path.slice(1).forEach(cell => {
+                    if (grid[cell.r][cell.c] !== 'blocker') {
+                        grid[cell.r][cell.c] = null;
+                    }
+                });
+            });
+            animatedCars.forEach(dc => {
+                pathPoints += dc.points;
+            });
+            
+            elDrivingLayer.innerHTML = '';
+            elComboLayer.classList.add('hidden');
+            animatingCells = [];
+
+            return pathPoints;
+        }
+
+        // --- BOOSTER LOGIC ---
+        async function handleBoosterUseStraight(car) {
+            isProcessing = true;
+            
+            let path = [];
+            path.push({r: GRID_SIZE, c: car.col}); 
+            for(let r = GRID_SIZE - 1; r >= 0; r--) {
+                path.push({r, c: car.col});
+            }
+
+            cars = cars.filter(c => c.id !== car.id);
+            replaceEscapedCars(1);
+            renderCarsRow();
+
+            let dc = { id: car.id, color: car.color, path: path, step: 0, points: 500, rotation: 0, collectedGem: false };
+
+            const maxSteps = path.length;
+            for (let i = 0; i < maxSteps; i++) {
+                elDrivingLayer.innerHTML = '';
+                dc.step = i;
+                let cell = dc.path[dc.step];
+                
+                if (gemPosition && cell.r === gemPosition.r && cell.c === gemPosition.c) {
+                    collectGem();
+                    dc.collectedGem = true;
+                }
+
+                let portalIndex = portals.findIndex(p => p.r === cell.r && p.c === cell.c);
+                if (portalIndex !== -1) {
+                    let portal = portals[portalIndex];
+                    portals.splice(portalIndex, 1);
+                    
+                    if (portal.type === '+2') {
+                        dc.points += 200;
+                        if (dc.collectedGem) {
+                            gems += 2;
+                            localStorage.setItem('blockBlastGems', gems);
+                            updateScoreUI();
+                            if (elGemContainer) {
+                                elGemContainer.classList.remove('animate-bounce-pop');
+                                void elGemContainer.offsetWidth;
+                                elGemContainer.classList.add('animate-bounce-pop');
+                            }
+                        }
+                    } else if (portal.type === '-1') {
+                        dc.points -= 200;
+                    }
+                    renderGrid(); 
+                }
+
+                // Straight booster destroys blocks but passes over indestructible blockers
+                if (cell.r < GRID_SIZE && grid[cell.r][cell.c] !== null && grid[cell.r][cell.c] !== 'blocker') {
+                    grid[cell.r][cell.c] = null;
+                    renderGrid(); 
+                }
+
+                const carEl = document.createElement('div');
+                carEl.className = 'absolute flex justify-center items-center z-40 transition-all ease-linear';
+                carEl.style.width = '12.5%'; carEl.style.height = '12.5%';
+                carEl.style.top = `${cell.r * 12.5}%`; carEl.style.left = `${cell.c * 12.5}%`;
+                carEl.style.transitionDuration = '60ms';
+                
+                carEl.innerHTML = `<div class="w-[75%] h-[75%] transition-transform ease-linear" style="transform: rotate(0deg); transition-duration: 60ms">${getCarSvg(dc.color)}</div>`;
+                elDrivingLayer.appendChild(carEl);
+                
+                await delay(60);
+            }
+
+            elDrivingLayer.innerHTML = '';
+            const cell = dc.path[dc.path.length - 1];
+            const popEl = document.createElement('div');
+            popEl.className = 'absolute flex justify-center items-center z-40';
+            popEl.style.width = '12.5%'; popEl.style.height = '12.5%';
+            popEl.style.top = `${cell.r * 12.5}%`; popEl.style.left = `${cell.c * 12.5}%`;
+            
+            const sign = dc.points >= 0 ? '+' : '';
+            const textColorClass = dc.points < 0 ? 'text-red-400' : 'text-yellow-300';
+
+            popEl.innerHTML = `<div class="absolute text-4xl sm:text-5xl font-black ${textColorClass} drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] animate-bounce z-50 whitespace-nowrap">${sign}${dc.points}</div>`;
+            elDrivingLayer.appendChild(popEl);
+
+            await delay(800);
+            elDrivingLayer.innerHTML = '';
+
+            score += dc.points;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('blockBlastHighScore', highScore);
+            }
+            updateScoreUI();
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                elLcScore.innerText = score;
+                elModalLC.classList.remove('hidden');
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handleBoosterUseColor(car) {
+            isProcessing = true;
+            
+            const currentKey = Object.keys(COLORS).find(k => COLORS[k] === car.color);
+            const otherKeys = COLOR_KEYS.filter(k => k !== currentKey);
+            const newKey = otherKeys[Math.floor(Math.random() * otherKeys.length)];
+            
+            const carIndex = cars.findIndex(c => c.id === car.id);
+            cars[carIndex].color = COLORS[newKey];
+            renderCarsRow(); 
+            
+            await delay(400); 
+
+            let pointsEarned = 0;
+            const paths = findCarPaths(grid);
+            if (paths.length > 0) {
+                const comboMultiplier = paths.length;
+                animatingCells = paths.flatMap(p => p.path.slice(1));
+                renderGrid(); 
+
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                replaceEscapedCars(paths.length);
+                renderCarsRow();
+
+                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+            }
+            
+            if (pointsEarned !== 0) {
+                score += pointsEarned;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHighScore', highScore);
+                }
+                updateScoreUI();
+                renderGrid();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                elLcScore.innerText = score;
+                elModalLC.classList.remove('hidden');
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handleBoosterUseHybrid(car) {
+            isProcessing = true;
+            
+            const carIndex = cars.findIndex(c => c.id === car.id);
+            cars[carIndex].color = 'hybrid';
+            renderCarsRow(); 
+            
+            await delay(400); 
+
+            let pointsEarned = 0;
+            
+            const paths = findCarPaths(grid);
+            if (paths.length > 0) {
+                const comboMultiplier = paths.length;
+                animatingCells = paths.flatMap(p => p.path.slice(1));
+                renderGrid(); 
+
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                replaceEscapedCars(paths.length);
+                renderCarsRow();
+
+                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+            }
+            
+            if (pointsEarned !== 0) {
+                score += pointsEarned;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHighScore', highScore);
+                }
+                updateScoreUI();
+                renderGrid();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                elLcScore.innerText = score;
+                elModalLC.classList.remove('hidden');
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handleBoosterUseColorClear(targetColor) {
+            isProcessing = true;
+            
+            let blocksRemoved = 0;
+            
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (grid[r][c] === targetColor && grid[r][c] !== 'blocker') {
+                        clearingRowsCols.push({r, c});
+                        blocksRemoved++;
+                    }
+                }
+            }
+
+            if (blocksRemoved > 0) {
+                renderGrid(); // Trigger scale-0 shrinking animation
+                await delay(400);
+
+                clearingRowsCols.forEach(({r, c}) => {
+                    grid[r][c] = null;
+                });
+                
+                let pointsEarned = blocksRemoved * 50;
+                score += pointsEarned;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHighScore', highScore);
+                }
+                clearingRowsCols = [];
+                updateScoreUI();
+                renderGrid();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                elLcScore.innerText = score;
+                elModalLC.classList.remove('hidden');
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handlePlacementSuccess(newGrid, placedShapeIndex, placedShape) {
+            isProcessing = true;
+            
+            // Instantly remove dragged shape to avoid UI ghosting during async pauses
+            availableShapes[placedShapeIndex] = null;
+            renderShapesDock();
+
+            grid = newGrid;
+            renderGrid(); 
+            
+            let pointsEarned = placedShape.matrix.flat().filter(v => v === 1).length * 10;
+            score += pointsEarned; 
+            
+            const paths = findCarPaths(grid);
+            
+            if (paths.length > 0) {
+                const comboMultiplier = paths.length;
+                animatingCells = paths.flatMap(p => p.path.slice(1));
+                renderGrid(); 
+
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                replaceEscapedCars(paths.length);
+                renderCarsRow();
+
+                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+            }
+
+            // Line Clears
+            const { fullRows, fullCols } = findFullRowsCols(grid);
+            if (fullRows.length > 0 || fullCols.length > 0) {
+                fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) { if(grid[r][c] !== 'blocker') clearingRowsCols.push({r, c}); } });
+                fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) { if(grid[r][c] !== 'blocker') clearingRowsCols.push({r, c}); } });
+                renderGrid(); 
+                
+                await delay(400);
+
+                fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) { if(grid[r][c] !== 'blocker') grid[r][c] = null; } });
+                fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) { if(grid[r][c] !== 'blocker') grid[r][c] = null; } });
+                pointsEarned += (fullRows.length + fullCols.length) * 100;
+                clearingRowsCols = [];
+            }
+
+            score += (pointsEarned - (placedShape.matrix.flat().filter(v => v === 1).length * 10));
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('blockBlastHighScore', highScore);
+            }
+            updateScoreUI();
+            renderGrid();
+
+            // Refill shapes 
+            if (availableShapes.every(s => s === null)) {
+                // Filter undefined to prevent invisible blocks picking up hybrid colors
+                const carColors = cars.map(c => Object.keys(COLORS).find(k => COLORS[k] === c.color)).filter(k => k !== undefined);
+                availableShapes = generateSmartBatch(carColors, grid);
+                renderShapesDock();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                elLcScore.innerText = score;
+                elModalLC.classList.remove('hidden');
+            } else {
+                checkGameOver();
+            }
+            
+            isProcessing = false;
+        }
+
+        // Added targetGrid parameter to allow checking against simulated future grids
+        function isValidPlacement(matrix, startR, startC, targetGrid = grid) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c] === 1) {
+                        const nr = startR + r, nc = startC + c;
+                        if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE || targetGrid[nr][nc] !== null) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function checkGameOver() {
+            const shapesToCheck = availableShapes.filter(s => s !== null);
+            if (shapesToCheck.length === 0) return;
+            
+            let canPlaceAny = false;
+            for (let shape of shapesToCheck) {
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (isValidPlacement(shape.matrix, r, c)) { canPlaceAny = true; break; }
+                    }
+                    if (canPlaceAny) break;
+                }
+                if (canPlaceAny) break;
+            }
+
+            const hasBoosters = Object.values(boosters).some(qty => qty > 0);
+
+            if (!canPlaceAny && !hasBoosters) {
+                elGoScore.innerText = score;
+                elModalGO.classList.remove('hidden');
+            }
+        }
+
+        // --- DRAG & DROP HANDLING ---
+        let isDragging = false;
+
+        function handlePointerDown(e, shape, index) {
+            e.preventDefault();
+            isDragging = true;
+            draggedShape = { ...shape, index };
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPos = { x: clientX, y: clientY };
+            
+            renderShapesDock(); 
+            updateFloatingShape();
+        }
+
+        function handleBoosterPointerDown(e, boosterType) {
+            e.preventDefault();
+            isDragging = true;
+            draggedBooster = boosterType;
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPos = { x: clientX, y: clientY };
+            
+            renderBoosters(); // Instantly hide the dragged booster from the dock
+            updateFloatingShape();
+        }
+
+        function updateFloatingShape() {
+            if (!draggedShape && !draggedBooster) {
+                elFloatingShape.style.opacity = '0';
+                elFloatingShape.style.left = '-1000px';
+                return;
+            }
+
+            if (draggedBooster) {
+                let bgClass = draggedBooster === 'straightClear' ? 'bg-red-500' : 
+                              draggedBooster === 'colorChange' ? 'bg-purple-500' : 
+                              draggedBooster === 'hybrid' ? 'bg-gradient-to-br from-red-500 via-yellow-400 to-green-500' : 'bg-cyan-500';
+                let icon = draggedBooster === 'straightClear' ? svgBoosterArrow : 
+                           draggedBooster === 'colorChange' ? svgBoosterColor : 
+                           draggedBooster === 'hybrid' ? svgBoosterHybrid : svgBoosterBomb;
+                
+                elFloatingShape.innerHTML = `<div class="w-16 h-16 sm:w-20 sm:h-20 ${bgClass} rounded-full flex justify-center items-center shadow-2xl scale-110 border-4 border-white/20">${icon}</div>`;
+                elFloatingShape.style.opacity = '0.9';
+                elFloatingShape.style.left = `${dragPos.x}px`;
+                elFloatingShape.style.top = `${dragPos.y}px`;
+                elFloatingShape.style.transform = `translate(-50%, calc(-100% - ${cellSize}px))`;
+                return;
+            }
+
+            elFloatingShape.innerHTML = buildShapeHTML(draggedShape, cellSize);
+            elFloatingShape.style.opacity = hoveredCells.length > 0 ? '0.6' : '1';
+            
+            const scale = hoveredCells.length > 0 ? 0.98 : 1;
+            const yOffset = hoveredCells.length > 0 ? cellSize * 0.2 : cellSize * 1.5;
+            
+            elFloatingShape.style.left = `${dragPos.x}px`;
+            elFloatingShape.style.top = `${dragPos.y}px`;
+            elFloatingShape.style.transform = `translate(-50%, calc(-100% - ${yOffset}px)) scale(${scale})`;
+        }
+
+        function handlePointerMove(e) {
+            if (!isDragging || isProcessing) return;
+            if(e.cancelable) e.preventDefault(); 
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPos = { x: clientX, y: clientY };
+
+            const gridRect = elGrid.getBoundingClientRect();
+            
+            if (draggedBooster) {
+                // Offset the target Y to match the visual center of the floating booster icon
+                const targetX = clientX;
+                const targetY = clientY - (cellSize * 1.8);
+
+                const col = Math.floor((targetX - gridRect.left) / cellSize);
+                const row = Math.floor((targetY - gridRect.top) / cellSize);
+                
+                if (draggedBooster === 'colorClear') {
+                    // Logic specifically for targeting grid blocks instead of cars
+                    if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
+                        if (!hoveredGridCell || hoveredGridCell.r !== row || hoveredGridCell.c !== col) {
+                            hoveredGridCell = {r: row, c: col};
+                            renderGrid();
+                        }
+                    } else {
+                        if (hoveredGridCell !== null) {
+                            hoveredGridCell = null;
+                            renderGrid();
+                        }
+                    }
+                    hoveredCarCol = null;
+                } else {
+                    const oldHoverCol = hoveredCarCol;
+                    
+                    // FIXED: Restrict vertical targeting!
+                    // row <= GRID_SIZE + 1 ensures that dragging down into the Shapes Dock or Booster Dock cancels the targeting!
+                    if (col >= 0 && col < GRID_SIZE && row >= -2 && row <= GRID_SIZE + 1 && cars.some(c => c.col === col)) {
+                        hoveredCarCol = col;
+                    } else {
+                        hoveredCarCol = null;
+                    }
+
+                    if (oldHoverCol !== hoveredCarCol) {
+                        renderGrid();
+                        renderCarsRow(); 
+                    }
+                    hoveredGridCell = null;
+                }
+                requestAnimationFrame(updateFloatingShape);
+                return;
+            }
+
+            if (draggedShape) {
+                const shapeCols = Math.max(...draggedShape.matrix.map(r => r.length));
+                const shapeRows = draggedShape.matrix.length;
+                const shapeHeight = shapeRows * cellSize;
+
+                const centerX = clientX;
+                const centerY = clientY - (cellSize * 1.5) - (shapeHeight / 2);
+
+                const col = Math.round(((centerX - gridRect.left) / cellSize) - (shapeCols / 2));
+                const row = Math.round(((centerY - gridRect.top) / cellSize) - (shapeRows / 2));
+
+                const oldHoverCount = hoveredCells.length;
+
+                if (isValidPlacement(draggedShape.matrix, row, col)) {
+                    let cells = [];
+                    draggedShape.matrix.forEach((rArr, r) => {
+                        rArr.forEach((val, c) => { if (val === 1) cells.push({ r: row + r, c: col + c }); });
+                    });
+                    hoveredCells = cells;
+                } else {
+                    hoveredCells = [];
+                }
+
+                if (oldHoverCount !== hoveredCells.length || hoveredCells.length > 0) {
+                    renderGrid();
+                }
+                
+                requestAnimationFrame(updateFloatingShape);
+            }
+        }
+
+        function handlePointerUp(e) {
+            if (!isDragging || isProcessing) return;
+            isDragging = false;
+
+            if (draggedBooster) {
+                const boosterType = draggedBooster; 
+                
+                if (boosterType === 'colorClear') {
+                    if (hoveredGridCell !== null && grid[hoveredGridCell.r][hoveredGridCell.c] !== null && grid[hoveredGridCell.r][hoveredGridCell.c] !== 'blocker') {
+                        const targetColor = grid[hoveredGridCell.r][hoveredGridCell.c];
+                        boosters[boosterType]--;
+                        draggedBooster = null;
+                        hoveredGridCell = null;
+                        
+                        updateFloatingShape();
+                        renderBoosters(); 
+                        
+                        handleBoosterUseColorClear(targetColor);
+                    } else {
+                        draggedBooster = null;
+                        hoveredGridCell = null;
+                        updateFloatingShape();
+                        renderGrid();
+                        renderBoosters(); // Return booster to dock
+                    }
+                } 
+                else if (hoveredCarCol !== null) {
+                    const car = cars.find(c => c.col === hoveredCarCol);
+                    boosters[boosterType]--;
+                    draggedBooster = null;
+                    hoveredCarCol = null;
+                    
+                    updateFloatingShape();
+                    renderGrid();
+                    renderCarsRow();
+                    renderBoosters(); 
+                    
+                    if (boosterType === 'straightClear') {
+                        handleBoosterUseStraight(car);
+                    } else if (boosterType === 'colorChange') {
+                        handleBoosterUseColor(car);
+                    } else if (boosterType === 'hybrid') {
+                        handleBoosterUseHybrid(car);
+                    }
+                } else {
+                    draggedBooster = null;
+                    hoveredCarCol = null;
+                    updateFloatingShape();
+                    renderGrid();
+                    renderCarsRow();
+                    renderBoosters(); // Return booster to dock
+                }
+                return;
+            }
+
+            if (hoveredCells.length > 0 && draggedShape) {
+                let newGrid = grid.map(row => [...row]);
+
+                hoveredCells.forEach(({ r, c }) => {
+                    newGrid[r][c] = draggedShape.color;
+                });
+
+                const shapeIndex = draggedShape.index;
+                const placedShape = draggedShape;
+                draggedShape = null;
+                hoveredCells = [];
+                updateFloatingShape();
+                handlePlacementSuccess(newGrid, shapeIndex, placedShape);
+            } else {
+                draggedShape = null;
+                hoveredCells = [];
+                updateFloatingShape();
+                renderGrid();
+                renderShapesDock();
+            }
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('pointermove', handlePointerMove, { passive: false });
+            window.addEventListener('pointerup', handlePointerUp);
+            window.addEventListener('touchmove', handlePointerMove, { passive: false });
+            window.addEventListener('touchend', handlePointerUp);
+            
+            document.addEventListener('contextmenu', e => e.preventDefault());
+
+            const elLevelBtn = document.getElementById('ui-level');
+            if (elLevelBtn) {
+                elLevelBtn.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation();
+                    openLevelSwitch();
+                });
+            }
+        }
+
+        window.onload = init;
+    </script>
+
+    <!-- FIREBASE TRACKING -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "[REDACTED]",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+        const GAME_ID = 'road-blocks-car-blast';
+
+        let db, auth, currentUser = null;
+        const startTime = Date.now();
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence set warning", e);
+                    }
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    const statsRef = doc(db, "game_stats", GAME_ID);
+                    updateDoc(statsRef, { plays: increment(1) }).catch(e => console.log("Stats error:", e));
+                    setInterval(saveTime, 30000);
+                }
+            } catch (e) { console.error("Tracking Error - check console", e); }
+        }
+
+        function saveTime() {
+            if (db && currentUser) {
+                const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+                if (timeSpentSeconds > 0) {
+                    const statsRef = doc(db, "game_stats", GAME_ID);
+                    updateDoc(statsRef, { timePlayed: increment(timeSpentSeconds) }).catch(e => console.log("Stats error:", e));
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', saveTime);
+        initFirebase();
+    </script>
+</body>
+</html>
