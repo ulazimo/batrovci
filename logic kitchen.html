@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-1X91H99N2G');
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Logic Kitchen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { touch-action: none; user-select: none; -webkit-user-select: none; background: #020617; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        const LucideIcon = ({ name, size = 24, className = '' }) => {
+            const ref = React.useRef(null);
+            React.useEffect(() => {
+                if (ref.current) {
+                    ref.current.innerHTML = '';
+                    const key = name.charAt(0).toUpperCase() + name.slice(1).replace(/-([a-z])/g, g => g[1].toUpperCase());
+                    const iconFn = lucide[key];
+                    if (iconFn) {
+                        const svg = lucide.createElement(iconFn);
+                        svg.setAttribute('width', size);
+                        svg.setAttribute('height', size);
+                        if (className) svg.setAttribute('class', className);
+                        ref.current.appendChild(svg);
+                    }
+                }
+            }, [name, size, className]);
+            return <span ref={ref} style={{display:'inline-flex',alignItems:'center',justifyContent:'center'}} />;
+        };
+
+        const Play = ({size=24,className=''}) => <LucideIcon name="play" size={size} className={className} />;
+        const Square = ({size=24,className=''}) => <LucideIcon name="square" size={size} className={className} />;
+        const Plus = ({size=24,className=''}) => <LucideIcon name="plus" size={size} className={className} />;
+        const ArrowRight = ({size=24,className=''}) => <LucideIcon name="arrow-right" size={size} className={className} />;
+        const Trash2 = ({size=24,className=''}) => <LucideIcon name="trash-2" size={size} className={className} />;
+
+        const LEVELS = [
+            { id:1, name:"Prep Work", desc:"Turn 2 into 6 using basic addition. Add a Math station and connect the flow.", start:2, target:6, nodes:["MATH"] },
+            { id:2, name:"Simmer Down", desc:"Reduce 20 to 5 using division or subtraction.", start:20, target:5, nodes:["MATH"] },
+            { id:3, name:"Double Batch", desc:"Use multiple stations to turn 3 into 14.", start:3, target:14, nodes:["MATH"] },
+            { id:4, name:"The Perfect Loop", desc:"Keep multiplying until the number reaches exactly 16.", start:1, target:16, nodes:["MATH","CONDITION"] },
+            { id:5, name:"Collatz Mini", desc:"If > 10, divide by 2. Else add 3. Route carefully to reach 8 from 5.", start:5, target:8, nodes:["MATH","CONDITION"] }
+        ];
+
+        const NODE_DIMS = { START:{w:120,h:60}, END:{w:120,h:60}, MATH:{w:150,h:80}, CONDITION:{w:150,h:100} };
+
+        const getPortCoords = (node, portId) => {
+            const dims = NODE_DIMS[node.type];
+            if (portId==="in") return {x:node.x, y:node.y+dims.h/2};
+            if (portId==="out") return {x:node.x+dims.w, y:node.y+dims.h/2};
+            if (portId==="true") return {x:node.x+dims.w, y:node.y+dims.h*0.3};
+            if (portId==="false") return {x:node.x+dims.w, y:node.y+dims.h*0.7};
+            return {x:node.x, y:node.y};
+        };
+
+        const getBezierPath = (p1, p2) => {
+            const cpOffset = Math.max(Math.abs(p2.x-p1.x)*0.5, 60);
+            return `M ${p1.x} ${p1.y} C ${p1.x+cpOffset} ${p1.y}, ${p2.x-cpOffset} ${p2.y}, ${p2.x} ${p2.y}`;
+        };
+
+        function App() {
+            const [currentLevel, setCurrentLevel] = useState(0);
+            const [nodes, setNodes] = useState([]);
+            const [connections, setConnections] = useState([]);
+            const [simulationState, setSimulationState] = useState("idle");
+            const [tokens, setTokens] = useState([]);
+            const [ticks, setTicks] = useState(0);
+            const [draggingNode, setDraggingNode] = useState(null);
+            const [connecting, setConnecting] = useState(null);
+            const [mousePos, setMousePos] = useState({x:0,y:0});
+            const workspaceRef = useRef(null);
+
+            const loadLevel = useCallback((idx) => {
+                const level = LEVELS[idx];
+                const mob = window.innerWidth < 768;
+                setNodes([
+                    {id:"start-node",type:"START",x:mob?20:100,y:mob?100:200,data:{value:level.start}},
+                    {id:"end-node",type:"END",x:mob?220:650,y:mob?100:200,data:{target:level.target}}
+                ]);
+                setConnections([]); setCurrentLevel(idx); setSimulationState("idle");
+                setTokens([]); setTicks(0); setConnecting(null);
+            }, []);
+
+            useEffect(() => { loadLevel(0); }, [loadLevel]);
+
+            const addNode = (type) => {
+                const mob = window.innerWidth < 768;
+                setNodes(prev => [...prev, {
+                    id:`node-${Date.now()}`,type,
+                    x:(mob?50:300)+Math.random()*50,y:(mob?180:200)+Math.random()*50,
+                    data:type==="MATH"?{operator:"+",operand:1}:{operator:">",operand:10}
+                }]);
+            };
+
+            const deleteNode = (id) => {
+                setNodes(prev=>prev.filter(n=>n.id!==id));
+                setConnections(prev=>prev.filter(c=>c.from!==id&&c.to!==id));
+            };
+            const deleteConnection = (id) => setConnections(prev=>prev.filter(c=>c.id!==id));
+            const updateNodeData = (id,key,value) => setNodes(prev=>prev.map(n=>n.id===id?{...n,data:{...n.data,[key]:value}}:n));
+
+            const handleNodePointerDown = (e,node) => {
+                if(simulationState!=="idle")return;
+                e.stopPropagation(); e.target.setPointerCapture(e.pointerId);
+                const rect=e.currentTarget.getBoundingClientRect();
+                setDraggingNode({id:node.id,offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top});
+            };
+            const handleWorkspacePointerMove = (e) => {
+                if(!workspaceRef.current)return;
+                const r=workspaceRef.current.getBoundingClientRect();
+                const x=e.clientX-r.left,y=e.clientY-r.top;
+                if(draggingNode)setNodes(prev=>prev.map(n=>n.id===draggingNode.id?{...n,x:x-draggingNode.offsetX,y:y-draggingNode.offsetY}:n));
+                else if(connecting)setMousePos({x,y});
+            };
+            const handleWorkspacePointerUp=()=>{if(draggingNode)setDraggingNode(null);};
+            const handleBackgroundPointerDown=()=>{if(connecting)setConnecting(null);};
+            const makeConnection=(fn,fp,tn,tp)=>{
+                setConnections(prev=>{const f=prev.filter(c=>!(c.from===fn&&c.fromPort===fp));return[...f,{id:`conn-${Date.now()}`,from:fn,fromPort:fp,to:tn,toPort:tp}];});
+                setConnecting(null);
+            };
+            const handlePortPointerDown=(e,nodeId,portId,isInput)=>{
+                e.stopPropagation();if(simulationState!=="idle")return;
+                if(connecting&&isInput&&connecting.nodeId!==nodeId){makeConnection(connecting.nodeId,connecting.portId,nodeId,portId);return;}
+                if(!isInput){setConnecting({nodeId,portId});if(workspaceRef.current){const r=workspaceRef.current.getBoundingClientRect();setMousePos({x:e.clientX-r.left,y:e.clientY-r.top});}}
+            };
+            const handlePortPointerUp=(e,nodeId,portId,isInput)=>{
+                e.stopPropagation();if(simulationState!=="idle")return;
+                if(isInput&&connecting&&connecting.nodeId!==nodeId)makeConnection(connecting.nodeId,connecting.portId,nodeId,portId);
+            };
+            const playSimulation=()=>{
+                if(simulationState==="running")return;
+                setSimulationState("running");setTicks(0);
+                const sn=nodes.find(n=>n.type==="START");
+                setTokens([{id:"tok-1",nodeId:sn.id,value:sn.data.value,status:"active"}]);
+            };
+            const stopSimulation=()=>{setSimulationState("idle");setTokens([]);setTicks(0);};
+            const tick=useCallback(()=>{
+                let ns=simulationState,ut=tokens.map(t=>({...t}));
+                if(ticks>=100)ns="failed";
+                for(let token of ut){
+                    if(token.status!=="active")continue;
+                    const node=nodes.find(n=>n.id===token.nodeId);
+                    if(!node){token.status="error";ns="failed";continue;}
+                    if(node.type==="END"){if(token.value===node.data.target){ns="success";token.status="success";}else{ns="failed";token.status="error";}continue;}
+                    let nv=token.value,op="out";
+                    if(node.type==="START"){nv=node.data.value;}
+                    else if(node.type==="MATH"){const o=node.data.operator,v=Number(node.data.operand);if(o==="+")nv+=v;if(o==="-")nv-=v;if(o==="*")nv*=v;if(o==="/"){if(v===0){token.status="error";ns="failed";continue;}nv=Math.trunc(nv/v);}}
+                    else if(node.type==="CONDITION"){const o=node.data.operator,v=Number(node.data.operand);const met=o===">"?nv>v:o==="<"?nv<v:nv===v;op=met?"true":"false";}
+                    const conn=connections.find(c=>c.from===node.id&&c.fromPort===op);
+                    if(conn){token.nodeId=conn.to;token.value=nv;}else{token.status="stuck";ns="failed";}
+                }
+                setTokens(ut);if(ns!==simulationState)setSimulationState(ns);setTicks(t=>t+1);
+            },[tokens,nodes,connections,simulationState,ticks]);
+            useEffect(()=>{if(simulationState==="running"){const t=setTimeout(tick,700);return()=>clearTimeout(t);}},[simulationState,tick]);
+
+            const PortBadge=({x,y,isInput,portId,nodeId,color})=>(
+                <div className={`absolute w-4 h-4 md:w-3 md:h-3 rounded-full border-2 border-gray-900 cursor-crosshair z-20 hover:scale-150 transition-transform ${color}`}
+                    style={{left:x,top:y,transform:"translate(-50%,-50%)"}}
+                    onPointerDown={(e)=>handlePortPointerDown(e,nodeId,portId,isInput)}
+                    onPointerUp={(e)=>handlePortPointerUp(e,nodeId,portId,isInput)}/>
+            );
+
+            return (
+                <div className="flex flex-col md:flex-row h-[100dvh] bg-slate-950 text-white font-sans overflow-hidden select-none">
+                    <div className="w-full md:w-72 h-[35dvh] md:h-auto bg-gray-900 border-t md:border-t-0 md:border-r border-gray-800 flex flex-col z-30 shadow-2xl order-2 md:order-1">
+                        <div className="p-3 md:p-5 bg-slate-900 font-black tracking-wider text-base md:text-lg border-b border-gray-800 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 shrink-0">LOGIC KITCHEN</div>
+                        <div className="flex-1 flex flex-row md:flex-col overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3 border-r md:border-r-0 md:border-b border-gray-800">
+                                <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-1 md:mb-2 sticky top-0 bg-gray-900 z-10 py-1">Recipes</div>
+                                {LEVELS.map((lvl,idx)=>(
+                                    <div key={lvl.id} onClick={()=>{if(simulationState==="idle")loadLevel(idx);}}
+                                        className={`p-2 md:p-3 rounded-lg cursor-pointer border transition-all ${currentLevel===idx?"bg-blue-900/40 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]":"bg-gray-800/50 border-gray-700 hover:bg-gray-800"} ${simulationState!=="idle"?"opacity-50 cursor-not-allowed":""}`}>
+                                        <div className="font-bold text-xs md:text-sm text-gray-200">{lvl.id}. {lvl.name}</div>
+                                        <div className="text-[10px] md:text-xs text-gray-400 mt-1 leading-relaxed line-clamp-2 md:line-clamp-none">{lvl.desc}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex-1 md:flex-none p-2 md:p-4 bg-slate-900 overflow-y-auto">
+                                <div className="text-[10px] md:text-xs font-bold text-gray-500 uppercase mb-2 md:mb-3">Stations</div>
+                                <div className="flex flex-col gap-2">
+                                    {LEVELS[currentLevel].nodes.includes("MATH")&&(
+                                        <button onClick={()=>addNode("MATH")} disabled={simulationState!=="idle"} className="px-2 md:px-4 py-2 md:py-2.5 bg-blue-600/20 text-blue-300 border border-blue-600/50 hover:bg-blue-600/40 rounded flex items-center justify-center gap-1 md:gap-2 transition-colors disabled:opacity-50 text-xs md:text-base font-medium">
+                                            <Plus size={14}/> <span className="hidden md:inline">Add</span> Math
+                                        </button>
+                                    )}
+                                    {LEVELS[currentLevel].nodes.includes("CONDITION")&&(
+                                        <button onClick={()=>addNode("CONDITION")} disabled={simulationState!=="idle"} className="px-2 md:px-4 py-2 md:py-2.5 bg-orange-600/20 text-orange-300 border border-orange-600/50 hover:bg-orange-600/40 rounded flex items-center justify-center gap-1 md:gap-2 transition-colors disabled:opacity-50 text-xs md:text-base font-medium">
+                                            <Plus size={14}/> <span className="hidden md:inline">Add</span> Check
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden order-1 md:order-2 touch-none"
+                        style={{backgroundImage:`linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)`,backgroundSize:"25px 25px"}}
+                        ref={workspaceRef} onPointerDown={handleBackgroundPointerDown}
+                        onPointerMove={handleWorkspacePointerMove} onPointerUp={handleWorkspacePointerUp} onPointerLeave={handleWorkspacePointerUp}>
+                        <div className="absolute top-2 md:top-6 left-2 md:left-6 right-2 md:right-auto z-10 flex gap-2 md:gap-6 items-center justify-between md:justify-start bg-gray-900/90 backdrop-blur p-2 md:p-3 px-3 md:px-6 rounded-xl border border-gray-700 shadow-2xl">
+                            <div className="flex gap-3 md:gap-6 items-center">
+                                <div className="flex flex-col items-center"><span className="text-[8px] md:text-[10px] uppercase font-bold text-gray-500">Input</span><span className="font-mono text-xl md:text-2xl text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.8)]">{LEVELS[currentLevel].start}</span></div>
+                                <ArrowRight className="text-gray-600 w-4 h-4 md:w-6 md:h-6"/>
+                                <div className="flex flex-col items-center"><span className="text-[8px] md:text-[10px] uppercase font-bold text-gray-500">Target</span><span className="font-mono text-xl md:text-2xl text-purple-400 drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]">{LEVELS[currentLevel].target}</span></div>
+                            </div>
+                            <div className="w-px h-8 md:h-10 bg-gray-700 mx-1 md:mx-2"></div>
+                            <button onClick={simulationState==="idle"?playSimulation:stopSimulation}
+                                className={`px-3 md:px-6 py-1.5 md:py-2.5 rounded-lg font-bold flex items-center gap-1.5 md:gap-2 transition-all shadow-lg text-sm md:text-base ${simulationState==="idle"?"bg-emerald-600 hover:bg-emerald-500 text-white":"bg-rose-600 hover:bg-rose-500 text-white"}`}>
+                                {simulationState==="idle"?<><Play size={16}/><span className="hidden sm:inline">Run Flow</span><span className="sm:hidden">Run</span></>:<><Square size={16}/><span className="hidden sm:inline">Stop & Edit</span><span className="sm:hidden">Stop</span></>}
+                            </button>
+                        </div>
+                        {simulationState==="success"&&(
+                            <div className="absolute top-20 md:top-24 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-slate-950 px-4 md:px-8 py-3 md:py-4 rounded-xl font-black shadow-[0_0_30px_rgba(16,185,129,0.5)] z-40 flex flex-col md:flex-row items-center gap-2 md:gap-4 animate-bounce text-sm md:text-base w-[90%] md:w-auto text-center">
+                                RECIPE MATCHES TARGET!
+                                {currentLevel<LEVELS.length-1&&<button onClick={()=>loadLevel(currentLevel+1)} className="mt-1 md:mt-0 md:ml-4 px-4 py-2 bg-slate-900 text-white rounded shadow hover:bg-slate-800 transition-colors text-xs md:text-sm w-full md:w-auto">Next Level <ArrowRight size={14}/></button>}
+                            </div>
+                        )}
+                        {simulationState==="failed"&&(
+                            <div className="absolute top-20 md:top-24 left-1/2 transform -translate-x-1/2 bg-rose-500 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-black shadow-[0_0_30px_rgba(225,29,72,0.5)] z-40 text-sm md:text-base w-[90%] md:w-auto text-center whitespace-nowrap">SYSTEM FAILED OR STUCK</div>
+                        )}
+                        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                            {connections.map(conn=>{
+                                const fn=nodes.find(n=>n.id===conn.from),tn=nodes.find(n=>n.id===conn.to);
+                                if(!fn||!tn)return null;
+                                const p1=getPortCoords(fn,conn.fromPort),p2=getPortCoords(tn,conn.toPort),d=getBezierPath(p1,p2);
+                                return(<g key={conn.id} className="pointer-events-auto cursor-pointer group" onPointerDown={()=>{if(simulationState==="idle")deleteConnection(conn.id);}}>
+                                    <path d={d} stroke="transparent" strokeWidth="30" fill="none"/>
+                                    <path d={d} stroke="#475569" strokeWidth="4" fill="none" className="group-hover:stroke-rose-500 transition-colors"/>
+                                    <circle cx={p2.x} cy={p2.y} r="6" fill="#94a3b8" className="group-hover:fill-rose-500 transition-colors"/>
+                                </g>);
+                            })}
+                            {connecting&&<path d={getBezierPath(getPortCoords(nodes.find(n=>n.id===connecting.nodeId),connecting.portId),mousePos)} stroke="#64748b" strokeWidth="3" strokeDasharray="6,6" fill="none"/>}
+                        </svg>
+                        {nodes.map(node=>{
+                            const dims=NODE_DIMS[node.type];
+                            return(<div key={node.id} className={`absolute bg-slate-800 rounded-lg shadow-2xl border ${simulationState==="running"?"border-slate-700":"border-slate-600 hover:border-slate-500"} flex flex-col z-10`}
+                                style={{width:dims.w,height:dims.h,left:node.x,top:node.y,cursor:simulationState==="idle"?(draggingNode?.id===node.id?"grabbing":"grab"):"default"}}
+                                onPointerDown={(e)=>handleNodePointerDown(e,node)}>
+                                {["MATH","CONDITION"].includes(node.type)&&simulationState==="idle"&&(<button onPointerDown={(e)=>{e.stopPropagation();deleteNode(node.id);}} className="absolute -top-3 -right-3 bg-rose-600 rounded-full p-2 md:p-1.5 shadow-lg hover:bg-rose-500 text-white z-30 transition-transform hover:scale-110"><Trash2 size={14}/></button>)}
+                                {node.type==="START"&&<><div className="bg-emerald-700/80 text-white text-[10px] uppercase px-3 py-1.5 rounded-t-lg font-black tracking-wider">Start</div><div className="flex-1 flex items-center justify-center font-mono text-2xl md:text-3xl text-emerald-300 bg-slate-800 rounded-b-lg">{node.data.value}</div><PortBadge x={dims.w} y={dims.h/2} isInput={false} portId="out" nodeId={node.id} color="bg-emerald-400"/></>}
+                                {node.type==="END"&&<><div className="bg-purple-700/80 text-white text-[10px] uppercase px-3 py-1.5 rounded-t-lg font-black tracking-wider">Target</div><div className="flex-1 flex items-center justify-center font-mono text-2xl md:text-3xl text-purple-300 bg-slate-800 rounded-b-lg">= {node.data.target}</div><PortBadge x={0} y={dims.h/2} isInput={true} portId="in" nodeId={node.id} color="bg-purple-400"/></>}
+                                {node.type==="MATH"&&<><div className="bg-blue-700/80 text-white text-[10px] uppercase px-3 py-1.5 rounded-t-lg font-black tracking-wider">Math</div><div className="flex-1 flex items-center justify-center gap-2 px-3 bg-slate-800 rounded-b-lg"><select value={node.data.operator} onChange={(e)=>updateNodeData(node.id,"operator",e.target.value)} onPointerDown={e=>e.stopPropagation()} className="bg-slate-900 text-blue-300 p-1 md:p-1.5 rounded font-mono text-sm md:text-base border border-slate-700 cursor-pointer outline-none" disabled={simulationState!=="idle"}><option value="+">+</option><option value="-">-</option><option value="*">x</option><option value="/">/</option></select><input type="number" value={node.data.operand} onChange={(e)=>updateNodeData(node.id,"operand",e.target.value)} onPointerDown={e=>e.stopPropagation()} className="bg-slate-900 text-white p-1 md:p-1.5 rounded font-mono text-sm md:text-base w-12 md:w-14 border border-slate-700 outline-none text-center" disabled={simulationState!=="idle"}/></div><PortBadge x={0} y={dims.h/2} isInput={true} portId="in" nodeId={node.id} color="bg-slate-400"/><PortBadge x={dims.w} y={dims.h/2} isInput={false} portId="out" nodeId={node.id} color="bg-blue-400"/></>}
+                                {node.type==="CONDITION"&&<><div className="bg-orange-700/80 text-white text-[10px] uppercase px-3 py-1.5 rounded-t-lg font-black tracking-wider">Condition</div><div className="flex-1 flex flex-col justify-center px-2 py-2 bg-slate-800 rounded-b-lg gap-2"><div className="flex items-center gap-1 justify-center"><span className="text-[10px] md:text-xs font-bold text-slate-400">If</span><select value={node.data.operator} onChange={(e)=>updateNodeData(node.id,"operator",e.target.value)} onPointerDown={e=>e.stopPropagation()} className="bg-slate-900 text-orange-300 p-1 rounded font-mono text-xs md:text-sm border border-slate-700 cursor-pointer outline-none" disabled={simulationState!=="idle"}><option value=">">&gt;</option><option value="<">&lt;</option><option value="==">==</option></select><input type="number" value={node.data.operand} onChange={(e)=>updateNodeData(node.id,"operand",e.target.value)} onPointerDown={e=>e.stopPropagation()} className="bg-slate-900 text-white p-1 rounded font-mono text-xs md:text-sm w-10 md:w-12 border border-slate-700 outline-none text-center" disabled={simulationState!=="idle"}/></div><span className="absolute right-3 text-[9px] md:text-[10px] text-emerald-400 font-bold" style={{top:dims.h*0.3,transform:"translateY(-50%)"}}>True</span><span className="absolute right-3 text-[9px] md:text-[10px] text-rose-400 font-bold" style={{top:dims.h*0.7,transform:"translateY(-50%)"}}>False</span></div><PortBadge x={0} y={dims.h/2} isInput={true} portId="in" nodeId={node.id} color="bg-slate-400"/><PortBadge x={dims.w} y={dims.h*0.3} isInput={false} portId="true" nodeId={node.id} color="bg-emerald-400"/><PortBadge x={dims.w} y={dims.h*0.7} isInput={false} portId="false" nodeId={node.id} color="bg-rose-400"/></>}
+                            </div>);
+                        })}
+                        {tokens.map(token=>{
+                            const node=nodes.find(n=>n.id===token.nodeId);if(!node)return null;
+                            const dims=NODE_DIMS[node.type];
+                            let bg="bg-amber-400 border-amber-500 text-slate-900";
+                            if(token.status==="stuck"||token.status==="error")bg="bg-rose-500 border-rose-600 text-white";
+                            if(token.status==="success")bg="bg-emerald-400 border-emerald-500 text-slate-900";
+                            return<div key={token.id} className={`absolute z-50 font-black rounded-full w-8 h-8 md:w-10 md:h-10 text-xs md:text-base flex items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.5)] border-2 transition-all duration-500 ease-in-out ${bg}`} style={{left:node.x+dims.w/2,top:node.y-18,transform:"translate(-50%,-50%)"}}>{token.value}</div>;
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+
+    <!-- FIREBASE TRACKING -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        const firebaseConfig = { apiKey:"[REDACTED]",authDomain:"prototypes-7691b.firebaseapp.com",projectId:"prototypes-7691b",storageBucket:"prototypes-7691b.firebasestorage.app",messagingSenderId:"263652926534",appId:"1:263652926534:web:9af3c4ce63aab78f0f9647",measurementId:"G-1X91H99N2G" };
+        const GAME_ID = "logic-kitchen";
+        let db, auth, currentUser = null;
+        const startTime = Date.now();
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app); auth = getAuth(app);
+                    try { await setPersistence(auth, inMemoryPersistence); } catch(e) { console.warn("Persistence set warning",e); }
+                    const uc = await signInAnonymously(auth); currentUser = uc.user;
+                    const sr = doc(db,"game_stats",GAME_ID);
+                    updateDoc(sr,{plays:increment(1)}).catch(e=>console.log("Stats error:",e));
+                    setInterval(saveTime,30000);
+                }
+            } catch(e) { console.error("Tracking Error - check console",e); }
+        }
+        function saveTime() {
+            if (db && currentUser) {
+                const s = Math.floor((Date.now()-startTime)/1000);
+                if (s>0) { const sr=doc(db,"game_stats",GAME_ID); updateDoc(sr,{timePlayed:increment(s)}).catch(e=>console.log("Stats error:",e)); }
+            }
+        }
+        window.addEventListener("beforeunload",saveTime);
+        initFirebase();
+    </script>
+</body>
+</html>
