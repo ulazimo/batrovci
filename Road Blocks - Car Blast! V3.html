@@ -64,13 +64,104 @@
                 Car Blast!
             </h2>
             
+            <!-- How to Play -->
+            <div class="w-[80%] max-w-[320px] bg-black/10 rounded-2xl px-5 py-4 mb-8 text-left">
+                <p class="font-black text-[#1e293b] text-sm uppercase tracking-widest mb-2">How to Play</p>
+                <ul class="text-[#1e293b]/80 text-sm font-semibold space-y-1 list-none">
+                    <li>🧩 Drag colored blocks onto the grid</li>
+                    <li>🚗 Clear a path from a car to the top row</li>
+                    <li>🎯 Match block color to car color to drive through</li>
+                    <li>💥 Fill a full row or column to clear it</li>
+                    <li>🏆 <b>Roadtrip:</b> send all cars to advance levels</li>
+                    <li>♾️ <b>Classic:</b> survive as long as possible</li>
+                </ul>
+            </div>
+
             <button onclick="startGame('roadtrip')" class="w-[70%] max-w-[280px] bg-[#4ade80] hover:bg-[#22c55e] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#166534] active:translate-y-[6px] active:shadow-none transition-all mb-6 uppercase tracking-widest border-4 border-[#166534]">
                 Roadtrip
             </button>
             
-            <button onclick="startGame('classic')" class="w-[70%] max-w-[280px] bg-[#facc15] hover:bg-[#eab308] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#a16207] active:translate-y-[6px] active:shadow-none transition-all uppercase tracking-widest border-4 border-[#a16207]">
+            <button onclick="startGame('classic')" class="w-[70%] max-w-[280px] bg-[#facc15] hover:bg-[#eab308] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#a16207] active:translate-y-[6px] active:shadow-none transition-all mb-4 uppercase tracking-widest border-4 border-[#a16207]">
                 Classic
             </button>
+
+            <button onclick="document.getElementById('modal-howto').classList.remove('hidden')" class="text-[#1e293b]/60 hover:text-[#1e293b] text-sm font-bold uppercase tracking-widest underline underline-offset-4 transition-colors mt-2">
+                Boosters &amp; Power-ups ?
+            </button>
+        </div>
+
+        <!-- HOW TO PLAY MODAL -->
+        <div id="modal-howto" class="absolute inset-0 bg-black/70 flex items-center justify-center z-[110] backdrop-blur-sm hidden">
+            <div class="bg-white rounded-[2rem] shadow-2xl w-[88%] max-w-[360px] p-6 sm:p-8 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-800 text-center tracking-tight">Boosters &amp; Power-ups</h2>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 bg-[#3b66c4] rounded-full flex items-center justify-center shadow-md">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Straight Blast</p>
+                        <p class="text-slate-500 text-sm mt-0.5">Drag onto a car — it blasts straight through the entire column, destroying all blocks in its path. Earns <b>+500 pts</b>.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 bg-[#3b66c4] rounded-full flex items-center justify-center shadow-md">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.124-.224-.258-.39-.546-.39-.856 0-.644.56-1.122 1.17-1.122h2.308c3.466 0 5.7-2.684 5.7-6.128C22 6.836 17.5 2 12 2z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Color Change</p>
+                        <p class="text-slate-500 text-sm mt-0.5">Drag onto a car — randomly changes its color. If it can now find a path, it drives immediately.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 bg-[#3b66c4] rounded-full flex items-center justify-center shadow-md">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Hybrid Boost</p>
+                        <p class="text-slate-500 text-sm mt-0.5">Drag onto a car — turns it into a <b>Hybrid</b> that can drive through any color block, not just its own.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 bg-[#3b66c4] rounded-full flex items-center justify-center shadow-md">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Color Bomb</p>
+                        <p class="text-slate-500 text-sm mt-0.5">Drag onto any block on the grid — removes <b>all blocks of that color</b> from the entire board. Earns <b>50 pts per block</b>.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 bg-cyan-500 rounded-full flex items-center justify-center shadow-md text-white text-xl font-black">+2</div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Portal +2 <span class="text-slate-400 font-medium">(Roadtrip lv3+)</span></p>
+                        <p class="text-slate-500 text-sm mt-0.5">A car driving through this portal earns a bonus <b>+200 pts</b>.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 bg-red-500 rounded-full flex items-center justify-center shadow-md text-white text-xl font-black">-1</div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Portal -1 <span class="text-slate-400 font-medium">(Roadtrip lv4+)</span></p>
+                        <p class="text-slate-500 text-sm mt-0.5">A car driving through this portal loses <b>-200 pts</b>. Avoid it!</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 bg-slate-50 rounded-xl p-4">
+                    <div class="w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center shadow-md overflow-hidden" style="background: repeating-linear-gradient(45deg, #111827, #111827 6px, #f97316 6px, #f97316 12px);">
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-800 text-base">Blocker <span class="text-slate-400 font-medium">(Roadtrip lv5+)</span></p>
+                        <p class="text-slate-500 text-sm mt-0.5">An indestructible hazard cell. Cars and boosters cannot pass through it.</p>
+                    </div>
+                </div>
+
+                <button onclick="document.getElementById('modal-howto').classList.add('hidden')" class="mt-2 w-full bg-[#3b66c4] hover:bg-blue-600 text-white font-black py-4 rounded-2xl shadow-[0_4px_0_#2a4b99] active:translate-y-1 active:shadow-none transition-all text-lg uppercase tracking-widest">Got it!</button>
+            </div>
         </div>
 
         <!-- HEADER -->
