@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-1X91H99N2G');
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Road Blocks: Car Blast!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-pop': 'bouncePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards'
+                    },
+                    keyframes: {
+                        bouncePop: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '70%': { transform: 'scale(1.1)', opacity: '1' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Prevent all pull-to-refresh and selection behaviors on mobile */
+        body { overscroll-behavior-y: contain; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: none; }
+        .grid-cell-inner { border-top: 2px solid rgba(255,255,255,0.3); border-left: 2px solid rgba(255,255,255,0.3); border-bottom: 2px solid rgba(0,0,0,0.3); border-right: 2px solid rgba(0,0,0,0.3); border-radius: inherit; }
+        .block-shape { background-color: currentColor; }
+        
+        /* Dynamic SVG Icons */
+        .icon-star { fill: #facc15; color: #facc15; }
+        .icon-rotate { color: currentColor; }
+        .icon-settings { color: currentColor; }
+        
+        /* Blocker Hazard Pattern */
+        .bg-blocker {
+            background: repeating-linear-gradient(45deg, #111827, #111827 8px, #f97316 8px, #f97316 16px);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 h-[100vh] w-full flex items-center justify-center font-sans overflow-hidden text-slate-900">
+
+    <!-- 1080x1920 HD 9:16 CONTAINER -->
+    <div class="bg-[#6b9ff0] relative w-full h-full sm:w-auto sm:h-[95vh] sm:aspect-[9/16] sm:shadow-2xl flex flex-col p-3 sm:p-6 overflow-hidden">
+        
+        <!-- START SCREEN OVERLAY -->
+        <div id="start-screen" class="absolute inset-0 bg-[#6b9ff0] z-[100] flex flex-col items-center justify-center font-sans">
+            <h1 class="text-[5rem] sm:text-[6.5rem] leading-none font-black text-[#1e293b] tracking-tighter mb-4 text-center">
+                ROAD<br>BLOCKS
+            </h1>
+            <h2 class="text-xl sm:text-2xl font-black text-[#1e293b] tracking-[0.2em] uppercase mb-12">
+                Car Blast!
+            </h2>
+            
+            <button onclick="startGame('roadtrip')" class="w-[70%] max-w-[280px] bg-[#4ade80] hover:bg-[#22c55e] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#166534] active:translate-y-[6px] active:shadow-none transition-all mb-5 uppercase tracking-widest border-4 border-[#166534]">
+                Roadtrip
+            </button>
+            
+            <button onclick="startGame('classic')" class="w-[70%] max-w-[280px] bg-[#facc15] hover:bg-[#eab308] text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#a16207] active:translate-y-[6px] active:shadow-none transition-all mb-5 uppercase tracking-widest border-4 border-[#a16207]">
+                Classic
+            </button>
+
+            <button onclick="openGarage()" class="w-[70%] max-w-[280px] bg-slate-800 hover:bg-slate-700 text-white font-black text-2xl sm:text-3xl py-5 rounded-[1.5rem] shadow-[0_6px_0_#0f172a] active:translate-y-[6px] active:shadow-none transition-all flex justify-center items-center gap-3 uppercase tracking-widest border-4 border-[#0f172a]">
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                Garage
+            </button>
+        </div>
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-start w-full mb-2 sm:mb-4 mt-1 sm:mt-2">
+            
+            <!-- Left: High Score & Gems -->
+            <div class="flex flex-col gap-1 w-1/3 pt-1 sm:pt-2">
+                <div class="flex items-center gap-2 font-bold text-xl sm:text-2xl">
+                    <svg class="icon-star w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span id="ui-highscore">0</span>
+                </div>
+                <div class="flex items-center gap-2 font-bold text-lg sm:text-xl text-purple-200 drop-shadow-sm transition-opacity duration-300" id="gem-container">
+                    <svg viewBox="0 0 24 24" fill="#a855f7" stroke="#e9d5ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-md"><polygon points="12 2 2 7 12 22 22 7 12 2"></polygon><polyline points="2 7 12 11 22 7"></polyline><line x1="12" y1="22" x2="12" y2="11"></line></svg>
+                    <span id="ui-gems">0</span>
+                </div>
+            </div>
+
+            <!-- Center: Level & Current Score -->
+            <div class="flex flex-col items-center justify-center w-1/3">
+                <div id="ui-level" class="text-sm sm:text-base font-bold text-slate-800/60 tracking-widest uppercase mb-[-5px] sm:mb-[-10px] z-10 cursor-pointer hover:text-slate-900 transition-colors pointer-events-auto" title="Click to jump to a specific level">Level 1</div>
+                <div id="ui-score" class="text-5xl sm:text-7xl font-black tracking-tight drop-shadow-sm relative z-0">0</div>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="flex items-center justify-end gap-1 sm:gap-2 w-1/3 pt-1 sm:pt-3">
+                <button onclick="startNewGame()" class="p-2 bg-black/10 hover:bg-black/20 rounded-full transition text-slate-900" title="Restart">
+                    <svg class="icon-rotate w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                </button>
+                <button id="btn-garage-header" onclick="openGarage()" class="p-2 bg-black/10 hover:bg-black/20 rounded-full transition text-slate-900 relative" title="Garage">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                </button>
+                <button onclick="showStartScreen()" class="p-2 bg-black/10 hover:bg-black/20 rounded-full transition text-slate-900" title="Home">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME BOARD & CARS -->
+        <div class="w-full flex-1 flex flex-col justify-center relative mt-auto">
+            <!-- Wrapped Grid for Blueprint layering -->
+            <div class="relative w-full rounded-sm aspect-square border-[3px] border-slate-900 shadow-lg bg-[#1e3a8a] overflow-hidden" style="background-image: linear-gradient(#2563eb 1px, transparent 1px), linear-gradient(90deg, #2563eb 1px, transparent 1px); background-size: 12.5% 12.5%;">
+                
+                <!-- The Hidden Blueprint Art -->
+                <div id="blueprint-icon" class="absolute inset-0 flex items-center justify-center text-white/30 z-0 p-8 pointer-events-none">
+                    <!-- Injected dynamically based on level -->
+                </div>
+
+                <!-- The Actual Grid -->
+                <div id="grid-container" class="absolute inset-0 grid grid-cols-8 gap-0 z-10">
+                    <!-- Grid cells injected via JS -->
+                </div>
+
+                <!-- OVERLAYS: Driving Cars & Combos -->
+                <div id="driving-cars-layer" class="absolute inset-0 pointer-events-none z-40"></div>
+                <div id="combo-layer" class="absolute inset-0 pointer-events-none z-50 flex items-center justify-center hidden">
+                    <div class="flex flex-col items-center justify-center scale-110 animate-bounce-pop">
+                        <span id="combo-text" class="text-4xl sm:text-5xl font-black text-yellow-300 drop-shadow-[0_3px_3px_rgba(0,0,0,0.9)] uppercase tracking-widest mb-1 hidden">Combo!</span>
+                        <span id="combo-multiplier" class="text-7xl sm:text-8xl font-black text-white drop-shadow-[0_5px_5px_rgba(0,0,0,0.9)]">x2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARS ROW -->
+            <div id="cars-row" class="grid grid-cols-8 gap-0 mt-2 sm:mt-4 h-[10%] min-h-[40px] w-full relative">
+                <!-- Parked cars injected via JS -->
+            </div>
+        </div>
+
+        <!-- AVAILABLE SHAPES DOCK -->
+        <div id="shapes-dock" class="flex justify-around items-center w-full mt-1 mb-3 sm:mt-2 sm:mb-5 h-[18%] min-h-[100px] max-h-[160px]">
+            <!-- Shapes injected via JS -->
+        </div>
+
+        <!-- BOTTOM BOOSTERS -->
+        <div id="boosters-container" class="flex justify-around items-end w-full mt-auto pb-4 sm:pb-8 h-[10%] min-h-[60px] max-h-[90px]">
+            <!-- Boosters injected via JS -->
+        </div>
+
+        <!-- FLOATING DRAGGED SHAPE/BOOSTER -->
+        <div id="floating-shape" class="fixed pointer-events-none z-50 flex justify-center opacity-0 transition-opacity duration-150 ease-out" style="left: -1000px; top: -1000px;">
+            <!-- Floating element injected via JS -->
+        </div>
+
+        <!-- MODALS -->
+        <div id="modal-gameover" class="absolute inset-0 bg-black/60 flex items-center justify-center z-[60] flex-col backdrop-blur-sm hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center">
+                <h2 class="text-4xl sm:text-5xl font-black text-slate-800 mb-2">Out of Moves!</h2>
+                <p class="text-slate-500 mb-6 sm:mb-8 text-lg sm:text-2xl">Final Score: <span id="go-score" class="font-bold text-blue-500">0</span></p>
+                <button onclick="startNewGame()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 sm:py-5 sm:px-10 rounded-xl sm:rounded-2xl shadow-[0_6px_0_#2563eb] active:translate-y-[6px] active:shadow-none transition-all text-xl sm:text-2xl w-full">Play Again</button>
+            </div>
+        </div>
+
+        <div id="modal-levelcomplete" class="absolute inset-0 bg-black/60 flex items-center justify-center z-[60] flex-col backdrop-blur-sm hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center">
+                <h2 class="text-4xl sm:text-5xl font-black text-green-500 mb-2 text-center">Part Secured!</h2>
+                <p class="text-slate-500 mb-6 sm:mb-8 text-lg sm:text-2xl text-center">Added to Garage. Score: <span id="lc-score" class="font-bold text-blue-500">0</span></p>
+                <button onclick="startNextLevel()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 sm:py-5 sm:px-10 rounded-xl sm:rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-[6px] active:shadow-none transition-all text-xl sm:text-2xl w-full">Next Level</button>
+            </div>
+        </div>
+
+        <!-- LEVEL JUMP MODAL -->
+        <div id="modal-levelswitch" class="absolute inset-0 bg-black/60 flex items-center justify-center z-[70] flex-col backdrop-blur-sm hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-[2rem] shadow-2xl flex flex-col items-center w-[85%] max-w-[340px]">
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-4 text-center">Jump Level</h2>
+                <input type="number" id="level-input" class="w-full text-center text-4xl font-black text-blue-500 p-4 border-4 border-slate-200 rounded-2xl mb-6 outline-none focus:border-blue-400 transition-colors" value="1" min="1">
+                <div class="flex gap-4 w-full">
+                    <button onclick="document.getElementById('modal-levelswitch').classList.add('hidden')" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-500 font-bold py-3 sm:py-4 rounded-xl transition-all text-xl">Cancel</button>
+                    <button onclick="confirmLevelSwitch()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 sm:py-4 rounded-xl shadow-[0_6px_0_#2563eb] active:translate-y-[6px] active:shadow-none transition-all text-xl">Go</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RULES MODAL (First time only) -->
+        <div id="modal-rules" class="absolute inset-0 bg-slate-900/90 flex items-center justify-center z-[110] flex-col backdrop-blur-sm hidden px-4">
+            <div class="bg-white p-6 sm:p-8 rounded-[2rem] shadow-2xl flex flex-col items-center max-w-sm w-full relative">
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-4 text-center">How to Play</h2>
+                <ul class="text-slate-600 text-base sm:text-lg mb-6 space-y-3 font-medium w-full">
+                    <li class="flex items-start gap-2"><span class="text-blue-500">🧱</span> Place blocks to build a path for the cars to escape!</li>
+                    <li class="flex items-start gap-2"><span class="text-purple-500">💎</span> Route cars over gems to collect them.</li>
+                    <li class="flex items-start gap-2"><span class="text-cyan-500">🌀</span> Pass through portals to modify your score.</li>
+                    <li class="flex items-start gap-2"><span class="text-orange-500">⚠️</span> Avoid hazard blocks—you can't build or drive over them!</li>
+                    <li class="flex items-start gap-2"><span class="text-green-500">🚘</span> Complete levels to uncover blueprints and build cars in your Garage!</li>
+                </ul>
+                <button onclick="closeRulesAndStart()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 w-full rounded-xl sm:rounded-2xl shadow-[0_6px_0_#2563eb] active:translate-y-[6px] active:shadow-none transition-all text-xl">Let's Play!</button>
+            </div>
+        </div>
+
+        <!-- GARAGE MODAL -->
+        <!-- Fixed z-index from 80 to 110 so it appears above the Start Screen -->
+        <div id="modal-garage" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-start z-[110] backdrop-blur-md hidden overflow-y-auto pt-10 pb-20">
+            <div class="w-full max-w-md px-4 sm:px-6 relative">
+                <button onclick="closeGarage()" class="absolute top-0 right-4 sm:right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h2 class="text-4xl font-black text-white tracking-widest mb-2 text-center mt-2">GARAGE</h2>
+                <p class="text-slate-400 text-center mb-8 font-bold text-sm">Build cars by completing levels!</p>
+                
+                <div class="grid grid-cols-3 gap-3 sm:gap-4" id="garage-cars-grid">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- CAR DETAILS MODAL -->
+        <!-- Fixed z-index from 90 to 120 so it appears above the Garage Modal -->
+        <div id="modal-car-details" class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-start z-[120] hidden pt-10 px-4 sm:px-6 overflow-y-auto pb-20">
+            <div class="w-full max-w-sm relative flex flex-col items-center">
+                <button onclick="closeCarDetails()" class="absolute top-0 right-0 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h2 id="car-details-title" class="text-3xl font-black text-white tracking-widest mb-1 text-center mt-2">CAR 1</h2>
+                <div id="car-details-progress" class="text-lg text-[#4ade80] font-bold mb-6 tracking-wide">0 / 10 Parts Built</div>
+                
+                <div class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2" id="car-details-list">
+                    <!-- Injected JS -->
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- MAIN GAME LOGIC -->
+    <script>
+        // --- CONSTANTS & ASSETS ---
+        const GRID_SIZE = 8;
+        const COLORS = {
+            yellow: 'bg-yellow-400',
+            green: 'bg-green-500',
+            red: 'bg-red-500',
+        };
+        const COLOR_KEYS = Object.keys(COLORS);
+
+        const SHAPES = [
+            { matrix: [[1]] },
+            { matrix: [[1, 1]] },
+            { matrix: [[1], [1]] },
+            { matrix: [[1, 1, 1]] },
+            { matrix: [[1], [1], [1]] },
+            { matrix: [[1, 1], [1, 1]] },
+            { matrix: [[1, 1, 1], [1, 0, 0]] },
+            { matrix: [[1, 1, 1], [0, 0, 1]] },
+            { matrix: [[1, 1, 1], [0, 1, 0]] },
+            { matrix: [[1, 1, 1, 1]] },
+            { matrix: [[1], [1], [1], [1]] },
+        ];
+
+        // The 10 Parts required to build a car
+        const CAR_PARTS = [
+            { name: "Chassis Frame", svg: `<rect x="3" y="8" width="18" height="8" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2"/>` },
+            { name: "Engine Block", svg: `<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.5-7.1l-2.8 2.8M7.3 16.2l-2.8 2.8m0-14.1l2.8 2.8m9.9 8.5l2.8 2.8" stroke="currentColor" stroke-width="2"/>` },
+            { name: "Tires & Axles", svg: `<circle cx="7" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="17" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/><line x1="11" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="2"/>` },
+            { name: "Steering & Dash", svg: `<circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="2" fill="none"/><line x1="12" y1="14" x2="12" y2="19" stroke="currentColor" stroke-width="2"/><line x1="10" y1="11" x2="6" y2="8" stroke="currentColor" stroke-width="2"/><line x1="14" y1="11" x2="18" y2="8" stroke="currentColor" stroke-width="2"/>` },
+            { name: "Seats & Interior", svg: `<path d="M7 20v-8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M7 14H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="2" fill="none"/>` },
+            { name: "Body Shell", svg: `<path d="M4 20h16a2 2 0 0 0 2-2v-4l-3-6H5l-3 6v4a2 2 0 0 0 2 2z" stroke="currentColor" stroke-width="2" fill="none"/>` },
+            { name: "Glass Windows", svg: `<rect x="4" y="6" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><line x1="12" y1="6" x2="12" y2="16" stroke="currentColor" stroke-width="2"/>` },
+            { name: "Headlights", svg: `<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 2v3m0 14v3m7.5-10h-3M5.5 12h-3" stroke="currentColor" stroke-width="2"/>` },
+            { name: "Exhaust System", svg: `<path d="M4 12h12M16 12a4 4 0 0 1 4 4v4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M20 20v2M22 18v2M18 20v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>` },
+            { name: "Custom Paint", svg: `<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2.5 14.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zm6-5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>` }
+        ];
+
+        function getPartSvg(levelNum) {
+            const index = (levelNum - 1) % 10;
+            return `<svg viewBox="0 0 24 24" class="w-full h-full">${CAR_PARTS[index].svg}</svg>`;
+        }
+
+        function getCarSvg(colorClass) {
+            let fillColor = '';
+            let defs = '';
+            if (colorClass === 'hybrid') {
+                fillColor = 'url(#hybridGrad)';
+                defs = `<defs><linearGradient id="hybridGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" /><stop offset="50%" style="stop-color:#facc15;stop-opacity:1" /><stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" /></linearGradient></defs>`;
+            } else {
+                fillColor = colorClass === 'bg-yellow-400' ? '#facc15' : colorClass === 'bg-green-500' ? '#22c55e' : '#ef4444';
+            }
+            return `<svg viewBox="0 0 24 24" class="w-full h-full drop-shadow-md">${defs}<rect x="3" y="4" width="4" height="4" rx="1" fill="#1f2937" /><rect x="17" y="4" width="4" height="4" rx="1" fill="#1f2937" /><rect x="3" y="16" width="4" height="4" rx="1" fill="#1f2937" /><rect x="17" y="16" width="4" height="4" rx="1" fill="#1f2937" /><rect x="5" y="2" width="14" height="20" rx="3" fill="${fillColor}" /><rect x="7" y="6" width="10" height="4" rx="1" fill="#1e3a8a" opacity="0.6" /><rect x="7" y="15" width="10" height="5" rx="1" fill="#1e3a8a" opacity="0.6" /><rect x="6" y="2" width="3" height="2" fill="#fef08a" /><rect x="15" y="2" width="3" height="2" fill="#fef08a" /></svg>`;
+        }
+
+        const svgBoosterArrow = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+        const svgBoosterColor = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.124-.224-.258-.39-.546-.39-.856 0-.644.56-1.122 1.17-1.122h2.308c3.466 0 5.7-2.684 5.7-6.128C22 6.836 17.5 2 12 2z"></path></svg>`;
+        const svgBoosterHybrid = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
+        const svgBoosterBomb = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-md"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`;
+        const svgGem = `<svg viewBox="0 0 24 24" fill="#a855f7" stroke="#e9d5ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full drop-shadow-md"><polygon points="12 2 2 7 12 22 22 7 12 2"></polygon><polyline points="2 7 12 11 22 7"></polyline><line x1="12" y1="22" x2="12" y2="11"></line></svg>`;
+
+        // --- STATE VARIABLES ---
+        let gameMode = 'roadtrip'; // 'roadtrip' or 'classic'
+        let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+        let fogGrid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(1)); // 1=opaque fog, 0.7=transparent fog, 0=no fog
+
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('blockBlastHighScore') || '0', 10);
+        let level = parseInt(localStorage.getItem('blockBlastLevel') || '1', 10);
+        let maxLevelCompleted = parseInt(localStorage.getItem('blockBlastMaxLevel') || '0', 10);
+        let gems = parseInt(localStorage.getItem('blockBlastGems') || '0', 10);
+        
+        let gemPosition = null; 
+        let portals = []; 
+        let cars = [];
+        let availableShapes = [];
+        let isProcessing = false;
+        
+        let boosters = { straightClear: 1, colorChange: 1, hybrid: 1, colorClear: 1 }; 
+
+        let draggedShape = null;
+        let draggedBooster = null; 
+        let dragPos = { x: 0, y: 0 };
+        let hoveredCells = [];
+        let hoveredCarCol = null; 
+        let hoveredGridCell = null; 
+        let animatingCells = [];
+        let clearingRowsCols = [];
+        let cellSize = 40;
+
+        // --- DOM ELEMENTS ---
+        const elScore = document.getElementById('ui-score');
+        const elHighScore = document.getElementById('ui-highscore');
+        const elLevel = document.getElementById('ui-level');
+        const elGems = document.getElementById('ui-gems');
+        const elGemContainer = document.getElementById('gem-container');
+        const elGrid = document.getElementById('grid-container');
+        const elBlueprint = document.getElementById('blueprint-icon');
+        const elCarsRow = document.getElementById('cars-row');
+        const elShapesDock = document.getElementById('shapes-dock');
+        const elBoostersContainer = document.getElementById('boosters-container');
+        const elFloatingShape = document.getElementById('floating-shape');
+        const elDrivingLayer = document.getElementById('driving-cars-layer');
+        const elComboLayer = document.getElementById('combo-layer');
+        const elComboText = document.getElementById('combo-text');
+        const elComboMulti = document.getElementById('combo-multiplier');
+        const elModalGO = document.getElementById('modal-gameover');
+        const elModalLC = document.getElementById('modal-levelcomplete');
+        const elLcScore = document.getElementById('lc-score');
+        const elGoScore = document.getElementById('go-score');
+        const elStartScreen = document.getElementById('start-screen');
+
+        // --- INITIALIZATION ---
+        function init() {
+            elHighScore.innerText = highScore;
+            elGems.innerText = gems;
+            setupResizeObserver();
+            setupEventListeners();
+            showStartScreen(); 
+        }
+
+        function showStartScreen() {
+            elStartScreen.classList.remove('hidden');
+        }
+
+        function startGame(selectedMode) {
+            gameMode = selectedMode;
+            elStartScreen.classList.add('hidden');
+            
+            // Check if this is the first time the player clicked Roadtrip
+            if (selectedMode === 'roadtrip' && !localStorage.getItem('blockBlastRulesShown')) {
+                document.getElementById('modal-rules').classList.remove('hidden');
+            } else {
+                startNewGame();
+            }
+        }
+
+        function closeRulesAndStart() {
+            localStorage.setItem('blockBlastRulesShown', 'true');
+            document.getElementById('modal-rules').classList.add('hidden');
+            startNewGame();
+        }
+
+        function setupResizeObserver() {
+            const observer = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    cellSize = entry.contentRect.width / GRID_SIZE;
+                    if(availableShapes.length > 0) renderShapesDock(); 
+                }
+            });
+            observer.observe(elGrid);
+        }
+
+        function getRandomColor() {
+            return COLOR_KEYS[Math.floor(Math.random() * COLOR_KEYS.length)];
+        }
+
+        // SMART GENERATOR: Guarantees generated batches can be placed on the current grid
+        function generateSmartBatch(carColors, currentGrid) {
+            let tempGrid = currentGrid.map(row => [...row]);
+            let batch = [];
+            
+            for (let i = 0; i < 3; i++) {
+                let validPlacements = [];
+                
+                SHAPES.forEach(shape => {
+                    let placementsForShape = [];
+                    for (let r = 0; r < GRID_SIZE; r++) {
+                        for (let c = 0; c < GRID_SIZE; c++) {
+                            if (isValidPlacement(shape.matrix, r, c, tempGrid)) {
+                                placementsForShape.push({r, c});
+                            }
+                        }
+                    }
+                    if (placementsForShape.length > 0) {
+                        validPlacements.push({ shape, placements: placementsForShape });
+                    }
+                });
+
+                let chosenShapeObj;
+                
+                if (validPlacements.length > 0) {
+                    let chosen = validPlacements[Math.floor(Math.random() * validPlacements.length)];
+                    chosenShapeObj = chosen.shape;
+                    
+                    let placement = chosen.placements[Math.floor(Math.random() * chosen.placements.length)];
+                    chosenShapeObj.matrix.forEach((row, rIdx) => {
+                        row.forEach((val, cIdx) => {
+                            if (val === 1) tempGrid[placement.r + rIdx][placement.c + cIdx] = 'simulated';
+                        });
+                    });
+                    
+                    let { fullRows, fullCols } = findFullRowsCols(tempGrid);
+                    fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) tempGrid[r][c] = null; });
+                    fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) tempGrid[r][c] = null; });
+                } else {
+                    chosenShapeObj = SHAPES[0]; // Gives a 1x1 as a pity block
+                }
+
+                const colorKey = Math.random() > 0.3 && carColors.length > 0
+                    ? carColors[Math.floor(Math.random() * carColors.length)]
+                    : getRandomColor();
+                    
+                batch.push({ ...chosenShapeObj, color: COLORS[colorKey], id: Math.random().toString(36).substr(2, 9) });
+            }
+            
+            return batch;
+        }
+
+        function startNewGame(keepScore = false) {
+            grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+            fogGrid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(1)); // reset fog to fully opaque
+            
+            if (!keepScore) {
+                score = 0;
+                if (gameMode === 'roadtrip') {
+                    level = 1;
+                    localStorage.setItem('blockBlastLevel', level);
+                }
+            }
+            updateScoreUI();
+            isProcessing = false;
+
+            // Handle Map Generation based on Mode
+            if (gameMode === 'roadtrip') {
+                elBlueprint.innerHTML = getPartSvg(level); // Inject current level part teaser
+                
+                // Spawn Gem on Level 2+
+                if (level >= 2) {
+                    gemPosition = { r: Math.floor(Math.random() * GRID_SIZE), c: Math.floor(Math.random() * GRID_SIZE) };
+                } else {
+                    gemPosition = null;
+                }
+
+                // Spawn Portals
+                portals = [];
+                if (level >= 3) {
+                    let availableSpots = [];
+                    for(let r=0; r<GRID_SIZE - 1; r++){
+                        for(let c=0; c<GRID_SIZE; c++){
+                            if (!gemPosition || gemPosition.r !== r || gemPosition.c !== c) {
+                                availableSpots.push({r, c});
+                            }
+                        }
+                    }
+                    availableSpots.sort(() => Math.random() - 0.5);
+                    
+                    if (level === 3 && availableSpots.length >= 1) {
+                        portals.push({r: availableSpots[0].r, c: availableSpots[0].c, type: '+2'});
+                    } else if (level >= 4 && availableSpots.length >= 2) {
+                        portals.push({r: availableSpots[0].r, c: availableSpots[0].c, type: '+2'});
+                        portals.push({r: availableSpots[1].r, c: availableSpots[1].c, type: '-1'});
+                    }
+                }
+
+                // Spawn Blocker
+                if (level >= 5) {
+                    let availableSpots = [];
+                    for(let r=0; r<GRID_SIZE - 1; r++){
+                        for(let c=0; c<GRID_SIZE; c++){
+                            if ((!gemPosition || gemPosition.r !== r || gemPosition.c !== c) && !portals.some(p => p.r === r && p.c === c)) {
+                                availableSpots.push({r, c});
+                            }
+                        }
+                    }
+                    if (availableSpots.length > 0) {
+                        let spot = availableSpots[Math.floor(Math.random() * availableSpots.length)];
+                        grid[spot.r][spot.c] = 'blocker';
+                    }
+                }
+            } else {
+                // Classic Mode logic
+                gemPosition = null;
+                portals = [];
+                elBlueprint.innerHTML = '';
+            }
+            
+            // Replenish boosters at start
+            boosters = { straightClear: 1, colorChange: 1, hybrid: 1, colorClear: 1 };
+            
+            elModalGO.classList.add('hidden');
+            elModalLC.classList.add('hidden');
+            elDrivingLayer.innerHTML = '';
+
+            cars = Array(GRID_SIZE).fill(null).map((_, i) => ({
+                col: i,
+                color: COLORS[getRandomColor()],
+                id: Math.random().toString(36).substr(2, 9)
+            }));
+
+            // Filter out 'undefined' to prevent invisible blocks caused by hybrid cars
+            const carColors = cars.map(c => Object.keys(COLORS).find(k => COLORS[k] === c.color)).filter(k => k !== undefined);
+            availableShapes = generateSmartBatch(carColors, grid);
+
+            renderGrid();
+            renderCarsRow();
+            renderShapesDock();
+            renderBoosters();
+        }
+
+        // Logic for spawning continuous cars in Classic Mode
+        function replaceEscapedCars(count) {
+            if (gameMode !== 'classic') return;
+            let cols = [0,1,2,3,4,5,6,7];
+            for (let i = 0; i < count; i++) {
+                let occupiedCols = cars.map(c => c.col);
+                let availableCols = cols.filter(c => !occupiedCols.includes(c));
+                if (availableCols.length > 0) {
+                    let newCol = availableCols[Math.floor(Math.random() * availableCols.length)];
+                    cars.push({
+                        col: newCol,
+                        color: COLORS[getRandomColor()],
+                        id: Math.random().toString(36).substr(2, 9)
+                    });
+                }
+            }
+        }
+
+        function collectGem() {
+            gems++;
+            localStorage.setItem('blockBlastGems', gems);
+            gemPosition = null; 
+            
+            if (elGemContainer) {
+                elGemContainer.classList.remove('animate-bounce-pop');
+                void elGemContainer.offsetWidth; // force DOM reflow to restart animation
+                elGemContainer.classList.add('animate-bounce-pop');
+            }
+            updateScoreUI();
+        }
+
+        // --- GARAGE LOGIC ---
+        function openGarage() {
+            const gridEl = document.getElementById('garage-cars-grid');
+            gridEl.innerHTML = '';
+            
+            // Show minimum 9 cars (3 rows)
+            const numCars = Math.max(9, Math.ceil((maxLevelCompleted + 1) / 10));
+            
+            for (let i = 0; i < numCars; i++) {
+                let partsUnlocked = Math.max(0, Math.min(10, maxLevelCompleted - (i * 10)));
+                const isComplete = partsUnlocked === 10;
+                
+                const slot = document.createElement('div');
+                slot.className = "bg-slate-800 border-2 border-slate-700 hover:border-blue-500 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95";
+                slot.onclick = () => openCarDetails(i, partsUnlocked);
+                
+                let iconHTML = '';
+                if (isComplete) {
+                    iconHTML = `<div class="w-12 h-12 text-[#4ade80] drop-shadow-md mb-2">${getCarSvg('bg-green-500')}</div>`;
+                } else if (partsUnlocked > 0) {
+                    iconHTML = `<div class="w-12 h-12 text-slate-400 mb-2 opacity-50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg></div>`;
+                } else {
+                    iconHTML = `<div class="w-12 h-12 text-slate-700 mb-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>`;
+                }
+
+                slot.innerHTML = `
+                    ${iconHTML}
+                    <span class="text-white font-bold text-sm mb-1">CAR ${i + 1}</span>
+                    <span class="text-xs font-black ${isComplete ? 'text-[#4ade80]' : 'text-slate-500'}">${partsUnlocked}/10</span>
+                `;
+                gridEl.appendChild(slot);
+            }
+
+            document.getElementById('modal-garage').classList.remove('hidden');
+        }
+
+        function closeGarage() {
+            document.getElementById('modal-garage').classList.add('hidden');
+        }
+
+        function openCarDetails(carIndex, partsUnlocked) {
+            document.getElementById('car-details-title').innerText = `CAR ${carIndex + 1}`;
+            document.getElementById('car-details-progress').innerText = `${partsUnlocked} / 10 Parts Built`;
+            document.getElementById('car-details-progress').className = `text-lg font-bold mb-6 tracking-wide ${partsUnlocked === 10 ? 'text-[#4ade80]' : 'text-blue-400'}`;
+
+            const listEl = document.getElementById('car-details-list');
+            listEl.innerHTML = '';
+
+            CAR_PARTS.forEach((part, index) => {
+                const isUnlocked = index < partsUnlocked;
+                const item = document.createElement('div');
+                item.className = `flex items-center gap-3 p-3 rounded-xl ${isUnlocked ? 'bg-white/10' : 'bg-black/20 opacity-50'}`;
+                
+                const icon = isUnlocked 
+                    ? `<svg class="w-6 h-6 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>` 
+                    : `<svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+
+                item.innerHTML = `
+                    ${icon}
+                    <div class="flex-1 font-bold ${isUnlocked ? 'text-white' : 'text-slate-400'}">${part.name}</div>
+                    <div class="w-8 h-8 text-slate-400 opacity-30">${part.svg}</div>
+                `;
+                listEl.appendChild(item);
+            });
+
+            document.getElementById('modal-car-details').classList.remove('hidden');
+        }
+
+        function closeCarDetails() {
+            document.getElementById('modal-car-details').classList.add('hidden');
+        }
+
+
+        // --- RENDERING ---
+        function renderGrid() {
+            elGrid.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cellColor = grid[r][c];
+                    const isHovered = hoveredCells.some(hc => hc.r === r && hc.c === c);
+                    const isAnimating = animatingCells.some(ac => ac.r === r && ac.c === c);
+                    const isClearing = clearingRowsCols.some(ac => ac.r === r && ac.c === c && grid[r][c] !== 'blocker');
+                    
+                    const isStraightBoosterTarget = draggedBooster === 'straightClear' && hoveredCarCol === c;
+                    const isColorClearTarget = draggedBooster === 'colorClear' && hoveredGridCell && grid[hoveredGridCell.r][hoveredGridCell.c] !== null && grid[hoveredGridCell.r][hoveredGridCell.c] !== 'blocker' && grid[hoveredGridCell.r][hoveredGridCell.c] === cellColor;
+                    
+                    const cell = document.createElement('div');
+                    
+                    // Fog layer logic: If it's empty space, only apply subtle dashed borders if fog is completely hidden
+                    const fogBorder = (fogGrid[r][c] < 1 && !cellColor) ? 'border-slate-800/10' : 'border-slate-800/30 border-dashed';
+                    cell.className = `relative border-[0.5px] ${fogBorder} transition-all duration-150`;
+
+                    // 1. Separate Fog Layer
+                    if (fogGrid[r][c] > 0) {
+                        const fog = document.createElement('div');
+                        fog.className = 'absolute inset-0 bg-[#7ba8f5] transition-opacity duration-300 pointer-events-none z-0';
+                        fog.style.opacity = fogGrid[r][c];
+                        cell.appendChild(fog);
+                    }
+
+                    // 2. Block Layer
+                    let blockClass = '';
+                    let innerHighlight = false;
+                    let isScaleDown = false;
+
+                    if (isHovered && draggedShape) {
+                        blockClass = draggedShape.color + ' opacity-95 shadow-md';
+                        innerHighlight = true;
+                        isScaleDown = true;
+                    } else if (isStraightBoosterTarget) {
+                        blockClass = 'bg-red-500/50 opacity-95 shadow-[inset_0_0_15px_rgba(239,68,68,0.8)] border border-red-500';
+                        isScaleDown = true;
+                    } else if (isColorClearTarget) {
+                        blockClass = cellColor + ' brightness-150 animate-pulse ring-4 ring-white/80';
+                        innerHighlight = true;
+                        isScaleDown = true;
+                    } else if (cellColor === 'blocker') {
+                        blockClass = 'bg-blocker shadow-[inset_0_0_10px_rgba(0,0,0,0.5)] border border-slate-900';
+                        innerHighlight = false;
+                    } else if (cellColor) {
+                        blockClass = cellColor;
+                        innerHighlight = true;
+                    }
+
+                    if (blockClass) {
+                        const block = document.createElement('div');
+                        let classes = `absolute inset-0 z-10 transition-all duration-300 ${blockClass}`;
+                        
+                        if (cellColor || isHovered || isStraightBoosterTarget || isColorClearTarget) {
+                            classes += ' rounded-md';
+                        }
+
+                        if (isAnimating) classes += ' brightness-125 animate-pulse shadow-[0_0_20px_rgba(255,255,255,0.6)] ring-2 ring-white/60';
+                        
+                        if (isClearing) classes += ' brightness-150 scale-0';
+                        else if (isScaleDown) {
+                            if (isHovered && draggedShape) classes += ' scale-[0.98]';
+                            else if (isStraightBoosterTarget) classes += ' scale-[0.96]';
+                            else if (isColorClearTarget) classes += ' scale-[0.95]';
+                        }
+                        
+                        block.className = classes;
+                        
+                        if (innerHighlight && !isClearing && !isStraightBoosterTarget) {
+                            const inner = document.createElement('div');
+                            inner.className = "absolute inset-0 grid-cell-inner rounded-md";
+                            block.appendChild(inner);
+                        }
+                        cell.appendChild(block);
+                    }
+
+                    // 3. Collectibles & Portals
+                    if (gemPosition && gemPosition.r === r && gemPosition.c === c && !isStraightBoosterTarget && !isHovered) {
+                        const gemEl = document.createElement('div');
+                        gemEl.className = "absolute inset-0 flex items-center justify-center z-20 animate-pulse-fast pointer-events-none";
+                        gemEl.innerHTML = `<div class="w-[50%] h-[50%]">${svgGem}</div>`;
+                        cell.appendChild(gemEl);
+                    }
+
+                    let portal = portals.find(p => p.r === r && p.c === c);
+                    if (portal && !isStraightBoosterTarget && !isHovered) {
+                        const portalEl = document.createElement('div');
+                        let colorClasses = portal.type === '+2' 
+                            ? 'bg-cyan-500/50 text-cyan-100 border-cyan-400' 
+                            : 'bg-red-500/50 text-red-100 border-red-500';
+                        portalEl.className = `absolute inset-[4px] flex items-center justify-center z-[15] border-2 border-dashed rounded-lg font-black text-xl sm:text-2xl drop-shadow-md pointer-events-none ${colorClasses}`;
+                        portalEl.innerText = portal.type;
+                        cell.appendChild(portalEl);
+                    }
+
+                    elGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderCarsRow() {
+            elCarsRow.innerHTML = '';
+            cars.forEach(car => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex justify-center items-start relative';
+                wrapper.style.gridColumnStart = car.col + 1;
+                wrapper.style.gridRowStart = 1; 
+                
+                if (draggedBooster === 'straightClear' && hoveredCarCol === car.col) {
+                    wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-red-500/30 blur-sm rounded-full z-0"></div>`;
+                } else if (draggedBooster === 'colorChange' && hoveredCarCol === car.col) {
+                    wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-gradient-to-t from-purple-500/50 to-transparent blur-sm rounded-full z-0"></div>`;
+                } else if (draggedBooster === 'hybrid' && hoveredCarCol === car.col) {
+                    wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-gradient-to-t from-yellow-400/60 via-red-500/60 to-transparent blur-sm rounded-full z-0"></div>`;
+                }
+
+                const isTargeted = draggedBooster && hoveredCarCol === car.col;
+                const iconContainer = document.createElement('div');
+                iconContainer.className = `w-[70%] h-[70%] transition-transform duration-300 ${isTargeted ? 'scale-125 -translate-y-2' : 'hover:scale-110'} z-10`;
+                iconContainer.innerHTML = getCarSvg(car.color);
+                
+                wrapper.appendChild(iconContainer);
+                elCarsRow.appendChild(wrapper);
+            });
+        }
+
+        function buildShapeHTML(shape, blockPxSize, isGhost = false) {
+            if (!shape) return '<div class="w-full h-full"></div>';
+            const maxCols = Math.max(...shape.matrix.map(r => r.length));
+            const maxRows = shape.matrix.length;
+            
+            let html = `<div class="grid gap-[2px] ${isGhost ? 'opacity-50' : ''}" style="grid-template-columns: repeat(${maxCols}, ${blockPxSize}px); grid-template-rows: repeat(${maxRows}, ${blockPxSize}px);">`;
+            shape.matrix.forEach((row, rIdx) => {
+                row.forEach((val, cIdx) => {
+                    html += `<div class="${val ? shape.color : 'bg-transparent'} rounded-[4px] border border-black/20" style="width: ${blockPxSize}px; height: ${blockPxSize}px; visibility: ${val ? 'visible' : 'hidden'}"></div>`;
+                });
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        function renderShapesDock() {
+            elShapesDock.innerHTML = '';
+            availableShapes.forEach((shape, index) => {
+                const slot = document.createElement('div');
+                const isHidden = draggedShape && draggedShape.index === index;
+                slot.className = `flex-1 h-full mx-2 flex justify-center items-center cursor-pointer touch-none ${isHidden ? 'opacity-0' : 'opacity-100'} transition-transform active:scale-95 bg-white/10 rounded-xl sm:rounded-2xl shadow-inner`;
+                
+                slot.innerHTML = buildShapeHTML(shape, cellSize * 0.48);
+                slot.addEventListener('pointerdown', (e) => {
+                    if (shape && !isProcessing && !draggedBooster) handlePointerDown(e, shape, index);
+                });
+                elShapesDock.appendChild(slot);
+            });
+        }
+
+        function renderBoosters() {
+            elBoostersContainer.innerHTML = '';
+            const boosterConfigs = [
+                { id: 'straightClear', svg: svgBoosterArrow, bg: 'bg-[#3b66c4]', activeBg: 'bg-red-500' },
+                { id: 'colorChange', svg: svgBoosterColor, bg: 'bg-[#3b66c4]', activeBg: 'bg-purple-500' },
+                { id: 'hybrid', svg: svgBoosterHybrid, bg: 'bg-[#3b66c4]', activeBg: 'bg-yellow-500' },
+                { id: 'colorClear', svg: svgBoosterBomb, bg: 'bg-[#3b66c4]', activeBg: 'bg-cyan-500' }
+            ];
+
+            for(let i = 0; i < 4; i++) {
+                const slot = document.createElement('div');
+                const conf = boosterConfigs[i];
+                const isHidden = draggedBooster && conf && draggedBooster === conf.id;
+                
+                slot.className = `h-full aspect-square rounded-full shadow-[0_4px_0_#2a4b99] sm:shadow-[0_6px_0_#2a4b99] transition-all flex justify-center items-center relative select-none touch-none ${isHidden ? 'opacity-0' : 'opacity-100'}`;
+                
+                if (conf) {
+                    slot.classList.add(conf.bg);
+                    const qty = boosters[conf.id];
+                    if (qty > 0) {
+                        slot.classList.add('cursor-pointer', 'active:translate-y-1', 'active:sm:translate-y-2', 'active:shadow-none');
+                        slot.innerHTML = `
+                            ${conf.svg}
+                            <div class="absolute -top-1 -right-1 ${conf.activeBg} text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#6b9ff0] shadow-md">${qty}</div>
+                        `;
+                        slot.addEventListener('pointerdown', (e) => {
+                            if (!isProcessing && !draggedShape) handleBoosterPointerDown(e, conf.id);
+                        });
+                    } else {
+                        slot.classList.add('opacity-40', 'grayscale');
+                        slot.innerHTML = conf.svg;
+                    }
+                } else {
+                    slot.classList.add('bg-[#3b66c4]'); 
+                }
+                elBoostersContainer.appendChild(slot);
+            }
+        }
+
+        function updateScoreUI() {
+            elScore.innerText = score;
+            elHighScore.innerText = highScore;
+            
+            if (gameMode === 'classic') {
+                elLevel.innerText = 'CLASSIC';
+                elLevel.classList.add('pointer-events-none');
+                elGemContainer.style.opacity = '0';
+            } else {
+                elLevel.innerText = 'LEVEL ' + level;
+                elLevel.classList.remove('pointer-events-none');
+                elGemContainer.style.opacity = '1';
+                elGems.innerText = gems;
+            }
+        }
+
+        function startNextLevel() {
+            level++;
+            localStorage.setItem('blockBlastLevel', level);
+            startNewGame(true);
+        }
+
+        async function triggerLevelCompleteAnimation() {
+            isProcessing = true;
+            
+            // Clear all fog entirely to fully reveal the blueprint artifact
+            fogGrid = fogGrid.map(row => row.map(() => 0));
+            renderGrid();
+            
+            if (level > maxLevelCompleted) {
+                maxLevelCompleted = level;
+                localStorage.setItem('blockBlastMaxLevel', maxLevelCompleted);
+            }
+            
+            await delay(1200); 
+            
+            const flyIcon = document.createElement('div');
+            flyIcon.innerHTML = getPartSvg(level);
+            flyIcon.className = 'fixed z-[200] text-white drop-shadow-2xl transition-all duration-1000 ease-in-out pointer-events-none';
+            
+            const gridRect = elGrid.getBoundingClientRect();
+            const btnRect = document.getElementById('btn-garage-header').getBoundingClientRect();
+            
+            flyIcon.style.width = '150px';
+            flyIcon.style.height = '150px';
+            flyIcon.style.left = `${gridRect.left + gridRect.width/2 - 75}px`;
+            flyIcon.style.top = `${gridRect.top + gridRect.height/2 - 75}px`;
+            document.body.appendChild(flyIcon);
+            
+            void flyIcon.offsetWidth;
+            
+            const targetX = btnRect.left - (gridRect.left + gridRect.width/2 - 75) + 10;
+            const targetY = btnRect.top - (gridRect.top + gridRect.height/2 - 75) + 10;
+            flyIcon.style.transform = `translate(${targetX}px, ${targetY}px) scale(0.1)`;
+            flyIcon.style.opacity = '0';
+            
+            await delay(1000); 
+            flyIcon.remove();
+            
+            elLcScore.innerText = score;
+            elModalLC.classList.remove('hidden');
+            isProcessing = false;
+        }
+
+        function openLevelSwitch() {
+            if (gameMode !== 'roadtrip') return;
+            document.getElementById('level-input').value = level;
+            document.getElementById('modal-levelswitch').classList.remove('hidden');
+        }
+
+        function confirmLevelSwitch() {
+            let input = document.getElementById('level-input').value;
+            let parsed = parseInt(input, 10);
+            if (!isNaN(parsed) && parsed > 0) {
+                level = parsed;
+                localStorage.setItem('blockBlastLevel', level);
+                document.getElementById('modal-levelswitch').classList.add('hidden');
+                startNewGame(true); 
+            }
+        }
+
+        // --- GAME LOGIC & PATHFINDING ---
+        function findCarPaths(currentGrid) {
+            let pathsFound = [];
+            cars.forEach(car => {
+                const startCell = currentGrid[GRID_SIZE - 1][car.col];
+                const canStart = startCell !== null && startCell !== 'blocker' && (car.color === 'hybrid' || startCell === car.color);
+
+                if (canStart) {
+                    let queue = [[GRID_SIZE - 1, car.col]];
+                    let visited = new Set([`${GRID_SIZE - 1},${car.col}`]);
+                    let parent = new Map();
+                    let successPath = null;
+
+                    while (queue.length > 0) {
+                        let [r, c] = queue.shift();
+                        if (r === 0) {
+                            let path = [];
+                            let curr = `${r},${c}`;
+                            while (curr) {
+                                let [pr, pc] = curr.split(',').map(Number);
+                                path.unshift({ r: pr, c: pc });
+                                curr = parent.get(curr);
+                            }
+                            successPath = path;
+                            break;
+                        }
+                        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                        for (let [dr, dc] of dirs) {
+                            let nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                                const neighborCell = currentGrid[nr][nc];
+                                const canTraverse = neighborCell !== null && neighborCell !== 'blocker' && (car.color === 'hybrid' || neighborCell === car.color);
+                                
+                                if (canTraverse && !visited.has(`${nr},${nc}`)) {
+                                    visited.add(`${nr},${nc}`);
+                                    parent.set(`${nr},${nc}`, `${r},${c}`);
+                                    queue.push([nr, nc]);
+                                }
+                            }
+                        }
+                    }
+                    if (successPath) {
+                        successPath.unshift({ r: GRID_SIZE, c: car.col }); 
+                        pathsFound.push({ car, path: successPath });
+                    }
+                }
+            });
+            return pathsFound;
+        }
+
+        function findFullRowsCols(currentGrid) {
+            let fullRows = [], fullCols = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                if (currentGrid[r].every(cell => cell !== null) && !currentGrid[r].includes('blocker')) fullRows.push(r);
+            }
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let isFull = true;
+                let hasBlocker = false;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (currentGrid[r][c] === null) { isFull = false; break; }
+                    if (currentGrid[r][c] === 'blocker') { hasBlocker = true; }
+                }
+                if (isFull && !hasBlocker) fullCols.push(c);
+            }
+            return { fullRows, fullCols };
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        async function executeDrivingSequence(paths, comboMultiplier) {
+            let animatedCars = paths.map(({car, path}) => ({
+                id: car.id, color: car.color, path: path, step: 0,
+                points: (path.length - 1) * 50 * comboMultiplier,
+                rotation: 0,
+                collectedGem: false 
+            }));
+
+            const maxSteps = Math.max(...paths.map(p => p.path.length));
+            for (let i = 0; i < maxSteps; i++) {
+                elDrivingLayer.innerHTML = '';
+                animatedCars.forEach(dc => {
+                    let step = Math.min(i, dc.path.length - 1);
+                    let cell = dc.path[step];
+                    
+                    if (gameMode === 'roadtrip' && cell.r < GRID_SIZE) {
+                        fogGrid[cell.r][cell.c] = 0.7; // Expose 30% transparency smoothly
+                    }
+                    
+                    if (gemPosition && cell.r === gemPosition.r && cell.c === gemPosition.c) {
+                        collectGem();
+                        dc.collectedGem = true;
+                    }
+
+                    let portalIndex = portals.findIndex(p => p.r === cell.r && p.c === cell.c);
+                    if (portalIndex !== -1) {
+                        let portal = portals[portalIndex];
+                        portals.splice(portalIndex, 1); 
+                        if (portal.type === '+2') {
+                            dc.points += 200;
+                            if (dc.collectedGem) {
+                                gems += 2;
+                                localStorage.setItem('blockBlastGems', gems);
+                                updateScoreUI();
+                                if (elGemContainer) {
+                                    elGemContainer.classList.remove('animate-bounce-pop');
+                                    void elGemContainer.offsetWidth;
+                                    elGemContainer.classList.add('animate-bounce-pop');
+                                }
+                            }
+                        } else if (portal.type === '-1') {
+                            dc.points -= 200;
+                        }
+                    }
+
+                    let nextCell = dc.path[Math.min(step + 1, dc.path.length - 1)];
+                    if (nextCell.c > cell.c) dc.rotation = 90;
+                    else if (nextCell.c < cell.c) dc.rotation = -90;
+                    else if (nextCell.r < cell.r) dc.rotation = 0;
+                    else if (nextCell.r > cell.r) dc.rotation = 180;
+
+                    const carEl = document.createElement('div');
+                    carEl.className = 'absolute flex justify-center items-center z-40 transition-all ease-linear';
+                    carEl.style.width = '12.5%'; carEl.style.height = '12.5%';
+                    carEl.style.top = `${cell.r * 12.5}%`; carEl.style.left = `${cell.c * 12.5}%`;
+                    carEl.style.transitionDuration = '60ms';
+                    carEl.innerHTML = `<div class="w-[75%] h-[75%] transition-transform ease-linear" style="transform: rotate(${dc.rotation}deg); transition-duration: 60ms">${getCarSvg(dc.color)}</div>`;
+                    elDrivingLayer.appendChild(carEl);
+                });
+                renderGrid(); // Visually update the fading fog
+                await delay(60);
+            }
+
+            elDrivingLayer.innerHTML = '';
+            animatedCars.forEach(dc => {
+                const cell = dc.path[dc.path.length - 1];
+                const popEl = document.createElement('div');
+                popEl.className = 'absolute flex justify-center items-center z-40';
+                popEl.style.width = '12.5%'; popEl.style.height = '12.5%';
+                popEl.style.top = `${cell.r * 12.5}%`; popEl.style.left = `${cell.c * 12.5}%`;
+                
+                const sign = dc.points >= 0 ? '+' : '';
+                const textColorClass = dc.points < 0 ? 'text-red-400' : 'text-white';
+                popEl.innerHTML = `<div class="absolute text-3xl sm:text-4xl font-black ${textColorClass} drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] animate-bounce z-50 whitespace-nowrap">${sign}${dc.points}</div>`;
+                elDrivingLayer.appendChild(popEl);
+            });
+
+            if (comboMultiplier > 1) {
+                elComboText.classList.remove('hidden');
+                elComboMulti.classList.add('text-green-400');
+            } else {
+                elComboText.classList.add('hidden');
+                elComboMulti.classList.remove('text-green-400');
+            }
+            elComboMulti.innerText = `x${comboMultiplier}`;
+            elComboLayer.classList.remove('hidden');
+
+            await delay(800);
+            
+            let pathPoints = 0;
+            paths.forEach(({ path }) => {
+                path.slice(1).forEach(cell => {
+                    if (grid[cell.r][cell.c] !== 'blocker') grid[cell.r][cell.c] = null;
+                });
+            });
+            animatedCars.forEach(dc => {
+                pathPoints += dc.points;
+            });
+            
+            elDrivingLayer.innerHTML = '';
+            elComboLayer.classList.add('hidden');
+            animatingCells = [];
+
+            return pathPoints;
+        }
+
+        async function handleBoosterUseStraight(car) {
+            isProcessing = true;
+            
+            let path = [];
+            path.push({r: GRID_SIZE, c: car.col}); 
+            for(let r = GRID_SIZE - 1; r >= 0; r--) {
+                path.push({r, c: car.col});
+            }
+
+            cars = cars.filter(c => c.id !== car.id);
+            replaceEscapedCars(1);
+            renderCarsRow();
+
+            let dc = { id: car.id, color: car.color, path: path, step: 0, points: 500, rotation: 0, collectedGem: false };
+
+            const maxSteps = path.length;
+            for (let i = 0; i < maxSteps; i++) {
+                elDrivingLayer.innerHTML = '';
+                dc.step = i;
+                let cell = dc.path[dc.step];
+                
+                if (gameMode === 'roadtrip' && cell.r < GRID_SIZE) fogGrid[cell.r][cell.c] = 0.7;
+
+                if (gemPosition && cell.r === gemPosition.r && cell.c === gemPosition.c) {
+                    collectGem();
+                    dc.collectedGem = true;
+                }
+
+                let portalIndex = portals.findIndex(p => p.r === cell.r && p.c === cell.c);
+                if (portalIndex !== -1) {
+                    let portal = portals[portalIndex];
+                    portals.splice(portalIndex, 1);
+                    if (portal.type === '+2') {
+                        dc.points += 200;
+                        if (dc.collectedGem) {
+                            gems += 2;
+                            localStorage.setItem('blockBlastGems', gems);
+                            updateScoreUI();
+                            if (elGemContainer) {
+                                elGemContainer.classList.remove('animate-bounce-pop');
+                                void elGemContainer.offsetWidth;
+                                elGemContainer.classList.add('animate-bounce-pop');
+                            }
+                        }
+                    } else if (portal.type === '-1') {
+                        dc.points -= 200;
+                    }
+                }
+
+                if (cell.r < GRID_SIZE && grid[cell.r][cell.c] !== null && grid[cell.r][cell.c] !== 'blocker') {
+                    grid[cell.r][cell.c] = null;
+                }
+                
+                renderGrid(); 
+
+                const carEl = document.createElement('div');
+                carEl.className = 'absolute flex justify-center items-center z-40 transition-all ease-linear';
+                carEl.style.width = '12.5%'; carEl.style.height = '12.5%';
+                carEl.style.top = `${cell.r * 12.5}%`; carEl.style.left = `${cell.c * 12.5}%`;
+                carEl.style.transitionDuration = '60ms';
+                carEl.innerHTML = `<div class="w-[75%] h-[75%] transition-transform ease-linear" style="transform: rotate(0deg); transition-duration: 60ms">${getCarSvg(dc.color)}</div>`;
+                elDrivingLayer.appendChild(carEl);
+                
+                await delay(60);
+            }
+
+            elDrivingLayer.innerHTML = '';
+            const cell = dc.path[dc.path.length - 1];
+            const popEl = document.createElement('div');
+            popEl.className = 'absolute flex justify-center items-center z-40';
+            popEl.style.width = '12.5%'; popEl.style.height = '12.5%';
+            popEl.style.top = `${cell.r * 12.5}%`; popEl.style.left = `${cell.c * 12.5}%`;
+            
+            const sign = dc.points >= 0 ? '+' : '';
+            const textColorClass = dc.points < 0 ? 'text-red-400' : 'text-yellow-300';
+            popEl.innerHTML = `<div class="absolute text-4xl sm:text-5xl font-black ${textColorClass} drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] animate-bounce z-50 whitespace-nowrap">${sign}${dc.points}</div>`;
+            elDrivingLayer.appendChild(popEl);
+
+            await delay(800);
+            elDrivingLayer.innerHTML = '';
+
+            score += dc.points;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('blockBlastHighScore', highScore);
+            }
+            updateScoreUI();
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                triggerLevelCompleteAnimation();
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handleBoosterUseColor(car) {
+            isProcessing = true;
+            const currentKey = Object.keys(COLORS).find(k => COLORS[k] === car.color);
+            const otherKeys = COLOR_KEYS.filter(k => k !== currentKey);
+            const newKey = otherKeys[Math.floor(Math.random() * otherKeys.length)];
+            const carIndex = cars.findIndex(c => c.id === car.id);
+            cars[carIndex].color = COLORS[newKey];
+            renderCarsRow(); 
+            
+            await delay(400); 
+
+            let pointsEarned = 0;
+            const paths = findCarPaths(grid);
+            if (paths.length > 0) {
+                const comboMultiplier = paths.length;
+                animatingCells = paths.flatMap(p => p.path.slice(1));
+                renderGrid(); 
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                replaceEscapedCars(paths.length);
+                renderCarsRow();
+                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+            }
+            
+            if (pointsEarned !== 0) {
+                score += pointsEarned;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHighScore', highScore);
+                }
+                updateScoreUI();
+                renderGrid();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                triggerLevelCompleteAnimation();
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handleBoosterUseHybrid(car) {
+            isProcessing = true;
+            const carIndex = cars.findIndex(c => c.id === car.id);
+            cars[carIndex].color = 'hybrid';
+            renderCarsRow(); 
+            
+            await delay(400); 
+
+            let pointsEarned = 0;
+            const paths = findCarPaths(grid);
+            if (paths.length > 0) {
+                const comboMultiplier = paths.length;
+                animatingCells = paths.flatMap(p => p.path.slice(1));
+                renderGrid(); 
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                replaceEscapedCars(paths.length);
+                renderCarsRow();
+                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+            }
+            
+            if (pointsEarned !== 0) {
+                score += pointsEarned;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHighScore', highScore);
+                }
+                updateScoreUI();
+                renderGrid();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                triggerLevelCompleteAnimation();
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handleBoosterUseColorClear(targetColor) {
+            isProcessing = true;
+            let blocksRemoved = 0;
+            
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (grid[r][c] === targetColor && grid[r][c] !== 'blocker') {
+                        clearingRowsCols.push({r, c});
+                        blocksRemoved++;
+                    }
+                }
+            }
+
+            if (blocksRemoved > 0) {
+                renderGrid(); 
+                await delay(400);
+                clearingRowsCols.forEach(({r, c}) => { grid[r][c] = null; });
+                
+                let pointsEarned = blocksRemoved * 50;
+                score += pointsEarned;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHighScore', highScore);
+                }
+                clearingRowsCols = [];
+                updateScoreUI();
+                renderGrid();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                triggerLevelCompleteAnimation();
+            } else {
+                checkGameOver();
+            }
+
+            isProcessing = false;
+        }
+
+        async function handlePlacementSuccess(newGrid, placedShapeIndex, placedShape) {
+            isProcessing = true;
+            availableShapes[placedShapeIndex] = null;
+            renderShapesDock();
+
+            grid = newGrid;
+            renderGrid(); 
+            
+            let pointsEarned = placedShape.matrix.flat().filter(v => v === 1).length * 10;
+            score += pointsEarned; 
+            
+            const paths = findCarPaths(grid);
+            if (paths.length > 0) {
+                const comboMultiplier = paths.length;
+                animatingCells = paths.flatMap(p => p.path.slice(1));
+                renderGrid(); 
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                replaceEscapedCars(paths.length);
+                renderCarsRow();
+                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+            }
+
+            const { fullRows, fullCols } = findFullRowsCols(grid);
+            if (fullRows.length > 0 || fullCols.length > 0) {
+                fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) { if(grid[r][c] !== 'blocker') clearingRowsCols.push({r, c}); } });
+                fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) { if(grid[r][c] !== 'blocker') clearingRowsCols.push({r, c}); } });
+                renderGrid(); 
+                await delay(400);
+                fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) { if(grid[r][c] !== 'blocker') grid[r][c] = null; } });
+                fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) { if(grid[r][c] !== 'blocker') grid[r][c] = null; } });
+                pointsEarned += (fullRows.length + fullCols.length) * 100;
+                clearingRowsCols = [];
+            }
+
+            score += (pointsEarned - (placedShape.matrix.flat().filter(v => v === 1).length * 10));
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('blockBlastHighScore', highScore);
+            }
+            updateScoreUI();
+            renderGrid();
+
+            if (availableShapes.every(s => s === null)) {
+                const carColors = cars.map(c => Object.keys(COLORS).find(k => COLORS[k] === c.color)).filter(k => k !== undefined);
+                availableShapes = generateSmartBatch(carColors, grid);
+                renderShapesDock();
+            }
+
+            if (cars.length === 0 && gameMode === 'roadtrip') {
+                triggerLevelCompleteAnimation();
+            } else {
+                checkGameOver();
+            }
+            
+            isProcessing = false;
+        }
+
+        function isValidPlacement(matrix, startR, startC, targetGrid = grid) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c] === 1) {
+                        const nr = startR + r, nc = startC + c;
+                        if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE || targetGrid[nr][nc] !== null) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function checkGameOver() {
+            const shapesToCheck = availableShapes.filter(s => s !== null);
+            if (shapesToCheck.length === 0) return;
+            
+            let canPlaceAny = false;
+            for (let shape of shapesToCheck) {
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (isValidPlacement(shape.matrix, r, c)) { canPlaceAny = true; break; }
+                    }
+                    if (canPlaceAny) break;
+                }
+                if (canPlaceAny) break;
+            }
+
+            const hasBoosters = Object.values(boosters).some(qty => qty > 0);
+
+            if (!canPlaceAny && !hasBoosters) {
+                elGoScore.innerText = score;
+                elModalGO.classList.remove('hidden');
+            }
+        }
+
+        // --- DRAG & DROP HANDLING ---
+        let isDragging = false;
+
+        function handlePointerDown(e, shape, index) {
+            e.preventDefault();
+            isDragging = true;
+            draggedShape = { ...shape, index };
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPos = { x: clientX, y: clientY };
+            renderShapesDock(); 
+            updateFloatingShape();
+        }
+
+        function handleBoosterPointerDown(e, boosterType) {
+            e.preventDefault();
+            isDragging = true;
+            draggedBooster = boosterType;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPos = { x: clientX, y: clientY };
+            renderBoosters(); 
+            updateFloatingShape();
+        }
+
+        function updateFloatingShape() {
+            if (!draggedShape && !draggedBooster) {
+                elFloatingShape.style.opacity = '0';
+                elFloatingShape.style.left = '-1000px';
+                return;
+            }
+            if (draggedBooster) {
+                let bgClass = draggedBooster === 'straightClear' ? 'bg-red-500' : 
+                              draggedBooster === 'colorChange' ? 'bg-purple-500' : 
+                              draggedBooster === 'hybrid' ? 'bg-gradient-to-br from-red-500 via-yellow-400 to-green-500' : 'bg-cyan-500';
+                let icon = draggedBooster === 'straightClear' ? svgBoosterArrow : 
+                           draggedBooster === 'colorChange' ? svgBoosterColor : 
+                           draggedBooster === 'hybrid' ? svgBoosterHybrid : svgBoosterBomb;
+                
+                elFloatingShape.innerHTML = `<div class="w-16 h-16 sm:w-20 sm:h-20 ${bgClass} rounded-full flex justify-center items-center shadow-2xl scale-110 border-4 border-white/20">${icon}</div>`;
+                elFloatingShape.style.opacity = '0.9';
+                elFloatingShape.style.left = `${dragPos.x}px`;
+                elFloatingShape.style.top = `${dragPos.y}px`;
+                elFloatingShape.style.transform = `translate(-50%, calc(-100% - ${cellSize}px))`;
+                return;
+            }
+            elFloatingShape.innerHTML = buildShapeHTML(draggedShape, cellSize);
+            elFloatingShape.style.opacity = hoveredCells.length > 0 ? '0.6' : '1';
+            const scale = hoveredCells.length > 0 ? 0.98 : 1;
+            const yOffset = hoveredCells.length > 0 ? cellSize * 0.2 : cellSize * 1.5;
+            elFloatingShape.style.left = `${dragPos.x}px`;
+            elFloatingShape.style.top = `${dragPos.y}px`;
+            elFloatingShape.style.transform = `translate(-50%, calc(-100% - ${yOffset}px)) scale(${scale})`;
+        }
+
+        function handlePointerMove(e) {
+            if (!isDragging || isProcessing) return;
+            if(e.cancelable) e.preventDefault(); 
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPos = { x: clientX, y: clientY };
+            const gridRect = elGrid.getBoundingClientRect();
+            
+            if (draggedBooster) {
+                const targetX = clientX;
+                const targetY = clientY - (cellSize * 1.8);
+                const col = Math.floor((targetX - gridRect.left) / cellSize);
+                const row = Math.floor((targetY - gridRect.top) / cellSize);
+                
+                if (draggedBooster === 'colorClear') {
+                    if (col >= 0 && col < GRID_SIZE && row >= 0 && row < GRID_SIZE) {
+                        if (!hoveredGridCell || hoveredGridCell.r !== row || hoveredGridCell.c !== col) {
+                            hoveredGridCell = {r: row, c: col};
+                            renderGrid();
+                        }
+                    } else {
+                        if (hoveredGridCell !== null) { hoveredGridCell = null; renderGrid(); }
+                    }
+                    hoveredCarCol = null;
+                } else {
+                    const oldHoverCol = hoveredCarCol;
+                    if (col >= 0 && col < GRID_SIZE && row >= -2 && row <= GRID_SIZE + 1 && cars.some(c => c.col === col)) {
+                        hoveredCarCol = col;
+                    } else {
+                        hoveredCarCol = null;
+                    }
+                    if (oldHoverCol !== hoveredCarCol) { renderGrid(); renderCarsRow(); }
+                    hoveredGridCell = null;
+                }
+                requestAnimationFrame(updateFloatingShape);
+                return;
+            }
+
+            if (draggedShape) {
+                const shapeCols = Math.max(...draggedShape.matrix.map(r => r.length));
+                const shapeRows = draggedShape.matrix.length;
+                const shapeHeight = shapeRows * cellSize;
+                const centerX = clientX;
+                const centerY = clientY - (cellSize * 1.5) - (shapeHeight / 2);
+                const col = Math.round(((centerX - gridRect.left) / cellSize) - (shapeCols / 2));
+                const row = Math.round(((centerY - gridRect.top) / cellSize) - (shapeRows / 2));
+                const oldHoverCount = hoveredCells.length;
+
+                if (isValidPlacement(draggedShape.matrix, row, col)) {
+                    let cells = [];
+                    draggedShape.matrix.forEach((rArr, r) => {
+                        rArr.forEach((val, c) => { if (val === 1) cells.push({ r: row + r, c: col + c }); });
+                    });
+                    hoveredCells = cells;
+                } else {
+                    hoveredCells = [];
+                }
+                if (oldHoverCount !== hoveredCells.length || hoveredCells.length > 0) renderGrid();
+                requestAnimationFrame(updateFloatingShape);
+            }
+        }
+
+        function handlePointerUp(e) {
+            if (!isDragging || isProcessing) return;
+            isDragging = false;
+
+            if (draggedBooster) {
+                const boosterType = draggedBooster; 
+                if (boosterType === 'colorClear') {
+                    if (hoveredGridCell !== null && grid[hoveredGridCell.r][hoveredGridCell.c] !== null && grid[hoveredGridCell.r][hoveredGridCell.c] !== 'blocker') {
+                        const targetColor = grid[hoveredGridCell.r][hoveredGridCell.c];
+                        boosters[boosterType]--;
+                        draggedBooster = null; hoveredGridCell = null;
+                        updateFloatingShape(); renderBoosters(); 
+                        handleBoosterUseColorClear(targetColor);
+                    } else {
+                        draggedBooster = null; hoveredGridCell = null;
+                        updateFloatingShape(); renderGrid(); renderBoosters();
+                    }
+                } else if (hoveredCarCol !== null) {
+                    const car = cars.find(c => c.col === hoveredCarCol);
+                    boosters[boosterType]--;
+                    draggedBooster = null; hoveredCarCol = null;
+                    updateFloatingShape(); renderGrid(); renderCarsRow(); renderBoosters(); 
+                    if (boosterType === 'straightClear') handleBoosterUseStraight(car);
+                    else if (boosterType === 'colorChange') handleBoosterUseColor(car);
+                    else if (boosterType === 'hybrid') handleBoosterUseHybrid(car);
+                } else {
+                    draggedBooster = null; hoveredCarCol = null;
+                    updateFloatingShape(); renderGrid(); renderCarsRow(); renderBoosters(); 
+                }
+                return;
+            }
+
+            if (hoveredCells.length > 0 && draggedShape) {
+                let newGrid = grid.map(row => [...row]);
+                hoveredCells.forEach(({ r, c }) => { newGrid[r][c] = draggedShape.color; });
+                const shapeIndex = draggedShape.index;
+                const placedShape = draggedShape;
+                draggedShape = null; hoveredCells = [];
+                updateFloatingShape();
+                handlePlacementSuccess(newGrid, shapeIndex, placedShape);
+            } else {
+                draggedShape = null; hoveredCells = [];
+                updateFloatingShape(); renderGrid(); renderShapesDock();
+            }
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('pointermove', handlePointerMove, { passive: false });
+            window.addEventListener('pointerup', handlePointerUp);
+            window.addEventListener('touchmove', handlePointerMove, { passive: false });
+            window.addEventListener('touchend', handlePointerUp);
+            document.addEventListener('contextmenu', e => e.preventDefault());
+
+            const elLevelBtn = document.getElementById('ui-level');
+            if (elLevelBtn) {
+                elLevelBtn.addEventListener('pointerdown', (e) => {
+                    e.stopPropagation(); openLevelSwitch();
+                });
+            }
+        }
+
+        window.onload = init;
+    </script>
+
+    <!-- FIREBASE TRACKING -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+        const GAME_ID = 'road-blocks-car-blast';
+
+        let db, auth, currentUser = null;
+        const startTime = Date.now();
+
+        async function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    try {
+                        await setPersistence(auth, inMemoryPersistence);
+                    } catch (e) {
+                        console.warn("Persistence set warning", e);
+                    }
+                    const userCredential = await signInAnonymously(auth);
+                    currentUser = userCredential.user;
+                    const statsRef = doc(db, "game_stats", GAME_ID);
+                    updateDoc(statsRef, { plays: increment(1) }).catch(e => console.log("Stats error:", e));
+                    setInterval(saveTime, 30000);
+                }
+            } catch (e) { console.error("Tracking Error - check console", e); }
+        }
+
+        function saveTime() {
+            if (db && currentUser) {
+                const timeSpentSeconds = Math.floor((Date.now() - startTime) / 1000);
+                if (timeSpentSeconds > 0) {
+                    const statsRef = doc(db, "game_stats", GAME_ID);
+                    updateDoc(statsRef, { timePlayed: increment(timeSpentSeconds) }).catch(e => console.log("Stats error:", e));
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', saveTime);
+        initFirebase();
+    </script>
+</body>
+</html>
