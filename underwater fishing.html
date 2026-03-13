@@ -304,10 +304,14 @@
         let shotData = { hit: false, tier: 'miss', animal: null, bulletX: state.mouseX, bulletY: state.mouseY };
         state.animals.forEach(animal => {
             if (animal.dead) return;
-            const bodyY = animal.y - animal.type.size * 0.5;
-            const distBody = Math.hypot(state.mouseX - animal.x, state.mouseY - bodyY);
-            const hx = animal.x + (animal.dir * animal.type.size * animal.type.hX);
-            const hy = animal.y - (animal.type.size * animal.type.hY);
+            const s = animal.type.size;
+            // Emoji is drawn at (0, -s) relative to animal.y, with font size s*2.2
+            // Visual center of the emoji is at animal.y - s, spanning roughly s*1.1 in each direction
+            const visualCenterY = animal.y - s;
+            const bodyRadius = s * 1.1;
+            const distBody = Math.hypot(state.mouseX - animal.x, state.mouseY - visualCenterY);
+            const hx = animal.x + (animal.dir * s * animal.type.hX);
+            const hy = animal.y - (s * animal.type.hY);
             const dH = Math.hypot(state.mouseX - hx, state.mouseY - hy);
             if (dH < animal.type.heartSize) {
                 shotData.hit = true; shotData.animal = { ...animal };
@@ -315,7 +319,7 @@
                 else if (dH < animal.type.heartSize * 0.6) shotData.tier = 'great';
                 else shotData.tier = 'heart';
                 processHit(animal, shotData.tier);
-            } else if (distBody < animal.type.size) {
+            } else if (distBody < bodyRadius) {
                 shotData.hit = true; shotData.animal = { ...animal }; shotData.tier = 'body';
                 processHit(animal, 'body');
             }
