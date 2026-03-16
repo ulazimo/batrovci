@@ -284,7 +284,7 @@
         const firebaseConfig = { apiKey:"[REDACTED]",authDomain:"prototypes-7691b.firebaseapp.com",projectId:"prototypes-7691b",storageBucket:"prototypes-7691b.firebasestorage.app",messagingSenderId:"263652926534",appId:"1:263652926534:web:9af3c4ce63aab78f0f9647",measurementId:"G-1X91H99N2G" };
         const GAME_ID = "logic-kitchen";
         let db, auth, currentUser = null;
-        const startTime = Date.now();
+        let startTime = Date.now();
         async function initFirebase() {
             try {
                 if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
@@ -301,9 +301,17 @@
         function saveTime() {
             if (db && currentUser) {
                 const s = Math.floor((Date.now()-startTime)/1000);
-                if (s>0) { const sr=doc(db,"game_stats",GAME_ID); updateDoc(sr,{timePlayed:increment(s)}).catch(e=>console.log("Stats error:",e)); }
+                if (s>0) {
+                    const sr=doc(db,"game_stats",GAME_ID);
+                    updateDoc(sr,{timePlayed:increment(s)}).catch(e=>console.log("Stats error:",e));
+                    startTime = Date.now();
+                }
             }
         }
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') saveTime();
+            else startTime = Date.now();
+        });
         window.addEventListener("beforeunload",saveTime);
         initFirebase();
     </script>

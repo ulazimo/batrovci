@@ -406,7 +406,7 @@
         const GAME_ID = 'royal-chase';
 
         let db, auth, currentUser = null;
-        const startTime = Date.now();
+        let startTime = Date.now();
 
         async function initFirebase() {
             try {
@@ -434,10 +434,15 @@
                 if (timeSpentSeconds > 0) {
                     const statsRef = doc(db, "game_stats", GAME_ID);
                     updateDoc(statsRef, { timePlayed: increment(timeSpentSeconds) }).catch(e => console.log("Stats error:", e));
+                    startTime = Date.now();
                 }
             }
         }
 
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') saveTime();
+            else startTime = Date.now();
+        });
         window.addEventListener('beforeunload', saveTime);
         initFirebase();
     </script>
