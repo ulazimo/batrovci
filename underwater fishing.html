@@ -64,17 +64,10 @@
         .mode-btn.dive-btn:hover   { border-color: #2dd4bf; }
         .mode-btn.frenzy-btn:hover { border-color: #f59e0b; }
 
-        /* OPPONENT HUD — sits in top-right, timer stays center */
+        /* OPPONENT HUD — right column of top-hud */
         #opponent-hud {
-            position: absolute; top: env(safe-area-inset-top, 16px); right: 16px;
-            pointer-events: none; z-index: 55;
-            text-align: right; display: none;
-            background: rgba(8,16,32,0.82);
-            border: 1px solid rgba(248,113,113,0.25);
-            border-radius: 0.75rem;
-            padding: 6px 10px 7px;
-            backdrop-filter: blur(4px);
-            min-width: 120px;
+            text-align: right;
+            min-width: 110px;
         }
         #opponent-bar-wrap {
             width: 100%; height: 5px; background: rgba(255,255,255,0.1);
@@ -146,13 +139,7 @@
         </button>
     </div>
 
-    <!-- OPPONENT HUD (absolute top-right) -->
-    <div id="opponent-hud">
-        <div style="font-size:0.58rem; letter-spacing:0.15em; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">🤖 Opponent</div>
-        <div id="opponent-score" style="font-size:1.55rem; font-weight:900; color:#f87171; text-shadow:0 0 10px rgba(248,113,113,0.5); line-height:1;">0</div>
-        <div id="opponent-bar-wrap"><div id="opponent-bar"></div></div>
-        <div id="opponent-lead" style="font-size:0.62rem; margin-top:4px; font-weight:700; letter-spacing:0.08em;"></div>
-    </div>
+
 
     <!-- COMBO DISPLAY -->
     <div id="combo-display">
@@ -183,8 +170,14 @@
                 <div class="text-xl font-bold text-teal-400" id="hunt-goal">Catch: 3</div>
             </div>
         </div>
-        <!-- Right: opponent hud placeholder (actual hud is absolute-positioned) -->
-        <div style="min-width:110px;"></div>
+        <!-- Right: opponent score (frenzy only) -->
+        <div id="opponent-hud" style="display:none; text-align:right; min-width:110px;">
+            <div style="font-size:0.6rem; letter-spacing:0.15em; color:#94a3b8; text-transform:uppercase; margin-bottom:1px;">🤖 Opponent</div>
+            <div id="opponent-score" style="font-size:2.2rem; font-weight:900; color:#f87171; text-shadow:0 0 12px rgba(248,113,113,0.6); line-height:1;">0</div>
+            <div id="opponent-bar-wrap"><div id="opponent-bar"></div></div>
+            <div id="opponent-lead" style="font-size:0.62rem; margin-top:3px; font-weight:700; letter-spacing:0.08em;"></div>
+        </div>
+        <div id="opponent-hud-placeholder" style="min-width:110px;"></div>
     </div>
 
     <!-- BOTTOM HUD -->
@@ -338,9 +331,15 @@
     // that produce a plausible but beatable final score.
     let oppState = { score: 0, events: [], nextEventIdx: 0 };
     const oppHud        = document.getElementById('opponent-hud');
+    const oppHudPlaceholder = document.getElementById('opponent-hud-placeholder');
     const oppScoreEl    = document.getElementById('opponent-score');
     const oppBar        = document.getElementById('opponent-bar');
     const oppLeadEl     = document.getElementById('opponent-lead');
+
+    function showOppHud(visible) {
+        oppHud.style.display = visible ? 'block' : 'none';
+        oppHudPlaceholder.style.display = visible ? 'none' : 'block';
+    }
 
     function generateOpponentScript() {
         // Build a list of (timeElapsed, pointsGained) events
@@ -420,7 +419,7 @@
         state.frenzyRunning = false;
         state.gameOver = true;
         msgBox.style.display = 'none';
-        oppHud.style.display = 'none';
+        showOppHud(false);
         showModeSelect();
     }
 
@@ -455,7 +454,7 @@
         document.getElementById('dive-label-wrap').style.display='block';
         ammoLabel.textContent='Spears'; statusSub.textContent='Aim for the vitals';
         frenzyTimerWrap.style.display='none'; comboHud.style.display='none';
-        oppHud.style.display='none';
+        showOppHud(false);
         updateUI(); msgBox.style.display='none'; analysisBox.style.display='none';
         setTimeout(spawnAnimal,1000);
     }
@@ -477,7 +476,7 @@
         generateOpponentScript();
         oppState.score=0; oppScoreEl.textContent='0';
         oppBar.style.width='0%'; oppLeadEl.textContent='';
-        oppHud.style.display='block';
+        showOppHud(true);
         state.animals=[]; state.particles=[]; state.floatingTexts=[]; state.spearLines=[];
         state.gameOver=false; state.analysisActive=false; state.isWaitingForAnalysis=false;
         state.zoom=1.0; state.targetZoom=1.0; state.ammo=999;
@@ -754,7 +753,7 @@
             updateOpponent(state.frenzyElapsed);
             if(state.frenzyTimeLeft<=0){
                 state.frenzyRunning=false; state.animals=[];
-                setTimeout(()=>{ oppHud.style.display='none'; showEndScreen("TIME'S UP!",'Score: '+state.frenzyScore.toLocaleString(),'Play Again',true); },400);
+                setTimeout(()=>{ showOppHud(false); showEndScreen("TIME'S UP!",'Score: '+state.frenzyScore.toLocaleString(),'Play Again',true); },400);
                 return;
             }
             if(state.animals.filter(a=>!a.dead).length<4) setTimeout(spawnFrenzyFish,100);
