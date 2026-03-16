@@ -527,15 +527,18 @@
             const hx=animal.x+(animal.dir*s*animal.type.hX);
             const hy=animal.y-(s*animal.type.hY);
             const dH=Math.hypot(state.mouseX-hx,state.mouseY-hy);
-            if(dH<animal.type.heartSize&&!shotData.hit){
-                shotData.hit=true; shotData.animal={...animal};
-                if(dH<animal.type.heartSize*0.25) shotData.tier='perfect';
-                else if(dH<animal.type.heartSize*0.6) shotData.tier='great';
-                else shotData.tier='heart';
-                processHit(animal,shotData.tier);
-            } else if(distBody<bodyR&&!shotData.hit){
-                shotData.hit=true; shotData.animal={...animal}; shotData.tier='body';
-                processHit(animal,'body');
+            let tier=null;
+            if(dH<animal.type.heartSize){
+                if(dH<animal.type.heartSize*0.25) tier='perfect';
+                else if(dH<animal.type.heartSize*0.6) tier='great';
+                else tier='heart';
+            } else if(distBody<bodyR){
+                tier='body';
+            }
+            if(tier){
+                // first hit is used for dive analysis display
+                if(!shotData.hit){ shotData.hit=true; shotData.animal={...animal}; shotData.tier=tier; }
+                processHit(animal,tier);
             }
         });
         if(mode==='dive'){
