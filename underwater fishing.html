@@ -66,25 +66,31 @@
 
         /* OPPONENT HUD — sits in top-right, timer stays center */
         #opponent-hud {
-            position: absolute; top: env(safe-area-inset-top, 20px); right: 20px;
+            position: absolute; top: env(safe-area-inset-top, 16px); right: 16px;
             pointer-events: none; z-index: 55;
             text-align: right; display: none;
+            background: rgba(8,16,32,0.82);
+            border: 1px solid rgba(248,113,113,0.25);
+            border-radius: 0.75rem;
+            padding: 6px 10px 7px;
+            backdrop-filter: blur(4px);
+            min-width: 120px;
         }
         #opponent-bar-wrap {
-            width: 100px; height: 5px; background: rgba(255,255,255,0.1);
-            border-radius: 3px; margin: 3px 0 0 auto; overflow: hidden;
+            width: 100%; height: 5px; background: rgba(255,255,255,0.1);
+            border-radius: 3px; margin: 4px 0 0; overflow: hidden;
         }
         #opponent-bar {
             height: 100%; width: 0%; border-radius: 3px;
-            transition: width 0.4s ease, background-color 0.4s ease;
+            transition: width 0.5s ease, background-color 0.4s ease;
             background: #f59e0b;
         }
         @keyframes opp-score-bump {
             0%   { transform: scale(1); }
-            40%  { transform: scale(1.15); color: #f87171; }
+            35%  { transform: scale(1.22); color: #fca5a5; text-shadow: 0 0 16px rgba(248,113,113,0.9); }
             100% { transform: scale(1); }
         }
-        .opp-bump { animation: opp-score-bump 0.35s forwards; }
+        .opp-bump { animation: opp-score-bump 0.4s forwards; }
 
         /* COMBO POPUP */
         @keyframes combo-pop {
@@ -141,10 +147,10 @@
 
     <!-- OPPONENT HUD (absolute top-right) -->
     <div id="opponent-hud">
-        <div style="font-size:0.6rem; letter-spacing:0.15em; color:#94a3b8; text-transform:uppercase; margin-bottom:1px;">🤖 Opponent</div>
-        <div id="opponent-score" style="font-size:1.4rem; font-weight:900; color:#f87171; text-shadow:0 0 10px rgba(248,113,113,0.5); line-height:1;">0</div>
+        <div style="font-size:0.58rem; letter-spacing:0.15em; color:#94a3b8; text-transform:uppercase; margin-bottom:2px;">🤖 Opponent</div>
+        <div id="opponent-score" style="font-size:1.55rem; font-weight:900; color:#f87171; text-shadow:0 0 10px rgba(248,113,113,0.5); line-height:1;">0</div>
         <div id="opponent-bar-wrap"><div id="opponent-bar"></div></div>
-        <div id="opponent-lead" style="font-size:0.6rem; margin-top:2px; font-weight:700; letter-spacing:0.08em;"></div>
+        <div id="opponent-lead" style="font-size:0.62rem; margin-top:4px; font-weight:700; letter-spacing:0.08em;"></div>
     </div>
 
     <!-- COMBO DISPLAY -->
@@ -355,7 +361,6 @@
     }
 
     function updateOpponent(elapsed) {
-        // elapsed = seconds since frenzy started
         let changed = false;
         while (oppState.nextEventIdx < oppState.events.length &&
                oppState.events[oppState.nextEventIdx].t <= elapsed) {
@@ -369,23 +374,21 @@
             void oppScoreEl.offsetWidth;
             oppScoreEl.classList.add('opp-bump');
         }
-        // Update bar: ratio of opponent score vs max(player, opponent) expected
-        const maxExpected = Math.max(oppState.target, state.frenzyScore, 1);
+        // Bar shows opponent fill vs max expected; color reflects who's winning
+        const maxExpected = Math.max(oppState.target, state.frenzyScore, oppState.score, 1);
         const oppRatio = Math.min(oppState.score / maxExpected, 1);
         const playerRatio = Math.min(state.frenzyScore / maxExpected, 1);
         oppBar.style.width = (oppRatio * 100) + '%';
-        oppBar.style.background = oppRatio > playerRatio ? '#f87171' : '#4ade80';
-        // Lead label
+        const oppWinning = oppState.score > state.frenzyScore;
+        oppBar.style.background = oppWinning ? '#f87171' : '#4ade80';
+        // Lead label — always show current diff
         const diff = state.frenzyScore - oppState.score;
         if (diff > 0) {
-            oppLeadEl.textContent = 'YOU +' + diff.toLocaleString();
-            oppLeadEl.style.color = '#4ade80';
+            oppLeadEl.innerHTML = '<span style="color:#4ade80">▲ +' + diff.toLocaleString() + '</span>';
         } else if (diff < 0) {
-            oppLeadEl.textContent = 'OPP +' + Math.abs(diff).toLocaleString();
-            oppLeadEl.style.color = '#f87171';
+            oppLeadEl.innerHTML = '<span style="color:#f87171">▼ ' + Math.abs(diff).toLocaleString() + '</span>';
         } else {
-            oppLeadEl.textContent = 'TIED';
-            oppLeadEl.style.color = '#facc15';
+            oppLeadEl.innerHTML = '<span style="color:#facc15">TIED</span>';
         }
     }
 
@@ -750,8 +753,7 @@
             updateOpponent(state.frenzyElapsed);
             if(state.frenzyTimeLeft<=0){
                 state.frenzyRunning=false; state.animals=[];
-                oppHud.style.display='none';
-                setTimeout(()=>showEndScreen("TIME'S UP!",'Score: '+state.frenzyScore.toLocaleString(),'Play Again',true),400);
+                setTimeout(()=>{ oppHud.style.display='none'; showEndScreen("TIME'S UP!",'Score: '+state.frenzyScore.toLocaleString(),'Play Again',true); },400);
                 return;
             }
             if(state.animals.filter(a=>!a.dead).length<4) setTimeout(spawnFrenzyFish,100);
