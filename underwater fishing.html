@@ -321,7 +321,7 @@
         combo: 0, comboTimer: 0, catchLog: {}, frenzyScore: 0,
     };
 
-    const FRENZY_DURATION = 15;
+    const FRENZY_DURATION = 30;
 
     let frenzyHighScore = parseInt(localStorage.getItem('frenzy_hs') || '0');
     let comboPopTimeout = null;
@@ -748,12 +748,15 @@
             state.frenzyTimeLeft=Math.max(0,state.frenzyTimeLeft-dtSec);
             state.frenzyElapsed=(state.frenzyElapsed||0)+dtSec;
             frenzyTimerEl.textContent=Math.ceil(state.frenzyTimeLeft);
-            if(state.frenzyTimeLeft<=5) frenzyTimerEl.className='text-4xl font-black timer-urgent';
+            if(state.frenzyTimeLeft<=10) frenzyTimerEl.className='text-4xl font-black timer-urgent';
             if(state.combo>0){ state.comboTimer-=dtSec; if(state.comboTimer<=0) breakCombo(); }
             updateOpponent(state.frenzyElapsed);
             if(state.frenzyTimeLeft<=0){
-                state.frenzyRunning=false; state.animals=[];
-                setTimeout(()=>{ showOppHud(false); showEndScreen("TIME'S UP!",'Score: '+state.frenzyScore.toLocaleString(),'Play Again',true); },400);
+                state.frenzyRunning=false;
+                frenzyTimerEl.textContent='0';
+                // let existing fish swim off naturally — no hard clear
+                // stop spawning new ones (spawnFrenzyFish checks frenzyRunning)
+                setTimeout(()=>{ showOppHud(false); showEndScreen("TIME'S UP!",'Score: '+state.frenzyScore.toLocaleString(),'Play Again',true); },1200);
                 return;
             }
             if(state.animals.filter(a=>!a.dead).length<4) setTimeout(spawnFrenzyFish,100);
