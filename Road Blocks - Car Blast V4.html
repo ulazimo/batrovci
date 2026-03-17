@@ -952,6 +952,7 @@
                 const slot = document.createElement('div');
                 const isHidden = draggedShape && draggedShape.index === index;
                 slot.className = `flex-1 h-full mx-1 sm:mx-2 flex justify-center items-center cursor-pointer touch-none ${isHidden ? 'opacity-0' : 'opacity-100'} transition-transform active:scale-95 bg-white/10 rounded-xl sm:rounded-2xl shadow-inner`;
+                slot.style.touchAction = 'none';
                 
                 if (shape) {
                     const maxDim = Math.max(shape.matrix.length, Math.max(...shape.matrix.map(r => r.length)));
@@ -963,8 +964,12 @@
                     
                     slot.innerHTML = buildShapeHTML(shape, cellSize * scaleFactor);
                     slot.addEventListener('pointerdown', (e) => {
-                        if (!isProcessing && !draggedBooster) handlePointerDown(e, shape, index);
-                    });
+                        if (!isProcessing && !draggedBooster) {
+                            e.preventDefault();
+                            slot.setPointerCapture(e.pointerId);
+                            handlePointerDown(e, shape, index);
+                        }
+                    }, { passive: false });
                 } else {
                     slot.innerHTML = '<div class="w-full h-full"></div>';
                 }
@@ -999,6 +1004,7 @@
                 const isHidden = draggedBooster && conf && draggedBooster === conf.id;
                 
                 slot.className = `h-full aspect-square rounded-full shadow-[0_4px_0_#2a4b99] sm:shadow-[0_6px_0_#2a4b99] transition-all flex justify-center items-center relative select-none touch-none ${isHidden ? 'opacity-0' : 'opacity-100'}`;
+                slot.style.touchAction = 'none';
                 
                 if (conf) {
                     slot.classList.add(conf.bg);
@@ -1010,8 +1016,12 @@
                             <div class="absolute -top-1 -right-1 ${conf.activeBg} text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#6b9ff0] shadow-md">${qty}</div>
                         `;
                         slot.addEventListener('pointerdown', (e) => {
-                            if (!isProcessing && !draggedShape) handleBoosterPointerDown(e, conf.id);
-                        });
+                            if (!isProcessing && !draggedShape) {
+                                e.preventDefault();
+                                slot.setPointerCapture(e.pointerId);
+                                handleBoosterPointerDown(e, conf.id);
+                            }
+                        }, { passive: false });
                     } else {
                         slot.classList.add('opacity-40', 'grayscale');
                         slot.innerHTML = conf.svg;
@@ -1686,8 +1696,8 @@
             e.preventDefault();
             isDragging = true;
             draggedShape = { ...shape, index };
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clientX = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : 0);
             dragPos = { x: clientX, y: clientY };
             renderShapesDock(); 
             updateFloatingShape();
@@ -1697,8 +1707,8 @@
             e.preventDefault();
             isDragging = true;
             draggedBooster = boosterType;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clientX = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : 0);
             dragPos = { x: clientX, y: clientY };
             renderBoosters(); 
             updateFloatingShape();
@@ -1739,9 +1749,9 @@
 
         function handlePointerMove(e) {
             if (!isDragging || isProcessing) return;
-            if(e.cancelable) e.preventDefault(); 
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            if (e.cancelable) e.preventDefault();
+            const clientX = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : 0);
             dragPos = { x: clientX, y: clientY };
             const gridRect = elGrid.getBoundingClientRect();
             
@@ -1857,9 +1867,10 @@
         function setupEventListeners() {
             window.addEventListener('pointermove', handlePointerMove, { passive: false });
             window.addEventListener('pointerup', handlePointerUp);
-            window.addEventListener('touchmove', handlePointerMove, { passive: false });
-            window.addEventListener('touchend', handlePointerUp);
+            window.addEventListener('pointercancel', handlePointerUp);
             document.addEventListener('contextmenu', e => e.preventDefault());
+            // Prevent iOS Safari scroll/bounce during drag
+            document.body.addEventListener('touchmove', e => { if (isDragging) e.preventDefault(); }, { passive: false });
 
             const elLevelBtn = document.getElementById('ui-level');
             if (elLevelBtn) {
