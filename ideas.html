@@ -100,14 +100,15 @@
             <form id="idea-form" class="space-y-6">
                 <div>
                     <label for="idea-title" class="block text-sm font-mono text-cyber-primary mb-2">Idea Title</label>
-                    <input type="text" id="idea-title" name="title" class="block w-full px-4 py-3 bg-cyber-bg border border-cyber-border placeholder-cyber-muted/50 focus:outline-none focus:border-cyber-primary transition-colors" placeholder="e.g., Real-time weather integration">
+                    <input type="text" id="idea-title" name="title" maxlength="120" class="block w-full px-4 py-3 bg-cyber-bg border border-cyber-border placeholder-cyber-muted/50 focus:outline-none focus:border-cyber-primary transition-colors" placeholder="e.g., Real-time weather integration">
                 </div>
                 <div>
                     <label for="idea-description" class="block text-sm font-mono text-cyber-primary mb-2">Description</label>
-                    <textarea id="idea-description" name="description" rows="4" class="block w-full px-4 py-3 bg-cyber-bg border border-cyber-border placeholder-cyber-muted/50 focus:outline-none focus:border-cyber-primary transition-colors" placeholder="Explain the core mechanic or concept..."></textarea>
+                    <textarea id="idea-description" name="description" rows="4" maxlength="1000" class="block w-full px-4 py-3 bg-cyber-bg border border-cyber-border placeholder-cyber-muted/50 focus:outline-none focus:border-cyber-primary transition-colors" placeholder="Explain the core mechanic or concept..."></textarea>
+                    <div class="text-right text-xs font-mono text-cyber-muted/50 mt-1"><span id="desc-char-count">0</span>/1000</div>
                 </div>
                 <div class="text-center pt-4">
-                    <button type="submit" class="inline-block px-10 py-4 bg-cyber-primary text-cyber-bg font-display font-bold text-lg uppercase tracking-wider hover:bg-white hover:shadow-[0_0_25px_rgba(0,240,255,0.7)] transition-all duration-300" style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">
+                    <button type="submit" id="submit-btn" class="inline-block px-10 py-4 bg-cyber-primary text-cyber-bg font-display font-bold text-lg uppercase tracking-wider hover:bg-white hover:shadow-[0_0_25px_rgba(0,240,255,0.7)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" style="clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);">
                         SUBMIT
                     </button>
                 </div>
@@ -160,6 +161,25 @@
         document.getElementById('year').textContent = new Date().getFullYear();
         lucide.createIcons();
 
+        // Char counter for description
+        const descEl = document.getElementById('idea-description');
+        const descCount = document.getElementById('desc-char-count');
+        descEl.addEventListener('input', () => { descCount.textContent = descEl.value.length; });
+
+        // Disable submit if on cooldown
+        const submitBtn = document.getElementById('submit-btn');
+        const lastSubmit = parseInt(localStorage.getItem('ideaLastSubmit') || '0', 10);
+        if (Date.now() - lastSubmit < 2 * 60 * 1000) {
+            const secsLeft = Math.ceil((2 * 60 * 1000 - (Date.now() - lastSubmit)) / 1000);
+            submitBtn.textContent = `Wait ${secsLeft}s`;
+            submitBtn.disabled = true;
+            const interval = setInterval(() => {
+                const s = Math.ceil((2 * 60 * 1000 - (Date.now() - lastSubmit)) / 1000);
+                if (s <= 0) { submitBtn.textContent = 'SUBMIT'; submitBtn.disabled = false; clearInterval(interval); }
+                else submitBtn.textContent = `Wait ${s}s`;
+            }, 1000);
+        }
+
         async function loadIdeas() {
             if (!db) return;
             const querySnapshot = await getDocs(collection(db, "ideas"));
@@ -199,8 +219,22 @@
                 return;
             }
 
-            const title = ideaForm.title.value.trim();
-            const description = ideaForm.description.value.trim();
+            // Rate limiting: max 1 submission per 2 minutes
+            const lastSubmit = parseInt(localStorage.getItem('ideaLastSubmit') || '0', 10);
+            const now = Date.now();
+            if (now - lastSubmit < 2 * 60 * 1000) {
+                const secsLeft = Math.ceil((2 * 60 * 1000 - (now - lastSubmit)) / 1000);
+                alert(`Please wait ${secsLeft}s before submitting again.`);
+                return;
+            }
+
+            const title = ideaForm.title.value.trim().slice(0, 120);
+            const description = ideaForm.description.value.trim().slice(0, 1000);
+
+            if (title.length < 3 || description.length < 10) {
+                alert("Title must be at least 3 characters and description at least 10.");
+                return;
+            }
 
             if (title && description) {
                 try {
@@ -209,6 +243,7 @@
                         description: description,
                         timestamp: serverTimestamp()
                     });
+                    localStorage.setItem('ideaLastSubmit', String(now));
                     ideaForm.reset();
                     loadIdeas(); 
                 } catch (error) {
