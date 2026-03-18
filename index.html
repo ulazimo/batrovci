@@ -11,6 +11,14 @@
         gtag('config', 'G-1X91H99N2G');
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A collection of playable HTML5 game prototypes by Mladen Dulanovic — puzzles, arcade, sports, board games and more. Play directly in browser.">
+    <meta property="og:title" content="Mladen's Prototype Lab">
+    <meta property="og:description" content="Playable HTML5 game prototypes — puzzles, arcade, sports, board games and more. No install needed.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ulazimo.github.io/batrovci/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Mladen's Prototype Lab">
+    <meta name="twitter:description" content="Playable HTML5 game prototypes — puzzles, arcade, sports, board games and more.">
     <title>Mladen's Prototype Lab</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
@@ -235,10 +243,22 @@
                             placeholder="SEARCH_DATABASE...">
                     </div>
                 </div>
-                
-                <!-- Filters -->
-                <div class="flex flex-wrap gap-2" id="category-filters">
-                    <!-- Categories injected by JS -->
+
+                <!-- Sort + Filters row -->
+                <div class="flex flex-col gap-3 items-end">
+                    <!-- Sort -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-cyber-muted uppercase tracking-widest">Sort:</span>
+                        <select id="sort-select" class="bg-cyber-card border border-cyber-border text-cyber-muted font-mono text-xs px-3 py-2 focus:outline-none focus:border-cyber-primary transition-colors cursor-pointer hover:border-cyber-primary/50">
+                            <option value="featured">Featured First</option>
+                            <option value="newest">Newest</option>
+                            <option value="plays">Most Played</option>
+                        </select>
+                    </div>
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-2 justify-end" id="category-filters">
+                        <!-- Categories injected by JS -->
+                    </div>
                 </div>
             </div>
             
@@ -302,12 +322,12 @@
                 <p class="text-sm text-cyber-muted font-mono">
                     &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
                 </p>
-                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-17 11:33:13">v2026-03-17 11:33:13</p>
+                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-18 10:14:07">v2026-03-18 10:14:07</p>
             </div>
             <div class="flex gap-6 text-sm font-mono text-cyber-muted">
-                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">STATUS</a>
-                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LOGS</a>
-                <a href="#" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">CONTACT</a>
+                <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LINKEDIN</a>
+                <a href="ideas.html" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">IDEAS</a>
+                <a href="mailto:mladend@nordeus.com" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">CONTACT</a>
             </div>
         </div>
     </footer>
@@ -455,7 +475,7 @@
                 file: "hunting.html",
                 description: "Test your aim in this hunting simulator, tracking and shooting various animals.",
                 category: "Action",
-                date: "2026-01-23", // Today's date
+                date: "2026-01-23",
                 featured: false,
                 version: "1.0"
             },
@@ -483,7 +503,7 @@
                 id: "football-legendary-league",
                 title: "Football Legendary League",
                 file: "football legendary league.html",
-                description: "Arcade football with league progression. Control your team, pass, shoot and win matches.\n",
+                description: "Arcade football with league progression. Control your team, pass, shoot and win matches.",
                 category: "Sports",
                 date: "2026-01-27",
                 featured: true,
@@ -527,7 +547,7 @@
                 category: "Puzzle",
                 date: "2026-03-05",
                 featured: true,
-                version: "3.0"
+                version: "4.0"
             }
         ];
 
@@ -556,6 +576,7 @@
 
         let activeCategory = 'All';
         let searchQuery = '';
+        let sortMode = 'featured';
         let gameStats = {}; // Stores { gameId: { plays: 0, timePlayed: 0 } }
 
         const grid = document.getElementById('projects-grid');
@@ -571,11 +592,14 @@
 
         function init() {
             renderCategories();
-            renderProjects(); // Initial render with defaults
+            renderProjects();
             lucide.createIcons();
-            
-            // Listen to Real-time Stats
             initFirebase();
+
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                sortMode = e.target.value;
+                renderProjects();
+            });
         }
 
         function subscribeToStats() {
@@ -635,32 +659,18 @@
             renderProjects();
         };
 
-        window.handleGameClick = async (event, gameId, url) => {
-            event.preventDefault(); // Stop navigation temporarily
-
+        window.handleGameClick = (event, gameId, url) => {
+            // Fire-and-forget: don't await Firebase, navigate immediately
+            // Note: plays are tracked by the game file itself on load — no double-counting here
             if (db && currentUser) {
-                try {
-                    const statsRef = doc(db, "game_stats", gameId);
-                    const docSnap = await getDoc(statsRef);
-
-                    if (docSnap.exists()) {
-                        // Document exists, just increment plays
-                        await updateDoc(statsRef, {
-                            plays: increment(1)
-                        });
-                    } else {
-                        // Document does not exist, create it with initial plays and timePlayed
-                        await setDoc(statsRef, {
-                            plays: 1, // Initialize plays to 1 for the first click
-                            timePlayed: 0 // Initialize timePlayed to 0
-                        });
+                const statsRef = doc(db, "game_stats", gameId);
+                getDoc(statsRef).then(docSnap => {
+                    if (!docSnap.exists()) {
+                        // Only create the document if it doesn't exist yet (no play increment)
+                        setDoc(statsRef, { plays: 0, timePlayed: 0 }).catch(e => console.log("Stats init error:", e));
                     }
-                } catch (e) {
-                    console.error("Error updating stats", e);
-                }
+                }).catch(e => console.log("Stats check error:", e));
             }
-
-            // Resume navigation
             window.location.href = url;
         };
 
@@ -680,12 +690,25 @@
         }
 
         function renderProjects() {
-            const filtered = projects.filter(p => {
+            let filtered = projects.filter(p => {
                 const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                     p.description.toLowerCase().includes(searchQuery.toLowerCase());
                 const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
                 return matchesSearch && matchesCategory;
             });
+
+            // Sort
+            if (sortMode === 'newest') {
+                filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else if (sortMode === 'plays') {
+                filtered.sort((a, b) => (gameStats[b.id]?.plays || 0) - (gameStats[a.id]?.plays || 0));
+            } else {
+                // featured first, then newest
+                filtered.sort((a, b) => {
+                    if (b.featured !== a.featured) return b.featured ? 1 : -1;
+                    return new Date(b.date) - new Date(a.date);
+                });
+            }
 
             resultCount.innerHTML = `// FOUND_${filtered.length}_ENTRIES`;
 
@@ -700,9 +723,13 @@
             grid.innerHTML = filtered.map(project => {
                 let iconName = 'gamepad-2';
                 const catLower = (project.category || '').toLowerCase();
-                if (catLower.includes('tool')) iconName = 'cpu';
-                if (catLower.includes('puzzle')) iconName = 'box-select';
-                if (catLower.includes('board')) iconName = 'dice-5';
+                if (catLower === 'tool')    iconName = 'cpu';
+                if (catLower === 'puzzle')  iconName = 'box-select';
+                if (catLower === 'board')   iconName = 'dice-5';
+                if (catLower === 'action')  iconName = 'crosshair';
+                if (catLower === 'sports')  iconName = 'trophy';
+                if (catLower === 'arcade')  iconName = 'zap';
+                if (catLower === 'party')   iconName = 'users';
 
                 // Get Real Stats or Default to 0
                 const stats = gameStats[project.id] || { plays: 0, timePlayed: 0 };

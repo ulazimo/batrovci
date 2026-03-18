@@ -11,6 +11,7 @@
         gtag('config', 'G-1X91H99N2G');
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Submit and browse prototype game ideas for Mladen's Lab.">
     <title>Prototype Ideas - Mladen's Lab</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     
@@ -125,7 +126,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
@@ -137,15 +138,22 @@
             measurementId: "G-1X91H99N2G"
         };
         
-        let db;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            console.log("Firebase Initialized for Ideas Page");
-            loadIdeas();
-        } catch(e) {
-            console.error("Firebase initialization failed:", e);
+        let db, currentUser = null;
+
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                try { await setPersistence(auth, inMemoryPersistence); } catch(e) {}
+                const cred = await signInAnonymously(auth);
+                currentUser = cred.user;
+                loadIdeas();
+            } catch(e) {
+                console.error("Firebase initialization failed:", e);
+            }
         }
+        initFirebase();
 
         const ideasList = document.getElementById('ideas-list');
         const ideaForm = document.getElementById('idea-form');
@@ -160,16 +168,24 @@
                 ideas.push({ id: doc.id, ...doc.data() });
             });
             
-            // Clear placeholders
             ideasList.innerHTML = ''; 
-
             ideas.sort((a,b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
 
+            if (ideas.length === 0) {
+                ideasList.innerHTML = '<p class="text-cyber-muted font-mono text-center py-8">No ideas yet. Be the first!</p>';
+                return;
+            }
+
             ideas.forEach(idea => {
+                const date = idea.timestamp?.toDate();
+                const dateStr = date ? date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
                 const ideaEl = document.createElement('div');
                 ideaEl.className = "bg-cyber-card/80 border border-cyber-border p-6 rounded-lg";
                 ideaEl.innerHTML = `
-                    <h3 class="text-xl font-display font-bold text-white mb-2">${idea.title}</h3>
+                    <div class="flex justify-between items-start gap-4 mb-2">
+                        <h3 class="text-xl font-display font-bold text-white">${idea.title}</h3>
+                        ${dateStr ? `<span class="text-xs font-mono text-cyber-muted whitespace-nowrap mt-1">${dateStr}</span>` : ''}
+                    </div>
                     <p class="text-cyber-muted">${idea.description}</p>
                 `;
                 ideasList.appendChild(ideaEl);
@@ -178,7 +194,7 @@
 
         ideaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!db) {
+            if (!db || !currentUser) {
                 alert("Database not connected. Cannot submit idea.");
                 return;
             }
