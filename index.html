@@ -116,7 +116,47 @@
             box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
         }
         
-        /* New styling for featured cards */
+        /* Screenshot preview styles */
+
+        /* Option A: Hover reveal (block-away) */
+        .preview-hover .preview-img {
+            position: absolute; inset: 0; z-index: 5;
+            background-size: cover; background-position: center top;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .preview-hover:hover .preview-img { opacity: 1; }
+        .preview-hover .preview-img::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 40%, rgba(21,25,35,0.97) 100%);
+        }
+        .preview-hover:hover .card-content-overlay {
+            position: relative; z-index: 6;
+        }
+
+        /* Option B: Header thumbnail (underwater-fishing) */
+        .preview-header .thumb {
+            width: 100%; height: 160px;
+            background-size: cover; background-position: center top;
+            position: relative; overflow: hidden;
+            flex-shrink: 0;
+        }
+        .preview-header .thumb::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+            background: linear-gradient(to bottom, transparent, #151923);
+        }
+
+        /* Option C: Peek strip (road-blocks) */
+        .preview-strip .strip {
+            width: 100%; height: 110px;
+            background-size: cover; background-position: center 20%;
+            position: relative; overflow: hidden;
+            flex-shrink: 0;
+        }
+        .preview-strip .strip::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 30%, #151923 100%);
+        }
         .card-featured {
             border-color: rgba(245, 158, 11, 0.5); /* Amber-500 */
             box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
@@ -322,7 +362,7 @@
                 <p class="text-sm text-cyber-muted font-mono">
                     &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
                 </p>
-                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-18 11:12:58">v2026-03-18 11:12:58</p>
+                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-18 11:23:56">v2026-03-18 11:23:56</p>
             </div>
             <div class="flex gap-6 text-sm font-mono text-cyber-muted">
                 <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LINKEDIN</a>
@@ -735,6 +775,14 @@
                 const stats = gameStats[project.id] || { plays: 0, timePlayed: 0 };
                 const playTimeStr = formatTime(stats.timePlayed);
 
+                // Screenshot preview config (test on 3 cards)
+                const PREVIEW_SCREENSHOTS = {
+                    'block-away':        { style: 'hover',  src: 'screenshots/block-away.svg' },
+                    'underwater-fishing':{ style: 'header', src: 'screenshots/underwater-fishing.svg' },
+                    'road-blocks-car-blast': { style: 'strip', src: 'screenshots/road-blocks.svg' },
+                };
+                const preview = PREVIEW_SCREENSHOTS[project.id] || null;
+
                 // Featured Styling logic
                 const containerClass = project.featured 
                     ? 'card-featured bg-cyber-card' 
@@ -744,65 +792,95 @@
                     ? 'bg-amber-500/10 border border-amber-500/50 text-amber-500 group-hover:bg-amber-500 group-hover:text-black group-hover:shadow-[0_0_15px_rgba(245,158,11,0.6)]'
                     : 'bg-cyber-bg border border-cyber-border text-cyber-primary group-hover:text-white group-hover:bg-cyber-primary group-hover:shadow-[0_0_15px_rgba(0,240,255,0.6)]';
 
+                const previewClass = preview ? `preview-${preview.style}` : '';
+
+                // --- Card Header block (icon + title + category) ---
+                const cardHeader = `
+                    <div class="p-6 pb-4 border-b border-cyber-border/50 bg-gradient-to-b from-white/5 to-transparent">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 rounded-sm ${iconContainerClass} transition-all duration-300">
+                                <i data-lucide="${iconName}" class="w-8 h-8"></i>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="font-mono text-xs text-cyber-muted opacity-50">#${project.id.split('-')[0].toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-display font-bold text-white group-hover:text-cyber-primary transition-colors truncate">
+                            ${project.title}
+                        </h3>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="w-1.5 h-1.5 rounded-full ${project.featured ? 'bg-amber-500' : 'bg-cyber-secondary'}"></span>
+                            <span class="text-xs font-mono text-cyber-muted uppercase">${project.category}</span>
+                        </div>
+                    </div>`;
+
+                // --- Card Body block (desc + stats) ---
+                const cardBody = `
+                    <div class="p-6 flex-grow flex flex-col">
+                        <p class="text-cyber-muted text-sm leading-relaxed mb-6 line-clamp-2 font-sans font-light">
+                            ${project.description}
+                        </p>
+                        <div class="mt-auto space-y-4">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
+                                    <span class="text-[10px] font-mono text-cyber-muted uppercase">Plays</span>
+                                    <span class="text-sm font-display font-bold text-white">${stats.plays.toLocaleString()}</span>
+                                </div>
+                                <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
+                                    <span class="text-[10px] font-mono text-cyber-muted uppercase">Play Time</span>
+                                    <span class="text-sm font-display font-bold text-white">${playTimeStr}</span>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-cyber-border/50 flex items-center justify-between">
+                                <span class="font-mono text-xs text-cyber-muted">v${project.version || '1.0'}</span>
+                                <span class="flex items-center gap-2 text-sm font-display font-semibold text-white group-hover:text-cyber-primary transition-colors">
+                                    INITIALIZE <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>`;
+
+                // --- Build card inner HTML based on preview style ---
+                let cardInner;
+                if (preview?.style === 'hover') {
+                    // Option A: full-card hover reveal
+                    cardInner = `
+                        <div class="preview-img" style="background-image:url('${preview.src}')"></div>
+                        <div class="card-content-overlay flex flex-col h-full">
+                            ${cardHeader}${cardBody}
+                        </div>`;
+                } else if (preview?.style === 'header') {
+                    // Option B: thumbnail as card header image
+                    cardInner = `
+                        <div class="thumb" style="background-image:url('${preview.src}')"></div>
+                        <div class="p-6 pb-4">
+                            <h3 class="text-xl font-display font-bold text-white group-hover:text-cyber-primary transition-colors truncate mb-1">${project.title}</h3>
+                            <div class="flex items-center gap-2 mb-0">
+                                <span class="w-1.5 h-1.5 rounded-full ${project.featured ? 'bg-amber-500' : 'bg-cyber-secondary'}"></span>
+                                <span class="text-xs font-mono text-cyber-muted uppercase">${project.category}</span>
+                            </div>
+                        </div>
+                        ${cardBody}`;
+                } else if (preview?.style === 'strip') {
+                    // Option C: peek strip at top
+                    cardInner = `
+                        <div class="strip" style="background-image:url('${preview.src}')"></div>
+                        ${cardHeader}${cardBody}`;
+                } else {
+                    // Default: no preview
+                    cardInner = `${cardHeader}${cardBody}`;
+                }
+
                 return `
                 <a href="${project.file}" onclick="window.handleGameClick(event, '${project.id}', '${project.file}')" class="group block h-full">
-                    <div class="h-full ${containerClass} p-0 card-hover flex flex-col relative transition-all duration-300">
-                        
+                    <div class="h-full ${containerClass} p-0 card-hover ${previewClass} flex flex-col relative transition-all duration-300 overflow-hidden">
                         ${project.featured ? `
                         <div class="absolute -top-px -right-px z-10">
                             <div class="bg-amber-500 text-black text-[10px] font-display font-bold uppercase px-3 py-1 tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.5)]">
                                 ★ Featured
                             </div>
-                        </div>
-                        ` : ''}
-
-                        <!-- Card Header -->
-                        <div class="p-6 pb-4 border-b border-cyber-border/50 bg-gradient-to-b from-white/5 to-transparent">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="p-3 rounded-sm ${iconContainerClass} transition-all duration-300">
-                                    <i data-lucide="${iconName}" class="w-8 h-8"></i>
-                                </div>
-                                <div class="flex flex-col items-end">
-                                    <span class="font-mono text-xs text-cyber-muted opacity-50">#${project.id.split('-')[0].toUpperCase()}</span>
-                                </div>
-                            </div>
-                            
-                            <h3 class="text-xl font-display font-bold text-white group-hover:text-cyber-primary transition-colors truncate">
-                                ${project.title}
-                            </h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="w-1.5 h-1.5 rounded-full ${project.featured ? 'bg-amber-500' : 'bg-cyber-secondary'}"></span>
-                                <span class="text-xs font-mono text-cyber-muted uppercase">${project.category}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Card Body -->
-                        <div class="p-6 flex-grow flex flex-col">
-                            <p class="text-cyber-muted text-sm leading-relaxed mb-6 line-clamp-2 font-sans font-light">
-                                ${project.description}
-                            </p>
-
-                            <div class="mt-auto space-y-4">
-                                <!-- Real Stats Display -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
-                                        <span class="text-[10px] font-mono text-cyber-muted uppercase">Plays</span>
-                                        <span class="text-sm font-display font-bold text-white">${stats.plays.toLocaleString()}</span>
-                                    </div>
-                                    <div class="bg-cyber-bg/50 border border-cyber-border p-2 rounded flex flex-col">
-                                        <span class="text-[10px] font-mono text-cyber-muted uppercase">Play Time</span>
-                                        <span class="text-sm font-display font-bold text-white">${playTimeStr}</span>
-                                    </div>
-                                </div>
-
-                                <div class="pt-4 border-t border-cyber-border/50 flex items-center justify-between">
-                                    <span class="font-mono text-xs text-cyber-muted">v${project.version || '1.0'}</span>
-                                    <span class="flex items-center gap-2 text-sm font-display font-semibold text-white group-hover:text-cyber-primary transition-colors">
-                                        INITIALIZE <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                        </div>` : ''}
+                        ${cardInner}
                     </div>
                 </a>
                 `;
