@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="60%" stop-color="#bae6fd"/>
+      <stop offset="100%" stop-color="#e6a055"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="360" fill="url(#sky)"/>
+
+  <!-- Sun -->
+  <circle cx="520" cy="60" r="35" fill="#fde68a" opacity="0.9"/>
+
+  <!-- Terrain -->
+  <polygon points="0,240 60,200 120,220 180,170 250,190 320,150 400,175 460,145 530,165 600,140 600,360 0,360" fill="#e6a055"/>
+  <polygon points="0,255 60,215 120,235 180,185 250,205 320,165 400,190 460,160 530,180 600,155 600,360 0,360" fill="#c47e3a" opacity="0.5"/>
+
+  <!-- Bunker patches -->
+  <ellipse cx="200" cy="245" rx="45" ry="12" fill="#a0612a" opacity="0.7"/>
+  <ellipse cx="420" cy="215" rx="55" ry="14" fill="#a0612a" opacity="0.7"/>
+
+  <!-- Flag/hole -->
+  <line x1="460" y1="148" x2="460" y2="100" stroke="#1f2937" stroke-width="2.5"/>
+  <polygon points="460,100 490,112 460,124" fill="#ef4444"/>
+  <circle cx="460" cy="150" r="7" fill="#1f2937"/>
+
+  <!-- Golf ball -->
+  <circle cx="160" cy="205" r="8" fill="white" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- Shot arc (trajectory) -->
+  <path d="M160,205 Q310,60 460,150" fill="none" stroke="white" stroke-width="1.5" stroke-dasharray="8,5" opacity="0.7"/>
+
+  <!-- Wind indicator -->
+  <g transform="translate(30, 30)">
+    <rect x="0" y="0" width="90" height="28" rx="6" fill="rgba(0,0,0,0.35)"/>
+    <text x="10" y="12" font-family="monospace" font-size="8" fill="#94a3b8" letter-spacing="1">WIND</text>
+    <text x="10" y="24" font-family="monospace" font-size="12" font-weight="bold" fill="white">→ 12 km/h</text>
+  </g>
+
+  <!-- Stroke counter -->
+  <g transform="translate(470, 25)">
+    <rect x="0" y="0" width="100" height="28" rx="6" fill="rgba(0,0,0,0.35)"/>
+    <text x="10" y="12" font-family="monospace" font-size="8" fill="#94a3b8" letter-spacing="1">STROKES</text>
+    <text x="10" y="24" font-family="monospace" font-size="12" font-weight="bold" fill="white">3 / PAR 4</text>
+  </g>
+
+  <!-- HUD bottom -->
+  <rect x="0" y="318" width="600" height="42" fill="rgba(0,0,0,0.55)"/>
+  <text x="16" y="334" font-family="'Courier New',monospace" font-size="9" fill="#94a3b8" letter-spacing="2">HOLE</text>
+  <text x="16" y="352" font-family="'Courier New',monospace" font-size="18" font-weight="bold" fill="white">7 / 18</text>
+  <text x="300" y="334" font-family="'Courier New',monospace" font-size="9" fill="#94a3b8" letter-spacing="2" text-anchor="middle">SCORE</text>
+  <text x="300" y="352" font-family="'Courier New',monospace" font-size="18" font-weight="bold" fill="#4ade80" text-anchor="middle">-2</text>
+  <text x="584" y="334" font-family="'Courier New',monospace" font-size="9" fill="#94a3b8" letter-spacing="2" text-anchor="end">BIOME</text>
+  <text x="584" y="352" font-family="'Courier New',monospace" font-size="18" font-weight="bold" fill="#fbbf24" text-anchor="end">DUNES</text>
+</svg>
