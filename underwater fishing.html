@@ -954,51 +954,8 @@
 
 <!-- FIREBASE TRACKING -->
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyCe_GCqwQqmSdL-QoHHYMBpSKSHgbEDHqA",
-        authDomain: "prototypes-7691b.firebaseapp.com",
-        projectId: "prototypes-7691b",
-        storageBucket: "prototypes-7691b.firebasestorage.app",
-        messagingSenderId: "263652926534",
-        appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
-        measurementId: "G-1X91H99N2G"
-    };
-
-    const GAME_ID = 'underwater-fishing';
-    let db, auth, currentUser = null;
-
-    async function initFirebase() {
-        try {
-            if (firebaseConfig.apiKey !== 'YOUR_API_KEY') {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app); auth = getAuth(app);
-                try { await setPersistence(auth, inMemoryPersistence); } catch (e) { console.warn('Persistence set warning', e); }
-                const cred = await signInAnonymously(auth); currentUser = cred.user;
-                const ref = doc(db, 'game_stats', GAME_ID);
-                updateDoc(ref, { plays: increment(1) }).catch(e => console.log('Stats error:', e));
-                setInterval(saveTime, 30000);
-            }
-        } catch (e) { console.error('Tracking Error - check console', e); }
-    }
-
-    initFirebase();
-    let startTime = Date.now();
-
-    function saveTime() {
-        if (!db || !currentUser) return;
-        const s = Math.floor((Date.now() - startTime) / 1000);
-        if (s > 0) {
-            updateDoc(doc(db, 'game_stats', GAME_ID), { timePlayed: increment(s) }).catch(e => console.log('Stats error:', e));
-            startTime = Date.now();
-        }
-    }
-
-    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveTime(); else startTime = Date.now(); });
-    window.addEventListener('beforeunload', saveTime);
+    import { initTracking } from './firebase-tracker.js';
+    initTracking('underwater-fishing');
 </script>
 </body>
 </html>

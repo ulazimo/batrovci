@@ -185,7 +185,14 @@
     </style>
 </head>
 <body class="text-cyber-text min-h-screen flex flex-col font-sans antialiased overflow-x-hidden">
-    
+
+    <!-- Loading overlay (shown when navigating to a game) -->
+    <div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(11,14,20,0.92);backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+        <div style="width:48px;height:48px;border:3px solid #2A303C;border-top-color:#00F0FF;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+        <span style="font-family:'Orbitron',monospace;font-size:12px;color:#00F0FF;letter-spacing:0.2em;text-transform:uppercase;">Loading</span>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
     <div class="fixed top-0 left-0 w-full h-screen z-0 overflow-hidden">
         <video class="absolute top-1/2 left-1/2 w-auto min-w-full min-h-full max-w-none -translate-x-1/2 -translate-y-1/2" autoplay loop muted playsinline>
             <source src="work_in_progress_video.mp4" type="video/mp4">
@@ -278,9 +285,10 @@
                         <div class="pl-4 text-cyber-muted group-focus-within:text-cyber-primary">
                             <i data-lucide="search" class="w-5 h-5"></i>
                         </div>
-                        <input type="text" id="search-input" 
+                        <input type="text" id="search-input"
                             class="block w-full px-4 py-3 bg-transparent text-white placeholder-cyber-muted/50 focus:outline-none font-mono text-sm"
-                            placeholder="SEARCH_DATABASE...">
+                            placeholder="SEARCH_DATABASE..."
+                            aria-label="Search games">
                     </div>
                 </div>
 
@@ -289,7 +297,7 @@
                     <!-- Sort -->
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-mono text-cyber-muted uppercase tracking-widest">Sort:</span>
-                        <select id="sort-select" class="bg-cyber-card border border-cyber-border text-cyber-muted font-mono text-xs px-3 py-2 focus:outline-none focus:border-cyber-primary transition-colors cursor-pointer hover:border-cyber-primary/50">
+                        <select id="sort-select" aria-label="Sort games" class="bg-cyber-card border border-cyber-border text-cyber-muted font-mono text-xs px-3 py-2 focus:outline-none focus:border-cyber-primary transition-colors cursor-pointer hover:border-cyber-primary/50">
                             <option value="featured">Featured First</option>
                             <option value="newest">Newest</option>
                             <option value="plays">Most Played</option>
@@ -362,7 +370,7 @@
                 <p class="text-sm text-cyber-muted font-mono">
                     &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
                 </p>
-                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-18 11:44:50">v2026-03-18 11:44:50</p>
+                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-23 09:26:48">v2026-03-23 09:26:48</p>
             </div>
             <div class="flex gap-6 text-sm font-mono text-cyber-muted">
                 <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LINKEDIN</a>
@@ -412,7 +420,7 @@
 
                     const userCredential = await signInAnonymously(auth);
                     currentUser = userCredential.user;
-                    console.log("Firebase Initialized & Signed In: " + currentUser.uid);
+                    console.info("Firebase ready:", currentUser.uid);
                     
                     document.getElementById('system-status').textContent = "Connected";
                     document.getElementById('system-status').className = "text-green-400";
@@ -700,6 +708,10 @@
         };
 
         window.handleGameClick = (event, gameId, url) => {
+            // Show loading overlay immediately
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+
             // Fire-and-forget: don't await Firebase, navigate immediately
             // Note: plays are tracked by the game file itself on load — no double-counting here
             if (db && currentUser) {
@@ -707,9 +719,9 @@
                 getDoc(statsRef).then(docSnap => {
                     if (!docSnap.exists()) {
                         // Only create the document if it doesn't exist yet (no play increment)
-                        setDoc(statsRef, { plays: 0, timePlayed: 0 }).catch(e => console.log("Stats init error:", e));
+                        setDoc(statsRef, { plays: 0, timePlayed: 0 }).catch(e => console.warn("Stats init error:", e));
                     }
-                }).catch(e => console.log("Stats check error:", e));
+                }).catch(e => console.warn("Stats check error:", e));
             }
             window.location.href = url;
         };
