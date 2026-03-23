@@ -114,6 +114,12 @@ body {
 .card.reveal-flash { animation: revealFlash .5s ease-out; }
 @keyframes scoreFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(1.3)} }
 .score-popup { position:fixed;font-size:26px;font-weight:900;color:#f0c040;text-shadow:0 0 10px rgba(240,192,64,.5);pointer-events:none;animation:scoreFloat 1s ease-out forwards;z-index:100; }
+@keyframes boardShake { 0%,100%{transform:translate(0,0) rotate(0)} 18%{transform:translate(-5px,2px) rotate(-.5deg)} 36%{transform:translate(5px,-2px) rotate(.5deg)} 54%{transform:translate(-3px,1px) rotate(-.3deg)} 72%{transform:translate(3px,-1px) rotate(.3deg)} }
+.board-shake { animation: boardShake .38s ease-out; }
+@keyframes particleFly { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0} }
+.particle { position:fixed;width:7px;height:7px;border-radius:50%;pointer-events:none;z-index:200;animation:particleFly .55s ease-out forwards; }
+@keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+.confetto { position:fixed;top:-12px;pointer-events:none;z-index:500;animation:confettiFall linear forwards; }
 
 /* ================================================================
    BOOSTER BAR
@@ -599,15 +605,104 @@ let boosterCounts = {};
 // ============================================================
 // DOM REFS
 // ============================================================
-const boardEl       = document.getElementById('board');
-const scoreEl       = document.getElementById('score-value');
-const turnsEl       = document.getElementById('turns-value');
-const targetEl      = document.getElementById('target-value');
-const chainEl       = document.getElementById('chain-indicator');
-const boosterBar    = document.getElementById('booster-bar');
-const tooltipEl     = document.getElementById('tooltip');
-const statusBadge   = document.getElementById('status-badge');
-const colorPickerEl = document.getElementById('color-picker');
+const boardEl          = document.getElementById('board');
+const boardContainerEl = document.getElementById('board-container');
+const scoreEl          = document.getElementById('score-value');
+const turnsEl          = document.getElementById('turns-value');
+const targetEl         = document.getElementById('target-value');
+const chainEl          = document.getElementById('chain-indicator');
+const boosterBar       = document.getElementById('booster-bar');
+const tooltipEl        = document.getElementById('tooltip');
+const statusBadge      = document.getElementById('status-badge');
+const colorPickerEl    = document.getElementById('color-picker');
+
+// ============================================================
+// SOUND (Web Audio API — programmatic tones, no files)
+// ============================================================
+const SFX = (() => {
+  let ctx = null;
+  function ac() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, type, vol, dur, delay = 0) {
+    try {
+      const c = ac(), o = c.createOscillator(), g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type = type; o.frequency.value = freq;
+      const t = c.currentTime + delay;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.start(t); o.stop(t + dur + 0.02);
+    } catch(e) {}
+  }
+  return {
+    flip()     { tone(880, 'sine',     0.07, 0.07); },
+    match()    { tone(660, 'sine',     0.09, 0.11); tone(990, 'sine', 0.06, 0.11, 0.05); },
+    mismatch() { tone(160, 'sawtooth', 0.13, 0.24); },
+    combo(n)   { [523,659,784,1047,1319].slice(0, Math.min(n-2, 5)).forEach((f,i) => tone(f,'triangle',0.14,0.22,i*0.09)); },
+    win()      { [523,659,784,1047].forEach((f,i) => tone(f,'triangle',0.16,0.40,i*0.10)); },
+    fail()     { [380,300,220].forEach((f,i) => tone(f,'sawtooth',0.12,0.30,i*0.13)); },
+    booster()  { tone(1200,'sine',0.09,0.12); tone(1600,'sine',0.06,0.10,0.08); },
+    special()  { tone(440,'triangle',0.10,0.20); },
+  };
+})();
+
+// ============================================================
+// JUICE HELPERS
+// ============================================================
+function shakeBoard() {
+  boardContainerEl.classList.remove('board-shake');
+  void boardContainerEl.offsetWidth; // reflow to restart animation
+  boardContainerEl.classList.add('board-shake');
+  boardContainerEl.addEventListener('animationend', () => boardContainerEl.classList.remove('board-shake'), { once: true });
+}
+
+function spawnParticles(indices, color) {
+  const hex = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[color] || '#fff';
+  indices.slice(0, 5).forEach(idx => {
+    const cell = boardEl.children[idx]; if (!cell) return;
+    const r = cell.getBoundingClientRect();
+    for (let i = 0; i < 9; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `left:${r.left+r.width/2}px;top:${r.top+r.height/2}px;background:${i%3===0?'#fff':hex};--dx:${(Math.random()-.5)*110}px;--dy:${(Math.random()-.5)*110}px;animation-duration:${.4+Math.random()*.25}s`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 700);
+    }
+  });
+}
+
+function launchConfetti() {
+  const colors = ['#D01012','#FFD700','#006CB7','#237841','#ff6b6b','#f0c040','#4fc3f7'];
+  for (let i = 0; i < 70; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetto';
+      const size = 4 + Math.random() * 7;
+      c.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[i%colors.length]};border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${.9+Math.random()*.9}s`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 2200);
+    }, i * 22);
+  }
+}
+
+let _scoreDisplayed = 0;
+function animateScore(to) {
+  const from = _scoreDisplayed;
+  if (from === to) return;
+  const dur = Math.min(500, Math.abs(to - from) * 1.5);
+  const start = performance.now();
+  (function tick(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const e = 1 - Math.pow(1 - t, 3);
+    _scoreDisplayed = Math.round(from + (to - from) * e);
+    scoreEl.textContent = _scoreDisplayed;
+    if (t < 1) requestAnimationFrame(tick);
+  })(start);
+}
 
 // ============================================================
 // OVERLAY HELPERS
@@ -677,13 +772,13 @@ function updateBanner() {
 // ============================================================
 function startGame() {
   closeAllOverlays();
-  score = 0; turns = MAX_TURNS;
+  score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainCards = []; specialsUsed = [];
   turnActive = false; inputLocked = false;
   shieldCharges = 0; jokerCharges = 0; activeBooster = null;
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
   targetEl.textContent = TARGET;
-  renderBoard(); initBoosters(); updateUI(); updateChainIndicator(); updateStatusBadge();
+  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge();
   revealEntireBoard();
 }
 
@@ -820,6 +915,7 @@ function activateBooster(id) {
   if (inputLocked || boosterCounts[id] <= 0) return;
   if (activeBooster === id) { activeBooster = null; updateBoosterUI(); updateChainIndicator(); return; }
   const b = BOOSTERS.find(x => x.id === id);
+  SFX.booster();
   if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
   boosterCounts[id]--;
   if (id === 'random3')   executeRandom3();
@@ -894,6 +990,7 @@ function onCardClick(index) {
   if (activeBooster) { if (card.special) return; executeBoosterTap(activeBooster, index); return; }
 
   if (card.special) {
+    SFX.special();
     if (!turnActive) { turnActive=true; chainColor=null; chainCards=[]; specialsUsed=[index]; getCardEl(index).classList.add('used'); updateChainIndicator(); return; }
     if (specialsUsed.includes(index)) return;
     specialsUsed.push(index); getCardEl(index).classList.add('used'); updateChainIndicator(); return;
@@ -909,10 +1006,11 @@ function onCardClick(index) {
 
   card.flipped = true;
   const el = getCardEl(index); el.classList.add('flipped');
+  SFX.flip();
 
   if (!turnActive) { turnActive=true; chainColor=card.color; chainCards=[index]; specialsUsed=[]; updateChainIndicator(); return; }
   if (chainColor === null) { chainColor=card.color; chainCards.push(index); updateChainIndicator(); return; }
-  if (card.color === chainColor) { chainCards.push(index); updateChainIndicator(); return; }
+  if (card.color === chainColor) { SFX.match(); chainCards.push(index); updateChainIndicator(); return; }
 
   if (shieldCharges > 0) {
     shieldCharges--; updateStatusBadge();
@@ -920,6 +1018,7 @@ function onCardClick(index) {
     updateChainIndicator(); return;
   }
 
+  SFX.mismatch(); shakeBoard();
   chainCards.push(index); inputLocked = true;
   setTimeout(() => endTurn(false), 500);
 }
@@ -930,7 +1029,7 @@ function onCardClick(index) {
 function endTurn(manual) {
   inputLocked = true; turns--;
   shieldCharges = 0; jokerCharges = 0;
-  updateUI(); updateStatusBadge();
+  scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
   const normalCards = chainCards.filter(i => !board[i].special);
   const mismatchIdx = manual ? -1 : (normalCards.length>0 ? normalCards[normalCards.length-1] : -1);
@@ -973,8 +1072,12 @@ function endTurn(manual) {
   }
 
   if (toRemove.length>0 || newSP>=0 || revealTargets.length>0) {
-    score += pts; updateUI();
-    if (pts>0) showScorePopup(pts, matched.length>0 ? matched : specialsUsed);
+    score += pts; animateScore(score); turnsEl.textContent = turns;
+    if (pts>0) {
+      showScorePopup(pts, matched.length>0 ? matched : specialsUsed);
+      SFX.combo(combo);
+      spawnParticles(matched.length>0 ? matched : specialsUsed, chainColor);
+    }
     toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
     setTimeout(() => {
       if (newSP>=0) { board[newSP]=createSpecialCard(newSP,newST); replaceCell(newSP); }
@@ -1044,6 +1147,8 @@ function levelWon() {
   document.getElementById('win-streak').textContent = progress.winStreak > 1 ? `🔥 Win Streak: ${progress.winStreak}` : '';
   document.getElementById('next-level-btn').style.display = currentLevelIndex >= LEVELS.length-1 ? 'none' : '';
   document.getElementById('overlay-win').classList.add('active');
+  SFX.win();
+  launchConfetti();
 }
 
 function levelFailed() {
@@ -1052,6 +1157,8 @@ function levelFailed() {
   updateBanner();
   document.getElementById('fail-sub').textContent = `Score: ${score} / ${TARGET}`;
   document.getElementById('overlay-fail').classList.add('active');
+  SFX.fail();
+  shakeBoard();
 }
 
 // ============================================================
