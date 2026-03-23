@@ -195,38 +195,34 @@ body {
 .sp-blue-c  { background:radial-gradient(circle at 30% 30%,#6b9bff,#2980b9);border:2px solid #3498db; }
 .sp-spec-c  { background:radial-gradient(circle at 40% 40%,#e0b0ff,#8a2be2);border:2px solid #9b59b6; }
 
-/* LEGO preview cards */
+/* LEGO preview cards — shared stud helper */
+.sp-back-l,.sp-red-l,.sp-blue-l,.sp-spec-l {
+  border: none;
+  border-radius: 3px;
+}
 .sp-back-l {
-  background:#C4C4C4;border:2px solid #9A9A9A;
+  background-color: #B0B0B0;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.50), inset 0 -3px 0 rgba(0,0,0,.40), 0 3px 0 rgba(0,0,0,.50);
   background-image:
-    radial-gradient(circle at 28% 28%,rgba(255,255,255,.65) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%),
-    radial-gradient(circle at 72% 28%,rgba(255,255,255,.65) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%),
-    radial-gradient(circle at 28% 72%,rgba(255,255,255,.65) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%),
-    radial-gradient(circle at 72% 72%,rgba(255,255,255,.65) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%);
+    radial-gradient(ellipse at 45% 42%, rgba(255,255,255,.85) 0%, rgba(255,255,255,.35) 14%, transparent 28%),
+    radial-gradient(circle at 50% 50%, transparent 24%, rgba(0,0,0,.30) 24%, rgba(0,0,0,.30) 30%, transparent 31%),
+    linear-gradient(to bottom, rgba(255,255,255,.18) 0%, transparent 40%, rgba(0,0,0,.08) 100%);
 }
-.sp-red-l {
-  background:#D01012;border:2px solid #A00010;
+.sp-red-l  { background-color:#D01012; }
+.sp-blue-l { background-color:#006CB7; }
+.sp-spec-l { background-color:#F5A623; }
+.sp-red-l,.sp-blue-l,.sp-spec-l {
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 2px 0 0 rgba(255,255,255,.22), inset 0 -3px 0 rgba(0,0,0,.38), inset -2px 0 0 rgba(0,0,0,.22), 0 3px 0 rgba(0,0,0,.50);
   background-image:
-    radial-gradient(circle at 28% 28%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%),
-    radial-gradient(circle at 72% 28%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%),
-    radial-gradient(circle at 28% 72%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%),
-    radial-gradient(circle at 72% 72%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%);
-}
-.sp-blue-l {
-  background:#006CB7;border:2px solid #00508A;
-  background-image:
-    radial-gradient(circle at 28% 28%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%),
-    radial-gradient(circle at 72% 28%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%),
-    radial-gradient(circle at 28% 72%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%),
-    radial-gradient(circle at 72% 72%,rgba(255,255,255,.5) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.25) 22%,rgba(0,0,0,.25) 28%,transparent 28%);
-}
-.sp-spec-l {
-  background:#F5A623;border:2px solid #D48A10;
-  background-image:
-    radial-gradient(circle at 28% 28%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%),
-    radial-gradient(circle at 72% 28%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%),
-    radial-gradient(circle at 28% 72%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%),
-    radial-gradient(circle at 72% 72%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 22%,rgba(0,0,0,.2) 22%,rgba(0,0,0,.2) 28%,transparent 28%);
+    radial-gradient(ellipse at 20% 19%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.38) 5%, transparent 10%),
+    radial-gradient(ellipse at 70% 19%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.38) 5%, transparent 10%),
+    radial-gradient(ellipse at 20% 69%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.38) 5%, transparent 10%),
+    radial-gradient(ellipse at 70% 69%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.38) 5%, transparent 10%),
+    radial-gradient(circle at 25% 25%, transparent 10%, rgba(0,0,0,.32) 10%, rgba(0,0,0,.32) 13.5%, transparent 14%),
+    radial-gradient(circle at 75% 25%, transparent 10%, rgba(0,0,0,.32) 10%, rgba(0,0,0,.32) 13.5%, transparent 14%),
+    radial-gradient(circle at 25% 75%, transparent 10%, rgba(0,0,0,.32) 10%, rgba(0,0,0,.32) 13.5%, transparent 14%),
+    radial-gradient(circle at 75% 75%, transparent 10%, rgba(0,0,0,.32) 10%, rgba(0,0,0,.32) 13.5%, transparent 14%),
+    linear-gradient(to bottom, rgba(255,255,255,.14) 0%, transparent 45%, rgba(0,0,0,.10) 100%);
 }
 
 /* ================================================================
@@ -247,15 +243,32 @@ body {
    LEGO SKIN
 ================================================================ */
 body.skin-lego {
-  background: #E8E4D8;
+  background: #D8D4C4;
   color: #2A2A2A;
 
-  /* Stud pattern — reused across all colored cards */
+  /*
+    Stud pattern for face-up cards (4 studs in 2×2 grid at 25%/75%).
+    Per stud: bright highlight ellipse (top-left) + stud disc + shadow ring at base.
+    Plus a brick-surface top-to-bottom shading.
+  */
   --studs:
-    radial-gradient(circle at 28% 28%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.22) 23%,rgba(0,0,0,.22) 29%,transparent 29%),
-    radial-gradient(circle at 72% 28%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.22) 23%,rgba(0,0,0,.22) 29%,transparent 29%),
-    radial-gradient(circle at 28% 72%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.22) 23%,rgba(0,0,0,.22) 29%,transparent 29%),
-    radial-gradient(circle at 72% 72%,rgba(255,255,255,.55) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.22) 23%,rgba(0,0,0,.22) 29%,transparent 29%);
+    /* Stud highlights — bright ellipse offset toward top-left of each stud */
+    radial-gradient(ellipse at 20% 19%, rgba(255,255,255,.90) 0%, rgba(255,255,255,.40) 5%, transparent 10%),
+    radial-gradient(ellipse at 70% 19%, rgba(255,255,255,.90) 0%, rgba(255,255,255,.40) 5%, transparent 10%),
+    radial-gradient(ellipse at 20% 69%, rgba(255,255,255,.90) 0%, rgba(255,255,255,.40) 5%, transparent 10%),
+    radial-gradient(ellipse at 70% 69%, rgba(255,255,255,.90) 0%, rgba(255,255,255,.40) 5%, transparent 10%),
+    /* Stud discs — slightly lighter circle */
+    radial-gradient(circle at 25% 25%, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 9%, transparent 11%),
+    radial-gradient(circle at 75% 25%, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 9%, transparent 11%),
+    radial-gradient(circle at 25% 75%, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 9%, transparent 11%),
+    radial-gradient(circle at 75% 75%, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 9%, transparent 11%),
+    /* Stud shadow rings — dark ring just outside stud edge */
+    radial-gradient(circle at 25% 25%, transparent 10%, rgba(0,0,0,.34) 10%, rgba(0,0,0,.34) 14%, transparent 14.5%),
+    radial-gradient(circle at 75% 25%, transparent 10%, rgba(0,0,0,.34) 10%, rgba(0,0,0,.34) 14%, transparent 14.5%),
+    radial-gradient(circle at 25% 75%, transparent 10%, rgba(0,0,0,.34) 10%, rgba(0,0,0,.34) 14%, transparent 14.5%),
+    radial-gradient(circle at 75% 75%, transparent 10%, rgba(0,0,0,.34) 10%, rgba(0,0,0,.34) 14%, transparent 14.5%),
+    /* Brick surface shading — lit from above */
+    linear-gradient(to bottom, rgba(255,255,255,.16) 0%, transparent 45%, rgba(0,0,0,.12) 100%);
 }
 
 /* Level banner */
@@ -276,62 +289,60 @@ body.skin-lego {
 /* Chain indicator */
 .skin-lego #chain-indicator { background: #FFD700; color: #2A2A2A; border-bottom: 2px solid #D01012; }
 
-/* Board bg */
-.skin-lego #board-container { background: #D8D0C0; border-radius: 8px; }
+/* Board bg — LEGO baseplate */
+.skin-lego #board-container {
+  background-color: #1E7030;
+  background-image: radial-gradient(circle, rgba(255,255,255,.15) 16%, transparent 16%);
+  background-size: 13px 13px;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.35);
+}
 
-/* Card — face down */
+/* Card — face down: gray LEGO tile with single center stud */
 .skin-lego .card-back {
-  background-color: #C4C4C4;
-  border: 3px solid #9A9A9A;
-  border-bottom: 4px solid #7A7A7A;
-  border-right:  4px solid #7A7A7A;
+  background-color: #B8B8B8;
+  border: none;
   border-radius: 3px;
-  box-shadow: none;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.55),
+    inset 2px 0 0 rgba(255,255,255,.28),
+    inset 0 -4px 0 rgba(0,0,0,.45),
+    inset -3px 0 0 rgba(0,0,0,.28),
+    0 4px 0 rgba(0,0,0,.60);
   background-image:
-    radial-gradient(circle at 28% 28%,rgba(255,255,255,.7) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.2) 23%,rgba(0,0,0,.2) 29%,transparent 29%),
-    radial-gradient(circle at 72% 28%,rgba(255,255,255,.7) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.2) 23%,rgba(0,0,0,.2) 29%,transparent 29%),
-    radial-gradient(circle at 28% 72%,rgba(255,255,255,.7) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.2) 23%,rgba(0,0,0,.2) 29%,transparent 29%),
-    radial-gradient(circle at 72% 72%,rgba(255,255,255,.7) 14%,transparent 14%,transparent 23%,rgba(0,0,0,.2) 23%,rgba(0,0,0,.2) 29%,transparent 29%);
+    radial-gradient(ellipse at 45% 42%, rgba(255,255,255,.88) 0%, rgba(255,255,255,.35) 13%, transparent 26%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.16) 0%, rgba(255,255,255,.06) 20%, transparent 24%),
+    radial-gradient(circle at 50% 50%, transparent 23%, rgba(0,0,0,.32) 23%, rgba(0,0,0,.32) 30%, transparent 30.5%),
+    linear-gradient(to bottom, rgba(255,255,255,.20) 0%, transparent 40%, rgba(0,0,0,.10) 100%);
 }
 .skin-lego .card-back::after { content: none; }
 
-/* Card — face up colors */
+/* Card — face up: 3D brick depth via box-shadow, studs from --studs */
 .skin-lego .card-front {
-  border-bottom-width: 4px;
-  border-right-width:  4px;
+  border: none;
   border-radius: 3px;
-}
-.skin-lego .card-front.red {
-  background-color: #D01012; border-color: #A00010;
-  background-image: var(--studs);
-}
-.skin-lego .card-front.green {
-  background-color: #4B9F4A; border-color: #357A34;
-  background-image: var(--studs);
-}
-.skin-lego .card-front.blue {
-  background-color: #006CB7; border-color: #00508A;
-  background-image: var(--studs);
-}
-.skin-lego .card-front.yellow {
-  background-color: #FFD700; border-color: #CCA800;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.50),
+    inset 2px 0 0 rgba(255,255,255,.25),
+    inset 0 -4px 0 rgba(0,0,0,.42),
+    inset -3px 0 0 rgba(0,0,0,.25),
+    0 4px 0 rgba(0,0,0,.60);
   background-image: var(--studs);
 }
 
+.skin-lego .card-front.red    { background-color: #D01012; }
+.skin-lego .card-front.green  { background-color: #237841; }
+.skin-lego .card-front.blue   { background-color: #006CB7; }
+.skin-lego .card-front.yellow { background-color: #FFD700; }
+
 /* Special cards LEGO */
-.skin-lego .card.special .card-front.special-cross {
-  background-color: #F5A623; border-color: #C07800;
-  background-image: var(--studs);
+.skin-lego .card.special .card-front.special-cross   { background-color: #F5A623; }
+.skin-lego .card.special .card-front.special-ring    { background-color: #9C27B0; }
+.skin-lego .card.special .card-front.special-diamond { background-color: #00ADEF; }
+@keyframes specialPulseLego {
+  0%,100% { box-shadow: inset 0 2px 0 rgba(255,255,255,.50),inset 2px 0 0 rgba(255,255,255,.25),inset 0 -4px 0 rgba(0,0,0,.42),inset -3px 0 0 rgba(0,0,0,.25),0 4px 0 rgba(0,0,0,.60),0 0 8px rgba(255,200,0,.4); }
+  50%      { box-shadow: inset 0 2px 0 rgba(255,255,255,.50),inset 2px 0 0 rgba(255,255,255,.25),inset 0 -4px 0 rgba(0,0,0,.42),inset -3px 0 0 rgba(0,0,0,.25),0 4px 0 rgba(0,0,0,.60),0 0 16px rgba(255,200,0,.9); }
 }
-.skin-lego .card.special .card-front.special-ring {
-  background-color: #B0B0B0; border-color: #888;
-  background-image: var(--studs);
-}
-.skin-lego .card.special .card-front.special-diamond {
-  background-color: #5BB8FF; border-color: #3A98DF;
-  background-image: var(--studs);
-}
-@keyframes specialPulseLego { 0%,100%{box-shadow:0 0 6px rgba(245,166,35,.5)} 50%{box-shadow:0 0 14px rgba(245,166,35,.9)} }
 .skin-lego .card.special .card-front { animation: specialPulseLego 2s ease-in-out infinite; }
 
 /* Score popup */
@@ -357,7 +368,7 @@ body.skin-lego {
 .skin-lego .lvl-btn          { border-color: #D8C0A0; background: #FFF8E8; color: #333; }
 .skin-lego .lvl-btn.unlocked { border-color: #C0A878; background: #FFF0D0; }
 .skin-lego .lvl-btn.unlocked:hover { border-color: #D01012; }
-.skin-lego .lvl-btn.completed { border-color: #4B9F4A; background: #E8F4E8; color: #357A34; }
+.skin-lego .lvl-btn.completed { border-color: #237841; background: #E8F4E8; color: #237841; }
 .skin-lego .lvl-btn.current   { border-color: #D01012; background: #FFE8E8; color: #D01012; }
 .skin-lego .lvl-btn.locked    { background: #EEE8D8; }
 
@@ -371,7 +382,7 @@ body.skin-lego {
 /* Color picker LEGO */
 .skin-lego #color-picker .overlay-box { background: #FFF8E0; border: 3px solid #D01012; color: #2A2A2A; }
 .skin-lego .color-choice.cc-red    { background: #D01012; }
-.skin-lego .color-choice.cc-green  { background: #4B9F4A; }
+.skin-lego .color-choice.cc-green  { background: #237841; }
 .skin-lego .color-choice.cc-blue   { background: #006CB7; }
 .skin-lego .color-choice.cc-yellow { background: #FFD700; border-color: rgba(0,0,0,.2); }
 
