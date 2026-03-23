@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1X91H99N2G');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Memory Match</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #1a1a2e; color: #eee; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden; -webkit-tap-highlight-color: transparent; user-select: none;
+}
+#header {
+  width: 100%; max-width: 500px; display: flex; justify-content: space-between;
+  align-items: center; padding: 12px 16px; background: #16213e; border-bottom: 2px solid #0f3460;
+}
+.stat { text-align: center; flex: 1; }
+.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 2px; }
+.stat-value { font-size: 22px; font-weight: 700; }
+#score-value { color: #f0c040; }
+#turns-value { color: #4fc3f7; }
+#target-value { color: #aaa; }
+#chain-indicator {
+  width: 100%; max-width: 500px; height: 36px; display: flex; align-items: center;
+  justify-content: center; background: #16213e; font-size: 14px; font-weight: 600;
+  color: #ccc; border-bottom: 1px solid #0f3460; gap: 6px;
+}
+#chain-indicator .chain-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+#board-container {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 8px; width: 100%; max-width: 500px;
+}
+#board {
+  display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr);
+  gap: 4px; width: 100%; aspect-ratio: 1; max-height: calc(100vh - 200px); max-width: calc(100vh - 200px);
+}
+.cell { perspective: 400px; cursor: pointer; }
+.card {
+  width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
+  transition: transform 0.35s ease; border-radius: 4px;
+}
+.card.flipped { transform: rotateY(180deg); }
+.card-face {
+  position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+}
+.card-back {
+  background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
+  border: 2px solid #4a4a7a; box-shadow: inset 0 0 8px rgba(100,100,180,0.3);
+}
+.card-back::after { content: '?'; font-size: clamp(12px, 3vw, 20px); color: #6a6a9a; font-weight: 700; }
+.card-front { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,0.3); }
+.card-front.red { background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b); border-color: #e74c3c; }
+.card-front.green { background: radial-gradient(circle at 30% 30%, #6bff6b, #27ae60); border-color: #2ecc71; }
+.card-front.blue { background: radial-gradient(circle at 30% 30%, #6b9bff, #2980b9); border-color: #3498db; }
+.card-front.yellow { background: radial-gradient(circle at 30% 30%, #ffe66b, #f39c12); border-color: #f1c40f; }
+.card.special { transform: none; }
+.card.special .card-back { display: none; }
+.card.special .card-front { transform: none; backface-visibility: visible; }
+.card.special .card-front.special-cross { background: radial-gradient(circle at 40% 40%, #e0b0ff, #8a2be2); border-color: #9b59b6; }
+.card.special .card-front.special-ring { background: radial-gradient(circle at 40% 40%, #ff9ecb, #d63384); border-color: #e91e8c; }
+.card.special .card-front.special-diamond { background: radial-gradient(circle at 40% 40%, #ffd700, #ff6600); border-color: #ff8c00; }
+.special-icon { font-size: clamp(14px, 4vw, 24px); filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+.card.special.used { opacity: 0.4; pointer-events: none; }
+@keyframes specialPulse { 0%,100%{box-shadow:0 0 6px rgba(155,89,182,0.4)} 50%{box-shadow:0 0 14px rgba(155,89,182,0.9)} }
+.card.special .card-front { animation: specialPulse 2s ease-in-out infinite; }
+@keyframes explode { 0%{transform:rotateY(180deg) scale(1);opacity:1} 50%{transform:rotateY(180deg) scale(1.3);opacity:.8} 100%{transform:rotateY(180deg) scale(0);opacity:0} }
+.card.exploding { animation: explode 0.4s ease-out forwards; }
+@keyframes explodeSpecial { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:.8} 100%{transform:scale(0);opacity:0} }
+.card.special.exploding { animation: explodeSpecial 0.4s ease-out forwards; }
+@keyframes dropIn { 0%{transform:translateY(-60px) scale(.5);opacity:0} 60%{transform:translateY(5px) scale(1.05);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+.card.dropping { animation: dropIn 0.4s ease-out; }
+@keyframes shake { 0%,100%{transform:rotateY(180deg) translateX(0)} 20%{transform:rotateY(180deg) translateX(-4px)} 40%{transform:rotateY(180deg) translateX(4px)} 60%{transform:rotateY(180deg) translateX(-4px)} 80%{transform:rotateY(180deg) translateX(4px)} }
+.card.wrong { animation: shake 0.4s ease-out; }
+@keyframes revealFlash { 0%{box-shadow:0 0 0 rgba(255,255,255,0)} 50%{box-shadow:0 0 20px rgba(255,255,255,.8)} 100%{box-shadow:0 0 0 rgba(255,255,255,0)} }
+.card.reveal-flash { animation: revealFlash 0.5s ease-out; }
+@keyframes scoreFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(1.3)} }
+.score-popup { position:fixed;font-size:28px;font-weight:900;color:#f0c040;text-shadow:0 0 10px rgba(240,192,64,.5);pointer-events:none;animation:scoreFloat 1s ease-out forwards;z-index:100; }
+#booster-bar {
+  width:100%;max-width:500px;background:#16213e;border-top:2px solid #0f3460;
+  padding:6px 4px;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;
+}
+.booster-btn {
+  width:calc((100% - 16px) / 5);max-width:56px;aspect-ratio:1;border-radius:8px;border:2px solid #3a3a6a;background:#2a2a4a;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;
+  position:relative;transition:all .15s;flex-shrink:0;
+}
+.booster-btn:active { transform:scale(.9); }
+.booster-btn.active { border-color:#f0c040;background:#3a3a5a;box-shadow:0 0 10px rgba(240,192,64,.4); }
+.booster-btn.disabled { opacity:.3;pointer-events:none; }
+.booster-btn .badge {
+  position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;
+  font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+}
+.booster-tooltip {
+  display:none;position:fixed;background:#222;color:#ddd;padding:10px 14px;border-radius:8px;
+  font-size:13px;max-width:220px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.6);
+  border:1px solid #444;line-height:1.4;text-align:center;
+}
+.booster-tooltip.visible { display:block; }
+.status-badge { position:fixed;top:80px;right:10px;z-index:90;display:flex;flex-direction:column;gap:4px;align-items:flex-end; }
+.status-pill { background:rgba(0,0,0,.7);padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px; }
+.status-pill.shield { border:1px solid #4fc3f7;color:#4fc3f7; }
+.status-pill.joker { border:1px solid #f0c040;color:#f0c040; }
+#overlay,#color-picker {
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;
+  align-items:center;justify-content:center;flex-direction:column;
+}
+#overlay.active,#color-picker.active { display:flex; }
+#overlay h1 { font-size:36px;margin-bottom:8px; }
+#overlay .sub { font-size:18px;color:#aaa;margin-bottom:24px; }
+#overlay button,#color-picker button {
+  padding:14px 40px;font-size:18px;font-weight:700;border:none;border-radius:8px;
+  cursor:pointer;background:linear-gradient(135deg,#0f3460,#533483);color:#fff;transition:transform .15s;
+}
+#overlay button:active,#color-picker button:active { transform:scale(.95); }
+#color-picker h2 { font-size:22px;margin-bottom:16px; }
+.color-choices { display:flex;gap:12px;margin-bottom:20px; }
+.color-choice {
+  width:56px;height:56px;border-radius:12px;cursor:pointer;
+  border:3px solid rgba(255,255,255,.3);transition:transform .15s;
+}
+.color-choice:active { transform:scale(.9); }
+.color-choice.cc-red { background:radial-gradient(circle at 30% 30%,#ff6b6b,#c0392b); }
+.color-choice.cc-green { background:radial-gradient(circle at 30% 30%,#6bff6b,#27ae60); }
+.color-choice.cc-blue { background:radial-gradient(circle at 30% 30%,#6b9bff,#2980b9); }
+.color-choice.cc-yellow { background:radial-gradient(circle at 30% 30%,#ffe66b,#f39c12); }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">← All Games</a>
+<div id="header">
+  <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="score-value">0</div></div>
+  <div class="stat"><div class="stat-label">Turns</div><div class="stat-value" id="turns-value">15</div></div>
+  <div class="stat"><div class="stat-label">Target</div><div class="stat-value" id="target-value">1000</div></div>
+</div>
+<div id="chain-indicator">Tap a card to begin</div>
+<div class="status-badge" id="status-badge"></div>
+<div id="board-container"><div id="board"></div></div>
+<div id="booster-bar"></div>
+<div id="overlay">
+  <h1 id="overlay-title"></h1>
+  <div class="sub" id="overlay-sub"></div>
+  <button onclick="startGame()">Play Again</button>
+</div>
+<div id="color-picker">
+  <h2>Choose a color</h2>
+  <div class="color-choices">
+    <div class="color-choice cc-red" onclick="pickColor('red')"></div>
+    <div class="color-choice cc-green" onclick="pickColor('green')"></div>
+    <div class="color-choice cc-blue" onclick="pickColor('blue')"></div>
+    <div class="color-choice cc-yellow" onclick="pickColor('yellow')"></div>
+  </div>
+  <button onclick="pickColor(null)">Cancel</button>
+</div>
+<div class="booster-tooltip" id="tooltip"></div>
+<script>
+const COLS = 6, ROWS = 6, TOTAL = COLS * ROWS;
+const COLORS = ['red', 'green', 'blue', 'yellow'];
+const TARGET = 1000, MAX_TURNS = 15;
+
+let board = [], score = 0, turns = 0;
+let chainColor = null, chainCards = [], specialsUsed = [];
+let turnActive = false, inputLocked = false;
+let shieldCharges = 0, jokerCharges = 0, activeBooster = null;
+
+const BOOSTERS = [
+  { id: 'peek', icon: '👁', desc: 'Reveal one card by tapping it', needsTap: true },
+  { id: 'random3', icon: '🎲', desc: 'Reveal 3 random face-down cards', needsTap: false },
+  { id: 'cross', icon: '✚', desc: 'Reveal cards in a cross around the card you tap', needsTap: true },
+  { id: 'row', icon: '↔', desc: 'Reveal the entire row of the card you tap', needsTap: true },
+  { id: 'col', icon: '↕', desc: 'Reveal the entire column of the card you tap', needsTap: true },
+  { id: 'neighbor', icon: '🔗', desc: 'Reveal same-color neighbors around the last revealed card', needsTap: false },
+  { id: 'colorpick', icon: '🎨', desc: 'Choose a color and reveal 3 cards of that color', needsTap: false },
+  { id: 'shield', icon: '🛡', desc: 'Next 2 wrong-color reveals won\'t break your combo', needsTap: false },
+  { id: 'joker', icon: '🃏', desc: 'Next 2 taps become the combo color', needsTap: false },
+];
+let boosterCounts = {};
+
+const boardEl = document.getElementById('board');
+const scoreEl = document.getElementById('score-value');
+const turnsEl = document.getElementById('turns-value');
+const chainEl = document.getElementById('chain-indicator');
+const overlayEl = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const overlaySub = document.getElementById('overlay-sub');
+const boosterBar = document.getElementById('booster-bar');
+const tooltipEl = document.getElementById('tooltip');
+const statusBadge = document.getElementById('status-badge');
+const colorPickerEl = document.getElementById('color-picker');
+
+function randomColor() { return COLORS[Math.floor(Math.random() * COLORS.length)]; }
+function createCard(i) { return { color: randomColor(), flipped: false, special: null, index: i }; }
+function createSpecialCard(i, type) { return { color: null, flipped: false, special: type, index: i }; }
+function toRC(i) { return { r: Math.floor(i / COLS), c: i % COLS }; }
+function toIndex(r, c) { return (r < 0 || r >= ROWS || c < 0 || c >= COLS) ? -1 : r * COLS + c; }
+
+function getRevealPattern(type, index) {
+  const { r, c } = toRC(index);
+  let off = [];
+  if (type === 'cross') off = [[-1,0],[1,0],[0,-1],[0,1]];
+  else if (type === 'ring') off = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  else if (type === 'diamond') off = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]];
+  return off.map(([dr, dc]) => toIndex(r + dr, c + dc)).filter(i => i >= 0);
+}
+
+function specialIcon(t) { return t === 'cross' ? '✦' : t === 'ring' ? '✸' : t === 'diamond' ? '❖' : '?'; }
+function specialCSS(t) { return 'special-' + t; }
+
+function buildCardHTML(card) {
+  const i = card.index;
+  if (card.special) return `<div class="card special" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}"><span class="special-icon">${specialIcon(card.special)}</span></div></div>`;
+  return `<div class="card" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${card.color}"></div></div>`;
+}
+
+function renderBoard() {
+  boardEl.innerHTML = '';
+  board.forEach(card => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = buildCardHTML(card);
+    boardEl.appendChild(cell);
+  });
+}
+
+boardEl.addEventListener('click', e => {
+  const el = e.target.closest('.card');
+  if (!el) return;
+  const i = parseInt(el.dataset.index, 10);
+  if (!isNaN(i)) onCardClick(i);
+});
+
+function getCardEl(i) { return boardEl.querySelector(`.card[data-index="${i}"]`); }
+function updateUI() { scoreEl.textContent = score; turnsEl.textContent = turns; }
+function replaceCell(i) { boardEl.children[i].innerHTML = buildCardHTML(board[i]); }
+
+function updateStatusBadge() {
+  let h = '';
+  if (shieldCharges > 0) h += `<div class="status-pill shield">🛡 ${shieldCharges}</div>`;
+  if (jokerCharges > 0) h += `<div class="status-pill joker">🃏 ${jokerCharges}</div>`;
+  statusBadge.innerHTML = h;
+}
+
+function cssColor(c) { return { red: '#e74c3c', green: '#2ecc71', blue: '#3498db', yellow: '#f1c40f' }[c] || '#fff'; }
+
+function updateChainIndicator() {
+  if (!turnActive) {
+    chainEl.innerHTML = activeBooster ? `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}` : 'Tap a card to begin';
+    return;
+  }
+  const nDots = chainCards.filter(i => !board[i].special).map(() =>
+    `<span class="chain-dot" style="background:${cssColor(chainColor)}"></span>`).join('');
+  const sDots = specialsUsed.map(() =>
+    `<span class="chain-dot" style="background:#fff;border:2px solid #999"></span>`).join('');
+  const nc = chainCards.filter(i => !board[i].special).length;
+  const sc = specialsUsed.length;
+  let extra = '';
+  if (shieldCharges > 0) extra += ' 🛡' + shieldCharges;
+  if (jokerCharges > 0) extra += ' 🃏' + jokerCharges;
+  chainEl.innerHTML = `Chain: ${nDots}${sDots} <span>(${nc}${sc > 0 ? '+' + sc + '⚡' : ''})${extra}</span>`;
+}
+
+// ---- Boosters ----
+function initBoosters() {
+  boosterBar.innerHTML = '';
+  BOOSTERS.forEach(b => {
+    boosterCounts[b.id] = 3;
+    const btn = document.createElement('div');
+    btn.className = 'booster-btn';
+    btn.dataset.booster = b.id;
+    btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
+    btn.addEventListener('click', () => activateBooster(b.id));
+    let pt = null;
+    btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt = 'shown'; }, 400); });
+    btn.addEventListener('pointerup', () => { if (pt !== 'shown') clearTimeout(pt); hideTooltip(); });
+    btn.addEventListener('pointerleave', () => { if (pt !== 'shown') clearTimeout(pt); hideTooltip(); });
+    boosterBar.appendChild(btn);
+  });
+}
+
+function updateBoosterUI() {
+  boosterBar.querySelectorAll('.booster-btn').forEach(btn => {
+    const id = btn.dataset.booster;
+    btn.querySelector('.badge').textContent = boosterCounts[id];
+    btn.classList.toggle('disabled', boosterCounts[id] <= 0 || inputLocked);
+    btn.classList.toggle('active', activeBooster === id);
+  });
+}
+
+function showTooltip(b, btn) {
+  tooltipEl.textContent = b.desc;
+  tooltipEl.classList.add('visible');
+  const r = btn.getBoundingClientRect();
+  tooltipEl.style.left = Math.max(8, Math.min(window.innerWidth - 230, r.left + r.width / 2 - 110)) + 'px';
+  tooltipEl.style.top = (r.top - 60) + 'px';
+}
+function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
+function activateBooster(id) {
+  if (inputLocked || boosterCounts[id] <= 0) return;
+  if (activeBooster === id) { activeBooster = null; updateBoosterUI(); updateChainIndicator(); return; }
+  const b = BOOSTERS.find(x => x.id === id);
+  if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
+  boosterCounts[id]--;
+  if (id === 'random3') executeRandom3();
+  else if (id === 'neighbor') executeNeighbor();
+  else if (id === 'colorpick') executeColorPick();
+  else if (id === 'shield') { shieldCharges += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
+  else if (id === 'joker') { jokerCharges += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
+}
+
+function executeBoosterTap(id, index) {
+  boosterCounts[id]--;
+  activeBooster = null;
+  const { r, c } = toRC(index);
+  if (id === 'peek') boosterReveal([index]);
+  else if (id === 'cross') {
+    const t = [[-1,0],[1,0],[0,-1],[0,1]].map(([dr, dc]) => toIndex(r + dr, c + dc)).filter(i => i >= 0);
+    t.push(index);
+    boosterReveal(t);
+  } else if (id === 'row') {
+    const t = []; for (let cc = 0; cc < COLS; cc++) t.push(toIndex(r, cc));
+    boosterReveal(t);
+  } else if (id === 'col') {
+    const t = []; for (let rr = 0; rr < ROWS; rr++) t.push(toIndex(rr, c));
+    boosterReveal(t);
+  }
+  updateBoosterUI();
+}
+
+function boosterReveal(indices) {
+  const targets = indices.filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped);
+  if (!targets.length) { updateBoosterUI(); return; }
+  inputLocked = true;
+  targets.forEach((idx, i) => {
+    setTimeout(() => {
+      board[idx].flipped = true;
+      const el = getCardEl(idx);
+      if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), { once: true }); }
+    }, i * 80);
+  });
+  setTimeout(() => {
+    targets.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
+    inputLocked = false; updateBoosterUI(); updateChainIndicator();
+  }, targets.length * 80 + 1500);
+}
+
+function executeRandom3() {
+  const fd = board.filter(c => !c.flipped && !c.special).map(c => c.index).sort(() => Math.random() - 0.5);
+  boosterReveal(fd.slice(0, 3));
+}
+
+function executeNeighbor() {
+  const last = [...chainCards].reverse().find(i => !board[i].special);
+  if (last === undefined) { updateBoosterUI(); return; }
+  const card = board[last]; const { r, c } = toRC(last);
+  const t = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]
+    .map(([dr, dc]) => toIndex(r + dr, c + dc))
+    .filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && board[i].color === card.color);
+  if (!t.length) { updateBoosterUI(); return; }
+  boosterReveal(t);
+}
+
+function executeColorPick() { colorPickerEl.classList.add('active'); inputLocked = true; }
+
+function pickColor(color) {
+  colorPickerEl.classList.remove('active');
+  if (!color) { inputLocked = false; boosterCounts['colorpick']++; updateBoosterUI(); return; }
+  const m = board.filter(c => !c.flipped && !c.special && c.color === color).map(c => c.index).sort(() => Math.random() - 0.5);
+  boosterReveal(m.slice(0, 3));
+}
+
+// ---- Card Click ----
+function onCardClick(index) {
+  if (inputLocked) return;
+  const card = board[index];
+  if (!card || turns <= 0) return;
+
+  if (activeBooster) {
+    if (card.special) return;
+    executeBoosterTap(activeBooster, index);
+    return;
+  }
+
+  if (card.special) {
+    if (!turnActive) {
+      turnActive = true; chainColor = null; chainCards = [];
+      specialsUsed = [index]; getCardEl(index).classList.add('used');
+      updateChainIndicator(); return;
+    }
+    if (specialsUsed.includes(index)) return;
+    specialsUsed.push(index); getCardEl(index).classList.add('used');
+    updateChainIndicator(); return;
+  }
+
+  if (card.flipped) return;
+
+  if (jokerCharges > 0 && turnActive && chainColor && card.color !== chainColor) {
+    card.color = chainColor; jokerCharges--; updateStatusBadge();
+    const el = getCardEl(index); const front = el.querySelector('.card-front');
+    COLORS.forEach(cl => front.classList.remove(cl)); front.classList.add(chainColor);
+  }
+
+  card.flipped = true;
+  const el = getCardEl(index); el.classList.add('flipped');
+
+  if (!turnActive) {
+    turnActive = true; chainColor = card.color;
+    chainCards = [index]; specialsUsed = [];
+    updateChainIndicator(); return;
+  }
+  if (chainColor === null) { chainColor = card.color; chainCards.push(index); updateChainIndicator(); return; }
+  if (card.color === chainColor) { chainCards.push(index); updateChainIndicator(); return; }
+
+  // Mismatch
+  if (shieldCharges > 0) {
+    shieldCharges--; updateStatusBadge();
+    setTimeout(() => { card.flipped = false; el.classList.remove('flipped'); }, 400);
+    updateChainIndicator(); return;
+  }
+
+  chainCards.push(index); inputLocked = true;
+  setTimeout(() => endTurn(false), 500);
+}
+
+// ---- End Turn ----
+function endTurn(manual) {
+  inputLocked = true; turns--;
+  shieldCharges = 0; jokerCharges = 0;
+  updateUI(); updateStatusBadge();
+
+  const normalCards = chainCards.filter(i => !board[i].special);
+  const mismatchIdx = manual ? -1 : (normalCards.length > 0 ? normalCards[normalCards.length - 1] : -1);
+
+  let matched;
+  if (manual) matched = normalCards;
+  else if (normalCards.length > 0 && board[normalCards[normalCards.length - 1]].color !== chainColor)
+    matched = normalCards.slice(0, -1);
+  else matched = normalCards;
+
+  const combo = matched.length + specialsUsed.length;
+  let specialActivated = matched.length >= 2 && specialsUsed.length > 0;
+  let pts = 0, toRemove = [], newST = null, newSP = -1;
+
+  if (combo >= 3) {
+    toRemove = [...matched];
+    if (combo === 3) pts = 100; else if (combo === 4) pts = 150; else pts = combo * 50;
+    if (combo === 4) newST = 'cross';
+    else if (combo === 5) newST = 'ring';
+    else if (combo >= 6) newST = 'diamond';
+    if (newST) newSP = matched.length > 0 ? matched[matched.length - 1] : -1;
+    if (newSP >= 0) toRemove = toRemove.filter(i => i !== newSP);
+  }
+  if (specialActivated) toRemove.push(...specialsUsed);
+
+  const toFlip = [];
+  normalCards.forEach(idx => { if (!toRemove.includes(idx) && idx !== newSP) toFlip.push(idx); });
+  toFlip.forEach(idx => {
+    const el = getCardEl(idx);
+    if (el) {
+      if (!manual && idx === mismatchIdx) { el.classList.add('wrong'); el.addEventListener('animationend', () => el.classList.remove('wrong'), { once: true }); }
+      setTimeout(() => { el.classList.remove('flipped'); board[idx].flipped = false; }, 300);
+    }
+  });
+
+  if (!specialActivated) specialsUsed.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.remove('used'); });
+
+  let revealTargets = [];
+  if (specialActivated) {
+    specialsUsed.forEach(sIdx => {
+      const sc = board[sIdx];
+      if (sc && sc.special) revealTargets.push(...getRevealPattern(sc.special, sIdx));
+    });
+    revealTargets = [...new Set(revealTargets)].filter(i => !toRemove.includes(i) && i !== newSP && !board[i].special && !board[i].flipped);
+  }
+
+  if (toRemove.length > 0 || newSP >= 0 || revealTargets.length > 0) {
+    score += pts; updateUI();
+    if (pts > 0) showScorePopup(pts, matched.length > 0 ? matched : specialsUsed);
+    toRemove.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.add('exploding'); });
+
+    setTimeout(() => {
+      if (newSP >= 0) { board[newSP] = createSpecialCard(newSP, newST); replaceCell(newSP); }
+      if (revealTargets.length > 0) {
+        doSpecialReveal(revealTargets, () => addNewCards(toRemove, newSP, () => finishTurn()));
+      } else {
+        addNewCards(toRemove, newSP, () => finishTurn());
+      }
+    }, 500);
+  } else setTimeout(finishTurn, 400);
+}
+
+function addNewCards(toRemove, skip, cb) {
+  const nc = [];
+  toRemove.forEach(idx => {
+    if (idx === skip) return;
+    board[idx] = createCard(idx); replaceCell(idx); nc.push(idx);
+    const el = getCardEl(idx);
+    if (el) { el.classList.add('dropping'); el.addEventListener('animationend', () => el.classList.remove('dropping'), { once: true }); }
+  });
+  if (nc.length > 0) {
+    setTimeout(() => {
+      nc.forEach(idx => { board[idx].flipped = true; const el = getCardEl(idx); if (el) el.classList.add('flipped'); });
+      setTimeout(() => {
+        nc.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
+        cb();
+      }, 1500);
+    }, 450);
+  } else cb();
+}
+
+function doSpecialReveal(targets, cb) {
+  targets.forEach((rIdx, i) => {
+    setTimeout(() => {
+      const c = board[rIdx];
+      if (c && !c.special && !c.flipped) {
+        c.flipped = true; const el = getCardEl(rIdx);
+        if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), { once: true }); }
+      }
+    }, i * 80);
+  });
+  setTimeout(() => {
+    targets.forEach(rIdx => {
+      const c = board[rIdx];
+      if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(rIdx); if (el) el.classList.remove('flipped'); }
+    });
+    cb();
+  }, targets.length * 80 + 2200);
+}
+
+function finishTurn() {
+  chainColor = null; chainCards = []; specialsUsed = [];
+  turnActive = false; inputLocked = false; activeBooster = null;
+  updateChainIndicator(); updateBoosterUI();
+  if (score >= TARGET) showOverlay('You Win!', `Final score: ${score}`, true);
+  else if (turns <= 0) showOverlay('Game Over', `Score: ${score} / ${TARGET}`, false);
+}
+
+function showScorePopup(pts, indices) {
+  const mid = indices[Math.floor(indices.length / 2)];
+  const cell = boardEl.children[mid]; if (!cell) return;
+  const rect = cell.getBoundingClientRect();
+  const p = document.createElement('div'); p.className = 'score-popup';
+  p.textContent = `+${pts}`;
+  p.style.left = `${rect.left + rect.width / 2 - 30}px`;
+  p.style.top = `${rect.top}px`;
+  document.body.appendChild(p); setTimeout(() => p.remove(), 1000);
+}
+
+function showOverlay(title, sub, win) {
+  overlayTitle.textContent = title;
+  overlayTitle.style.color = win ? '#2ecc71' : '#e74c3c';
+  overlaySub.textContent = sub;
+  overlayEl.classList.add('active');
+}
+
+function startGame() {
+  overlayEl.classList.remove('active');
+  score = 0; turns = MAX_TURNS;
+  chainColor = null; chainCards = []; specialsUsed = [];
+  turnActive = false; inputLocked = false;
+  shieldCharges = 0; jokerCharges = 0; activeBooster = null;
+  board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
+  renderBoard(); initBoosters(); updateUI(); updateChainIndicator(); updateStatusBadge();
+  revealEntireBoard();
+}
+
+function revealEntireBoard() {
+  inputLocked = true;
+  board.forEach((c, i) => {
+    c.flipped = true;
+    const el = getCardEl(i);
+    if (el) setTimeout(() => {
+      el.classList.add('flipped');
+      setTimeout(() => {
+        el.classList.remove('flipped');
+        c.flipped = false;
+      }, 2000);
+    }, i * 60);
+  });
+
+  setTimeout(() => {
+    inputLocked = false;
+    updateBoosterUI();
+  }, 5000);
+}
+
+startGame();
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from './firebase-tracker.js';
+    initTracking('memory-match');
+</script>
+</body>
+</html>
