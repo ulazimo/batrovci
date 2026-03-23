@@ -1017,8 +1017,8 @@ function finishTurn() {
 }
 
 function levelWon() {
-  const ratio = score / TARGET;
-  const newStars = ratio >= 1.6 ? 3 : ratio >= 1.3 ? 2 : 1;
+  const remaining = turns / MAX_TURNS;
+  const newStars = remaining >= 2/3 ? 3 : remaining >= 1/3 ? 2 : 1;
   if (newStars > (progress.stars[currentLevelIndex]||0)) progress.stars[currentLevelIndex] = newStars;
   if (currentLevelIndex+1 > progress.highestUnlocked && currentLevelIndex+1 < LEVELS.length)
     progress.highestUnlocked = currentLevelIndex+1;
@@ -1029,7 +1029,7 @@ function levelWon() {
   const stars = progress.stars[currentLevelIndex];
   document.getElementById('win-title').textContent = `Level ${LEVELS[currentLevelIndex].id} Complete!`;
   document.getElementById('win-stars').textContent = '★'.repeat(stars)+'☆'.repeat(3-stars);
-  document.getElementById('win-score').textContent  = `Score: ${score} / ${TARGET}`;
+  document.getElementById('win-score').textContent  = `Score: ${score}  •  ${turns} turn${turns!==1?'s':''} remaining`;
   document.getElementById('win-streak').textContent = progress.winStreak > 1 ? `🔥 Win Streak: ${progress.winStreak}` : '';
   document.getElementById('next-level-btn').style.display = currentLevelIndex >= LEVELS.length-1 ? 'none' : '';
   document.getElementById('overlay-win').classList.add('active');
