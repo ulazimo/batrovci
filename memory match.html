@@ -393,6 +393,66 @@ body.skin-lego {
 .skin-lego .color-choice.cc-yellow { background: #FFD700; border-color: rgba(0,0,0,.2); }
 
 /* ================================================================
+   SETTINGS PANEL
+================================================================ */
+#settings-panel .overlay-box { max-width:420px;gap:12px; }
+#settings-panel h2 { color:#4fc3f7; }
+.settings-list { width:100%;display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow-y:auto;padding-right:4px; }
+.setting-row {
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.06);
+}
+.setting-icon { font-size:20px;flex-shrink:0;width:28px;text-align:center; }
+.setting-info { flex:1;text-align:left;min-width:0; }
+.setting-name { font-size:13px;font-weight:700;color:#ddd; }
+.setting-desc { font-size:10px;color:#888;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.setting-controls { display:flex;align-items:center;gap:6px;flex-shrink:0; }
+.setting-toggle {
+  width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;
+  background:#3a3a5a;position:relative;transition:background .2s;flex-shrink:0;
+}
+.setting-toggle::after {
+  content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;
+  border-radius:50%;background:#888;transition:all .2s;
+}
+.setting-toggle.on { background:#2ecc71; }
+.setting-toggle.on::after { left:18px;background:#fff; }
+.qty-control { display:flex;align-items:center;gap:2px; }
+.qty-btn {
+  width:24px;height:24px;border-radius:6px;border:1px solid #3a3a6a;
+  background:#2a2a4a;color:#ccc;font-size:14px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;line-height:1;
+}
+.qty-btn:active { transform:scale(.9); }
+.qty-btn:hover { border-color:#4fc3f7;color:#4fc3f7; }
+.qty-value { width:22px;text-align:center;font-size:14px;font-weight:700;color:#f0c040; }
+.setting-row.disabled { opacity:.4; }
+.setting-row.disabled .qty-btn { pointer-events:none; }
+
+/* Settings gear button */
+.settings-gear {
+  background:none;border:none;font-size:18px;cursor:pointer;
+  padding:4px 8px;border-radius:6px;transition:all .15s;color:rgba(255,255,255,.5);
+}
+.settings-gear:hover { color:#fff;background:rgba(255,255,255,.1); }
+
+/* LEGO skin settings */
+.skin-lego #settings-panel .overlay-box { background:#FFF8E0;border:3px solid #D01012;color:#2A2A2A; }
+.skin-lego .setting-row { background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08); }
+.skin-lego .setting-name { color:#333; }
+.skin-lego .setting-desc { color:#777; }
+.skin-lego .setting-toggle { background:#D8C0A0; }
+.skin-lego .setting-toggle::after { background:#999; }
+.skin-lego .setting-toggle.on { background:#237841; }
+.skin-lego .setting-toggle.on::after { background:#fff; }
+.skin-lego .qty-btn { background:#FFF0D0;border-color:#D8C0A0;color:#555; }
+.skin-lego .qty-btn:hover { border-color:#D01012;color:#D01012; }
+.skin-lego .qty-value { color:#D01012; }
+.skin-lego .settings-gear { color:rgba(0,0,0,.35); }
+.skin-lego .settings-gear:hover { color:#D01012;background:rgba(0,0,0,.06); }
+
+/* ================================================================
    SCROLLBAR (chain indicator overflow)
 ================================================================ */
 ::-webkit-scrollbar { width: 0; height: 0; }
@@ -406,6 +466,7 @@ body.skin-lego {
   <span class="level-label" id="banner-level">Level 1</span>
   <div class="level-dots" id="banner-dots"></div>
   <span class="streak-label" id="banner-streak"></span>
+  <button class="settings-gear" onclick="showSettings('game')" title="Power-Up Settings">⚙</button>
 </div>
 
 <!-- Stats header -->
@@ -460,7 +521,10 @@ body.skin-lego {
     <p style="font-size:13px;color:#888;">Choose a level</p>
     <div id="level-grid"></div>
     <div id="ls-streak" style="font-size:13px;color:#f0c040;min-height:18px;"></div>
-    <button class="overlay-btn secondary" style="font-size:12px;padding:8px;" onclick="showSkinSelect()">🎨 Change Skin</button>
+    <div style="display:flex;gap:8px;width:100%;">
+      <button class="overlay-btn secondary" style="font-size:12px;padding:8px;flex:1;" onclick="showSkinSelect()">🎨 Skin</button>
+      <button class="overlay-btn secondary" style="font-size:12px;padding:8px;flex:1;" onclick="showSettings('level-select')">⚙ Power-Ups</button>
+    </div>
   </div>
 </div>
 
@@ -499,6 +563,16 @@ body.skin-lego {
       <div class="color-choice cc-yellow" onclick="pickColor('yellow')"></div>
     </div>
     <button class="overlay-btn secondary" style="width:auto;padding:8px 24px;" onclick="pickColor(null)">Cancel</button>
+  </div>
+</div>
+
+<!-- Settings Panel -->
+<div id="settings-panel" class="overlay-screen">
+  <div class="overlay-box">
+    <h2>⚙ Power-Ups</h2>
+    <p style="font-size:12px;color:#888;margin-top:-6px;">Toggle and set quantity per level</p>
+    <div class="settings-list" id="settings-list"></div>
+    <button class="overlay-btn primary" id="settings-done-btn" onclick="closeSettings()">Done</button>
   </div>
 </div>
 
@@ -577,6 +651,73 @@ function showSkinSelect() {
 // Init skin on load
 applySkintToBody();
 selectSkin(currentSkin);
+
+// ============================================================
+// POWER-UP SETTINGS
+// ============================================================
+const DEFAULT_BOOSTER_QTY = 3;
+const MAX_BOOSTER_QTY = 9;
+
+if (!progress.boosterSettings) progress.boosterSettings = {};
+
+function getBoosterSetting(id) {
+  if (!progress.boosterSettings[id]) progress.boosterSettings[id] = { enabled: true, qty: DEFAULT_BOOSTER_QTY };
+  return progress.boosterSettings[id];
+}
+
+let settingsReturnTo = null; // tracks where to go back: 'level-select' or 'game'
+
+function showSettings(returnTo) {
+  settingsReturnTo = returnTo;
+  const list = document.getElementById('settings-list');
+  list.innerHTML = '';
+  BOOSTERS.forEach(b => {
+    const s = getBoosterSetting(b.id);
+    const row = document.createElement('div');
+    row.className = 'setting-row' + (s.enabled ? '' : ' disabled');
+    row.id = 'setting-row-' + b.id;
+    row.innerHTML = `
+      <span class="setting-icon">${b.icon}</span>
+      <div class="setting-info">
+        <div class="setting-name">${b.id.charAt(0).toUpperCase()+b.id.slice(1)}</div>
+        <div class="setting-desc">${b.desc}</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustQty('${b.id}',-1)">−</button>
+          <span class="qty-value" id="qty-${b.id}">${s.qty}</span>
+          <button class="qty-btn" onclick="adjustQty('${b.id}',1)">+</button>
+        </div>
+        <button class="setting-toggle ${s.enabled?'on':''}" id="toggle-${b.id}" onclick="toggleBoosterSetting('${b.id}')"></button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+  closeAllOverlays();
+  document.getElementById('settings-panel').classList.add('active');
+}
+
+function toggleBoosterSetting(id) {
+  const s = getBoosterSetting(id);
+  s.enabled = !s.enabled;
+  document.getElementById('toggle-' + id).classList.toggle('on', s.enabled);
+  document.getElementById('setting-row-' + id).classList.toggle('disabled', !s.enabled);
+  saveProgress();
+}
+
+function adjustQty(id, delta) {
+  const s = getBoosterSetting(id);
+  if (!s.enabled) return;
+  s.qty = Math.max(0, Math.min(MAX_BOOSTER_QTY, s.qty + delta));
+  document.getElementById('qty-' + id).textContent = s.qty;
+  saveProgress();
+}
+
+function closeSettings() {
+  document.getElementById('settings-panel').classList.remove('active');
+  if (settingsReturnTo === 'level-select') showLevelSelect();
+  // 'game' — just close the overlay, game continues
+}
 
 // ============================================================
 // GAME STATE
@@ -708,7 +849,7 @@ function animateScore(to) {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['skin-select','level-select','overlay-fail','overlay-win','color-picker']
+  ['skin-select','level-select','overlay-fail','overlay-win','color-picker','settings-panel']
     .forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById('next-level-btn').style.display = '';
 }
@@ -881,10 +1022,12 @@ function updateChainIndicator() {
 function initBoosters() {
   boosterBar.innerHTML = '';
   BOOSTERS.forEach(b => {
-    boosterCounts[b.id] = 3;
+    const s = getBoosterSetting(b.id);
+    if (!s.enabled) { boosterCounts[b.id] = 0; return; }
+    boosterCounts[b.id] = s.qty;
     const btn = document.createElement('div');
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
-    btn.innerHTML = `<span>${b.icon}</span><span class="badge">3</span>`;
+    btn.innerHTML = `<span>${b.icon}</span><span class="badge">${s.qty}</span>`;
     btn.addEventListener('click', () => activateBooster(b.id));
     let pt = null;
     btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt='shown'; }, 400); });
