@@ -108,6 +108,7 @@ body {
 .card.special.exploding { animation: explodeSpecial .4s ease-out forwards; }
 @keyframes dropIn { 0%{transform:translateY(-60px) scale(.5);opacity:0} 60%{transform:translateY(5px) scale(1.05);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
 .card.dropping { animation: dropIn .4s ease-out; }
+.card.gravity-falling { transition: transform 0.4s ease-in; }
 @keyframes shake { 0%,100%{transform:rotateY(180deg) translateX(0)} 20%{transform:rotateY(180deg) translateX(-4px)} 40%{transform:rotateY(180deg) translateX(4px)} 60%{transform:rotateY(180deg) translateX(-4px)} 80%{transform:rotateY(180deg) translateX(4px)} }
 .card.wrong { animation: shake .4s ease-out; }
 @keyframes revealFlash { 0%{box-shadow:0 0 0 rgba(255,255,255,0)} 50%{box-shadow:0 0 20px rgba(255,255,255,.8)} 100%{box-shadow:0 0 0 rgba(255,255,255,0)} }
@@ -608,6 +609,9 @@ const GAMEPLAY_RULES = [
     default: false },
   { id: 'hiddenNewCards', name: 'Hidden New Cards', icon: '🂠',
     desc: 'New cards that replace combos arrive face-down instead of briefly revealed',
+    default: false },
+  { id: 'gravityDrop', name: 'Gravity Drop', icon: '⬇',
+    desc: 'Cards fall down to fill gaps after combos; new cards enter from the top',
     default: false },
 ];
 
@@ -1367,6 +1371,9 @@ function endTurn(manual) {
 }
 
 function addNewCards(toRemove, skip, cb) {
+  if (getRule('gravityDrop') && toRemove.filter(i => i !== skip).length > 0) {
+    return gravityDrop(toRemove, skip, cb);
+  }
   const nc = [];
   toRemove.forEach(idx => {
     if (idx===skip) return;
@@ -1384,6 +1391,105 @@ function addNewCards(toRemove, skip, cb) {
       }, 450);
     }
   } else cb();
+}
+
+function gravityDrop(toRemove, skip, cb) {
+  const removeSet = new Set(toRemove.filter(i => i !== skip));
+  const affectedCols = new Set();
+  removeSet.forEach(i => affectedCols.add(i % COLS));
+
+  const newCardIndices = [];
+  const moveInfo = []; // {idx, rowDelta} for animation
+
+  affectedCols.forEach(c => {
+    // Collect survivors (non-removed) top-to-bottom
+    const survivors = [];
+    let gapCount = 0;
+    for (let r = 0; r < ROWS; r++) {
+      const idx = toIndex(r, c);
+      if (removeSet.has(idx)) { gapCount++; }
+      else { survivors.push({ card: board[idx], fromRow: r }); }
+    }
+
+    // New cards fill top rows, survivors sink to bottom
+    for (let i = 0; i < gapCount; i++) {
+      const targetIdx = toIndex(i, c);
+      const card = createCard(targetIdx);
+      board[targetIdx] = card;
+      newCardIndices.push(targetIdx);
+      moveInfo.push({ idx: targetIdx, rowDelta: -(gapCount - i), isNew: true });
+    }
+    for (let i = 0; i < survivors.length; i++) {
+      const targetRow = gapCount + i;
+      const targetIdx = toIndex(targetRow, c);
+      const s = survivors[i];
+      const rowDelta = s.fromRow - targetRow; // negative = fell down
+      s.card.index = targetIdx;
+      board[targetIdx] = s.card;
+      if (rowDelta !== 0) {
+        moveInfo.push({ idx: targetIdx, rowDelta, isNew: false });
+      }
+    }
+  });
+
+  // Rebuild DOM for affected columns
+  affectedCols.forEach(c => {
+    for (let r = 0; r < ROWS; r++) replaceCell(toIndex(r, c));
+  });
+
+  // Compute cell step (height + gap)
+  const cellRect = boardEl.children[0].getBoundingClientRect();
+  const gap = 4;
+  const step = cellRect.height + gap;
+
+  // Flip falling cards face-up so player can track movement
+  moveInfo.forEach(m => {
+    const el = getCardEl(m.idx);
+    if (!el) return;
+    board[m.idx].flipped = true;
+    el.classList.add('flipped');
+    el.style.transform = `translateY(${m.rowDelta * step}px)`;
+  });
+
+  // Trigger transition: add class first frame, change transform second frame
+  requestAnimationFrame(() => {
+    moveInfo.forEach(m => {
+      const el = getCardEl(m.idx);
+      if (el) el.classList.add('gravity-falling');
+    });
+    requestAnimationFrame(() => {
+      moveInfo.forEach(m => {
+        const el = getCardEl(m.idx);
+        if (el) el.style.transform = 'translateY(0)';
+      });
+    });
+  });
+
+  // After animation, flip cards back face-down and handle new card reveal
+  const animDuration = 450;
+  const holdDuration = 800; // extra time to memorize positions
+  setTimeout(() => {
+    // Flip all gravity cards back face-down
+    moveInfo.forEach(m => {
+      const el = getCardEl(m.idx);
+      if (el) {
+        el.classList.remove('gravity-falling');
+        el.style.transform = '';
+        el.classList.remove('flipped');
+        board[m.idx].flipped = false;
+      }
+    });
+
+    if (newCardIndices.length > 0 && !getRule('hiddenNewCards')) {
+      newCardIndices.forEach(idx => { board[idx].flipped = true; const el = getCardEl(idx); if (el) el.classList.add('flipped'); });
+      setTimeout(() => {
+        newCardIndices.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
+        cb();
+      }, 1500);
+    } else {
+      cb();
+    }
+  }, animDuration);
 }
 
 function doSpecialReveal(targets, cb) {
