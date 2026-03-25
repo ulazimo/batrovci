@@ -606,6 +606,9 @@ const GAMEPLAY_RULES = [
   { id: 'instantSpecialReveal', name: 'Instant Special Reveal', icon: '⚡',
     desc: 'Special cards reveal surrounding cards immediately on click instead of at end of turn',
     default: false },
+  { id: 'hiddenNewCards', name: 'Hidden New Cards', icon: '🂠',
+    desc: 'New cards that replace combos arrive face-down instead of briefly revealed',
+    default: false },
 ];
 
 function getRule(id) {
@@ -1372,10 +1375,14 @@ function addNewCards(toRemove, skip, cb) {
     if (el) { el.classList.add('dropping'); el.addEventListener('animationend',()=>el.classList.remove('dropping'),{once:true}); }
   });
   if (nc.length>0) {
-    setTimeout(() => {
-      nc.forEach(idx => { board[idx].flipped=true; const el=getCardEl(idx); if(el) el.classList.add('flipped'); });
-      setTimeout(() => { nc.forEach(idx => { board[idx].flipped=false; const el=getCardEl(idx); if(el) el.classList.remove('flipped'); }); cb(); }, 1500);
-    }, 450);
+    if (getRule('hiddenNewCards')) {
+      setTimeout(cb, 450);
+    } else {
+      setTimeout(() => {
+        nc.forEach(idx => { board[idx].flipped=true; const el=getCardEl(idx); if(el) el.classList.add('flipped'); });
+        setTimeout(() => { nc.forEach(idx => { board[idx].flipped=false; const el=getCardEl(idx); if(el) el.classList.remove('flipped'); }); cb(); }, 1500);
+      }, 450);
+    }
   } else cb();
 }
 
