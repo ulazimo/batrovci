@@ -534,6 +534,8 @@ body.skin-lego {
     <h1 style="color:#e74c3c">Level Failed</h1>
     <div class="stars">💔</div>
     <div class="sub" id="fail-sub"></div>
+    <div id="fail-streak-info" style="font-size:14px;font-weight:700;color:#f39c12;margin:6px 0;min-height:20px;"></div>
+    <button class="overlay-btn" id="keep-streak-btn" style="background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;display:none;" onclick="keepStreak()">🔥 Keep Streak (-<span id="keep-streak-cost"></span> pts)</button>
     <button class="overlay-btn primary" onclick="retryLevel()">Try Again</button>
     <button class="overlay-btn secondary" onclick="showLevelSelect()">Level Select</button>
   </div>
@@ -595,6 +597,36 @@ const LEVELS = [
   { id:10, cols:8, rows:8, colorCount:4, turns:14, target:2500 },
 ];
 const ALL_COLORS = ['red','green','blue','yellow'];
+
+// ============================================================
+// WIN STREAK CONFIG — add/remove levels here to expand
+// Each entry: { streak: min streak needed, revealPct: % of board revealed at start }
+// ============================================================
+const WIN_STREAK_LEVELS = [
+  { streak: 0, revealPct: 0   },   // no streak → nothing revealed
+  { streak: 1, revealPct: 0.25 },  // streak 1 → 25% of board
+  { streak: 2, revealPct: 0.50 },  // streak 2 → 50% of board
+  { streak: 3, revealPct: 1.0  },  // streak 3+ → entire board
+];
+const KEEP_STREAK_COST = 100;       // point cost to preserve streak on fail
+
+function getStreakRevealPct() {
+  let pct = 0;
+  for (const lvl of WIN_STREAK_LEVELS) {
+    if (progress.winStreak >= lvl.streak) pct = lvl.revealPct;
+  }
+  console.log("Winstreak reveal percentage: " + pct)
+  return pct;
+}
+
+function getStreakLevel() {
+  let level = 0;
+  for (let i = WIN_STREAK_LEVELS.length - 1; i >= 0; i--) {
+    if (progress.winStreak >= WIN_STREAK_LEVELS[i].streak) { level = i; break; }
+  }
+  console.log("Winstreak level: " + level)
+  return level;
+}
 
 // ============================================================
 // PERSISTENCE
@@ -859,7 +891,10 @@ function showLevelSelect() {
   buildLevelGrid();
   document.getElementById('level-select').classList.add('active');
   const streak = progress.winStreak;
-  document.getElementById('ls-streak').textContent = streak > 0 ? `🔥 Win Streak: ${streak}` : '';
+  const pct = getStreakRevealPct();
+  document.getElementById('ls-streak').textContent = streak > 0
+    ? `🔥 Win Streak: ${streak} (${Math.round(pct * 100)}% board reveal)`
+    : '';
 }
 
 function buildLevelGrid() {
@@ -889,6 +924,11 @@ function buildLevelGrid() {
 // LEVEL INIT
 // ============================================================
 function startLevel() {
+  // Reset win streak when starting from level 1 (fresh run)
+  if (currentLevelIndex === 0) {
+    progress.winStreak = 0;
+    saveProgress();
+  }
   const lvl = LEVELS[currentLevelIndex];
   COLS = lvl.cols; ROWS = lvl.rows; TOTAL = COLS * ROWS;
   ACTIVE_COLORS = ALL_COLORS.slice(0, lvl.colorCount);
@@ -901,7 +941,11 @@ function startLevel() {
 
 function updateBanner() {
   document.getElementById('banner-level').textContent = `Level ${LEVELS[currentLevelIndex].id}`;
-  document.getElementById('banner-streak').textContent = progress.winStreak > 0 ? `🔥 ${progress.winStreak}` : '';
+  const pct = getStreakRevealPct();
+  const streakText = progress.winStreak > 0
+    ? `🔥 ${progress.winStreak} (${Math.round(pct * 100)}% reveal)`
+    : '';
+  document.getElementById('banner-streak').textContent = streakText;
   document.getElementById('banner-dots').innerHTML = LEVELS.map((_, i) => {
     const cls = i < currentLevelIndex ? 'dot done' : i === currentLevelIndex ? 'dot current' : 'dot';
     return `<div class="${cls}"></div>`;
@@ -1287,7 +1331,11 @@ function levelWon() {
   document.getElementById('win-title').textContent = `Level ${LEVELS[currentLevelIndex].id} Complete!`;
   document.getElementById('win-stars').textContent = '★'.repeat(stars)+'☆'.repeat(3-stars);
   document.getElementById('win-score').textContent  = `Score: ${score}  •  ${turns} turn${turns!==1?'s':''} remaining`;
-  document.getElementById('win-streak').textContent = progress.winStreak > 1 ? `🔥 Win Streak: ${progress.winStreak}` : '';
+  const nextPct = getStreakRevealPct();
+  const streakMsg = progress.winStreak > 0
+    ? `🔥 Win Streak: ${progress.winStreak} — ${Math.round(nextPct * 100)}% board reveal next game`
+    : '';
+  document.getElementById('win-streak').textContent = streakMsg;
   document.getElementById('next-level-btn').style.display = currentLevelIndex >= LEVELS.length-1 ? 'none' : '';
   document.getElementById('overlay-win').classList.add('active');
   SFX.win();
@@ -1295,13 +1343,44 @@ function levelWon() {
 }
 
 function levelFailed() {
+  const hadStreak = progress.winStreak;
+  _failSavedStreak = hadStreak;   // stash so keepStreak() can restore it
   progress.winStreak = 0;
   saveProgress();
   updateBanner();
+
   document.getElementById('fail-sub').textContent = `Score: ${score} / ${TARGET}`;
+
+  // Show keep-streak option if player had a streak and scored enough to pay
+  const keepBtn = document.getElementById('keep-streak-btn');
+  const streakInfo = document.getElementById('fail-streak-info');
+  if (hadStreak > 0) {
+    streakInfo.textContent = `You lost your 🔥 ${hadStreak} win streak!`;
+    if (score >= KEEP_STREAK_COST) {
+      keepBtn.style.display = '';
+      document.getElementById('keep-streak-cost').textContent = KEEP_STREAK_COST;
+    } else {
+      keepBtn.style.display = 'none';
+    }
+  } else {
+    streakInfo.textContent = '';
+    keepBtn.style.display = 'none';
+  }
+
   document.getElementById('overlay-fail').classList.add('active');
   SFX.fail();
   shakeBoard();
+}
+
+let _failSavedStreak = 0;
+function keepStreak() {
+  progress.winStreak = _failSavedStreak;
+  saveProgress();
+  updateBanner();
+  document.getElementById('keep-streak-btn').style.display = 'none';
+  document.getElementById('fail-streak-info').textContent = `🔥 Streak restored to ${progress.winStreak}!`;
+  document.getElementById('fail-streak-info').style.color = '#2ecc71';
+  setTimeout(() => { document.getElementById('fail-streak-info').style.color = '#f39c12'; }, 2000);
 }
 
 // ============================================================
@@ -1319,21 +1398,41 @@ function showScorePopup(pts, indices) {
 }
 
 // ============================================================
-// INITIAL BOARD REVEAL — scales with win streak
+// INITIAL BOARD REVEAL — streak determines how much is shown
 // ============================================================
 function revealEntireBoard() {
   inputLocked = true;
+  const pct = getStreakRevealPct();
   const revealMs  = Math.min(1500 + progress.winStreak * 250, 3500);
   const staggerMs = 50;
-  board.forEach((c, i) => {
-    c.flipped = true;
-    const el = getCardEl(i);
-    if (el) setTimeout(() => {
-      el.classList.add('flipped');
-      setTimeout(() => { el.classList.remove('flipped'); c.flipped=false; }, revealMs);
-    }, i * staggerMs);
-  });
-  setTimeout(() => { inputLocked=false; updateBoosterUI(); }, TOTAL*staggerMs+revealMs+200);
+
+  // Decide which cards get the streak pre-reveal (stay face-up permanently)
+  const streakIndices = new Set();
+  if (pct > 0) {
+    const indices = board.map((_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const count = Math.min(Math.ceil(TOTAL * pct), TOTAL);
+    indices.slice(0, count).forEach(idx => streakIndices.add(idx));
+  }
+
+  // Briefly flash only streak-awarded cards, then hide them
+  if (streakIndices.size > 0) {
+    board.forEach((c, i) => {
+      if (!streakIndices.has(i)) return;
+      c.flipped = true;
+      const el = getCardEl(i);
+      if (el) setTimeout(() => {
+        el.classList.add('flipped');
+        setTimeout(() => { el.classList.remove('flipped'); c.flipped = false; }, revealMs);
+      }, i * staggerMs);
+    });
+  }
+
+  const unlockDelay = streakIndices.size > 0 ? TOTAL * staggerMs + revealMs + 200 : 200;
+  setTimeout(() => { inputLocked = false; updateBoosterUI(); }, unlockDelay);
 }
 
 // ============================================================

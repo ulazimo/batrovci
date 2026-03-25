@@ -8,7 +8,8 @@
       "Bash(sort -t: -k2 -rn)",
       "Bash(git -C /Users/MladenD_1/Downloads/batrovci log --oneline)",
       "Bash(grep -l \"initTracking\" *.html)",
-      "Bash(grep -l \"ErrorBoundary\" *.html)"
+      "Bash(grep -l \"ErrorBoundary\" *.html)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
