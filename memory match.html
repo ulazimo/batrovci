@@ -523,7 +523,7 @@ body.skin-lego {
     <div id="ls-streak" style="font-size:13px;color:#f0c040;min-height:18px;"></div>
     <div style="display:flex;gap:8px;width:100%;">
       <button class="overlay-btn secondary" style="font-size:12px;padding:8px;flex:1;" onclick="showSkinSelect()">🎨 Skin</button>
-      <button class="overlay-btn secondary" style="font-size:12px;padding:8px;flex:1;" onclick="showSettings('level-select')">⚙ Power-Ups</button>
+      <button class="overlay-btn secondary" style="font-size:12px;padding:8px;flex:1;" onclick="showSettings('level-select')">⚙ Settings</button>
     </div>
   </div>
 </div>
@@ -571,8 +571,8 @@ body.skin-lego {
 <!-- Settings Panel -->
 <div id="settings-panel" class="overlay-screen">
   <div class="overlay-box">
-    <h2>⚙ Power-Ups</h2>
-    <p style="font-size:12px;color:#888;margin-top:-6px;">Toggle and set quantity per level</p>
+    <h2>⚙ Settings</h2>
+    <p style="font-size:12px;color:#888;margin-top:-6px;">Gameplay rules and power-up configuration</p>
     <div class="settings-list" id="settings-list"></div>
     <button class="overlay-btn primary" id="settings-done-btn" onclick="closeSettings()">Done</button>
   </div>
@@ -597,6 +597,29 @@ const LEVELS = [
   { id:10, cols:8, rows:8, colorCount:4, turns:14, target:2500 },
 ];
 const ALL_COLORS = ['red','green','blue','yellow'];
+
+// ============================================================
+// GAMEPLAY RULES — toggleable behaviors that change core mechanics
+// Add new rules here; they auto-appear in the settings panel
+// ============================================================
+const GAMEPLAY_RULES = [
+  { id: 'instantSpecialReveal', name: 'Instant Special Reveal', icon: '⚡',
+    desc: 'Special cards reveal surrounding cards immediately on click instead of at end of turn',
+    default: false },
+];
+
+function getRule(id) {
+  const rule = GAMEPLAY_RULES.find(r => r.id === id);
+  if (progress.gameplayRules[id] === undefined) progress.gameplayRules[id] = rule ? rule.default : false;
+  return progress.gameplayRules[id];
+}
+
+function toggleRule(id) {
+  progress.gameplayRules[id] = !getRule(id);
+  document.getElementById('rule-toggle-' + id).classList.toggle('on', progress.gameplayRules[id]);
+  document.getElementById('rule-row-' + id).classList.toggle('disabled', !progress.gameplayRules[id]);
+  saveProgress();
+}
 
 // ============================================================
 // WIN STREAK CONFIG — add/remove levels here to expand
@@ -644,6 +667,7 @@ if (!progress.highestUnlocked) progress.highestUnlocked = 0;
 if (!progress.stars) progress.stars = new Array(LEVELS.length).fill(0);
 if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.skin) progress.skin = 'classic';
+if (!progress.gameplayRules) progress.gameplayRules = {};
 
 // ============================================================
 // SKIN
@@ -703,6 +727,38 @@ function showSettings(returnTo) {
   settingsReturnTo = returnTo;
   const list = document.getElementById('settings-list');
   list.innerHTML = '';
+
+  // Gameplay rules section
+  if (GAMEPLAY_RULES.length > 0) {
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:8px 0 4px;text-transform:uppercase;letter-spacing:1px;';
+    header.textContent = 'Gameplay';
+    list.appendChild(header);
+
+    GAMEPLAY_RULES.forEach(r => {
+      const enabled = getRule(r.id);
+      const row = document.createElement('div');
+      row.className = 'setting-row' + (enabled ? '' : ' disabled');
+      row.id = 'rule-row-' + r.id;
+      row.innerHTML = `
+        <span class="setting-icon">${r.icon}</span>
+        <div class="setting-info">
+          <div class="setting-name">${r.name}</div>
+          <div class="setting-desc">${r.desc}</div>
+        </div>
+        <div class="setting-controls">
+          <button class="setting-toggle ${enabled?'on':''}" id="rule-toggle-${r.id}" onclick="toggleRule('${r.id}')"></button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+
+    const divider = document.createElement('div');
+    divider.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
+    divider.textContent = 'Power-Ups';
+    list.appendChild(divider);
+  }
+
   BOOSTERS.forEach(b => {
     const s = getBoosterSetting(b.id);
     const row = document.createElement('div');
@@ -1177,6 +1233,39 @@ function onCardClick(index) {
   if (activeBooster) { if (card.special) return; executeBoosterTap(activeBooster, index); return; }
 
   if (card.special) {
+    if (getRule('instantSpecialReveal')) {
+      // Instant mode: reveal surrounding cards immediately on click
+      if (inputLocked) return;
+      SFX.special();
+      inputLocked = true;
+      const specialEl = getCardEl(index);
+      const targets = getRevealPattern(card.special, index)
+        .filter(i => board[i] && !board[i].special && !board[i].flipped);
+      spawnParticles([index], chainColor || 'red');
+
+      targets.forEach((idx, ti) => {
+        setTimeout(() => {
+          board[idx].flipped = true;
+          const cel = getCardEl(idx);
+          if (cel) { cel.classList.add('flipped', 'reveal-flash'); cel.addEventListener('animationend', () => cel.classList.remove('reveal-flash'), {once:true}); }
+        }, 100 + ti * 70);
+      });
+
+      specialEl.classList.add('used');
+      if (!turnActive) { turnActive = true; chainColor = null; chainCards = []; specialsUsed = [index]; }
+      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); }
+      updateChainIndicator();
+
+      const hideDelay = 100 + Math.max(targets.length, 1) * 70 + 2000;
+      setTimeout(() => {
+        targets.forEach(idx => { board[idx].flipped = false; const cel = getCardEl(idx); if (cel) cel.classList.remove('flipped'); });
+        inputLocked = false;
+        updateBoosterUI();
+        updateChainIndicator();
+      }, hideDelay);
+      return;
+    }
+    // Default mode: mark special as used, reveal at end of turn
     SFX.special();
     if (!turnActive) { turnActive=true; chainColor=null; chainCards=[]; specialsUsed=[index]; getCardEl(index).classList.add('used'); updateChainIndicator(); return; }
     if (specialsUsed.includes(index)) return;
@@ -1253,7 +1342,7 @@ function endTurn(manual) {
   if (!specialActivated) specialsUsed.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.remove('used'); });
 
   let revealTargets = [];
-  if (specialActivated) {
+  if (specialActivated && !getRule('instantSpecialReveal')) {
     specialsUsed.forEach(sIdx => { const sc=board[sIdx]; if(sc&&sc.special) revealTargets.push(...getRevealPattern(sc.special,sIdx)); });
     revealTargets = [...new Set(revealTargets)].filter(i=>!toRemove.includes(i)&&i!==newSP&&!board[i].special&&!board[i].flipped);
   }
