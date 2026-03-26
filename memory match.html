@@ -122,6 +122,10 @@ body {
 .card.special .card-front.special-wild      { background: conic-gradient(from 0deg, #e74c3c, #f1c40f, #2ecc71, #3498db, #e74c3c); border-color: #fff; }
 .special-icon { font-size:clamp(12px,3.5vw,22px); filter: drop-shadow(0 0 2px rgba(0,0,0,.5)); }
 .card.special.used { opacity:.4; pointer-events:none; }
+/* Combo spawn indicator — glow on the card where the special will spawn */
+.card.combo-spawn-indicator { position: relative; }
+.card.combo-spawn-indicator::after { content:''; position:absolute; inset:-3px; border-radius:inherit; border:2px solid #ffd700; box-shadow:0 0 12px 4px rgba(255,215,0,0.7), 0 0 24px 8px rgba(255,165,0,0.4); pointer-events:none; z-index:3; animation: comboSpawnGlow 1s ease-in-out infinite; }
+@keyframes comboSpawnGlow { 0%,100%{opacity:.6; box-shadow:0 0 12px 4px rgba(255,215,0,0.7), 0 0 24px 8px rgba(255,165,0,0.4)} 50%{opacity:1; box-shadow:0 0 16px 6px rgba(255,215,0,0.9), 0 0 32px 12px rgba(255,165,0,0.6)} }
 /* Tint hint — faint colored glow on face-down cards */
 .card.tinted { position: relative; }
 .card.tinted::after { content:''; position:absolute; inset:-2px; border-radius:inherit; border:2px solid var(--tint-color, #5b9bd5); box-shadow:0 0 8px var(--tint-color, #5b9bd5); pointer-events:none; z-index:2; animation: tintPulse 1.5s ease-in-out infinite; }
@@ -1637,8 +1641,28 @@ function tensionPulseLoop() {
   tensionRAF = requestAnimationFrame(tensionPulseLoop);
 }
 
+function updateComboSpawnIndicator() {
+  // Remove any existing indicator
+  document.querySelectorAll('.combo-spawn-indicator').forEach(el => el.classList.remove('combo-spawn-indicator'));
+  if (!turnActive) return;
+  const combo = chainCards.length + specialsUsed.length;
+  // Find the minimum combo that produces a special
+  const map = getComboMapping();
+  const minCombo = Math.min(...map.map(m => typeof m.combo === 'number' ? m.combo : parseInt(m.combo)));
+  if (combo < minCombo) return;
+  // Check that this combo length actually yields a special
+  if (!getSpecialForCombo(combo)) return;
+  // The spawn position is the last card in the chain (matching endTurn logic)
+  const allChain = [...chainCards];
+  if (allChain.length === 0) return;
+  const spawnIdx = allChain[allChain.length - 1];
+  const el = getCardEl(spawnIdx);
+  if (el) el.classList.add('combo-spawn-indicator');
+}
+
 function updateChainIndicator() {
   updateChainTension();
+  updateComboSpawnIndicator();
   if (!turnActive) {
     chainEl.innerHTML = spotlightMode
       ? '🔦 Tap a face-down card to reveal it'
