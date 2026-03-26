@@ -100,6 +100,7 @@ body {
 .card.special .card-front.special-tint      { background: radial-gradient(circle at 40% 40%, #b8d4e3, #5b9bd5); border-color: #4682b4; }
 .card.special .card-front.special-spotlight { background: radial-gradient(circle at 40% 40%, #fff3b0, #e6ac00); border-color: #daa520; }
 .card.special .card-front.special-echo      { background: radial-gradient(circle at 40% 40%, #d4b8e0, #9370db); border-color: #7b68ee; }
+.card.special .card-front.special-wild      { background: conic-gradient(from 0deg, #e74c3c, #f1c40f, #2ecc71, #3498db, #e74c3c); border-color: #fff; }
 .special-icon { font-size:clamp(12px,3.5vw,22px); filter: drop-shadow(0 0 2px rgba(0,0,0,.5)); }
 .card.special.used { opacity:.4; pointer-events:none; }
 /* Tint hint — faint colored glow on face-down cards */
@@ -358,6 +359,7 @@ body.skin-lego {
 .skin-lego .card.special .card-front.special-tint      { background-color: #5B9BD5; }
 .skin-lego .card.special .card-front.special-spotlight { background-color: #DAA520; }
 .skin-lego .card.special .card-front.special-echo      { background-color: #7B68EE; }
+.skin-lego .card.special .card-front.special-wild      { background: conic-gradient(from 0deg, #D01012, #FFD700, #237841, #006CB7, #D01012); }
 @keyframes specialPulseLego {
   0%,100% { box-shadow: inset 0 2px 0 rgba(255,255,255,.50),inset 2px 0 0 rgba(255,255,255,.25),inset 0 -4px 0 rgba(0,0,0,.42),inset -3px 0 0 rgba(0,0,0,.25),0 4px 0 rgba(0,0,0,.60),0 0 8px rgba(255,200,0,.4); }
   50%      { box-shadow: inset 0 2px 0 rgba(255,255,255,.50),inset 2px 0 0 rgba(255,255,255,.25),inset 0 -4px 0 rgba(0,0,0,.42),inset -3px 0 0 rgba(0,0,0,.25),0 4px 0 rgba(0,0,0,.60),0 0 16px rgba(255,200,0,.9); }
@@ -1158,6 +1160,7 @@ const SPECIAL_TYPES = [
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
   { id: 'diamond',   icon: '❖',  name: 'Diamond',   desc: 'Reveal 12 cards in extended cross',                power: 'high',   needsTap: false,
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]] },
+  { id: 'wild',      icon: '🌈', name: 'Wild',      desc: 'Matches any color — acts as a wildcard in combos', power: 'medium', needsTap: false, isWild: true },
 ];
 
 function getSpecialType(id) { return SPECIAL_TYPES.find(s => s.id === id); }
@@ -1415,6 +1418,20 @@ function onCardClick(index) {
     const spec = getSpecialType(card.special);
     if (!spec) return;
 
+    // Wild card: acts as a color wildcard in combos
+    if (spec.isWild) {
+      SFX.match();
+      getCardEl(index).classList.add('used');
+      if (!turnActive) {
+        // Starting a chain with wild — chainColor stays null until a real card sets it
+        turnActive = true; chainColor = null; chainCards = [index]; specialsUsed = [];
+      } else {
+        chainCards.push(index);
+      }
+      updateChainIndicator();
+      return;
+    }
+
     // Mark special as used and register in turn
     function markUsed() {
       SFX.special();
@@ -1533,12 +1550,13 @@ function endTurn(manual) {
   shieldCharges = 0; jokerCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
-  const normalCards = chainCards.filter(i => !board[i].special);
-  const mismatchIdx = manual ? -1 : (normalCards.length>0 ? normalCards[normalCards.length-1] : -1);
+  const isWildCard = (i) => board[i].special && getSpecialType(board[i].special)?.isWild;
+  const normalCards = chainCards.filter(i => !board[i].special || isWildCard(i));
+  const mismatchIdx = manual ? -1 : (normalCards.length>0 && !isWildCard(normalCards[normalCards.length-1]) ? normalCards[normalCards.length-1] : -1);
 
   let matched;
   if (manual) matched = normalCards;
-  else if (normalCards.length>0 && board[normalCards[normalCards.length-1]].color !== chainColor)
+  else if (mismatchIdx >= 0 && board[mismatchIdx].color !== chainColor)
     matched = normalCards.slice(0,-1);
   else matched = normalCards;
 
