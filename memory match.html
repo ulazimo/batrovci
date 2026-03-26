@@ -93,11 +93,19 @@ body {
 .card.special { transform: none; }
 .card.special .card-back { display: none; }
 .card.special .card-front { transform: none; backface-visibility: visible; }
-.card.special .card-front.special-cross   { background: radial-gradient(circle at 40% 40%, #e0b0ff, #8a2be2); border-color: #9b59b6; }
-.card.special .card-front.special-ring    { background: radial-gradient(circle at 40% 40%, #ff9ecb, #d63384); border-color: #e91e8c; }
-.card.special .card-front.special-diamond { background: radial-gradient(circle at 40% 40%, #ffd700, #ff6600); border-color: #ff8c00; }
+.card.special .card-front.special-cross     { background: radial-gradient(circle at 40% 40%, #e0b0ff, #8a2be2); border-color: #9b59b6; }
+.card.special .card-front.special-ring      { background: radial-gradient(circle at 40% 40%, #ff9ecb, #d63384); border-color: #e91e8c; }
+.card.special .card-front.special-diamond   { background: radial-gradient(circle at 40% 40%, #ffd700, #ff6600); border-color: #ff8c00; }
+.card.special .card-front.special-peek      { background: radial-gradient(circle at 40% 40%, #a8e6cf, #3cb371); border-color: #2e8b57; }
+.card.special .card-front.special-tint      { background: radial-gradient(circle at 40% 40%, #b8d4e3, #5b9bd5); border-color: #4682b4; }
+.card.special .card-front.special-spotlight { background: radial-gradient(circle at 40% 40%, #fff3b0, #e6ac00); border-color: #daa520; }
+.card.special .card-front.special-echo      { background: radial-gradient(circle at 40% 40%, #d4b8e0, #9370db); border-color: #7b68ee; }
 .special-icon { font-size:clamp(12px,3.5vw,22px); filter: drop-shadow(0 0 2px rgba(0,0,0,.5)); }
 .card.special.used { opacity:.4; pointer-events:none; }
+/* Tint hint — faint colored glow on face-down cards */
+.card.tinted { position: relative; }
+.card.tinted::after { content:''; position:absolute; inset:-2px; border-radius:inherit; border:2px solid var(--tint-color, #5b9bd5); box-shadow:0 0 8px var(--tint-color, #5b9bd5); pointer-events:none; z-index:2; animation: tintPulse 1.5s ease-in-out infinite; }
+@keyframes tintPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
 /* animations */
 @keyframes specialPulse { 0%,100%{box-shadow:0 0 6px rgba(155,89,182,.4)} 50%{box-shadow:0 0 14px rgba(155,89,182,.9)} }
@@ -108,7 +116,7 @@ body {
 .card.special.exploding { animation: explodeSpecial .4s ease-out forwards; }
 @keyframes dropIn { 0%{transform:translateY(-60px) scale(.5);opacity:0} 60%{transform:translateY(5px) scale(1.05);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
 .card.dropping { animation: dropIn .4s ease-out; }
-.card.gravity-falling { transition: transform 0.4s ease-in; }
+
 @keyframes shake { 0%,100%{transform:rotateY(180deg) translateX(0)} 20%{transform:rotateY(180deg) translateX(-4px)} 40%{transform:rotateY(180deg) translateX(4px)} 60%{transform:rotateY(180deg) translateX(-4px)} 80%{transform:rotateY(180deg) translateX(4px)} }
 .card.wrong { animation: shake .4s ease-out; }
 @keyframes revealFlash { 0%{box-shadow:0 0 0 rgba(255,255,255,0)} 50%{box-shadow:0 0 20px rgba(255,255,255,.8)} 100%{box-shadow:0 0 0 rgba(255,255,255,0)} }
@@ -343,9 +351,13 @@ body.skin-lego {
 .skin-lego .card-front.yellow { background-color: #FFD700; }
 
 /* Special cards LEGO */
-.skin-lego .card.special .card-front.special-cross   { background-color: #F5A623; }
-.skin-lego .card.special .card-front.special-ring    { background-color: #9C27B0; }
-.skin-lego .card.special .card-front.special-diamond { background-color: #00ADEF; }
+.skin-lego .card.special .card-front.special-cross     { background-color: #F5A623; }
+.skin-lego .card.special .card-front.special-ring      { background-color: #9C27B0; }
+.skin-lego .card.special .card-front.special-diamond   { background-color: #00ADEF; }
+.skin-lego .card.special .card-front.special-peek      { background-color: #3CB371; }
+.skin-lego .card.special .card-front.special-tint      { background-color: #5B9BD5; }
+.skin-lego .card.special .card-front.special-spotlight { background-color: #DAA520; }
+.skin-lego .card.special .card-front.special-echo      { background-color: #7B68EE; }
 @keyframes specialPulseLego {
   0%,100% { box-shadow: inset 0 2px 0 rgba(255,255,255,.50),inset 2px 0 0 rgba(255,255,255,.25),inset 0 -4px 0 rgba(0,0,0,.42),inset -3px 0 0 rgba(0,0,0,.25),0 4px 0 rgba(0,0,0,.60),0 0 8px rgba(255,200,0,.4); }
   50%      { box-shadow: inset 0 2px 0 rgba(255,255,255,.50),inset 2px 0 0 rgba(255,255,255,.25),inset 0 -4px 0 rgba(0,0,0,.42),inset -3px 0 0 rgba(0,0,0,.25),0 4px 0 rgba(0,0,0,.60),0 0 16px rgba(255,200,0,.9); }
@@ -430,6 +442,22 @@ body.skin-lego {
 .qty-value { width:22px;text-align:center;font-size:14px;font-weight:700;color:#f0c040; }
 .setting-row.disabled { opacity:.4; }
 .setting-row.disabled .qty-btn { pointer-events:none; }
+
+/* Combo mapping UI */
+.combo-map-row { display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(255,255,255,.05);border-radius:6px;margin:4px 0; }
+.combo-map-label { font-size:13px;font-weight:700;color:#f0c040;min-width:60px; }
+.combo-map-arrow { color:#888;font-size:14px; }
+.combo-map-select { flex:1;background:#1a1a2e;color:#e0e0e0;border:1px solid #333;border-radius:4px;padding:4px 6px;font-size:12px;cursor:pointer; }
+.combo-map-select:focus { outline:none;border-color:#4fc3f7; }
+.combo-map-remove { background:none;border:1px solid #e74c3c;color:#e74c3c;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;transition:all .15s; }
+.combo-map-remove:hover { background:#e74c3c;color:#fff; }
+.combo-map-add { background:none;border:1px dashed #4fc3f7;color:#4fc3f7;border-radius:6px;padding:6px;font-size:12px;cursor:pointer;text-align:center;margin:4px 0;transition:all .15s; }
+.combo-map-add:hover { background:rgba(79,195,247,.1); }
+.skin-lego .combo-map-row { background:rgba(0,0,0,.04); }
+.skin-lego .combo-map-select { background:#FFF0D0;color:#333;border-color:#D8C0A0; }
+.skin-lego .combo-map-remove { border-color:#D01012;color:#D01012; }
+.skin-lego .combo-map-remove:hover { background:#D01012;color:#fff; }
+.skin-lego .combo-map-add { border-color:#006CB7;color:#006CB7; }
 
 /* Settings gear button */
 .settings-gear {
@@ -610,9 +638,6 @@ const GAMEPLAY_RULES = [
   { id: 'hiddenNewCards', name: 'Hidden New Cards', icon: '🂠',
     desc: 'New cards that replace combos arrive face-down instead of briefly revealed',
     default: false },
-  { id: 'gravityDrop', name: 'Gravity Drop', icon: '⬇',
-    desc: 'Cards fall down to fill gaps after combos; new cards enter from the top',
-    default: false },
 ];
 
 function getRule(id) {
@@ -626,6 +651,64 @@ function toggleRule(id) {
   document.getElementById('rule-toggle-' + id).classList.toggle('on', progress.gameplayRules[id]);
   document.getElementById('rule-row-' + id).classList.toggle('disabled', !progress.gameplayRules[id]);
   saveProgress();
+}
+
+// ============================================================
+// COMBO MAPPING UI
+// ============================================================
+function renderComboMapping() {
+  const container = document.getElementById('combo-map-container');
+  if (!container) return;
+  container.innerHTML = '';
+  const map = getComboMapping();
+
+  map.forEach((entry, idx) => {
+    const row = document.createElement('div');
+    row.className = 'combo-map-row';
+    const comboLabel = typeof entry.combo === 'string' ? `Combo ${entry.combo}` : `Combo ${entry.combo}`;
+    const optionsHTML = SPECIAL_TYPES.map(s =>
+      `<option value="${s.id}" ${s.id===entry.specialId?'selected':''}>${s.icon} ${s.name} — ${s.desc}</option>`
+    ).join('');
+    row.innerHTML = `
+      <span class="combo-map-label">${comboLabel}</span>
+      <span class="combo-map-arrow">\u2192</span>
+      <select class="combo-map-select" onchange="updateComboMap(${idx},this.value)">${optionsHTML}</select>
+      ${map.length > 1 ? `<button class="combo-map-remove" onclick="removeComboMap(${idx})">\u2715</button>` : ''}
+    `;
+    container.appendChild(row);
+  });
+
+  const addBtn = document.createElement('div');
+  addBtn.className = 'combo-map-add';
+  addBtn.textContent = '+ Add Combo Rule';
+  addBtn.onclick = addComboMapRule;
+  container.appendChild(addBtn);
+}
+
+function updateComboMap(idx, specialId) {
+  const map = getComboMapping();
+  map[idx].specialId = specialId;
+  setComboMapping(map);
+}
+
+function removeComboMap(idx) {
+  const map = getComboMapping();
+  map.splice(idx, 1);
+  setComboMapping(map);
+  renderComboMapping();
+}
+
+function addComboMapRule() {
+  const map = getComboMapping();
+  // Find the next combo number not yet mapped
+  const usedNums = map.map(m => typeof m.combo === 'number' ? m.combo : parseInt(m.combo));
+  let next = 4;
+  while (usedNums.includes(next)) next++;
+  // If all exact numbers are taken, suggest a range
+  const isRange = next > 10;
+  map.push({ combo: isRange ? `${next}+` : next, specialId: SPECIAL_TYPES[0].id });
+  setComboMapping(map);
+  renderComboMapping();
 }
 
 // ============================================================
@@ -760,6 +843,17 @@ function showSettings(returnTo) {
       list.appendChild(row);
     });
 
+    // Combo → Special mapping section
+    const comboHeader = document.createElement('div');
+    comboHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
+    comboHeader.textContent = 'Combo \u2192 Special Card';
+    list.appendChild(comboHeader);
+
+    const comboContainer = document.createElement('div');
+    comboContainer.id = 'combo-map-container';
+    list.appendChild(comboContainer);
+    renderComboMapping();
+
     const divider = document.createElement('div');
     divider.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
     divider.textContent = 'Power-Ups';
@@ -823,7 +917,7 @@ let currentLevelIndex = progress.highestUnlocked;
 let board = [], score = 0, turns = 0;
 let chainColor = null, chainCards = [], specialsUsed = [];
 let turnActive = false, inputLocked = false;
-let shieldCharges = 0, jokerCharges = 0, activeBooster = null;
+let shieldCharges = 0, jokerCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 
 const BOOSTERS = [
   { id:'peek',      icon:'👁',  desc:'Reveal one card by tapping it',                               needsTap:true  },
@@ -1023,7 +1117,7 @@ function startGame() {
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainCards = []; specialsUsed = [];
   turnActive = false; inputLocked = false;
-  shieldCharges = 0; jokerCharges = 0; activeBooster = null;
+  shieldCharges = 0; jokerCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
   targetEl.textContent = TARGET;
   renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge();
@@ -1048,6 +1142,63 @@ function nextLevel() {
 }
 
 // ============================================================
+// SPECIAL CARD TYPES — all available special abilities
+// Add new types here; they auto-appear in combo mapping UI
+// ============================================================
+const SPECIAL_TYPES = [
+  { id: 'peek',      icon: '👁', name: 'Peek',      desc: 'Flash 2-3 nearby cards for 1.5s then hide',        power: 'low',    needsTap: false,
+    offsets: [[-1,0],[1,0],[0,-1],[0,1]], revealCount: 3, temporary: true },
+  { id: 'tint',      icon: '🎯', name: 'Tint',      desc: 'Add color hints to 3-4 nearby face-down cards',    power: 'low',    needsTap: false,
+    offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]], tintCount: 4, temporary: false },
+  { id: 'spotlight', icon: '🔦', name: 'Spotlight', desc: 'Tap any face-down card to permanently reveal it',  power: 'medium', needsTap: true },
+  { id: 'echo',      icon: '🔔', name: 'Echo',      desc: 'Next flipped card stays visible for 1 extra turn', power: 'medium', needsTap: false },
+  { id: 'cross',     icon: '✦',  name: 'Cross',     desc: 'Reveal 4 adjacent cards',                          power: 'high',   needsTap: false,
+    offsets: [[-1,0],[1,0],[0,-1],[0,1]] },
+  { id: 'ring',      icon: '✸',  name: 'Ring',      desc: 'Reveal 8 surrounding cards',                       power: 'high',   needsTap: false,
+    offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
+  { id: 'diamond',   icon: '❖',  name: 'Diamond',   desc: 'Reveal 12 cards in extended cross',                power: 'high',   needsTap: false,
+    offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]] },
+];
+
+function getSpecialType(id) { return SPECIAL_TYPES.find(s => s.id === id); }
+
+// ============================================================
+// COMBO → SPECIAL MAPPING
+// ============================================================
+const DEFAULT_COMBO_MAP = [
+  { combo: 4,   specialId: 'cross' },
+  { combo: 5,   specialId: 'ring' },
+  { combo: '6+', specialId: 'diamond' },
+];
+
+function getComboMapping() {
+  return progress.comboMapping || DEFAULT_COMBO_MAP;
+}
+
+function setComboMapping(map) {
+  progress.comboMapping = map;
+  saveProgress();
+}
+
+function getSpecialForCombo(comboLen) {
+  const map = getComboMapping();
+  // Check exact matches first, then find highest N+ rule that applies
+  let exact = map.find(m => typeof m.combo === 'number' && m.combo === comboLen);
+  if (exact) return exact.specialId;
+  // Find all range rules (e.g. '6+') where comboLen qualifies
+  let bestRange = null;
+  map.forEach(m => {
+    if (typeof m.combo === 'string' && m.combo.endsWith('+')) {
+      const min = parseInt(m.combo);
+      if (comboLen >= min) {
+        if (!bestRange || min > parseInt(bestRange.combo)) bestRange = m;
+      }
+    }
+  });
+  return bestRange ? bestRange.specialId : null;
+}
+
+// ============================================================
 // CARD HELPERS
 // ============================================================
 function randomColor() { return ACTIVE_COLORS[Math.floor(Math.random() * ACTIVE_COLORS.length)]; }
@@ -1057,15 +1208,19 @@ function toRC(i) { return { r: Math.floor(i / COLS), c: i % COLS }; }
 function toIndex(r, c) { return (r < 0 || r >= ROWS || c < 0 || c >= COLS) ? -1 : r * COLS + c; }
 
 function getRevealPattern(type, index) {
+  const spec = getSpecialType(type);
+  if (!spec || !spec.offsets) return [];
   const { r, c } = toRC(index);
-  let off = [];
-  if (type === 'cross')   off = [[-1,0],[1,0],[0,-1],[0,1]];
-  else if (type === 'ring')    off = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-  else if (type === 'diamond') off = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]];
-  return off.map(([dr,dc]) => toIndex(r+dr, c+dc)).filter(i => i >= 0);
+  let targets = spec.offsets.map(([dr,dc]) => toIndex(r+dr, c+dc)).filter(i => i >= 0);
+  // For peek, randomly pick revealCount from the targets
+  if (spec.revealCount && targets.length > spec.revealCount) {
+    for (let i = targets.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [targets[i],targets[j]]=[targets[j],targets[i]]; }
+    targets = targets.slice(0, spec.revealCount);
+  }
+  return targets;
 }
 
-function specialIcon(t) { return t==='cross' ? '✦' : t==='ring' ? '✸' : t==='diamond' ? '❖' : '?'; }
+function specialIcon(t) { const s = getSpecialType(t); return s ? s.icon : '?'; }
 function specialCSS(t)  { return 'special-' + t; }
 
 function buildCardHTML(card) {
@@ -1099,6 +1254,8 @@ function updateStatusBadge() {
   let h = '';
   if (shieldCharges > 0) h += `<div class="status-pill shield">🛡 ${shieldCharges}</div>`;
   if (jokerCharges  > 0) h += `<div class="status-pill joker">🃏 ${jokerCharges}</div>`;
+  if (echoCharges   > 0) h += `<div class="status-pill echo">🔔 ${echoCharges}</div>`;
+  if (spotlightMode)     h += `<div class="status-pill spotlight">🔦 Tap a card</div>`;
   statusBadge.innerHTML = h;
 }
 
@@ -1106,7 +1263,9 @@ function cssColor(c) { return { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', 
 
 function updateChainIndicator() {
   if (!turnActive) {
-    chainEl.innerHTML = activeBooster
+    chainEl.innerHTML = spotlightMode
+      ? '🔦 Tap a face-down card to reveal it'
+      : activeBooster
       ? `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}`
       : 'Tap a card to begin';
     return;
@@ -1239,13 +1398,76 @@ function onCardClick(index) {
 
   if (activeBooster) { if (card.special) return; executeBoosterTap(activeBooster, index); return; }
 
+  // Spotlight mode: next tap on a face-down card permanently reveals it
+  if (spotlightMode && !card.special && !card.flipped) {
+    spotlightMode = false;
+    card.flipped = true;
+    const cel = getCardEl(index);
+    if (cel) { cel.classList.add('flipped', 'reveal-flash'); cel.addEventListener('animationend', () => cel.classList.remove('reveal-flash'), {once:true}); }
+    SFX.match();
+    inputLocked = false;
+    updateBoosterUI();
+    updateChainIndicator();
+    return;
+  }
+
   if (card.special) {
-    if (getRule('instantSpecialReveal')) {
-      // Instant mode: reveal surrounding cards immediately on click
-      if (inputLocked) return;
+    const spec = getSpecialType(card.special);
+    if (!spec) return;
+
+    // Mark special as used and register in turn
+    function markUsed() {
       SFX.special();
+      getCardEl(index).classList.add('used');
+      if (!turnActive) { turnActive = true; chainColor = null; chainCards = []; specialsUsed = [index]; }
+      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); }
+      updateChainIndicator();
+    }
+
+    // Instant mode OR special types that always activate immediately
+    const alwaysInstant = ['peek', 'tint', 'spotlight', 'echo'];
+    if (getRule('instantSpecialReveal') || alwaysInstant.includes(card.special)) {
+      markUsed();
+
+      if (card.special === 'echo') {
+        // Echo: next flipped card stays visible 1 extra turn
+        echoCharges++;
+        inputLocked = false;
+        updateBoosterUI();
+        return;
+      }
+
+      if (card.special === 'spotlight') {
+        // Spotlight: enter tap mode
+        spotlightMode = true;
+        updateBoosterUI();
+        return;
+      }
+
+      if (card.special === 'tint') {
+        // Tint: add color hints to nearby face-down cards
+        const targets = getRevealPattern(card.special, index)
+          .filter(i => board[i] && !board[i].special && !board[i].flipped);
+        const tintTargets = targets.slice(0, spec.tintCount || 4);
+        spawnParticles([index], chainColor || 'blue');
+        tintTargets.forEach((idx, ti) => {
+          setTimeout(() => {
+            const cel = getCardEl(idx);
+            if (cel && !board[idx].flipped) {
+              const color = board[idx].color;
+              const colorMap = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' };
+              cel.classList.add('tinted');
+              cel.style.setProperty('--tint-color', colorMap[color] || '#5b9bd5');
+            }
+          }, ti * 60);
+        });
+        inputLocked = false;
+        updateBoosterUI();
+        return;
+      }
+
+      // Peek and cross/ring/diamond: reveal targets
       inputLocked = true;
-      const specialEl = getCardEl(index);
       const targets = getRevealPattern(card.special, index)
         .filter(i => board[i] && !board[i].special && !board[i].flipped);
       spawnParticles([index], chainColor || 'red');
@@ -1258,12 +1480,8 @@ function onCardClick(index) {
         }, 100 + ti * 70);
       });
 
-      specialEl.classList.add('used');
-      if (!turnActive) { turnActive = true; chainColor = null; chainCards = []; specialsUsed = [index]; }
-      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); }
-      updateChainIndicator();
-
-      const hideDelay = 100 + Math.max(targets.length, 1) * 70 + 2000;
+      // All instant reveals are temporary flashes — peek is shorter
+      const hideDelay = 100 + Math.max(targets.length, 1) * 70 + (spec.temporary ? 1500 : 2000);
       setTimeout(() => {
         targets.forEach(idx => { board[idx].flipped = false; const cel = getCardEl(idx); if (cel) cel.classList.remove('flipped'); });
         inputLocked = false;
@@ -1272,11 +1490,10 @@ function onCardClick(index) {
       }, hideDelay);
       return;
     }
+
     // Default mode: mark special as used, reveal at end of turn
-    SFX.special();
-    if (!turnActive) { turnActive=true; chainColor=null; chainCards=[]; specialsUsed=[index]; getCardEl(index).classList.add('used'); updateChainIndicator(); return; }
-    if (specialsUsed.includes(index)) return;
-    specialsUsed.push(index); getCardEl(index).classList.add('used'); updateChainIndicator(); return;
+    markUsed();
+    return;
   }
 
   if (card.flipped) return;
@@ -1289,6 +1506,8 @@ function onCardClick(index) {
 
   card.flipped = true;
   const el = getCardEl(index); el.classList.add('flipped');
+  // Remove tint hint when card is flipped
+  if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
   if (!turnActive) { turnActive=true; chainColor=card.color; chainCards=[index]; specialsUsed=[]; updateChainIndicator(); return; }
@@ -1311,7 +1530,7 @@ function onCardClick(index) {
 // ============================================================
 function endTurn(manual) {
   inputLocked = true; turns--;
-  shieldCharges = 0; jokerCharges = 0;
+  shieldCharges = 0; jokerCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
   const normalCards = chainCards.filter(i => !board[i].special);
@@ -1330,7 +1549,7 @@ function endTurn(manual) {
   if (combo >= 3) {
     toRemove = [...matched];
     if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
-    if (combo===4) newST='cross'; else if (combo===5) newST='ring'; else if (combo>=6) newST='diamond';
+    newST = getSpecialForCombo(combo);
     if (newST) newSP = matched.length>0 ? matched[matched.length-1] : -1;
     if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
   }
@@ -1338,7 +1557,15 @@ function endTurn(manual) {
 
   const toFlip = [];
   normalCards.forEach(idx => { if (!toRemove.includes(idx) && idx!==newSP) toFlip.push(idx); });
+  // Echo: keep the first card(s) visible instead of flipping back
+  const echoProtected = new Set();
+  if (echoCharges > 0 && toFlip.length > 0) {
+    const keep = Math.min(echoCharges, toFlip.length);
+    for (let i = 0; i < keep; i++) echoProtected.add(toFlip[i]);
+    echoCharges -= keep;
+  }
   toFlip.forEach(idx => {
+    if (echoProtected.has(idx)) return; // echo keeps this card visible
     const el = getCardEl(idx);
     if (el) {
       if (!manual && idx===mismatchIdx) { el.classList.add('wrong'); el.addEventListener('animationend', ()=>el.classList.remove('wrong'), {once:true}); }
@@ -1371,9 +1598,6 @@ function endTurn(manual) {
 }
 
 function addNewCards(toRemove, skip, cb) {
-  if (getRule('gravityDrop') && toRemove.filter(i => i !== skip).length > 0) {
-    return gravityDrop(toRemove, skip, cb);
-  }
   const nc = [];
   toRemove.forEach(idx => {
     if (idx===skip) return;
@@ -1393,104 +1617,6 @@ function addNewCards(toRemove, skip, cb) {
   } else cb();
 }
 
-function gravityDrop(toRemove, skip, cb) {
-  const removeSet = new Set(toRemove.filter(i => i !== skip));
-  const affectedCols = new Set();
-  removeSet.forEach(i => affectedCols.add(i % COLS));
-
-  const newCardIndices = [];
-  const moveInfo = []; // {idx, rowDelta} for animation
-
-  affectedCols.forEach(c => {
-    // Collect survivors (non-removed) top-to-bottom
-    const survivors = [];
-    let gapCount = 0;
-    for (let r = 0; r < ROWS; r++) {
-      const idx = toIndex(r, c);
-      if (removeSet.has(idx)) { gapCount++; }
-      else { survivors.push({ card: board[idx], fromRow: r }); }
-    }
-
-    // New cards fill top rows, survivors sink to bottom
-    for (let i = 0; i < gapCount; i++) {
-      const targetIdx = toIndex(i, c);
-      const card = createCard(targetIdx);
-      board[targetIdx] = card;
-      newCardIndices.push(targetIdx);
-      moveInfo.push({ idx: targetIdx, rowDelta: -(gapCount - i), isNew: true });
-    }
-    for (let i = 0; i < survivors.length; i++) {
-      const targetRow = gapCount + i;
-      const targetIdx = toIndex(targetRow, c);
-      const s = survivors[i];
-      const rowDelta = s.fromRow - targetRow; // negative = fell down
-      s.card.index = targetIdx;
-      board[targetIdx] = s.card;
-      if (rowDelta !== 0) {
-        moveInfo.push({ idx: targetIdx, rowDelta, isNew: false });
-      }
-    }
-  });
-
-  // Rebuild DOM for affected columns
-  affectedCols.forEach(c => {
-    for (let r = 0; r < ROWS; r++) replaceCell(toIndex(r, c));
-  });
-
-  // Compute cell step (height + gap)
-  const cellRect = boardEl.children[0].getBoundingClientRect();
-  const gap = 4;
-  const step = cellRect.height + gap;
-
-  // Flip falling cards face-up so player can track movement
-  moveInfo.forEach(m => {
-    const el = getCardEl(m.idx);
-    if (!el) return;
-    board[m.idx].flipped = true;
-    el.classList.add('flipped');
-    el.style.transform = `translateY(${m.rowDelta * step}px)`;
-  });
-
-  // Trigger transition: add class first frame, change transform second frame
-  requestAnimationFrame(() => {
-    moveInfo.forEach(m => {
-      const el = getCardEl(m.idx);
-      if (el) el.classList.add('gravity-falling');
-    });
-    requestAnimationFrame(() => {
-      moveInfo.forEach(m => {
-        const el = getCardEl(m.idx);
-        if (el) el.style.transform = 'translateY(0)';
-      });
-    });
-  });
-
-  // After animation, flip cards back face-down and handle new card reveal
-  const animDuration = 450;
-  const holdDuration = 800; // extra time to memorize positions
-  setTimeout(() => {
-    // Flip all gravity cards back face-down
-    moveInfo.forEach(m => {
-      const el = getCardEl(m.idx);
-      if (el) {
-        el.classList.remove('gravity-falling');
-        el.style.transform = '';
-        el.classList.remove('flipped');
-        board[m.idx].flipped = false;
-      }
-    });
-
-    if (newCardIndices.length > 0 && !getRule('hiddenNewCards')) {
-      newCardIndices.forEach(idx => { board[idx].flipped = true; const el = getCardEl(idx); if (el) el.classList.add('flipped'); });
-      setTimeout(() => {
-        newCardIndices.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
-        cb();
-      }, 1500);
-    } else {
-      cb();
-    }
-  }, animDuration);
-}
 
 function doSpecialReveal(targets, cb) {
   targets.forEach((rIdx,i) => {
