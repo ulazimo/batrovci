@@ -57,6 +57,18 @@ body {
 }
 #chain-indicator .chain-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
 
+/* Chain timer bar */
+#chain-timer-wrap { width:100%; max-width:500px; height:6px; background:#111; display:none; position:relative; overflow:hidden; }
+#chain-timer-wrap.active { display:block; }
+#chain-timer-bar { height:100%; width:100%; background:linear-gradient(90deg,#e74c3c,#f39c12,#2ecc71); transform-origin:left; transition:transform 0.15s linear; position:relative; }
+#chain-timer-bar::after { content:''; position:absolute; top:0; right:0; width:24px; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.6)); animation:timerSizzle .3s ease-in-out infinite; }
+@keyframes timerSizzle {
+  0%,100% { opacity:.3; width:16px; }
+  50%     { opacity:1;  width:28px; }
+}
+#chain-timer-wrap.urgent #chain-timer-bar { background:linear-gradient(90deg,#e74c3c,#c0392b); }
+#chain-timer-wrap.urgent #chain-timer-bar::after { animation-duration:.15s; }
+
 /* ================================================================
    BOARD
 ================================================================ */
@@ -529,6 +541,7 @@ body.skin-lego {
 </div>
 
 <div id="chain-indicator">Tap a card to begin</div>
+<div id="chain-timer-wrap"><div id="chain-timer-bar"></div></div>
 <div class="status-badge" id="status-badge"></div>
 <div id="board-container"><div id="board"></div></div>
 <div id="booster-bar"></div>
@@ -677,12 +690,20 @@ const GAMEPLAY_RULES = [
   { id: 'chainPulse', name: 'Chain Pulse', icon: '💓',
     desc: 'Flipped cards pulse in size during a combo chain — intensity increases with chain length',
     default: true },
+  { id: 'chainTimer', name: 'Chain Timer', icon: '⏱',
+    desc: 'A countdown timer starts at chain length 3 — if it expires, the chain breaks',
+    default: true },
 ];
 
 function getRule(id) {
   const rule = GAMEPLAY_RULES.find(r => r.id === id);
   if (progress.gameplayRules[id] === undefined) progress.gameplayRules[id] = rule ? rule.default : false;
   return progress.gameplayRules[id];
+}
+
+const DEFAULT_CHAIN_TIMER = 10; // seconds
+function getChainTimerDuration() {
+  return progress.chainTimerDuration || DEFAULT_CHAIN_TIMER;
 }
 
 function toggleRule(id) {
@@ -893,6 +914,27 @@ function showSettings(returnTo) {
       list.appendChild(row);
     });
 
+    // Chain Timer duration control (only shown when chainTimer is enabled)
+    if (getRule('chainTimer')) {
+      const timerRow = document.createElement('div');
+      timerRow.className = 'setting-row';
+      timerRow.innerHTML = `
+        <span class="setting-icon">⏱</span>
+        <div class="setting-info">
+          <div class="setting-name">Timer Duration</div>
+          <div class="setting-desc">Seconds before chain expires (starts at chain length 3)</div>
+        </div>
+        <div class="setting-controls">
+          <div class="qty-control">
+            <button class="qty-btn" onclick="adjustChainTimer(-1)">−</button>
+            <span class="qty-value" id="chain-timer-val">${getChainTimerDuration()}s</span>
+            <button class="qty-btn" onclick="adjustChainTimer(1)">+</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(timerRow);
+    }
+
     // Combo → Special mapping section
     const comboHeader = document.createElement('div');
     comboHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
@@ -976,6 +1018,13 @@ function adjustQty(id, delta) {
   if (!s.enabled) return;
   s.qty = Math.max(0, Math.min(MAX_BOOSTER_QTY, s.qty + delta));
   document.getElementById('qty-' + id).textContent = s.qty;
+  saveProgress();
+}
+
+function adjustChainTimer(delta) {
+  const current = getChainTimerDuration();
+  progress.chainTimerDuration = Math.max(3, Math.min(30, current + delta));
+  document.getElementById('chain-timer-val').textContent = progress.chainTimerDuration + 's';
   saveProgress();
 }
 
@@ -1278,6 +1327,79 @@ function updateBanner() {
 }
 
 // ============================================================
+// CHAIN TIMER
+// ============================================================
+let chainTimerRAF = null;
+let chainTimerStart = 0;
+let chainTimerDuration = 0;
+let chainTimerElapsed = 0;  // accumulated elapsed time (for pause/resume)
+let chainTimerPaused = false;
+const timerWrapEl = document.getElementById('chain-timer-wrap');
+const timerBarEl  = document.getElementById('chain-timer-bar');
+
+function startChainTimer() {
+  if (!getRule('chainTimer')) return;
+  chainTimerDuration = getChainTimerDuration() * 1000;
+  chainTimerElapsed = 0;
+  chainTimerPaused = false;
+  chainTimerStart = performance.now();
+  timerWrapEl.classList.add('active');
+  timerWrapEl.classList.remove('urgent');
+  if (chainTimerRAF) cancelAnimationFrame(chainTimerRAF);
+  chainTimerTick();
+}
+
+function resetChainTimer() {
+  if (!getRule('chainTimer')) return;
+  chainTimerElapsed = 0;
+  chainTimerPaused = false;
+  chainTimerStart = performance.now();
+  timerWrapEl.classList.remove('urgent');
+}
+
+function pauseChainTimer() {
+  if (!chainTimerRAF || chainTimerPaused) return;
+  chainTimerPaused = true;
+  chainTimerElapsed += performance.now() - chainTimerStart;
+  cancelAnimationFrame(chainTimerRAF);
+  chainTimerRAF = null;
+}
+
+function resumeChainTimer() {
+  if (!chainTimerPaused) return;
+  chainTimerPaused = false;
+  chainTimerStart = performance.now();
+  chainTimerTick();
+}
+
+function stopChainTimer() {
+  if (chainTimerRAF) { cancelAnimationFrame(chainTimerRAF); chainTimerRAF = null; }
+  chainTimerPaused = false;
+  chainTimerElapsed = 0;
+  timerWrapEl.classList.remove('active', 'urgent');
+  timerBarEl.style.transform = 'scaleX(1)';
+}
+
+function chainTimerTick() {
+  const totalElapsed = chainTimerElapsed + (performance.now() - chainTimerStart);
+  const remaining = Math.max(0, 1 - totalElapsed / chainTimerDuration);
+  timerBarEl.style.transform = `scaleX(${remaining})`;
+  if (remaining < 0.25) timerWrapEl.classList.add('urgent');
+  else timerWrapEl.classList.remove('urgent');
+
+  if (remaining <= 0) {
+    stopChainTimer();
+    if (turnActive && !inputLocked) {
+      SFX.mismatch(); shakeBoard();
+      inputLocked = true;
+      setTimeout(() => endTurn(false), 500);
+    }
+    return;
+  }
+  chainTimerRAF = requestAnimationFrame(chainTimerTick);
+}
+
+// ============================================================
 // GAME START
 // ============================================================
 function startGame(preplacedSpecials) {
@@ -1286,6 +1408,7 @@ function startGame(preplacedSpecials) {
   chainColor = null; chainCards = []; specialsUsed = [];
   turnActive = false; inputLocked = false;
   shieldCharges = 0; jokerCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
+  stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 
   // Place pre-selected special cards at random positions
@@ -1575,6 +1698,7 @@ function boosterReveal(indices) {
   const targets = indices.filter(i => i>=0 && board[i] && !board[i].special && !board[i].flipped);
   if (!targets.length) { updateBoosterUI(); return; }
   inputLocked = true;
+  pauseChainTimer();
   targets.forEach((idx, i) => {
     setTimeout(() => {
       board[idx].flipped = true;
@@ -1584,7 +1708,7 @@ function boosterReveal(indices) {
   });
   setTimeout(() => {
     targets.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if(el) el.classList.remove('flipped'); });
-    inputLocked = false; updateBoosterUI(); updateChainIndicator();
+    inputLocked = false; resumeChainTimer(); updateBoosterUI(); updateChainIndicator();
   }, targets.length * 80 + 1500);
 }
 
@@ -1642,11 +1766,13 @@ function onCardClick(index) {
       SFX.match();
       getCardEl(index).classList.add('used');
       if (!turnActive) {
-        // Starting a chain with wild — chainColor stays null until a real card sets it
         turnActive = true; chainColor = null; chainCards = [index]; specialsUsed = [];
       } else {
         chainCards.push(index);
       }
+      const chainLen = chainCards.length + specialsUsed.length;
+      if (chainLen === 3) startChainTimer();
+      else if (chainLen > 3) resetChainTimer();
       updateChainIndicator();
       return;
     }
@@ -1657,6 +1783,9 @@ function onCardClick(index) {
       getCardEl(index).classList.add('used');
       if (!turnActive) { turnActive = true; chainColor = null; chainCards = []; specialsUsed = [index]; }
       else if (!specialsUsed.includes(index)) { specialsUsed.push(index); }
+      const chainLen = chainCards.length + specialsUsed.length;
+      if (chainLen === 3) startChainTimer();
+      else if (chainLen > 3) resetChainTimer();
       updateChainIndicator();
     }
 
@@ -1704,6 +1833,7 @@ function onCardClick(index) {
 
       // Peek and cross/ring/diamond: reveal targets
       inputLocked = true;
+      pauseChainTimer();
       const targets = getRevealPattern(card.special, index)
         .filter(i => board[i] && !board[i].special && !board[i].flipped);
       spawnParticles([index], chainColor || 'red');
@@ -1721,6 +1851,7 @@ function onCardClick(index) {
       setTimeout(() => {
         targets.forEach(idx => { board[idx].flipped = false; const cel = getCardEl(idx); if (cel) cel.classList.remove('flipped'); });
         inputLocked = false;
+        resumeChainTimer();
         updateBoosterUI();
         updateChainIndicator();
       }, hideDelay);
@@ -1748,7 +1879,14 @@ function onCardClick(index) {
 
   if (!turnActive) { turnActive=true; chainColor=card.color; chainCards=[index]; specialsUsed=[]; updateChainIndicator(); return; }
   if (chainColor === null) { chainColor=card.color; chainCards.push(index); updateChainIndicator(); return; }
-  if (card.color === chainColor) { SFX.match(); chainCards.push(index); updateChainIndicator(); return; }
+  if (card.color === chainColor) {
+    SFX.match(); chainCards.push(index);
+    const chainLen = chainCards.length + specialsUsed.length;
+    if (chainLen === 3) startChainTimer();
+    else if (chainLen > 3) resetChainTimer();
+    updateChainIndicator();
+    return;
+  }
 
   if (shieldCharges > 0) {
     shieldCharges--; updateStatusBadge();
@@ -1765,6 +1903,7 @@ function onCardClick(index) {
 // END TURN
 // ============================================================
 function endTurn(manual) {
+  stopChainTimer();
   inputLocked = true; turns--;
   shieldCharges = 0; jokerCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
