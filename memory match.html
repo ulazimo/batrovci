@@ -794,9 +794,11 @@ function addComboMapRule() {
 // ============================================================
 const WIN_STREAK_LEVELS = [
   { streak: 0, revealPct: 0   },   // no streak → nothing revealed
-  { streak: 1, revealPct: 0.25 },  // streak 1 → 25% of board
-  { streak: 2, revealPct: 0.50 },  // streak 2 → 50% of board
-  { streak: 3, revealPct: 1.0  },  // streak 3+ → entire board
+  { streak: 1, revealPct: 0.1 },  // streak 1 → 10% of board
+  { streak: 2, revealPct: 0.25 },  // streak 2 → 25% of board
+  { streak: 3, revealPct: 0.50 },  // streak 3 → 50% of board
+  { streak: 4, revealPct: 0.75  },  // streak 4 → 75% of board
+  { streak: 5, revealPct: 1.0  },  // streak 5+ -> entire board
 ];
 const KEEP_STREAK_COST = 100;       // point cost to preserve streak on fail
 
