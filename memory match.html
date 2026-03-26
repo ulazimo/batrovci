@@ -458,11 +458,29 @@ body.skin-lego {
 .combo-map-remove:hover { background:#e74c3c;color:#fff; }
 .combo-map-add { background:none;border:1px dashed #4fc3f7;color:#4fc3f7;border-radius:6px;padding:6px;font-size:12px;cursor:pointer;text-align:center;margin:4px 0;transition:all .15s; }
 .combo-map-add:hover { background:rgba(79,195,247,.1); }
+
+/* Pre-level overlay */
+.pre-level-streak { font-size:14px; color:#f0c040; margin:8px 0; min-height:20px; }
+.pre-level-streak-breakdown { font-size:11px; color:#888; margin:2px 0 10px; }
+.pre-level-section-title { font-size:13px; font-weight:700; color:#ccc; text-transform:uppercase; letter-spacing:1px; margin:10px 0 6px; }
+.pre-level-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:8px 0; }
+.pre-level-card { display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 8px; border-radius:8px; border:2px solid #333; background:rgba(255,255,255,.05); cursor:pointer; min-width:70px; transition:all .2s; user-select:none; }
+.pre-level-card:hover { border-color:#666; background:rgba(255,255,255,.1); }
+.pre-level-card.selected { border-color:#f0c040; background:rgba(240,192,64,.15); box-shadow:0 0 10px rgba(240,192,64,.3); }
+.pre-level-card.disabled { opacity:.35; pointer-events:none; }
+.pre-level-card .plc-icon { font-size:24px; }
+.pre-level-card .plc-name { font-size:11px; font-weight:600; color:#e0e0e0; }
+.pre-level-card .plc-stock { font-size:10px; color:#888; }
+.pre-level-card.selected .plc-stock { color:#f0c040; }
 .skin-lego .combo-map-row { background:rgba(0,0,0,.04); }
 .skin-lego .combo-map-select { background:#FFF0D0;color:#333;border-color:#D8C0A0; }
 .skin-lego .combo-map-remove { border-color:#D01012;color:#D01012; }
 .skin-lego .combo-map-remove:hover { background:#D01012;color:#fff; }
 .skin-lego .combo-map-add { border-color:#006CB7;color:#006CB7; }
+.skin-lego .pre-level-card { background:rgba(0,0,0,.04); border-color:#D8C0A0; }
+.skin-lego .pre-level-card.selected { border-color:#FFD700; background:rgba(255,215,0,.12); box-shadow:0 0 10px rgba(255,215,0,.3); }
+.skin-lego .pre-level-card .plc-name { color:#333; }
+.skin-lego .pre-level-streak { color:#D01012; }
 
 /* Settings gear button */
 .settings-gear {
@@ -585,6 +603,19 @@ body.skin-lego {
     <button class="overlay-btn primary" id="next-level-btn" onclick="nextLevel()">Next Level →</button>
     <button class="overlay-btn secondary" onclick="retryLevel()">Play Again</button>
     <button class="overlay-btn secondary" onclick="showLevelSelect()">Level Select</button>
+  </div>
+</div>
+
+<!-- Pre-Level Preparation -->
+<div id="pre-level" class="overlay-screen">
+  <div class="overlay-box">
+    <h2 id="pre-level-title">Prepare</h2>
+    <div class="pre-level-streak" id="pre-level-streak"></div>
+    <div class="pre-level-streak-breakdown" id="pre-level-streak-breakdown"></div>
+    <div class="pre-level-section-title">Deploy Special Cards</div>
+    <div class="pre-level-grid" id="pre-level-grid"></div>
+    <button class="overlay-btn primary" onclick="confirmPreLevel()">Start Level →</button>
+    <button class="overlay-btn secondary" onclick="closeAllOverlays(); showLevelSelect()">← Back</button>
   </div>
 </div>
 
@@ -766,6 +797,17 @@ if (!progress.stars) progress.stars = new Array(LEVELS.length).fill(0);
 if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.skin) progress.skin = 'classic';
 if (!progress.gameplayRules) progress.gameplayRules = {};
+if (!progress.specialInventory) {
+  progress.specialInventory = {};
+  // Defer actual init until SPECIAL_TYPES is defined (see initInventoryDefaults)
+}
+
+function initInventoryDefaults() {
+  SPECIAL_TYPES.forEach(s => {
+    if (progress.specialInventory[s.id] === undefined) progress.specialInventory[s.id] = 3;
+  });
+  saveProgress();
+}
 
 // ============================================================
 // SKIN
@@ -890,6 +932,33 @@ function showSettings(returnTo) {
     `;
     list.appendChild(row);
   });
+  // Special Card Inventory section
+  const invHeader = document.createElement('div');
+  invHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
+  invHeader.textContent = 'Special Card Inventory';
+  list.appendChild(invHeader);
+
+  SPECIAL_TYPES.forEach(spec => {
+    const qty = progress.specialInventory[spec.id] || 0;
+    const row = document.createElement('div');
+    row.className = 'setting-row';
+    row.innerHTML = `
+      <span class="setting-icon">${spec.icon}</span>
+      <div class="setting-info">
+        <div class="setting-name">${spec.name}</div>
+        <div class="setting-desc">${spec.desc}</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustInventory('${spec.id}',-1)">−</button>
+          <span class="qty-value" id="inv-qty-${spec.id}">${qty}</span>
+          <button class="qty-btn" onclick="adjustInventory('${spec.id}',1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
   closeAllOverlays();
   document.getElementById('settings-panel').classList.add('active');
 }
@@ -907,6 +976,13 @@ function adjustQty(id, delta) {
   if (!s.enabled) return;
   s.qty = Math.max(0, Math.min(MAX_BOOSTER_QTY, s.qty + delta));
   document.getElementById('qty-' + id).textContent = s.qty;
+  saveProgress();
+}
+
+function adjustInventory(specId, delta) {
+  const current = progress.specialInventory[specId] || 0;
+  progress.specialInventory[specId] = Math.max(0, Math.min(99, current + delta));
+  document.getElementById('inv-qty-' + specId).textContent = progress.specialInventory[specId];
   saveProgress();
 }
 
@@ -1046,7 +1122,7 @@ function animateScore(to) {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['skin-select','level-select','overlay-fail','overlay-win','color-picker','settings-panel']
+  ['skin-select','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel']
     .forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById('next-level-btn').style.display = '';
 }
@@ -1080,7 +1156,7 @@ function buildLevelGrid() {
       <span class="lvl-num">${isUnlocked ? lvl.id : '🔒'}</span>
       <span class="lvl-stars">${isCompleted ? '★'.repeat(stars)+'☆'.repeat(3-stars) : ''}</span>
     `;
-    if (isUnlocked) btn.addEventListener('click', () => { currentLevelIndex = i; closeAllOverlays(); startLevel(); });
+    if (isUnlocked) btn.addEventListener('click', () => { currentLevelIndex = i; showPreLevel(); });
     grid.appendChild(btn);
   });
 }
@@ -1088,7 +1164,7 @@ function buildLevelGrid() {
 // ============================================================
 // LEVEL INIT
 // ============================================================
-function startLevel() {
+function initLevelConfig() {
   // Reset win streak when starting from level 1 (fresh run)
   if (currentLevelIndex === 0) {
     progress.winStreak = 0;
@@ -1101,7 +1177,91 @@ function startLevel() {
   boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
   boardEl.style.gridTemplateRows    = `repeat(${ROWS}, 1fr)`;
   updateBanner();
+}
+
+function startLevel() {
+  initLevelConfig();
   startGame();
+}
+
+// ============================================================
+// PRE-LEVEL PREPARATION
+// ============================================================
+let preLevelSelections = [];
+
+function showPreLevel() {
+  initLevelConfig();
+  closeAllOverlays();
+  preLevelSelections = [];
+
+  // Title
+  document.getElementById('pre-level-title').textContent = `Level ${LEVELS[currentLevelIndex].id} — Prepare`;
+
+  // Win streak info
+  const streak = progress.winStreak;
+  const pct = getStreakRevealPct();
+  const streakEl = document.getElementById('pre-level-streak');
+  streakEl.textContent = streak > 0
+    ? `🔥 Win Streak: ${streak} — ${Math.round(pct * 100)}% board reveal`
+    : 'No win streak active';
+
+  // Streak breakdown
+  const breakdownEl = document.getElementById('pre-level-streak-breakdown');
+  breakdownEl.innerHTML = WIN_STREAK_LEVELS.map(lvl => {
+    const active = streak >= lvl.streak;
+    return `<span style="color:${active ? '#f0c040' : '#555'}">` +
+      `${lvl.streak === 0 ? 'No streak' : '🔥' + lvl.streak}: ${Math.round(lvl.revealPct * 100)}%</span>`;
+  }).join(' &nbsp;→&nbsp; ');
+
+  // Special card grid — ordered by combo mapping (combo 4 first, then 5, etc.)
+  const grid = document.getElementById('pre-level-grid');
+  grid.innerHTML = '';
+  const comboMap = getComboMapping();
+  const orderedSpecs = comboMap
+    .map(m => SPECIAL_TYPES.find(s => s.id === m.specialId))
+    .filter(Boolean);
+  orderedSpecs.forEach(spec => {
+    const stock = progress.specialInventory[spec.id] || 0;
+    const card = document.createElement('div');
+    card.className = 'pre-level-card' + (stock <= 0 ? ' disabled' : '');
+    card.dataset.specId = spec.id;
+    card.innerHTML = `
+      <span class="plc-icon">${spec.icon}</span>
+      <span class="plc-name">${spec.name}</span>
+      <span class="plc-stock">×${stock}</span>
+    `;
+    card.title = spec.desc;
+    if (stock > 0) {
+      card.addEventListener('click', () => togglePreLevelCard(spec.id, card));
+    }
+    grid.appendChild(card);
+  });
+
+  document.getElementById('pre-level').classList.add('active');
+}
+
+function togglePreLevelCard(specId, el) {
+  const idx = preLevelSelections.indexOf(specId);
+  if (idx >= 0) {
+    preLevelSelections.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    const stock = progress.specialInventory[specId] || 0;
+    const alreadySelected = preLevelSelections.filter(s => s === specId).length;
+    if (alreadySelected >= stock) return; // can't exceed inventory
+    preLevelSelections.push(specId);
+    el.classList.add('selected');
+  }
+}
+
+function confirmPreLevel() {
+  // Deduct inventory
+  preLevelSelections.forEach(specId => {
+    progress.specialInventory[specId] = Math.max(0, (progress.specialInventory[specId] || 0) - 1);
+  });
+  saveProgress();
+  closeAllOverlays();
+  startGame(preLevelSelections);
 }
 
 function updateBanner() {
@@ -1120,25 +1280,41 @@ function updateBanner() {
 // ============================================================
 // GAME START
 // ============================================================
-function startGame() {
+function startGame(preplacedSpecials) {
   closeAllOverlays();
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainCards = []; specialsUsed = [];
   turnActive = false; inputLocked = false;
   shieldCharges = 0; jokerCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
+
+  // Place pre-selected special cards at random positions
+  if (preplacedSpecials && preplacedSpecials.length > 0) {
+    const available = board.map((_, i) => i);
+    // Shuffle available positions
+    for (let i = available.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [available[i], available[j]] = [available[j], available[i]];
+    }
+    preplacedSpecials.forEach((specId, idx) => {
+      if (idx < available.length) {
+        const pos = available[idx];
+        board[pos] = createSpecialCard(pos, specId);
+      }
+    });
+  }
+
   targetEl.textContent = TARGET;
   renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge();
   revealEntireBoard();
 }
 
-function retryLevel() { closeAllOverlays(); startLevel(); }
+function retryLevel() { showPreLevel(); }
 
 function nextLevel() {
   if (currentLevelIndex < LEVELS.length - 1) {
     currentLevelIndex++;
-    closeAllOverlays();
-    startLevel();
+    showPreLevel();
   } else {
     document.getElementById('win-title').textContent = '🏆 All Done!';
     document.getElementById('win-stars').textContent = '🌟🌟🌟';
@@ -1160,16 +1336,17 @@ const SPECIAL_TYPES = [
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]], tintCount: 4, temporary: false },
   { id: 'spotlight', icon: '🔦', name: 'Spotlight', desc: 'Tap any face-down card to permanently reveal it',  power: 'medium', needsTap: true },
   { id: 'echo',      icon: '🔔', name: 'Echo',      desc: 'Next flipped card stays visible for 1 extra turn', power: 'medium', needsTap: false },
-  { id: 'cross',     icon: '✦',  name: 'Cross',     desc: 'Reveal 4 adjacent cards',                          power: 'high',   needsTap: false,
+  { id: 'cross',     icon: '💣',  name: 'Baby Bomb',     desc: 'Reveal 4 adjacent cards',                          power: 'high',   needsTap: false,
     offsets: [[-1,0],[1,0],[0,-1],[0,1]] },
-  { id: 'ring',      icon: '✸',  name: 'Ring',      desc: 'Reveal 8 surrounding cards',                       power: 'high',   needsTap: false,
+  { id: 'ring',      icon: '💥',  name: 'BIG Bomb',      desc: 'Reveal 8 surrounding cards',                       power: 'high',   needsTap: false,
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
-  { id: 'diamond',   icon: '❖',  name: 'Diamond',   desc: 'Reveal 12 cards in extended cross',                power: 'high',   needsTap: false,
+  { id: 'diamond',   icon: '☢︎',  name: 'Nuke!',   desc: 'Reveal 12 cards in extended cross',                power: 'high',   needsTap: false,
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]] },
   { id: 'wild',      icon: '🌈', name: 'Wild',      desc: 'Matches any color — acts as a wildcard in combos', power: 'medium', needsTap: false, isWild: true },
 ];
 
 function getSpecialType(id) { return SPECIAL_TYPES.find(s => s.id === id); }
+initInventoryDefaults();
 
 // ============================================================
 // COMBO → SPECIAL MAPPING
