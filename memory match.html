@@ -1885,6 +1885,13 @@ function onCardClick(index) {
     if (chainLen === 3) startChainTimer();
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
+    // Check if all cards of this color have been found (perfect sweep)
+    const remaining = board.filter(c => c && !c.special && !c.flipped && c.color === chainColor);
+    if (remaining.length === 0 && chainLen >= 3) {
+      stopChainTimer();
+      inputLocked = true;
+      setTimeout(() => endTurn(true, true), 300);
+    }
     return;
   }
 
@@ -1902,7 +1909,7 @@ function onCardClick(index) {
 // ============================================================
 // END TURN
 // ============================================================
-function endTurn(manual) {
+function endTurn(manual, perfectSweep) {
   stopChainTimer();
   inputLocked = true; turns--;
   shieldCharges = 0; jokerCharges = 0; spotlightMode = false;
@@ -1921,10 +1928,12 @@ function endTurn(manual) {
   const combo = matched.length + specialsUsed.length;
   let specialActivated = matched.length>=2 && specialsUsed.length>0;
   let pts=0, toRemove=[], newST=null, newSP=-1;
+  const PERFECT_SWEEP_BONUS = 0;
 
   if (combo >= 3) {
     toRemove = [...matched];
     if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
+    if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
     newST = getSpecialForCombo(combo);
     if (newST) newSP = matched.length>0 ? matched[matched.length-1] : -1;
     if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
@@ -1960,9 +1969,10 @@ function endTurn(manual) {
   if (toRemove.length>0 || newSP>=0 || revealTargets.length>0) {
     score += pts; animateScore(score); turnsEl.textContent = turns;
     if (pts>0) {
-      showScorePopup(pts, matched.length>0 ? matched : specialsUsed);
+      showScorePopup(pts, matched.length>0 ? matched : specialsUsed, perfectSweep ? '🧹 PERFECT SWEEP!' : null);
       SFX.combo(combo);
       spawnParticles(matched.length>0 ? matched : specialsUsed, chainColor);
+      if (perfectSweep) { SFX.win(); launchConfetti(); }
     }
     toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
     setTimeout(() => {
@@ -2090,7 +2100,7 @@ function keepStreak() {
 // ============================================================
 // SCORE POPUP
 // ============================================================
-function showScorePopup(pts, indices) {
+function showScorePopup(pts, indices, extraMsg) {
   const mid = indices[Math.floor(indices.length/2)];
   const cell = boardEl.children[mid]; if(!cell) return;
   const rect = cell.getBoundingClientRect();
@@ -2099,6 +2109,14 @@ function showScorePopup(pts, indices) {
   p.style.left = `${rect.left+rect.width/2-30}px`;
   p.style.top  = `${rect.top}px`;
   document.body.appendChild(p); setTimeout(()=>p.remove(), 1000);
+  if (extraMsg) {
+    const m = document.createElement('div'); m.className='score-popup';
+    m.textContent = extraMsg;
+    m.style.left = `${rect.left+rect.width/2-60}px`;
+    m.style.top  = `${rect.top - 30}px`;
+    m.style.fontSize = '18px'; m.style.color = '#f0c040'; m.style.width = '140px'; m.style.textAlign = 'center';
+    document.body.appendChild(m); setTimeout(()=>m.remove(), 1500);
+  }
 }
 
 // ============================================================
