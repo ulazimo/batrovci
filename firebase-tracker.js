@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -20,7 +20,7 @@ export function initTracking(gameId) {
         if (!db || !currentUser) return;
         const s = Math.floor((Date.now() - startTime) / 1000);
         if (s > 0) {
-            updateDoc(doc(db, "game_stats", gameId), { timePlayed: increment(s) })
+            setDoc(doc(db, "game_stats", gameId), { timePlayed: increment(s) }, { merge: true })
                 .catch(e => console.warn("Stats error:", e));
             startTime = Date.now();
         }
@@ -39,7 +39,7 @@ export function initTracking(gameId) {
             }
             const { user } = await signInAnonymously(auth);
             currentUser = user;
-            updateDoc(doc(db, "game_stats", gameId), { plays: increment(1) })
+            setDoc(doc(db, "game_stats", gameId), { plays: increment(1) }, { merge: true })
                 .catch(e => console.warn("Stats error:", e));
             setInterval(saveTime, 30000);
         } catch (e) {
