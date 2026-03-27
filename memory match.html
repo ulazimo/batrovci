@@ -669,6 +669,18 @@ const STREAK_EFFECTS = [
 function getStreakEffect() { return progress.streakEffect || 'reveal'; }
 function setStreakEffect(id) { progress.streakEffect = id; saveProgress(); }
 
+function getWinStreakStartLevel() { return progress.winStreakStartLevel || 1; }
+function setWinStreakStartLevel(lvl) { progress.winStreakStartLevel = lvl; saveProgress(); }
+function adjustWinStreakStartLevel(delta) {
+  const cur = getWinStreakStartLevel();
+  const newVal = Math.max(1, Math.min(LEVELS.length, cur + delta));
+  setWinStreakStartLevel(newVal);
+  document.getElementById('ws-start-level').textContent = newVal;
+}
+function isWinStreakActive() {
+  return LEVELS[currentLevelIndex].id >= getWinStreakStartLevel();
+}
+
 function getStreakRevealPct() {
   if (getStreakEffect() !== 'reveal') return 0;
   let pct = 0;
@@ -797,6 +809,25 @@ function showSettings(returnTo) {
     wsHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
     wsHeader.textContent = 'Winstreak Effect';
     list.appendChild(wsHeader);
+
+    // Winstreak start level
+    const wsStartRow = document.createElement('div');
+    wsStartRow.className = 'setting-row';
+    wsStartRow.innerHTML = `
+      <span class="setting-icon">🔥</span>
+      <div class="setting-info">
+        <div class="setting-name">Enabled from Level</div>
+        <div class="setting-desc">Winstreak only activates from this level onwards</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustWinStreakStartLevel(-1)">−</button>
+          <span class="qty-value" id="ws-start-level">${getWinStreakStartLevel()}</span>
+          <button class="qty-btn" onclick="adjustWinStreakStartLevel(1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(wsStartRow);
 
     const currentEffect = getStreakEffect();
     STREAK_EFFECTS.forEach(eff => {
@@ -1207,32 +1238,35 @@ function showPreLevel() {
   // Title
   document.getElementById('pre-level-title').textContent = `Level ${LEVELS[currentLevelIndex].id} — Prepare`;
 
-  // Win streak info — changes based on chosen effect
-  const streak = progress.winStreak;
-  const effect = getStreakEffect();
+  // Win streak info — only show if winstreak is active for this level
   const streakEl = document.getElementById('pre-level-streak');
-  if (streak > 0) {
-    if (effect === 'reveal') {
-      const pct = getStreakRevealPct();
-      streakEl.textContent = `🔥 Win Streak: ${streak} — 👁 ${Math.round(pct * 100)}% board reveal`;
-    } else {
-      const shields = getStreakShields();
-      streakEl.textContent = `🔥 Win Streak: ${streak} — 🛡 ${shields} shield${shields !== 1 ? 's' : ''}`;
-    }
-  } else {
-    streakEl.textContent = 'No win streak active';
-  }
-
-  // Streak breakdown
   const breakdownEl = document.getElementById('pre-level-streak-breakdown');
-  breakdownEl.innerHTML = WIN_STREAK_LEVELS.map(lvl => {
-    const active = streak >= lvl.streak;
-    const value = effect === 'reveal'
-      ? `${Math.round(lvl.revealPct * 100)}%`
-      : `🛡${lvl.shields}`;
-    return `<span style="color:${active ? '#f0c040' : '#555'}">` +
-      `${lvl.streak === 0 ? 'No streak' : '🔥' + lvl.streak}: ${value}</span>`;
-  }).join(' &nbsp;→&nbsp; ');
+  if (isWinStreakActive()) {
+    const streak = progress.winStreak;
+    const effect = getStreakEffect();
+    if (streak > 0) {
+      if (effect === 'reveal') {
+        const pct = getStreakRevealPct();
+        streakEl.textContent = `🔥 Win Streak: ${streak} — 👁 ${Math.round(pct * 100)}% board reveal`;
+      } else {
+        const shields = getStreakShields();
+        streakEl.textContent = `🔥 Win Streak: ${streak} — 🛡 ${shields} shield${shields !== 1 ? 's' : ''}`;
+      }
+    } else {
+      streakEl.textContent = 'No win streak active';
+    }
+    breakdownEl.innerHTML = WIN_STREAK_LEVELS.map(lvl => {
+      const active = streak >= lvl.streak;
+      const value = effect === 'reveal'
+        ? `${Math.round(lvl.revealPct * 100)}%`
+        : `🛡${lvl.shields}`;
+      return `<span style="color:${active ? '#f0c040' : '#555'}">` +
+        `${lvl.streak === 0 ? 'No streak' : '🔥' + lvl.streak}: ${value}</span>`;
+    }).join(' &nbsp;→&nbsp; ');
+  } else {
+    streakEl.textContent = '';
+    breakdownEl.innerHTML = '';
+  }
 
   // Special card grid — ordered by combo mapping (combo 4 first, then 5, etc.)
   const grid = document.getElementById('pre-level-grid');
@@ -1424,9 +1458,11 @@ function startGame(preplacedSpecials) {
     }, 800);
   }
 
-  // Apply winstreak effect
-  const streakShields = getStreakShields();
-  if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
+  // Apply winstreak effect (only if enabled for this level)
+  if (isWinStreakActive()) {
+    const streakShields = getStreakShields();
+    if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
+  }
 
   // Tutorial: show overlay on level 1 if not completed; otherwise reveal normally
   if (isTutorialLevel()) {
@@ -2316,7 +2352,7 @@ function levelWon() {
   if (newStars > (progress.stars[currentLevelIndex]||0)) progress.stars[currentLevelIndex] = newStars;
   if (currentLevelIndex+1 > progress.highestUnlocked && currentLevelIndex+1 < LEVELS.length)
     progress.highestUnlocked = currentLevelIndex+1;
-  progress.winStreak++;
+  if (isWinStreakActive()) progress.winStreak++;
   saveProgress();
   updateBanner();
 
@@ -2420,7 +2456,7 @@ function showScorePopup(pts, indices, extraMsg) {
 // ============================================================
 function revealEntireBoard() {
   inputLocked = true;
-  const pct = getStreakRevealPct();
+  const pct = isWinStreakActive() ? getStreakRevealPct() : 0;
   const revealMs  = Math.min(1500 + progress.winStreak * 250, 3500);
   const staggerMs = 50;
 
