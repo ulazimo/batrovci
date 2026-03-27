@@ -360,6 +360,15 @@ body {
 
 <!-- ===== OVERLAYS ===== -->
 
+<!-- Home Screen -->
+<div id="home-screen" class="overlay-screen">
+  <div class="overlay-box" style="text-align:center;gap:20px;">
+    <h1 style="font-size:42px;margin:0;">🎴</h1>
+    <h1 style="color:#4fc3f7;margin:0;font-size:28px;">Memory Match</h1>
+    <p style="color:#888;font-size:14px;margin:0;">Match colors. Build combos. Beat the score.</p>
+    <button class="overlay-btn primary" style="font-size:18px;padding:14px 48px;" onclick="document.getElementById('home-screen').classList.remove('active'); showLevelSelect();">Play</button>
+  </div>
+</div>
 
 <!-- Level Select -->
 <div id="level-select" class="overlay-screen">
@@ -1100,7 +1109,7 @@ function animateScore(to) {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay']
+  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay']
     .forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById('next-level-btn').style.display = '';
 }
@@ -2493,9 +2502,9 @@ function revealEntireBoard() {
 }
 
 // ============================================================
-// BOOT — go straight to level select
+// BOOT — show home screen
 // ============================================================
-showLevelSelect();
+document.getElementById('home-screen').classList.add('active');
 </script>
 
 <!-- FIREBASE TRACKING -->
