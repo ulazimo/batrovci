@@ -1127,7 +1127,7 @@ let COLS, ROWS, TOTAL, ACTIVE_COLORS, MAX_TURNS, TARGET;
 let currentLevelIndex = progress.highestUnlocked;
 
 let board = [], score = 0, turns = 0;
-let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = [];
+let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = [], lastSelectedIdx = -1;
 let turnActive = false, inputLocked = false;
 let shieldCharges = 0, jokerCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 
@@ -1495,7 +1495,7 @@ function chainTimerTick() {
 function startGame(preplacedSpecials) {
   closeAllOverlays();
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
-  chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [];
+  chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;
   shieldCharges = 0; jokerCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   stopChainTimer();
@@ -1730,10 +1730,9 @@ function updateComboSpawnIndicator() {
   // Check that this combo length actually yields a special
   const specialId = getSpecialForCombo(combo);
   if (!specialId) return;
-  // The spawn position is the last card in the chain (matching endTurn logic)
-  const allChain = [...chainCards];
-  if (allChain.length === 0) return;
-  const spawnIdx = allChain[allChain.length - 1];
+  // The spawn position is the last selected card (matching endTurn logic)
+  if (lastSelectedIdx < 0) return;
+  const spawnIdx = lastSelectedIdx;
   const el = getCardEl(spawnIdx);
   if (el) {
     el.classList.add('combo-spawn-indicator');
@@ -1963,8 +1962,8 @@ function onCardClick(index) {
     function markUsed() {
       SFX.special();
       getCardEl(index).classList.add('used');
-      if (!turnActive) { turnActive = true; chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [index]; }
-      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); }
+      if (!turnActive) { turnActive = true; chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [index]; lastSelectedIdx = index; }
+      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); lastSelectedIdx = index; }
       // Colored bombs: add bomb's color as a parallel chain color
       if (getRule('coloredBombs') && card.bombColor && isBombType(card.special)) {
         chainColors.add(card.bombColor);
@@ -2081,12 +2080,12 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; updateChainIndicator(); return; }
-  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); updateChainIndicator(); return; }
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; updateChainIndicator(); return; }
+  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; updateChainIndicator(); return; }
   // Match: primary chain color OR any parallel chain color (colored bombs)
   const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
   if (colorMatch) {
-    SFX.match(); chainCards.push(index);
+    SFX.match(); chainCards.push(index); lastSelectedIdx=index;
     // If this is a parallel color and no primary was set yet, adopt it
     if (chainColor === null) { chainColor = card.color; chainColors.add(card.color); }
     const chainLen = chainCards.length + specialsUsed.length;
@@ -2170,7 +2169,7 @@ function endTurn(manual, perfectSweep) {
     if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
     newST = getSpecialForCombo(combo);
-    if (newST) newSP = matched.length>0 ? matched[matched.length-1] : -1;
+    if (newST) newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1);
     if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
   }
   if (specialActivated) toRemove.push(...specialsUsed);
