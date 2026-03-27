@@ -802,25 +802,43 @@ function addComboMapRule() {
 
 // ============================================================
 // WIN STREAK CONFIG — add/remove levels here to expand
-// Each entry: { streak: min streak needed, revealPct: % of board revealed at start }
+// Each entry: { streak, revealPct, shields }
 // ============================================================
 const WIN_STREAK_LEVELS = [
-  { streak: 0, revealPct: 0   },   // no streak → nothing revealed
-  { streak: 1, revealPct: 0.1 },  // streak 1 → 10% of board
-  { streak: 2, revealPct: 0.25 },  // streak 2 → 25% of board
-  { streak: 3, revealPct: 0.50 },  // streak 3 → 50% of board
-  { streak: 4, revealPct: 0.75  },  // streak 4 → 75% of board
-  { streak: 5, revealPct: 1.0  },  // streak 5+ -> entire board
+  { streak: 0, revealPct: 0,    shields: 0 },
+  { streak: 1, revealPct: 0.1,  shields: 1 },
+  { streak: 2, revealPct: 0.25, shields: 2 },
+  { streak: 3, revealPct: 0.50, shields: 3 },
+  { streak: 4, revealPct: 0.75, shields: 4 },
+  { streak: 5, revealPct: 1.0,  shields: 5 },
 ];
-const KEEP_STREAK_COST = 100;       // point cost to preserve streak on fail
+const KEEP_STREAK_COST = 100;
+
+// Winstreak effect types
+const STREAK_EFFECTS = [
+  { id: 'reveal', name: 'Reveal', icon: '👁', desc: 'Reveal a % of the board at level start' },
+  { id: 'shield', name: 'Shield', icon: '🛡', desc: 'Start with shields that protect your combo' },
+];
+
+function getStreakEffect() { return progress.streakEffect || 'reveal'; }
+function setStreakEffect(id) { progress.streakEffect = id; saveProgress(); }
 
 function getStreakRevealPct() {
+  if (getStreakEffect() !== 'reveal') return 0;
   let pct = 0;
   for (const lvl of WIN_STREAK_LEVELS) {
     if (progress.winStreak >= lvl.streak) pct = lvl.revealPct;
   }
-  console.log("Winstreak reveal percentage: " + pct)
   return pct;
+}
+
+function getStreakShields() {
+  if (getStreakEffect() !== 'shield') return 0;
+  let shields = 0;
+  for (const lvl of WIN_STREAK_LEVELS) {
+    if (progress.winStreak >= lvl.streak) shields = lvl.shields;
+  }
+  return shields;
 }
 
 function getStreakLevel() {
@@ -828,7 +846,6 @@ function getStreakLevel() {
   for (let i = WIN_STREAK_LEVELS.length - 1; i >= 0; i--) {
     if (progress.winStreak >= WIN_STREAK_LEVELS[i].streak) { level = i; break; }
   }
-  console.log("Winstreak level: " + level)
   return level;
 }
 
@@ -965,6 +982,32 @@ function showSettings(returnTo) {
       `;
       list.appendChild(timerRow);
     }
+
+    // Winstreak Effect section
+    const wsHeader = document.createElement('div');
+    wsHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
+    wsHeader.textContent = 'Winstreak Effect';
+    list.appendChild(wsHeader);
+
+    const currentEffect = getStreakEffect();
+    STREAK_EFFECTS.forEach(eff => {
+      const active = currentEffect === eff.id;
+      const row = document.createElement('div');
+      row.className = 'setting-row' + (active ? '' : ' disabled');
+      row.style.cursor = 'pointer';
+      row.innerHTML = `
+        <span class="setting-icon">${eff.icon}</span>
+        <div class="setting-info">
+          <div class="setting-name">${eff.name}</div>
+          <div class="setting-desc">${eff.desc}</div>
+        </div>
+        <div class="setting-controls">
+          <div class="setting-toggle ${active ? 'on' : ''}" style="pointer-events:none;"></div>
+        </div>
+      `;
+      row.addEventListener('click', () => { setStreakEffect(eff.id); showSettings(settingsReturnTo); });
+      list.appendChild(row);
+    });
 
     // Combo → Special mapping section
     const comboHeader = document.createElement('div');
@@ -1277,20 +1320,31 @@ function showPreLevel() {
   // Title
   document.getElementById('pre-level-title').textContent = `Level ${LEVELS[currentLevelIndex].id} — Prepare`;
 
-  // Win streak info
+  // Win streak info — changes based on chosen effect
   const streak = progress.winStreak;
-  const pct = getStreakRevealPct();
+  const effect = getStreakEffect();
   const streakEl = document.getElementById('pre-level-streak');
-  streakEl.textContent = streak > 0
-    ? `🔥 Win Streak: ${streak} — ${Math.round(pct * 100)}% board reveal`
-    : 'No win streak active';
+  if (streak > 0) {
+    if (effect === 'reveal') {
+      const pct = getStreakRevealPct();
+      streakEl.textContent = `🔥 Win Streak: ${streak} — 👁 ${Math.round(pct * 100)}% board reveal`;
+    } else {
+      const shields = getStreakShields();
+      streakEl.textContent = `🔥 Win Streak: ${streak} — 🛡 ${shields} shield${shields !== 1 ? 's' : ''}`;
+    }
+  } else {
+    streakEl.textContent = 'No win streak active';
+  }
 
   // Streak breakdown
   const breakdownEl = document.getElementById('pre-level-streak-breakdown');
   breakdownEl.innerHTML = WIN_STREAK_LEVELS.map(lvl => {
     const active = streak >= lvl.streak;
+    const value = effect === 'reveal'
+      ? `${Math.round(lvl.revealPct * 100)}%`
+      : `🛡${lvl.shields}`;
     return `<span style="color:${active ? '#f0c040' : '#555'}">` +
-      `${lvl.streak === 0 ? 'No streak' : '🔥' + lvl.streak}: ${Math.round(lvl.revealPct * 100)}%</span>`;
+      `${lvl.streak === 0 ? 'No streak' : '🔥' + lvl.streak}: ${value}</span>`;
   }).join(' &nbsp;→&nbsp; ');
 
   // Special card grid — ordered by combo mapping (combo 4 first, then 5, etc.)
@@ -1471,6 +1525,10 @@ function startGame(preplacedSpecials) {
 
   targetEl.textContent = TARGET;
   renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge();
+
+  // Apply winstreak effect
+  const streakShields = getStreakShields();
+  if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
   revealEntireBoard();
 }
 
