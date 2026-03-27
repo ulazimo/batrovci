@@ -1910,10 +1910,57 @@ function activateBooster(id) {
   else if (id === 'joker')  { jokerCharges  += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
 }
 
+function executePeek(index) {
+  const card = board[index];
+  if (!card || card.flipped || card.special || card.locked) { updateBoosterUI(); return; }
+  inputLocked = true;
+  pauseChainTimer();
+  card.flipped = true;
+  const el = getCardEl(index);
+  if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+
+  // Check if it matches active chain color
+  const matchesChain = turnActive && (card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color)));
+
+  if (matchesChain) {
+    // Auto-add to chain with celebration
+    setTimeout(() => {
+      if (!chainCards.includes(index)) { chainCards.push(index); lastSelectedIdx = index; }
+      SFX.match();
+      spawnParticles([index], card.color);
+      const chainLen = chainCards.length + specialsUsed.length;
+      if (chainLen === 3) startChainTimer();
+      else if (chainLen > 3) resetChainTimer();
+      inputLocked = false;
+      resumeChainTimer();
+      updateBoosterUI();
+      updateChainIndicator();
+      // Check perfect sweep
+      const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+      const remaining = board.filter(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
+      if (remaining.length === 0 && chainLen >= 3) {
+        stopChainTimer();
+        inputLocked = true;
+        setTimeout(() => endTurn(false, true), 600);
+      }
+    }, 400);
+  } else {
+    // Normal peek — flash then hide
+    setTimeout(() => {
+      card.flipped = false;
+      if (el) el.classList.remove('flipped');
+      inputLocked = false;
+      resumeChainTimer();
+      updateBoosterUI();
+      updateChainIndicator();
+    }, 1500);
+  }
+}
+
 function executeBoosterTap(id, index) {
   boosterCounts[id]--; activeBooster = null; saveBoosterCounts();
   const { r, c } = toRC(index);
-  if (id === 'peek') boosterReveal([index]);
+  if (id === 'peek') { executePeek(index); return; }
   else if (id === 'cross') {
     const t = [[-1,0],[1,0],[0,-1],[0,1]].map(([dr,dc]) => toIndex(r+dr,c+dc)).filter(i=>i>=0);
     t.push(index); boosterReveal(t);
