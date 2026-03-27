@@ -414,7 +414,7 @@ body {
     <h2 id="pre-level-title">Prepare</h2>
     <div class="pre-level-streak" id="pre-level-streak"></div>
     <div class="pre-level-streak-breakdown" id="pre-level-streak-breakdown"></div>
-    <div class="pre-level-section-title">Deploy Special Cards</div>
+    <div class="pre-level-section-title" id="pre-level-section-title">Deploy Special Cards</div>
     <div class="pre-level-grid" id="pre-level-grid"></div>
     <button class="overlay-btn primary" onclick="confirmPreLevel()">Start Level →</button>
     <button class="overlay-btn secondary" onclick="closeAllOverlays(); showLevelSelect()">← Back</button>
@@ -711,6 +711,18 @@ function isWinStreakActive() {
   return LEVELS[currentLevelIndex].id >= getWinStreakStartLevel();
 }
 
+function getDeploySpecialsStartLevel() { return progress.deploySpecialsStartLevel || 1; }
+function setDeploySpecialsStartLevel(lvl) { progress.deploySpecialsStartLevel = lvl; saveProgress(); }
+function adjustDeploySpecialsStartLevel(delta) {
+  const cur = getDeploySpecialsStartLevel();
+  const newVal = Math.max(1, Math.min(LEVELS.length, cur + delta));
+  setDeploySpecialsStartLevel(newVal);
+  document.getElementById('deploy-specials-start-level').textContent = newVal;
+}
+function isDeploySpecialsActive() {
+  return LEVELS[currentLevelIndex].id >= getDeploySpecialsStartLevel();
+}
+
 function getStreakRevealPct() {
   if (getStreakEffect() !== 'reveal') return 0;
   let pct = 0;
@@ -878,6 +890,25 @@ function showSettings(returnTo) {
       row.addEventListener('click', () => { setStreakEffect(eff.id); showSettings(settingsReturnTo); });
       list.appendChild(row);
     });
+
+    // Deploy Special Cards start level
+    const dsStartRow = document.createElement('div');
+    dsStartRow.className = 'setting-row';
+    dsStartRow.innerHTML = `
+      <span class="setting-icon">🎴</span>
+      <div class="setting-info">
+        <div class="setting-name">Deploy Specials from Level</div>
+        <div class="setting-desc">Special card deployment unlocks at this level</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustDeploySpecialsStartLevel(-1)">−</button>
+          <span class="qty-value" id="deploy-specials-start-level">${getDeploySpecialsStartLevel()}</span>
+          <button class="qty-btn" onclick="adjustDeploySpecialsStartLevel(1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(dsStartRow);
 
     // Combo → Special mapping section
     const comboHeader = document.createElement('div');
@@ -1298,9 +1329,18 @@ function showPreLevel() {
     breakdownEl.innerHTML = '';
   }
 
-  // Special card grid — ordered by combo mapping (combo 4 first, then 5, etc.)
+  // Special card grid — only show if deploy specials is unlocked for this level
   const grid = document.getElementById('pre-level-grid');
   grid.innerHTML = '';
+  const sectionTitle = document.getElementById('pre-level-section-title');
+  if (!isDeploySpecialsActive()) {
+    if (sectionTitle) sectionTitle.style.display = 'none';
+    grid.style.display = 'none';
+    document.getElementById('pre-level').classList.add('active');
+    return;
+  }
+  if (sectionTitle) sectionTitle.style.display = '';
+  grid.style.display = '';
   const comboMap = getComboMapping();
   const orderedSpecs = comboMap
     .map(m => SPECIAL_TYPES.find(s => s.id === m.specialId))
