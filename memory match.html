@@ -2143,13 +2143,35 @@ function endTurn(manual, perfectSweep) {
     toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
     setTimeout(() => {
       if (newSP>=0) { const bColor = (getRule('coloredBombs') && isBombType(newST)) ? chainColor : null; board[newSP]=createSpecialCard(newSP,newST,bColor); replaceCell(newSP); }
-      if (revealTargets.length>0) doSpecialReveal(revealTargets, ()=>addNewCards(toRemove,newSP,()=>finishTurn()));
-      else addNewCards(toRemove,newSP,()=>finishTurn());
+      // Step 1: Reveal bomb targets (stay face-up, no auto-hide)
+      if (revealTargets.length > 0) {
+        revealCardsNoHide(revealTargets);
+      }
+      // Step 2: After bomb reveal animation, drop in new cards
+      const bombRevealTime = revealTargets.length > 0 ? 300 : 0;
+      setTimeout(() => {
+        const nc = placeNewCards(toRemove, newSP);
+        const showNewCards = nc.length > 0 && !getRule('hiddenNewCards');
+        const dropDelay = nc.length > 0 ? 450 : 0;
+        setTimeout(() => {
+          // Reveal new cards (no auto-hide)
+          if (showNewCards) revealCardsNoHide(nc);
+          // Hide everything together after 2.2s
+          const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
+          if (allRevealed.length > 0) {
+            setTimeout(() => {
+              allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
+              finishTurn();
+            }, 2200);
+          } else finishTurn();
+        }, dropDelay);
+      }, bombRevealTime);
     }, 500);
   } else setTimeout(finishTurn, 400);
 }
 
-function addNewCards(toRemove, skip, cb) {
+// Place new cards on the board (with drop animation) but don't reveal them yet
+function placeNewCards(toRemove, skip) {
   const nc = [];
   toRemove.forEach(idx => {
     if (idx===skip) return;
@@ -2157,33 +2179,45 @@ function addNewCards(toRemove, skip, cb) {
     const el=getCardEl(idx);
     if (el) { el.classList.add('dropping'); el.addEventListener('animationend',()=>el.classList.remove('dropping'),{once:true}); }
   });
-  if (nc.length>0) {
-    if (getRule('hiddenNewCards')) {
-      setTimeout(cb, 450);
-    } else {
-      setTimeout(() => {
-        nc.forEach(idx => { board[idx].flipped=true; const el=getCardEl(idx); if(el) el.classList.add('flipped'); });
-        setTimeout(() => { nc.forEach(idx => { board[idx].flipped=false; const el=getCardEl(idx); if(el) el.classList.remove('flipped'); }); cb(); }, 1500);
-      }, 450);
-    }
+  return nc;
+}
+
+// Legacy wrapper for any remaining callers
+function addNewCards(toRemove, skip, cb) {
+  const nc = placeNewCards(toRemove, skip);
+  if (nc.length > 0 && !getRule('hiddenNewCards')) {
+    doSimultaneousReveal(nc, cb);
+  } else if (nc.length > 0) {
+    setTimeout(cb, 450);
   } else cb();
 }
 
+// Reveal cards face-up without auto-hiding (caller is responsible for hiding)
+function revealCardsNoHide(targets) {
+  targets.forEach(rIdx => {
+    const c = board[rIdx];
+    if (c && !c.special && !c.flipped) {
+      c.flipped = true;
+      const el = getCardEl(rIdx);
+      if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+    }
+  });
+}
 
-function doSpecialReveal(targets, cb) {
-  targets.forEach((rIdx,i) => {
-    setTimeout(() => {
-      const c=board[rIdx];
-      if (c&&!c.special&&!c.flipped) {
-        c.flipped=true; const el=getCardEl(rIdx);
-        if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend',()=>el.classList.remove('reveal-flash'),{once:true}); }
-      }
-    }, i*80);
+// Reveal all targets at the same time, hide after 2s, then callback
+function doSimultaneousReveal(targets, cb) {
+  targets.forEach(rIdx => {
+    const c = board[rIdx];
+    if (c && !c.special && !c.flipped) {
+      c.flipped = true;
+      const el = getCardEl(rIdx);
+      if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+    }
   });
   setTimeout(() => {
-    targets.forEach(rIdx => { const c=board[rIdx]; if(c&&!c.special&&c.flipped){ c.flipped=false; const el=getCardEl(rIdx); if(el) el.classList.remove('flipped'); } });
+    targets.forEach(rIdx => { const c = board[rIdx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(rIdx); if (el) el.classList.remove('flipped'); } });
     cb();
-  }, targets.length*80+2200);
+  }, 2200);
 }
 
 // ============================================================
