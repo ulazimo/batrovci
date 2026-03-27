@@ -308,7 +308,23 @@ body {
 }
 .settings-gear:hover { color:#fff;background:rgba(255,255,255,.1); }
 
+/* Tutorial hint (non-blocking) */
+#tutorial-hint {
+  position:fixed; top:60px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,.85); color:#fff; padding:12px 24px;
+  border-radius:12px; font-size:15px; font-weight:600; z-index:250;
+  pointer-events:none; opacity:0; transition:opacity .3s;
+  box-shadow:0 4px 20px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.15);
+  text-align:center; max-width:90vw;
+}
+#tutorial-hint.visible { opacity:1; animation:tutHintIn .4s ease-out; }
+#tutorial-hint.hiding { opacity:0; transition:opacity .6s; }
+@keyframes tutHintIn { from{opacity:0;transform:translateX(-50%) translateY(-20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
+/* Tutorial overlay */
+#tutorial-overlay .overlay-box { text-align:center; max-width:340px; }
+#tutorial-overlay h2 { color:#4fc3f7; margin-bottom:8px; }
+#tutorial-overlay p { color:#ccc; font-size:14px; line-height:1.5; margin:8px 0; }
 
 /* ================================================================
    SCROLLBAR (chain indicator overflow)
@@ -418,6 +434,18 @@ body {
 </div>
 
 <div class="booster-tooltip" id="tooltip"></div>
+
+<div id="tutorial-hint"></div>
+
+<div id="tutorial-overlay" class="overlay-screen">
+  <div class="overlay-box">
+    <h2>🎴 How to Play</h2>
+    <p>Tap cards to reveal their colors.<br>Match same colors to build <b>combo chains</b>!</p>
+    <p>Reach the <b>target score</b> before you run out of turns.</p>
+    <p style="font-size:12px;color:#888;margin-top:4px;">Longer combos = more points + special cards!</p>
+    <button class="overlay-btn primary" onclick="closeTutorialOverlay()">Got it — Let's go! →</button>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -609,6 +637,7 @@ if (!progress.stars) progress.stars = new Array(LEVELS.length).fill(0);
 if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.gameplayRules) progress.gameplayRules = {};
 if (!progress.boosterCounts) progress.boosterCounts = {};
+if (progress.tutorialComplete === undefined) progress.tutorialComplete = false;
 if (!progress.specialInventory) {
   progress.specialInventory = {};
   // Defer actual init until SPECIAL_TYPES is defined (see initInventoryDefaults)
@@ -954,9 +983,65 @@ function animateScore(to) {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel']
+  ['level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay']
     .forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById('next-level-btn').style.display = '';
+}
+
+// ============================================================
+// TUTORIAL
+// ============================================================
+const TUTORIAL_STEPS = [
+  { trigger: 'boardRevealed', msg: 'Tap a card to reveal its color!' },
+  { trigger: 'firstFlip',     msg: 'Now find another card with the same color!' },
+  { trigger: 'firstMatch',    msg: 'Same color — combo chain! Keep going!' },
+  { trigger: 'chainOf3',      msg: 'Chain of 3+ banks the combo for points!' },
+  { trigger: 'mismatch',      msg: 'Wrong color — turn ends. Try again!' },
+  { trigger: 'comboReward',   msg: 'Combos of 4+ create special cards! 🎉' },
+];
+let tutorialStep = 0;
+let tutorialActive = false;
+let tutorialHintTimer = null;
+const tutorialHintEl = document.getElementById('tutorial-hint');
+
+function isTutorialLevel() { return currentLevelIndex === 0 && !progress.tutorialComplete; }
+
+function startTutorial() {
+  tutorialStep = 0;
+  tutorialActive = true;
+}
+
+function showTutorialHint(msg) {
+  if (tutorialHintTimer) clearTimeout(tutorialHintTimer);
+  tutorialHintEl.textContent = msg;
+  tutorialHintEl.classList.remove('hiding');
+  tutorialHintEl.classList.add('visible');
+  tutorialHintTimer = setTimeout(() => {
+    tutorialHintEl.classList.add('hiding');
+    setTimeout(() => { tutorialHintEl.classList.remove('visible', 'hiding'); }, 600);
+  }, 3500);
+}
+
+function advanceTutorial(trigger) {
+  if (!tutorialActive || tutorialStep >= TUTORIAL_STEPS.length) return;
+  if (TUTORIAL_STEPS[tutorialStep].trigger !== trigger) return;
+  showTutorialHint(TUTORIAL_STEPS[tutorialStep].msg);
+  tutorialStep++;
+  if (tutorialStep >= TUTORIAL_STEPS.length) {
+    tutorialActive = false;
+    progress.tutorialComplete = true;
+    saveProgress();
+  }
+}
+
+function showTutorialOverlay() {
+  document.getElementById('tutorial-overlay').classList.add('active');
+}
+
+function closeTutorialOverlay() {
+  document.getElementById('tutorial-overlay').classList.remove('active');
+  startTutorial();
+  revealEntireBoard();
 }
 
 function showLevelSelect() {
@@ -1000,6 +1085,7 @@ function initLevelConfig() {
   // Reset win streak, inventory and power-ups when starting from level 1 (fresh run)
   if (currentLevelIndex === 0) {
     progress.winStreak = 0;
+    progress.tutorialComplete = false;
     SPECIAL_TYPES.forEach(s => { progress.specialInventory[s.id] = 0; });
     BOOSTERS.forEach(b => {
       if (progress.boosterSettings[b.id]) progress.boosterSettings[b.id].qty = 0;
@@ -1243,7 +1329,13 @@ function startGame(preplacedSpecials) {
   // Apply winstreak effect
   const streakShields = getStreakShields();
   if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
-  revealEntireBoard();
+
+  // Tutorial: show overlay on level 1 if not completed; otherwise reveal normally
+  if (isTutorialLevel()) {
+    showTutorialOverlay();
+  } else {
+    revealEntireBoard();
+  }
 }
 
 function retryLevel() { showPreLevel(); }
@@ -1842,7 +1934,7 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; updateChainIndicator(); return; }
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; updateChainIndicator(); advanceTutorial('firstFlip'); return; }
   if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; updateChainIndicator(); return; }
   // Match: primary chain color OR any parallel chain color (colored bombs)
   const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
@@ -1851,7 +1943,8 @@ function onCardClick(index) {
     // If this is a parallel color and no primary was set yet, adopt it
     if (chainColor === null) { chainColor = card.color; chainColors.add(card.color); }
     const chainLen = chainCards.length + specialsUsed.length;
-    if (chainLen === 3) startChainTimer();
+    if (chainLen === 2) advanceTutorial('firstMatch');
+    if (chainLen === 3) { startChainTimer(); advanceTutorial('chainOf3'); }
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
     // Check if all cards of ALL active chain colors have been found (perfect sweep)
@@ -1897,6 +1990,7 @@ function onCardClick(index) {
   }
 
   SFX.mismatch(); shakeBoard();
+  advanceTutorial('mismatch');
   chainCards.push(index); inputLocked = true;
   setTimeout(() => endTurn(false), 500);
 }
@@ -1931,7 +2025,7 @@ function endTurn(manual, perfectSweep) {
     if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
     newST = getSpecialForCombo(combo);
-    if (newST) newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1);
+    if (newST) { newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1); advanceTutorial('comboReward'); }
     if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
   }
   if (specialActivated) toRemove.push(...specialsUsed);
@@ -2211,7 +2305,10 @@ function revealEntireBoard() {
   }
 
   const unlockDelay = streakIndices.size > 0 ? TOTAL * staggerMs + revealMs + 200 : 200;
-  setTimeout(() => { inputLocked = false; updateBoosterUI(); }, unlockDelay);
+  setTimeout(() => {
+    inputLocked = false; updateBoosterUI();
+    advanceTutorial('boardRevealed');
+  }, unlockDelay);
 }
 
 // ============================================================
