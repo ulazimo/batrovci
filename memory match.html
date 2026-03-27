@@ -878,7 +878,7 @@ if (!progress.specialInventory) {
 
 function initInventoryDefaults() {
   SPECIAL_TYPES.forEach(s => {
-    if (progress.specialInventory[s.id] === undefined) progress.specialInventory[s.id] = 3;
+    if (progress.specialInventory[s.id] === undefined) progress.specialInventory[s.id] = 0;
   });
   saveProgress();
 }
@@ -1293,9 +1293,13 @@ function buildLevelGrid() {
 // LEVEL INIT
 // ============================================================
 function initLevelConfig() {
-  // Reset win streak when starting from level 1 (fresh run)
+  // Reset win streak, inventory and power-ups when starting from level 1 (fresh run)
   if (currentLevelIndex === 0) {
     progress.winStreak = 0;
+    SPECIAL_TYPES.forEach(s => { progress.specialInventory[s.id] = 0; });
+    BOOSTERS.forEach(b => {
+      if (progress.boosterSettings[b.id]) progress.boosterSettings[b.id].qty = 0;
+    });
     saveProgress();
   }
   const lvl = LEVELS[currentLevelIndex];
