@@ -596,10 +596,17 @@ function renderLevelRewards() {
   container.innerHTML = '';
   const rewards = getLevelRewards();
 
-  const levelOptions = LEVELS.map(l => `<option value="${l.id}">Level ${l.id}</option>`).join('');
-  const boosterOptions = BOOSTERS.map(b => `<option value="${b.id}">${b.icon} ${b.name || b.id}</option>`).join('');
-
   rewards.forEach((entry, idx) => {
+    const type = entry.type || 'booster';
+    const itemId = type === 'special' ? (entry.specialId || SPECIAL_TYPES[0].id) : (entry.boosterId || BOOSTERS[0].id);
+
+    const boosterOpts = BOOSTERS.map(b =>
+      `<option value="${b.id}" ${type==='booster' && b.id===itemId?'selected':''}>${b.icon} ${b.name || b.id}</option>`
+    ).join('');
+    const specialOpts = SPECIAL_TYPES.map(s =>
+      `<option value="${s.id}" ${type==='special' && s.id===itemId?'selected':''}>${s.icon} ${s.name}</option>`
+    ).join('');
+
     const row = document.createElement('div');
     row.className = 'combo-map-row';
     row.innerHTML = `
@@ -608,8 +615,12 @@ function renderLevelRewards() {
         ${LEVELS.map(l => `<option value="${l.id}" ${l.id===entry.afterLevel?'selected':''}>Lv ${l.id}</option>`).join('')}
       </select>
       <span class="combo-map-arrow">→</span>
-      <select class="combo-map-select" onchange="updateLevelReward(${idx},'booster',this.value)">
-        ${BOOSTERS.map(b => `<option value="${b.id}" ${b.id===entry.boosterId?'selected':''}>${b.icon} ${b.name || b.id}</option>`).join('')}
+      <select class="combo-map-select" style="width:auto;min-width:70px;" onchange="updateLevelReward(${idx},'type',this.value)">
+        <option value="booster" ${type==='booster'?'selected':''}>Power-Up</option>
+        <option value="special" ${type==='special'?'selected':''}>Special Card</option>
+      </select>
+      <select class="combo-map-select" id="reward-item-${idx}" onchange="updateLevelReward(${idx},'item',this.value)">
+        ${type === 'special' ? specialOpts : boosterOpts}
       </select>
       <span class="combo-map-label" style="min-width:auto;">×</span>
       <div class="qty-control">
@@ -632,8 +643,18 @@ function renderLevelRewards() {
 function updateLevelReward(idx, field, value) {
   const rewards = getLevelRewards();
   if (field === 'level') rewards[idx].afterLevel = parseInt(value);
-  else if (field === 'booster') rewards[idx].boosterId = value;
-  else if (field === 'qty') {
+  else if (field === 'type') {
+    rewards[idx].type = value;
+    // Reset item to first of the new type
+    if (value === 'special') { rewards[idx].specialId = SPECIAL_TYPES[0].id; delete rewards[idx].boosterId; }
+    else { rewards[idx].boosterId = BOOSTERS[0].id; delete rewards[idx].specialId; }
+    setLevelRewards(rewards);
+    renderLevelRewards();
+    return;
+  } else if (field === 'item') {
+    if ((rewards[idx].type || 'booster') === 'special') rewards[idx].specialId = value;
+    else rewards[idx].boosterId = value;
+  } else if (field === 'qty') {
     rewards[idx].qty = Math.max(1, Math.min(9, rewards[idx].qty + parseInt(value)));
     const el = document.getElementById('reward-qty-' + idx);
     if (el) el.textContent = rewards[idx].qty;
@@ -650,7 +671,7 @@ function removeLevelReward(idx) {
 
 function addLevelReward() {
   const rewards = getLevelRewards();
-  rewards.push({ afterLevel: 1, boosterId: 'peek', qty: 1 });
+  rewards.push({ afterLevel: 1, type: 'booster', boosterId: 'peek', qty: 1 });
   setLevelRewards(rewards);
   renderLevelRewards();
 }
@@ -1543,9 +1564,14 @@ function grantLevelRewards(levelId) {
   const rewards = getLevelRewards().filter(r => r.afterLevel === levelId);
   if (rewards.length === 0) return [];
   rewards.forEach(r => {
-    boosterCounts[r.boosterId] = (boosterCounts[r.boosterId] || 0) + r.qty;
+    if ((r.type || 'booster') === 'special') {
+      progress.specialInventory[r.specialId] = (progress.specialInventory[r.specialId] || 0) + r.qty;
+    } else {
+      boosterCounts[r.boosterId] = (boosterCounts[r.boosterId] || 0) + r.qty;
+    }
   });
   saveBoosterCounts();
+  saveProgress();
   return rewards;
 }
 
@@ -2382,6 +2408,10 @@ function levelWon() {
   const rewardsEl = document.getElementById('win-rewards');
   if (granted.length > 0) {
     const rewardText = granted.map(r => {
+      if ((r.type || 'booster') === 'special') {
+        const s = SPECIAL_TYPES.find(x => x.id === r.specialId);
+        return `+${r.qty} ${s ? s.icon : ''} ${s ? s.name : r.specialId}`;
+      }
       const b = BOOSTERS.find(x => x.id === r.boosterId);
       return `+${r.qty} ${b ? b.icon : ''} ${b ? (b.name || b.id) : r.boosterId}`;
     }).join('  •  ');
