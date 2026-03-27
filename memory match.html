@@ -56,6 +56,7 @@ body {
   color: #ccc; border-bottom: 1px solid #0f3460; gap: 6px;
 }
 #chain-indicator .chain-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+#chain-indicator .chain-color-row { display: flex; align-items: center; gap: 3px; margin: 2px 0; }
 
 /* Chain timer bar */
 #chain-timer-wrap { width:100%; max-width:500px; height:6px; background:#111; display:none; position:relative; overflow:hidden; }
@@ -121,6 +122,8 @@ body {
 .card.special .card-front.special-echo      { background: radial-gradient(circle at 40% 40%, #d4b8e0, #9370db); border-color: #7b68ee; }
 .card.special .card-front.special-wild      { background: conic-gradient(from 0deg, #e74c3c, #f1c40f, #2ecc71, #3498db, #e74c3c); border-color: #fff; }
 .special-icon { font-size:clamp(12px,3.5vw,22px); filter: drop-shadow(0 0 2px rgba(0,0,0,.5)); }
+/* Colored bomb indicator — thick colored ring around bomb cards */
+.card.special.bomb-colored::before { content:''; position:absolute; inset:-3px; border-radius:inherit; border:3px solid var(--bomb-color, #fff); box-shadow:0 0 8px 2px var(--bomb-color, transparent), inset 0 0 6px 1px var(--bomb-color, transparent); pointer-events:none; z-index:3; }
 .card.special.used { opacity:.4; pointer-events:none; }
 /* Combo spawn indicator — glow on the card where the special will spawn */
 .card.combo-spawn-indicator { position: relative; }
@@ -714,6 +717,9 @@ const GAMEPLAY_RULES = [
   { id: 'revealOnUnlock', name: 'Reveal on Unlock', icon: '🔓',
     desc: 'When a locked card is unlocked, briefly reveal its color',
     default: false },
+  { id: 'coloredBombs', name: 'Colored Bombs', icon: '🎨',
+    desc: 'Bombs inherit the color of the combo that created them. Using a bomb opens a parallel chain of that color — match either color to continue. If all board colors have active chains, auto-reveal all cards for a 500pt bonus!',
+    default: false },
 ];
 
 function getRule(id) {
@@ -1071,7 +1077,7 @@ let COLS, ROWS, TOTAL, ACTIVE_COLORS, MAX_TURNS, TARGET;
 let currentLevelIndex = progress.highestUnlocked;
 
 let board = [], score = 0, turns = 0;
-let chainColor = null, chainCards = [], specialsUsed = [];
+let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = [];
 let turnActive = false, inputLocked = false;
 let shieldCharges = 0, jokerCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 
@@ -1428,7 +1434,7 @@ function chainTimerTick() {
 function startGame(preplacedSpecials) {
   closeAllOverlays();
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
-  chainColor = null; chainCards = []; specialsUsed = [];
+  chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [];
   turnActive = false; inputLocked = false;
   shieldCharges = 0; jokerCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   stopChainTimer();
@@ -1547,7 +1553,8 @@ function getSpecialForCombo(comboLen) {
 function randomColor() { return ACTIVE_COLORS[Math.floor(Math.random() * ACTIVE_COLORS.length)]; }
 function createCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: false }; }
 function createLockedCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: true }; }
-function createSpecialCard(i, type) { return { color: null, flipped: false, special: type, index: i }; }
+function createSpecialCard(i, type, bombColor) { return { color: null, flipped: false, special: type, index: i, bombColor: bombColor || null }; }
+function isBombType(type) { return ['cross','ring','diamond'].includes(type); }
 function toRC(i) { return { r: Math.floor(i / COLS), c: i % COLS }; }
 function toIndex(r, c) { return (r < 0 || r >= ROWS || c < 0 || c >= COLS) ? -1 : r * COLS + c; }
 
@@ -1570,7 +1577,11 @@ function specialCSS(t)  { return 'special-' + t; }
 function buildCardHTML(card) {
   const i = card.index;
   const lockedCls = card.locked ? ' locked' : '';
-  if (card.special) return `<div class="card special" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}"><span class="special-icon">${specialIcon(card.special)}</span></div></div>`;
+  if (card.special) {
+    const bombStyle = card.bombColor ? ` style="--bomb-color:${cssColor(card.bombColor)}"` : '';
+    const bombCls = card.bombColor ? ' bomb-colored' : '';
+    return `<div class="card special${bombCls}" data-index="${i}"${bombStyle}><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}"><span class="special-icon">${specialIcon(card.special)}</span></div></div>`;
+  }
   return `<div class="card${lockedCls}" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${card.color}"></div></div>`;
 }
 
@@ -1660,6 +1671,28 @@ function updateComboSpawnIndicator() {
   if (el) el.classList.add('combo-spawn-indicator');
 }
 
+function checkAllColorsBonus() {
+  if (!getRule('coloredBombs') || chainColors.size < ACTIVE_COLORS.length) return;
+  // All colors active! Reveal all face-down cards, add bonus, trigger end
+  stopChainTimer();
+  inputLocked = true;
+  const ALL_COLORS_BONUS = 500;
+  score += ALL_COLORS_BONUS;
+  // Reveal all non-special, non-flipped cards
+  board.forEach((c, i) => {
+    if (c && !c.special && !c.flipped && !c.locked) {
+      c.flipped = true;
+      chainCards.push(i);
+      const el = getCardEl(i);
+      if (el) el.classList.add('flipped');
+    }
+  });
+  animateScore(score);
+  showScorePopup(ALL_COLORS_BONUS, chainCards, '🌈 ALL COLORS! +500');
+  SFX.win(); launchConfetti();
+  setTimeout(() => endTurn(true, false), 1500);
+}
+
 function updateChainIndicator() {
   updateChainTension();
   updateComboSpawnIndicator();
@@ -1671,16 +1704,34 @@ function updateChainIndicator() {
       : 'Tap a card to begin';
     return;
   }
-  const nDots = chainCards.filter(i => !board[i].special).map(() =>
-    `<span class="chain-dot" style="background:${cssColor(chainColor)}"></span>`).join('');
-  const sDots = specialsUsed.map(() =>
-    `<span class="chain-dot" style="background:#fff;border:2px solid #999"></span>`).join('');
   const nc = chainCards.filter(i => !board[i].special).length;
   const sc = specialsUsed.length;
   let extra = '';
   if (shieldCharges > 0) extra += ' 🛡' + shieldCharges;
   if (jokerCharges  > 0) extra += ' 🃏' + jokerCharges;
-  chainEl.innerHTML = `Chain: ${nDots}${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span>`;
+
+  // Group chain dots by color, one line per color
+  if (getRule('coloredBombs') && chainColors.size > 1) {
+    const sDots = specialsUsed.map(i => {
+      const bc = board[i]?.bombColor;
+      return `<span class="chain-dot" style="background:${bc ? cssColor(bc) : '#fff'};border:2px solid ${bc ? cssColor(bc) : '#999'}">⚡</span>`;
+    }).join('');
+    let lines = '';
+    [...chainColors].forEach(color => {
+      const colorCards = chainCards.filter(i => !board[i].special && board[i].color === color);
+      if (colorCards.length === 0) return;
+      const dots = colorCards.map(() =>
+        `<span class="chain-dot" style="background:${cssColor(color)}"></span>`).join('');
+      lines += `<div class="chain-color-row">${dots} <span style="color:${cssColor(color)}">(${colorCards.length})</span></div>`;
+    });
+    chainEl.innerHTML = `Chain: ${lines}<div class="chain-color-row">${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span></div>`;
+  } else {
+    const nDots = chainCards.filter(i => !board[i].special).map(i =>
+      `<span class="chain-dot" style="background:${cssColor(board[i].color || chainColor)}"></span>`).join('');
+    const sDots = specialsUsed.map(() =>
+      `<span class="chain-dot" style="background:#fff;border:2px solid #999"></span>`).join('');
+    chainEl.innerHTML = `Chain: ${nDots}${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span>`;
+  }
 }
 
 // ============================================================
@@ -1822,7 +1873,7 @@ function onCardClick(index) {
       SFX.match();
       getCardEl(index).classList.add('used');
       if (!turnActive) {
-        turnActive = true; chainColor = null; chainCards = [index]; specialsUsed = [];
+        turnActive = true; chainColor = null; chainColors = new Set(); chainCards = [index]; specialsUsed = [];
       } else {
         chainCards.push(index);
       }
@@ -1837,8 +1888,12 @@ function onCardClick(index) {
     function markUsed() {
       SFX.special();
       getCardEl(index).classList.add('used');
-      if (!turnActive) { turnActive = true; chainColor = null; chainCards = []; specialsUsed = [index]; }
+      if (!turnActive) { turnActive = true; chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [index]; }
       else if (!specialsUsed.includes(index)) { specialsUsed.push(index); }
+      // Colored bombs: add bomb's color as a parallel chain color
+      if (getRule('coloredBombs') && card.bombColor && isBombType(card.special)) {
+        chainColors.add(card.bombColor);
+      }
       const chainLen = chainCards.length + specialsUsed.length;
       if (chainLen === 3) startChainTimer();
       else if (chainLen > 3) resetChainTimer();
@@ -1902,10 +1957,28 @@ function onCardClick(index) {
         }, 100 + ti * 70);
       });
 
+      // Colored bombs: find revealed cards that match the bomb's color — they join the chain
+      const bombAutoChain = (getRule('coloredBombs') && card.bombColor && isBombType(card.special))
+        ? targets.filter(idx => board[idx].color === card.bombColor)
+        : [];
+
       // All instant reveals are temporary flashes — peek is shorter
       const hideDelay = 100 + Math.max(targets.length, 1) * 70 + (spec.temporary ? 1500 : 2000);
       setTimeout(() => {
-        targets.forEach(idx => { board[idx].flipped = false; const cel = getCardEl(idx); if (cel) cel.classList.remove('flipped'); });
+        targets.forEach(idx => {
+          // Keep bomb-color matched cards face-up — they're part of the chain now
+          if (bombAutoChain.includes(idx)) return;
+          board[idx].flipped = false; const cel = getCardEl(idx); if (cel) cel.classList.remove('flipped');
+        });
+        // Auto-add bomb-color cards to chain
+        if (bombAutoChain.length > 0) {
+          bombAutoChain.forEach(idx => { if (!chainCards.includes(idx)) chainCards.push(idx); });
+          const chainLen = chainCards.length + specialsUsed.length;
+          if (chainLen === 3) startChainTimer();
+          else if (chainLen > 3) resetChainTimer();
+          // Check all-colors bonus
+          if (chainColors.size >= ACTIVE_COLORS.length) { checkAllColorsBonus(); return; }
+        }
         inputLocked = false;
         resumeChainTimer();
         updateBoosterUI();
@@ -1933,20 +2006,29 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainCards=[index]; specialsUsed=[]; updateChainIndicator(); return; }
-  if (chainColor === null) { chainColor=card.color; chainCards.push(index); updateChainIndicator(); return; }
-  if (card.color === chainColor) {
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; updateChainIndicator(); return; }
+  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); updateChainIndicator(); return; }
+  // Match: primary chain color OR any parallel chain color (colored bombs)
+  const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
+  if (colorMatch) {
     SFX.match(); chainCards.push(index);
+    // If this is a parallel color and no primary was set yet, adopt it
+    if (chainColor === null) { chainColor = card.color; chainColors.add(card.color); }
     const chainLen = chainCards.length + specialsUsed.length;
     if (chainLen === 3) startChainTimer();
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
-    // Check if all cards of this color have been found (perfect sweep)
-    const remaining = board.filter(c => c && !c.special && !c.flipped && !c.locked && c.color === chainColor);
+    // Check if all cards of ALL active chain colors have been found (perfect sweep)
+    const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+    const remaining = board.filter(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
     if (remaining.length === 0 && chainLen >= 3) {
       stopChainTimer();
       inputLocked = true;
       setTimeout(() => endTurn(true, true), 300);
+    }
+    // Check all-colors-active bonus
+    if (getRule('coloredBombs') && chainColors.size >= ACTIVE_COLORS.length) {
+      checkAllColorsBonus();
     }
     return;
   }
@@ -1976,8 +2058,9 @@ function endTurn(manual, perfectSweep) {
   const mismatchIdx = manual ? -1 : (normalCards.length>0 && !isWildCard(normalCards[normalCards.length-1]) ? normalCards[normalCards.length-1] : -1);
 
   let matched;
+  const isColorMatch = (color) => color === chainColor || (getRule('coloredBombs') && chainColors.has(color));
   if (manual) matched = normalCards;
-  else if (mismatchIdx >= 0 && board[mismatchIdx].color !== chainColor)
+  else if (mismatchIdx >= 0 && !isColorMatch(board[mismatchIdx].color))
     matched = normalCards.slice(0,-1);
   else matched = normalCards;
 
@@ -2059,7 +2142,7 @@ function endTurn(manual, perfectSweep) {
 
     toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
     setTimeout(() => {
-      if (newSP>=0) { board[newSP]=createSpecialCard(newSP,newST); replaceCell(newSP); }
+      if (newSP>=0) { const bColor = (getRule('coloredBombs') && isBombType(newST)) ? chainColor : null; board[newSP]=createSpecialCard(newSP,newST,bColor); replaceCell(newSP); }
       if (revealTargets.length>0) doSpecialReveal(revealTargets, ()=>addNewCards(toRemove,newSP,()=>finishTurn()));
       else addNewCards(toRemove,newSP,()=>finishTurn());
     }, 500);
@@ -2107,7 +2190,7 @@ function doSpecialReveal(targets, cb) {
 // FINISH TURN
 // ============================================================
 function finishTurn() {
-  chainColor=null; chainCards=[]; specialsUsed=[];
+  chainColor=null; chainColors=new Set(); chainCards=[]; specialsUsed=[];
   turnActive=false; inputLocked=false; activeBooster=null;
   updateChainIndicator(); updateBoosterUI();
   if (score >= TARGET) levelWon();
