@@ -1932,6 +1932,7 @@ function onCardClick(index) {
       } else {
         chainCards.push(index);
       }
+      lastSelectedIdx = index;
       const chainLen = chainCards.length + specialsUsed.length;
       if (chainLen === 3) startChainTimer();
       else if (chainLen > 3) resetChainTimer();
