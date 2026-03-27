@@ -871,6 +871,7 @@ if (!progress.stars) progress.stars = new Array(LEVELS.length).fill(0);
 if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.skin) progress.skin = 'classic';
 if (!progress.gameplayRules) progress.gameplayRules = {};
+if (!progress.boosterCounts) progress.boosterCounts = {};
 if (!progress.specialInventory) {
   progress.specialInventory = {};
   // Defer actual init until SPECIAL_TYPES is defined (see initInventoryDefaults)
@@ -1045,7 +1046,7 @@ function showSettings(returnTo) {
       <div class="setting-controls">
         <div class="qty-control">
           <button class="qty-btn" onclick="adjustQty('${b.id}',-1)">−</button>
-          <span class="qty-value" id="qty-${b.id}">${s.qty}</span>
+          <span class="qty-value" id="qty-${b.id}">${boosterCounts[b.id] !== undefined ? boosterCounts[b.id] : s.qty}</span>
           <button class="qty-btn" onclick="adjustQty('${b.id}',1)">+</button>
         </div>
         <button class="setting-toggle ${s.enabled?'on':''}" id="toggle-${b.id}" onclick="toggleBoosterSetting('${b.id}')"></button>
@@ -1095,9 +1096,14 @@ function toggleBoosterSetting(id) {
 function adjustQty(id, delta) {
   const s = getBoosterSetting(id);
   if (!s.enabled) return;
-  s.qty = Math.max(0, Math.min(MAX_BOOSTER_QTY, s.qty + delta));
-  document.getElementById('qty-' + id).textContent = s.qty;
+  const current = boosterCounts[id] !== undefined ? boosterCounts[id] : s.qty;
+  const newVal = Math.max(0, Math.min(MAX_BOOSTER_QTY, current + delta));
+  boosterCounts[id] = newVal;
+  s.qty = newVal;
+  progress.boosterCounts[id] = newVal;
+  document.getElementById('qty-' + id).textContent = newVal;
   saveProgress();
+  updateBoosterUI();
 }
 
 function adjustChainTimer(delta) {
@@ -1299,6 +1305,7 @@ function initLevelConfig() {
     SPECIAL_TYPES.forEach(s => { progress.specialInventory[s.id] = 0; });
     BOOSTERS.forEach(b => {
       if (progress.boosterSettings[b.id]) progress.boosterSettings[b.id].qty = 0;
+      progress.boosterCounts[b.id] = 0;
     });
     saveProgress();
   }
@@ -1820,10 +1827,15 @@ function initBoosters() {
   BOOSTERS.forEach(b => {
     const s = getBoosterSetting(b.id);
     if (!s.enabled) { boosterCounts[b.id] = 0; return; }
-    boosterCounts[b.id] = s.qty;
+    // Use persisted count if available, otherwise fall back to settings qty
+    if (progress.boosterCounts[b.id] !== undefined) {
+      boosterCounts[b.id] = progress.boosterCounts[b.id];
+    } else {
+      boosterCounts[b.id] = s.qty;
+    }
     const btn = document.createElement('div');
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
-    btn.innerHTML = `<span>${b.icon}</span><span class="badge">${s.qty}</span>`;
+    btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
     btn.addEventListener('click', () => activateBooster(b.id));
     let pt = null;
     btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt='shown'; }, 400); });
@@ -1831,6 +1843,11 @@ function initBoosters() {
     btn.addEventListener('pointerleave', () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
     boosterBar.appendChild(btn);
   });
+}
+
+function saveBoosterCounts() {
+  BOOSTERS.forEach(b => { progress.boosterCounts[b.id] = boosterCounts[b.id] || 0; });
+  saveProgress();
 }
 
 function updateBoosterUI() {
@@ -1857,6 +1874,7 @@ function activateBooster(id) {
   SFX.booster();
   if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
   boosterCounts[id]--;
+  saveBoosterCounts();
   if (id === 'random3')   executeRandom3();
   else if (id === 'neighbor')  executeNeighbor();
   else if (id === 'colorpick') executeColorPick();
@@ -1865,7 +1883,7 @@ function activateBooster(id) {
 }
 
 function executeBoosterTap(id, index) {
-  boosterCounts[id]--; activeBooster = null;
+  boosterCounts[id]--; activeBooster = null; saveBoosterCounts();
   const { r, c } = toRC(index);
   if (id === 'peek') boosterReveal([index]);
   else if (id === 'cross') {
@@ -1922,7 +1940,7 @@ function executeColorPick() {
 }
 function pickColor(color) {
   colorPickerEl.classList.remove('active');
-  if (!color) { inputLocked = false; boosterCounts['colorpick']++; updateBoosterUI(); return; }
+  if (!color) { inputLocked = false; boosterCounts['colorpick']++; saveBoosterCounts(); updateBoosterUI(); return; }
   const m = board.filter(c=>!c.flipped&&!c.special&&c.color===color&&!c.locked).map(c=>c.index).sort(()=>Math.random()-.5);
   const picks = m.slice(0, 3);
 
