@@ -174,6 +174,8 @@ body {
   width:100%;max-width:500px;background:#16213e;border-top:2px solid #0f3460;
   padding:6px 4px;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;
 }
+#booster-bar.highlight { animation:boosterBarPulse 1.5s ease-in-out 3; }
+@keyframes boosterBarPulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px 4px rgba(240,192,64,.6), inset 0 0 8px rgba(240,192,64,.3)} }
 .booster-btn {
   width:calc((100% - 16px) / 5);max-width:52px;aspect-ratio:1;border-radius:8px;
   border:2px solid #3a3a6a;background:#2a2a4a;cursor:pointer;
@@ -390,6 +392,7 @@ body {
     <div class="stars" id="win-stars"></div>
     <div class="sub" id="win-score"></div>
     <div style="font-size:15px;font-weight:700;min-height:22px;" id="win-streak"></div>
+    <div id="win-rewards" style="font-size:14px;font-weight:700;color:#f0c040;min-height:18px;display:none;"></div>
     <button class="overlay-btn primary" id="next-level-btn" onclick="nextLevel()">Next Level →</button>
     <button class="overlay-btn secondary" onclick="retryLevel()">Play Again</button>
     <button class="overlay-btn secondary" onclick="showLevelSelect()">Level Select</button>
@@ -578,6 +581,71 @@ function addComboMapRule() {
   renderComboMapping();
 }
 
+function renderLevelRewards() {
+  const container = document.getElementById('level-rewards-container');
+  if (!container) return;
+  container.innerHTML = '';
+  const rewards = getLevelRewards();
+
+  const levelOptions = LEVELS.map(l => `<option value="${l.id}">Level ${l.id}</option>`).join('');
+  const boosterOptions = BOOSTERS.map(b => `<option value="${b.id}">${b.icon} ${b.name || b.id}</option>`).join('');
+
+  rewards.forEach((entry, idx) => {
+    const row = document.createElement('div');
+    row.className = 'combo-map-row';
+    row.innerHTML = `
+      <span class="combo-map-label">After</span>
+      <select class="combo-map-select" onchange="updateLevelReward(${idx},'level',this.value)">
+        ${LEVELS.map(l => `<option value="${l.id}" ${l.id===entry.afterLevel?'selected':''}>Lv ${l.id}</option>`).join('')}
+      </select>
+      <span class="combo-map-arrow">→</span>
+      <select class="combo-map-select" onchange="updateLevelReward(${idx},'booster',this.value)">
+        ${BOOSTERS.map(b => `<option value="${b.id}" ${b.id===entry.boosterId?'selected':''}>${b.icon} ${b.name || b.id}</option>`).join('')}
+      </select>
+      <span class="combo-map-label" style="min-width:auto;">×</span>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="updateLevelReward(${idx},'qty',-1)">−</button>
+        <span class="qty-value" id="reward-qty-${idx}">${entry.qty}</span>
+        <button class="qty-btn" onclick="updateLevelReward(${idx},'qty',1)">+</button>
+      </div>
+      ${rewards.length > 1 ? `<button class="combo-map-remove" onclick="removeLevelReward(${idx})">✕</button>` : ''}
+    `;
+    container.appendChild(row);
+  });
+
+  const addBtn = document.createElement('div');
+  addBtn.className = 'combo-map-add';
+  addBtn.textContent = '+ Add Level Reward';
+  addBtn.onclick = addLevelReward;
+  container.appendChild(addBtn);
+}
+
+function updateLevelReward(idx, field, value) {
+  const rewards = getLevelRewards();
+  if (field === 'level') rewards[idx].afterLevel = parseInt(value);
+  else if (field === 'booster') rewards[idx].boosterId = value;
+  else if (field === 'qty') {
+    rewards[idx].qty = Math.max(1, Math.min(9, rewards[idx].qty + parseInt(value)));
+    const el = document.getElementById('reward-qty-' + idx);
+    if (el) el.textContent = rewards[idx].qty;
+  }
+  setLevelRewards(rewards);
+}
+
+function removeLevelReward(idx) {
+  const rewards = getLevelRewards();
+  rewards.splice(idx, 1);
+  setLevelRewards(rewards);
+  renderLevelRewards();
+}
+
+function addLevelReward() {
+  const rewards = getLevelRewards();
+  rewards.push({ afterLevel: 1, boosterId: 'peek', qty: 1 });
+  setLevelRewards(rewards);
+  renderLevelRewards();
+}
+
 // ============================================================
 // WIN STREAK CONFIG — add/remove levels here to expand
 // Each entry: { streak, revealPct, shields }
@@ -645,6 +713,7 @@ if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.gameplayRules) progress.gameplayRules = {};
 if (!progress.boosterCounts) progress.boosterCounts = {};
 if (progress.tutorialComplete === undefined) progress.tutorialComplete = false;
+if (progress.boosterTutorialDone === undefined) progress.boosterTutorialDone = false;
 if (!progress.specialInventory) {
   progress.specialInventory = {};
   // Defer actual init until SPECIAL_TYPES is defined (see initInventoryDefaults)
@@ -759,6 +828,16 @@ function showSettings(returnTo) {
     comboContainer.id = 'combo-map-container';
     list.appendChild(comboContainer);
     renderComboMapping();
+
+    // Level Rewards section
+    const rewardsHeader = document.createElement('div');
+    rewardsHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
+    rewardsHeader.textContent = 'Level Rewards';
+    list.appendChild(rewardsHeader);
+    const rewardsContainer = document.createElement('div');
+    rewardsContainer.id = 'level-rewards-container';
+    list.appendChild(rewardsContainer);
+    renderLevelRewards();
 
     const divider = document.createElement('div');
     divider.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
@@ -1093,6 +1172,7 @@ function initLevelConfig() {
   if (currentLevelIndex === 0) {
     progress.winStreak = 0;
     progress.tutorialComplete = false;
+    progress.boosterTutorialDone = false;
     SPECIAL_TYPES.forEach(s => { progress.specialInventory[s.id] = 0; });
     BOOSTERS.forEach(b => {
       if (progress.boosterSettings[b.id]) progress.boosterSettings[b.id].qty = 0;
@@ -1333,6 +1413,17 @@ function startGame(preplacedSpecials) {
   targetEl.textContent = TARGET;
   renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge();
 
+  // Booster tutorial: highlight bar and show hint on first level with boosters
+  if (!progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0)) {
+    progress.boosterTutorialDone = true;
+    saveProgress();
+    setTimeout(() => {
+      boosterBar.classList.add('highlight');
+      showTutorialHint('You have Power-Ups! Tap one below to use it 👇');
+      setTimeout(() => boosterBar.classList.remove('highlight'), 4600);
+    }, 800);
+  }
+
   // Apply winstreak effect
   const streakShields = getStreakShields();
   if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
@@ -1386,6 +1477,35 @@ initInventoryDefaults();
 
 // ============================================================
 // COMBO → SPECIAL MAPPING
+// ============================================================
+// ============================================================
+// LEVEL REWARDS
+// ============================================================
+const DEFAULT_LEVEL_REWARDS = [
+  { afterLevel: 1, boosterId: 'peek', qty: 3 },
+];
+
+function getLevelRewards() {
+  return progress.levelRewards || DEFAULT_LEVEL_REWARDS;
+}
+
+function setLevelRewards(rewards) {
+  progress.levelRewards = rewards;
+  saveProgress();
+}
+
+function grantLevelRewards(levelId) {
+  const rewards = getLevelRewards().filter(r => r.afterLevel === levelId);
+  if (rewards.length === 0) return [];
+  rewards.forEach(r => {
+    boosterCounts[r.boosterId] = (boosterCounts[r.boosterId] || 0) + r.qty;
+  });
+  saveBoosterCounts();
+  return rewards;
+}
+
+// ============================================================
+// COMBO MAPPING
 // ============================================================
 const DEFAULT_COMBO_MAP = [
   { combo: 4,   specialId: 'cross' },
@@ -2199,6 +2319,9 @@ function levelWon() {
   saveProgress();
   updateBanner();
 
+  // Grant level rewards
+  const granted = grantLevelRewards(LEVELS[currentLevelIndex].id);
+
   const stars = progress.stars[currentLevelIndex];
   document.getElementById('win-title').textContent = `Level ${LEVELS[currentLevelIndex].id} Complete!`;
   document.getElementById('win-stars').textContent = '★'.repeat(stars)+'☆'.repeat(3-stars);
@@ -2208,6 +2331,20 @@ function levelWon() {
     ? `🔥 Win Streak: ${progress.winStreak} — ${Math.round(nextPct * 100)}% board reveal next game`
     : '';
   document.getElementById('win-streak').textContent = streakMsg;
+
+  // Show rewards
+  const rewardsEl = document.getElementById('win-rewards');
+  if (granted.length > 0) {
+    const rewardText = granted.map(r => {
+      const b = BOOSTERS.find(x => x.id === r.boosterId);
+      return `+${r.qty} ${b ? b.icon : ''} ${b ? (b.name || b.id) : r.boosterId}`;
+    }).join('  •  ');
+    rewardsEl.textContent = rewardText;
+    rewardsEl.style.display = '';
+  } else {
+    rewardsEl.style.display = 'none';
+  }
+
   document.getElementById('next-level-btn').style.display = currentLevelIndex >= LEVELS.length-1 ? 'none' : '';
   document.getElementById('overlay-win').classList.add('active');
   SFX.win();
