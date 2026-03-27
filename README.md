@@ -11,6 +11,15 @@ A collection of experimental HTML5 game prototypes and interactive mechanics dem
 - **Pixel Destroyer** - Arcade pixel destruction mechanics
 - **Dice Roller** - Physics-based dice utility
 - **Hunting Sniper** - Hunting simulator
+- **Deep Sea Spearfishing** - Underwater spearfishing action game
+- **Desert Golf Tribute** - Minimalist golf with procedural terrain
+- **Football Legendary League** - Arcade football with league progression
+- **Royal Chase** - Chess-inspired strategy on a 5x5 board
+- **Logic Kitchen** - Visual node-based puzzle game
+- **The Rite of the Crimson Veil** - Multiplayer party game for 2-8 players
+- **Road Blocks: Car Blast!** - Block-placement puzzle by Tihi
+- **Memory Match** - Flip cards to build color chains and combos
+- **Black Hole City** - Control a black hole, consume everything
 
 ## 🚀 Quick Start
 
@@ -33,7 +42,7 @@ Right-click `index.html` → "Open with Live Server"
 
 ## 🏗️ Architecture
 
-- **Single-file HTML games** - Each game is completely standalone
+- **One folder per game** - Each game lives in its own directory
 - **No build process** - All dependencies loaded from CDN
 - **Firebase integration** - Real-time analytics and statistics
 - **Mobile-first design** - Touch-optimized controls
@@ -57,34 +66,51 @@ Right-click `index.html` → "Open with Live Server"
 
 ```
 batrovci/
-├── index.html              # Main landing page
-├── ideas.html              # Idea submission page
+├── index.html                # Main landing page
+├── ideas.html                # Idea submission page
+├── firebase-tracker.js       # Shared play/time tracking module
 ├── favicon.svg
-├── work_in_progress_video.mp4
-│
-├── block away.html
-├── closet sort.html
-├── dice-roller.html
-├── hunting.html
-├── mind match 3d.html
-├── monopoly mini games.html
-└── pixel.html
+├── block-away/index.html
+├── closet-sort/index.html
+├── crimson-veil/index.html
+├── desert-golf-tribute/index.html
+├── dice-roller/index.html
+├── football-legendary-league/index.html
+├── hole-io/index.html
+├── hunting-sniper/index.html
+├── logic-kitchen/index.html
+├── memory-match/index.html
+├── mind-match-3d/
+│   ├── index.html
+│   └── models/               # 3D models (.glb)
+├── monopoly-mini/index.html
+├── pixel-orbit/index.html
+├── road-blocks-car-blast/index.html
+├── royal-chase/index.html
+├── underwater-fishing/index.html
+└── screenshots/
 ```
 
 ## 🎯 Adding New Games
 
-1. Create `game-name.html` file
-2. Copy Firebase tracking code from existing game
-3. Set unique `GAME_ID` constant
+1. Create `game-id/index.html`
+2. Add Firebase tracking at the end of the file:
+   ```html
+   <script type="module">
+       import { initTracking } from '../firebase-tracker.js';
+       initTracking('game-id');
+   </script>
+   ```
+3. Add "← All Games" link pointing to `../index.html`
 4. Add game entry to `projects` array in `index.html`:
 
 ```javascript
 {
-    id: "game-id",           // Must match GAME_ID in game file
+    id: "game-id",
     title: "Game Title",
-    file: "game-name.html",
+    file: "game-id/",
     description: "Brief description",
-    category: "Puzzle",      // Puzzle, Arcade, Board, Tool, Action
+    category: "Puzzle",      // Puzzle, Arcade, Board, Tool, Action, Sports, Party
     date: "2026-01-23",
     featured: false,
     version: "1.0"
@@ -168,5 +194,5 @@ This is a personal portfolio project. For prototype ideas, use the ideas submiss
 
 ---
 
-**Last Updated:** 2026-01-23  
+**Last Updated:** 2026-03-27
 **Contact:** [LinkedIn](https://www.linkedin.com/in/mladendulanovic/)
