@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <radialGradient id="felt" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="360" fill="url(#bg)"/>
+
+  <!-- Board background -->
+  <rect x="40" y="30" width="520" height="300" rx="16" fill="url(#felt)" stroke="#15803d" stroke-width="3"/>
+  <rect x="55" y="45" width="490" height="270" rx="12" fill="none" stroke="#16a34a" stroke-width="1" opacity="0.5"/>
+
+  <!-- Dice area center -->
+  <rect x="230" y="130" width="140" height="100" rx="12" fill="#0f172a" opacity="0.6"/>
+  <!-- Dice 1 -->
+  <rect x="245" y="145" width="50" height="50" rx="8" fill="white"/>
+  <circle cx="265" cy="165" r="4" fill="#0f172a"/>
+  <circle cx="275" cy="175" r="4" fill="#0f172a"/>
+  <circle cx="285" cy="165" r="4" fill="#0f172a"/>
+  <!-- Dice 2 -->
+  <rect x="305" y="145" width="50" height="50" rx="8" fill="white"/>
+  <circle cx="321" cy="161" r="4" fill="#0f172a"/>
+  <circle cx="339" cy="161" r="4" fill="#0f172a"/>
+  <circle cx="321" cy="175" r="4" fill="#0f172a"/>
+  <circle cx="339" cy="175" r="4" fill="#0f172a"/>
+  <circle cx="321" cy="189" r="4" fill="#0f172a"/>
+  <circle cx="339" cy="189" r="4" fill="#0f172a"/>
+
+  <!-- Player tokens -->
+  <circle cx="120" cy="100" r="22" fill="#ef4444" stroke="white" stroke-width="3"/>
+  <text x="120" y="107" font-size="16" text-anchor="middle" fill="white" font-weight="bold">P1</text>
+  <circle cx="480" cy="250" r="22" fill="#3b82f6" stroke="white" stroke-width="3"/>
+  <text x="480" y="257" font-size="16" text-anchor="middle" fill="white" font-weight="bold">P2</text>
+
+  <!-- Board path dots -->
+  <g fill="#15803d" stroke="#16a34a" stroke-width="1">
+    <circle cx="100" cy="280" r="8"/>
+    <circle cx="140" cy="280" r="8"/>
+    <circle cx="180" cy="280" r="8"/>
+    <circle cx="220" cy="280" r="8"/>
+    <circle cx="260" cy="280" r="8"/>
+    <circle cx="300" cy="280" r="8"/>
+    <circle cx="340" cy="280" r="8"/>
+    <circle cx="380" cy="280" r="8"/>
+    <circle cx="420" cy="280" r="8"/>
+    <circle cx="460" cy="280" r="8"/>
+    <circle cx="500" cy="280" r="8"/>
+    <circle cx="500" cy="240" r="8"/>
+    <circle cx="500" cy="200" r="8"/>
+    <circle cx="500" cy="160" r="8"/>
+    <circle cx="500" cy="120" r="8"/>
+    <circle cx="500" cy="80" r="8"/>
+    <circle cx="460" cy="80" r="8"/>
+    <circle cx="420" cy="80" r="8"/>
+    <circle cx="380" cy="80" r="8"/>
+    <circle cx="340" cy="80" r="8"/>
+    <circle cx="300" cy="80" r="8"/>
+    <circle cx="260" cy="80" r="8"/>
+    <circle cx="220" cy="80" r="8"/>
+    <circle cx="180" cy="80" r="8"/>
+    <circle cx="140" cy="80" r="8"/>
+    <circle cx="100" cy="80" r="8"/>
+    <circle cx="100" cy="120" r="8"/>
+    <circle cx="100" cy="160" r="8"/>
+    <circle cx="100" cy="200" r="8"/>
+    <circle cx="100" cy="240" r="8"/>
+  </g>
+
+  <!-- Money card popup -->
+  <rect x="155" y="145" width="80" height="50" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+  <text x="195" y="163" font-size="10" text-anchor="middle" fill="#92400e" font-weight="bold">COLLECT</text>
+  <text x="195" y="182" font-size="16" text-anchor="middle" fill="#15803d" font-weight="bold">$200</text>
+
+  <!-- HUD -->
+  <rect x="0" y="318" width="600" height="42" fill="rgba(0,0,0,0.75)"/>
+  <text x="16" y="334" font-family="monospace" font-size="9" fill="#94a3b8" letter-spacing="2">P1 CASH</text>
+  <text x="16" y="352" font-family="monospace" font-size="18" font-weight="bold" fill="#4ade80">$1,540</text>
+  <text x="300" y="334" font-family="monospace" font-size="9" fill="#94a3b8" letter-spacing="2" text-anchor="middle">ROUND</text>
+  <text x="300" y="352" font-family="monospace" font-size="18" font-weight="bold" fill="white" text-anchor="middle">3</text>
+  <text x="584" y="334" font-family="monospace" font-size="9" fill="#94a3b8" letter-spacing="2" text-anchor="end">P2 CASH</text>
+  <text x="584" y="352" font-family="monospace" font-size="18" font-weight="bold" fill="#60a5fa" text-anchor="end">$980</text>
+</svg>

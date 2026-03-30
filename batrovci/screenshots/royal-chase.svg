@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="360" fill="url(#bg)"/>
+
+  <!-- Chess board 5x5 -->
+  <g transform="translate(175, 30)">
+    <rect width="250" height="250" rx="6" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <!-- Light squares -->
+    <rect x="0"   y="0"   width="50" height="50" fill="#e0e0e0"/>
+    <rect x="100" y="0"   width="50" height="50" fill="#e0e0e0"/>
+    <rect x="200" y="0"   width="50" height="50" fill="#e0e0e0"/>
+    <rect x="50"  y="50"  width="50" height="50" fill="#e0e0e0"/>
+    <rect x="150" y="50"  width="50" height="50" fill="#e0e0e0"/>
+    <rect x="0"   y="100" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="100" y="100" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="200" y="100" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="50"  y="150" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="150" y="150" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="0"   y="200" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="100" y="200" width="50" height="50" fill="#e0e0e0"/>
+    <rect x="200" y="200" width="50" height="50" fill="#e0e0e0"/>
+    <!-- Dark squares -->
+    <rect x="50"  y="0"   width="50" height="50" fill="#a0a0a0"/>
+    <rect x="150" y="0"   width="50" height="50" fill="#a0a0a0"/>
+    <rect x="0"   y="50"  width="50" height="50" fill="#a0a0a0"/>
+    <rect x="100" y="50"  width="50" height="50" fill="#a0a0a0"/>
+    <rect x="200" y="50"  width="50" height="50" fill="#a0a0a0"/>
+    <rect x="50"  y="100" width="50" height="50" fill="#a0a0a0"/>
+    <rect x="150" y="100" width="50" height="50" fill="#a0a0a0"/>
+    <rect x="0"   y="150" width="50" height="50" fill="#a0a0a0"/>
+    <rect x="100" y="150" width="50" height="50" fill="#a0a0a0"/>
+    <rect x="200" y="150" width="50" height="50" fill="#a0a0a0"/>
+    <rect x="50"  y="200" width="50" height="50" fill="#a0a0a0"/>
+    <rect x="150" y="200" width="50" height="50" fill="#a0a0a0"/>
+
+    <!-- Pieces -->
+    <!-- White King (player) -->
+    <text x="125" y="185" font-size="34" text-anchor="middle">♔</text>
+    <!-- White pawns -->
+    <text x="25"  y="235" font-size="28" text-anchor="middle">♙</text>
+    <text x="75"  y="185" font-size="28" text-anchor="middle">♙</text>
+    <text x="225" y="185" font-size="28" text-anchor="middle">♙</text>
+    <!-- Black King (enemy) -->
+    <text x="125" y="85" font-size="34" text-anchor="middle" fill="#1f2937">♚</text>
+    <!-- Black pawns -->
+    <text x="25"  y="85" font-size="28" text-anchor="middle" fill="#1f2937">♟</text>
+    <text x="225" y="85" font-size="28" text-anchor="middle" fill="#1f2937">♟</text>
+
+    <!-- Highlighted valid moves -->
+    <rect x="100" y="100" width="50" height="50" fill="rgba(74,222,128,0.35)" stroke="#4ade80" stroke-width="2"/>
+    <rect x="100" y="150" width="50" height="50" fill="rgba(74,222,128,0.35)" stroke="#4ade80" stroke-width="2"/>
+    <rect x="150" y="150" width="50" height="50" fill="rgba(74,222,128,0.35)" stroke="#4ade80" stroke-width="2"/>
+  </g>
+
+  <!-- Dice result -->
+  <g transform="translate(30, 130)">
+    <rect x="0" y="0" width="110" height="80" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+    <text x="55" y="20" font-family="monospace" font-size="9" fill="#94a3b8" text-anchor="middle" letter-spacing="2">ROLL</text>
+    <rect x="15" y="28" width="35" height="35" rx="6" fill="white"/>
+    <circle cx="32" cy="45" r="4" fill="#0f172a"/>
+    <rect x="60" y="28" width="35" height="35" rx="6" fill="white"/>
+    <circle cx="72" cy="37" r="3.5" fill="#0f172a"/>
+    <circle cx="84" cy="37" r="3.5" fill="#0f172a"/>
+    <circle cx="72" cy="53" r="3.5" fill="#0f172a"/>
+    <circle cx="84" cy="53" r="3.5" fill="#0f172a"/>
+    <text x="55" y="75" font-family="monospace" font-size="10" fill="#4ecca3" text-anchor="middle" font-weight="bold">MOVE KING</text>
+  </g>
+
+  <!-- Score panel -->
+  <g transform="translate(460, 130)">
+    <rect x="0" y="0" width="110" height="80" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+    <text x="55" y="20" font-family="monospace" font-size="9" fill="#94a3b8" text-anchor="middle" letter-spacing="2">ROUND</text>
+    <text x="55" y="52" font-family="monospace" font-size="30" font-weight="bold" fill="#4ecca3" text-anchor="middle">4</text>
+    <text x="55" y="72" font-family="monospace" font-size="9" fill="#94a3b8" text-anchor="middle">of 10</text>
+  </g>
+
+  <!-- HUD bottom -->
+  <rect x="0" y="318" width="600" height="42" fill="rgba(0,0,0,0.75)"/>
+  <text x="16" y="334" font-family="monospace" font-size="9" fill="#4ecca3" letter-spacing="2">YOU</text>
+  <text x="16" y="352" font-family="monospace" font-size="18" font-weight="bold" fill="white">♔ Row 3</text>
+  <text x="300" y="334" font-family="monospace" font-size="9" fill="#94a3b8" letter-spacing="2" text-anchor="middle">GOAL</text>
+  <text x="300" y="352" font-family="monospace" font-size="14" fill="#94a3b8" text-anchor="middle">Reach row 5</text>
+  <text x="584" y="334" font-family="monospace" font-size="9" fill="#f87171" letter-spacing="2" text-anchor="end">ENEMY</text>
+  <text x="584" y="352" font-family="monospace" font-size="18" font-weight="bold" fill="#f87171" text-anchor="end">♚ Row 2</text>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <!-- Background: blueprint grid -->
+  <rect width="600" height="360" fill="#1e3a8a"/>
+  <defs>
+    <pattern id="grid" width="75" height="45" patternUnits="userSpaceOnUse">
+      <path d="M 75 0 L 0 0 0 45" fill="none" stroke="#2563eb" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="360" fill="url(#grid)"/>
+
+  <!-- Game board area (8x8 grid, centered) -->
+  <g transform="translate(120, 30)">
+    <!-- Board background -->
+    <rect width="360" height="300" rx="4" fill="#0f172a" opacity="0.7"/>
+
+    <!-- Grid cells -->
+    <g stroke="#1e3a8a" stroke-width="0.5">
+      <!-- 8 cols x 6 rows visible -->
+      <line x1="45" y1="0" x2="45" y2="300"/>
+      <line x1="90" y1="0" x2="90" y2="300"/>
+      <line x1="135" y1="0" x2="135" y2="300"/>
+      <line x1="180" y1="0" x2="180" y2="300"/>
+      <line x1="225" y1="0" x2="225" y2="300"/>
+      <line x1="270" y1="0" x2="270" y2="300"/>
+      <line x1="315" y1="0" x2="315" y2="300"/>
+      <line x1="0" y1="50" x2="360" y2="50"/>
+      <line x1="0" y1="100" x2="360" y2="100"/>
+      <line x1="0" y1="150" x2="360" y2="150"/>
+      <line x1="0" y1="200" x2="360" y2="200"/>
+      <line x1="0" y1="250" x2="360" y2="250"/>
+    </g>
+
+    <!-- Placed blocks -->
+    <!-- Yellow L-shape -->
+    <rect x="2" y="2" width="41" height="46" rx="4" fill="#facc15"/>
+    <rect x="2" y="52" width="41" height="46" rx="4" fill="#facc15"/>
+    <rect x="47" y="52" width="41" height="46" rx="4" fill="#facc15"/>
+
+    <!-- Red 2x2 -->
+    <rect x="137" y="2" width="41" height="46" rx="4" fill="#ef4444"/>
+    <rect x="182" y="2" width="41" height="46" rx="4" fill="#ef4444"/>
+    <rect x="137" y="52" width="41" height="46" rx="4" fill="#ef4444"/>
+    <rect x="182" y="52" width="41" height="46" rx="4" fill="#ef4444"/>
+
+    <!-- Green bar -->
+    <rect x="227" y="102" width="41" height="46" rx="4" fill="#22c55e"/>
+    <rect x="272" y="102" width="41" height="46" rx="4" fill="#22c55e"/>
+    <rect x="317" y="102" width="41" height="46" rx="4" fill="#22c55e"/>
+
+    <!-- Blue single -->
+    <rect x="92" y="152" width="41" height="46" rx="4" fill="#3b82f6"/>
+
+    <!-- Purple T-shape -->
+    <rect x="2" y="202" width="41" height="46" rx="4" fill="#a855f7"/>
+    <rect x="47" y="202" width="41" height="46" rx="4" fill="#a855f7"/>
+    <rect x="92" y="202" width="41" height="46" rx="4" fill="#a855f7"/>
+    <rect x="47" y="252" width="41" height="46" rx="4" fill="#a855f7"/>
+
+    <!-- Flying block with arrow trail -->
+    <g transform="translate(200, 130)">
+      <rect x="0" y="0" width="41" height="46" rx="4" fill="#facc15" opacity="0.9"/>
+      <!-- Arrow pointing right -->
+      <text x="55" y="28" font-size="22" fill="#facc15" opacity="0.8">→</text>
+      <rect x="50" y="0" width="41" height="46" rx="4" fill="#facc15" opacity="0.5"/>
+      <rect x="100" y="0" width="41" height="46" rx="4" fill="#facc15" opacity="0.25"/>
+    </g>
+  </g>
+
+  <!-- Score overlay -->
+  <rect x="0" y="310" width="600" height="50" fill="rgba(11,14,20,0.85)"/>
+  <text x="20" y="342" font-family="monospace" font-size="13" fill="#94a3b8">LEVEL 7</text>
+  <text x="270" y="342" font-family="monospace" font-size="18" font-weight="bold" fill="white" text-anchor="middle">2,450</text>
+  <text x="520" y="342" font-family="monospace" font-size="13" fill="#94a3b8" text-anchor="end">★ 3,200</text>
+</svg>
