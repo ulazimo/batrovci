@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6b9ff0"/>
+      <stop offset="100%" stop-color="#4a7fd4"/>
+    </linearGradient>
+    <pattern id="bgrid" width="75" height="45" patternUnits="userSpaceOnUse">
+      <path d="M 75 0 L 0 0 0 45" fill="none" stroke="#2563eb" stroke-width="0.6" opacity="0.4"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="360" fill="url(#sky)"/>
+  <rect width="600" height="360" fill="url(#bgrid)"/>
+
+  <!-- Game board (8x8) centered -->
+  <g transform="translate(100, 20)">
+    <rect width="400" height="300" rx="3" fill="#1e3a8a" stroke="#1e293b" stroke-width="3"/>
+
+    <!-- Grid lines -->
+    <g stroke="#2563eb" stroke-width="0.5" opacity="0.6">
+      <line x1="50" y1="0" x2="50" y2="300"/>
+      <line x1="100" y1="0" x2="100" y2="300"/>
+      <line x1="150" y1="0" x2="150" y2="300"/>
+      <line x1="200" y1="0" x2="200" y2="300"/>
+      <line x1="250" y1="0" x2="250" y2="300"/>
+      <line x1="300" y1="0" x2="300" y2="300"/>
+      <line x1="350" y1="0" x2="350" y2="300"/>
+      <line x1="0" y1="37.5" x2="400" y2="37.5"/>
+      <line x1="0" y1="75" x2="400" y2="75"/>
+      <line x1="0" y1="112.5" x2="400" y2="112.5"/>
+      <line x1="0" y1="150" x2="400" y2="150"/>
+      <line x1="0" y1="187.5" x2="400" y2="187.5"/>
+      <line x1="0" y1="225" x2="400" y2="225"/>
+      <line x1="0" y1="262.5" x2="400" y2="262.5"/>
+    </g>
+
+    <!-- Placed blocks — color paths -->
+    <!-- Yellow horizontal bar row 3 -->
+    <rect x="3" y="78" width="44" height="31" rx="4" fill="#facc15"/>
+    <rect x="53" y="78" width="44" height="31" rx="4" fill="#facc15"/>
+    <rect x="103" y="78" width="44" height="31" rx="4" fill="#facc15"/>
+
+    <!-- Red L-shape -->
+    <rect x="153" y="3" width="44" height="31" rx="4" fill="#ef4444"/>
+    <rect x="153" y="40" width="44" height="31" rx="4" fill="#ef4444"/>
+    <rect x="203" y="40" width="44" height="31" rx="4" fill="#ef4444"/>
+
+    <!-- Green 2x2 -->
+    <rect x="253" y="115" width="44" height="31" rx="4" fill="#22c55e"/>
+    <rect x="303" y="115" width="44" height="31" rx="4" fill="#22c55e"/>
+    <rect x="253" y="152" width="44" height="31" rx="4" fill="#22c55e"/>
+    <rect x="303" y="152" width="44" height="31" rx="4" fill="#22c55e"/>
+
+    <!-- Blue vertical bar -->
+    <rect x="353" y="3" width="44" height="31" rx="4" fill="#3b82f6"/>
+    <rect x="353" y="40" width="44" height="31" rx="4" fill="#3b82f6"/>
+    <rect x="353" y="78" width="44" height="31" rx="4" fill="#3b82f6"/>
+
+    <!-- Purple single -->
+    <rect x="53" y="190" width="44" height="31" rx="4" fill="#a855f7"/>
+
+    <!-- Orange hazard block -->
+    <rect x="153" y="190" width="44" height="31" rx="4" fill="#111827"/>
+    <rect x="153" y="190" width="44" height="31" rx="4" fill="none" stroke="#f97316" stroke-width="2"
+          stroke-dasharray="6,4"/>
+    <line x1="153" y1="190" x2="197" y2="221" stroke="#f97316" stroke-width="1.5" opacity="0.6"/>
+    <line x1="197" y1="190" x2="153" y2="221" stroke="#f97316" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- Gem -->
+    <g transform="translate(203, 190)">
+      <polygon points="22,2 2,12 22,42 42,12" fill="#a855f7" stroke="#e9d5ff" stroke-width="1.5"/>
+      <polyline points="2,12 22,20 42,12" fill="none" stroke="#e9d5ff" stroke-width="1"/>
+    </g>
+
+    <!-- Portal +2 -->
+    <rect x="103" y="228" width="44" height="31" rx="4" fill="rgba(6,182,212,0.3)" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="125" y="249" font-family="monospace" font-size="11" font-weight="bold" fill="#67e8f9" text-anchor="middle">+2</text>
+
+    <!-- Highlight cells (placement preview) -->
+    <rect x="53" y="228" width="44" height="31" rx="4" fill="#22c55e" opacity="0.5"/>
+    <rect x="3" y="228" width="44" height="31" rx="4" fill="#22c55e" opacity="0.5"/>
+  </g>
+
+  <!-- Cars row at bottom of board -->
+  <g transform="translate(100, 325)">
+    <!-- 8 car slots -->
+    <g transform="translate(3,0)">
+      <rect x="0" y="0" width="44" height="28" rx="3" fill="#facc15"/>
+      <rect x="8" y="4" width="28" height="10" rx="2" fill="#1e3a8a" opacity="0.5"/>
+    </g>
+    <g transform="translate(103,0)">
+      <rect x="0" y="0" width="44" height="28" rx="3" fill="#ef4444"/>
+      <rect x="8" y="4" width="28" height="10" rx="2" fill="#1e3a8a" opacity="0.5"/>
+    </g>
+    <g transform="translate(203,0)">
+      <rect x="0" y="0" width="44" height="28" rx="3" fill="#22c55e"/>
+      <rect x="8" y="4" width="28" height="10" rx="2" fill="#1e3a8a" opacity="0.5"/>
+    </g>
+    <g transform="translate(303,0)">
+      <rect x="0" y="0" width="44" height="28" rx="3" fill="#3b82f6"/>
+      <rect x="8" y="4" width="28" height="10" rx="2" fill="#1e3a8a" opacity="0.5"/>
+    </g>
+  </g>
+
+  <!-- Shape dock at bottom -->
+  <rect x="0" y="310" width="600" height="50" fill="rgba(11,14,20,0.85)"/>
+
+  <!-- 3 shapes in dock -->
+  <!-- Shape 1: L-shape (yellow) -->
+  <g transform="translate(70, 318)">
+    <rect x="0" y="0" width="16" height="14" rx="2" fill="#facc15"/>
+    <rect x="0" y="16" width="16" height="14" rx="2" fill="#facc15"/>
+    <rect x="18" y="16" width="16" height="14" rx="2" fill="#facc15"/>
+  </g>
+
+  <!-- Shape 2: 2x2 (green) -->
+  <g transform="translate(190, 318)">
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="#22c55e"/>
+    <rect x="16" y="0" width="14" height="14" rx="2" fill="#22c55e"/>
+    <rect x="0" y="16" width="14" height="14" rx="2" fill="#22c55e"/>
+    <rect x="16" y="16" width="14" height="14" rx="2" fill="#22c55e"/>
+  </g>
+
+  <!-- Shape 3: horizontal bar (blue) -->
+  <g transform="translate(300, 325)">
+    <rect x="0" y="0" width="14" height="14" rx="2" fill="#3b82f6"/>
+    <rect x="16" y="0" width="14" height="14" rx="2" fill="#3b82f6"/>
+    <rect x="32" y="0" width="14" height="14" rx="2" fill="#3b82f6"/>
+    <rect x="48" y="0" width="14" height="14" rx="2" fill="#3b82f6"/>
+  </g>
+
+  <!-- Score HUD top -->
+  <rect x="0" y="0" width="600" height="18" fill="rgba(11,14,20,0.7)"/>
+  <text x="16" y="13" font-family="monospace" font-size="10" fill="#94a3b8">LEVEL 12</text>
+  <text x="300" y="13" font-family="monospace" font-size="12" font-weight="bold" fill="white" text-anchor="middle">4,750</text>
+  <text x="584" y="13" font-family="monospace" font-size="10" fill="#fbbf24" text-anchor="end">★ 6,200</text>
+</svg>
