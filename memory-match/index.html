@@ -191,7 +191,6 @@ body {
 .status-badge { position:fixed;top:95px;right:10px;z-index:90;display:flex;flex-direction:column;gap:4px;align-items:flex-end; }
 .status-pill  { background:rgba(0,0,0,.7);padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px; }
 .status-pill.shield { border:1px solid #4fc3f7;color:#4fc3f7; }
-.status-pill.joker  { border:1px solid #f0c040;color:#f0c040; }
 
 /* ================================================================
    OVERLAYS — base
@@ -1040,7 +1039,7 @@ let currentLevelIndex = progress.highestUnlocked;
 let board = [], score = 0, turns = 0;
 let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = [], lastSelectedIdx = -1;
 let turnActive = false, inputLocked = false;
-let shieldCharges = 0, jokerCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
+let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 
 const BOOSTERS = [
   { id:'peek',      icon:'👁',  desc:'Reveal one card by tapping it',                               needsTap:true  },
@@ -1051,7 +1050,7 @@ const BOOSTERS = [
   { id:'neighbor',  icon:'🔗',  desc:'Reveal same-color neighbors around the last revealed card',   needsTap:false },
   { id:'colorpick', icon:'🎨',  desc:'Choose a color and reveal 3 cards of that color',             needsTap:false },
   { id:'shield',    icon:'🛡',  desc:'Next 2 wrong-color reveals won\'t break your combo',          needsTap:false },
-  { id:'joker',     icon:'🃏',  desc:'Next 2 taps become the combo color',                          needsTap:false },
+  { id:'joker',     icon:'🃏',  desc:'Tap a card — it acts as your last-played card (copies its color or special)',  needsTap:true  },
 ];
 let boosterCounts = {};
 
@@ -1483,7 +1482,7 @@ function startGame(preplacedSpecials) {
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;
-  shieldCharges = 0; jokerCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
+  shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 
@@ -1713,7 +1712,6 @@ function replaceCell(i) { boardEl.children[i].innerHTML = buildCardHTML(board[i]
 function updateStatusBadge() {
   let h = '';
   if (shieldCharges > 0) h += `<div class="status-pill shield">🛡 ${shieldCharges}</div>`;
-  if (jokerCharges  > 0) h += `<div class="status-pill joker">🃏 ${jokerCharges}</div>`;
   if (echoCharges   > 0) h += `<div class="status-pill echo">🔔 ${echoCharges}</div>`;
   if (spotlightMode)     h += `<div class="status-pill spotlight">🔦 Tap a card</div>`;
   statusBadge.innerHTML = h;
@@ -1821,7 +1819,6 @@ function updateChainIndicator() {
   const sc = specialsUsed.length;
   let extra = '';
   if (shieldCharges > 0) extra += ' 🛡' + shieldCharges;
-  if (jokerCharges  > 0) extra += ' 🃏' + jokerCharges;
 
   // Group chain dots by color, one line per color
   if (getRule('coloredBombs') && chainColors.size > 1) {
@@ -1907,7 +1904,6 @@ function activateBooster(id) {
   else if (id === 'neighbor')  executeNeighbor();
   else if (id === 'colorpick') executeColorPick();
   else if (id === 'shield') { shieldCharges += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
-  else if (id === 'joker')  { jokerCharges  += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
 }
 
 function executePeek(index) {
@@ -1961,6 +1957,7 @@ function executeBoosterTap(id, index) {
   boosterCounts[id]--; activeBooster = null; saveBoosterCounts();
   const { r, c } = toRC(index);
   if (id === 'peek') { executePeek(index); return; }
+  else if (id === 'joker') { executeJoker(index); return; }
   else if (id === 'cross') {
     const t = [[-1,0],[1,0],[0,-1],[0,1]].map(([dr,dc]) => toIndex(r+dr,c+dc)).filter(i=>i>=0);
     t.push(index); boosterReveal(t);
@@ -1970,6 +1967,57 @@ function executeBoosterTap(id, index) {
     const t = []; for(let rr=0;rr<ROWS;rr++) t.push(toIndex(rr,c)); boosterReveal(t);
   }
   updateBoosterUI();
+}
+
+function executeJoker(index) {
+  const card = board[index];
+  if (!card || card.flipped || card.locked) { updateBoosterUI(); return; }
+
+  // Nothing to copy yet — refund the charge
+  if (lastSelectedIdx < 0) {
+    boosterCounts['joker']++;
+    saveBoosterCounts();
+    updateBoosterUI();
+    return;
+  }
+
+  const srcCard = board[lastSelectedIdx];
+  const el = getCardEl(index);
+
+  if (srcCard && srcCard.special) {
+    // Transform this card into a copy of the source special card
+    card.special = srcCard.special;
+    card.bombColor = srcCard.bombColor || null;
+    // Rebuild the card's DOM to look like a special card
+    if (el) {
+      el.classList.add('special');
+      el.classList.remove('locked');
+      if (card.bombColor) { el.classList.add('bomb-colored'); el.style.setProperty('--bomb-color', cssColor(card.bombColor)); }
+      const front = el.querySelector('.card-front');
+      if (front) {
+        ALL_COLORS.forEach(cl => front.classList.remove(cl));
+        front.className = `card-face card-front ${specialCSS(card.special)}`;
+        front.innerHTML = `<span class="special-icon">${specialIcon(card.special)}</span>`;
+      }
+    }
+  } else if (srcCard && srcCard.color) {
+    // Copy the color of the source normal card
+    card.color = srcCard.color;
+    if (el) {
+      const front = el.querySelector('.card-front');
+      if (front) { ALL_COLORS.forEach(cl => front.classList.remove(cl)); front.classList.add(card.color); }
+    }
+  } else {
+    // Nothing useful to copy — refund
+    boosterCounts['joker']++;
+    saveBoosterCounts();
+    updateBoosterUI();
+    return;
+  }
+
+  updateBoosterUI();
+  // Now process the tap as if the player normally clicked this card
+  onCardClick(index);
 }
 
 function boosterReveal(indices) {
@@ -2208,12 +2256,6 @@ function onCardClick(index) {
 
   if (card.flipped || card.locked) return;
 
-  if (jokerCharges > 0 && turnActive && chainColor && card.color !== chainColor) {
-    card.color = chainColor; jokerCharges--; updateStatusBadge();
-    const el = getCardEl(index); const front = el.querySelector('.card-front');
-    ALL_COLORS.forEach(cl => front.classList.remove(cl)); front.classList.add(chainColor);
-  }
-
   card.flipped = true;
   const el = getCardEl(index); el.classList.add('flipped');
   // Remove tint hint when card is flipped
@@ -2287,7 +2329,7 @@ function onCardClick(index) {
 function endTurn(manual, perfectSweep) {
   stopChainTimer();
   inputLocked = true; turns--;
-  shieldCharges = 0; jokerCharges = 0; spotlightMode = false;
+  shieldCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
   const isWildCard = (i) => board[i].special && getSpecialType(board[i].special)?.isWild;
