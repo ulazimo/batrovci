@@ -425,7 +425,7 @@
         <strong>THE RULES</strong><br><br>
         Match 3 objects by <u>CATEGORY</u>.<br><br>
         ✅ 🍔 + 🍕 + 🍟 (Fast Food)<br>
-        ✅ 🚗 + ✈️ + 🚀 (Vehicles)<br><br>
+        ✅ ⚽ + 🏀 + 🏈 (Sport Balls)<br><br>
         Clear the pile before time runs out!
     </p>
     <button onclick="startGame()">PLAY NOW</button>
@@ -466,18 +466,27 @@
         { id: 15, name: 'French Fries',    file: './models/lowpoly_3d_game_asset_cartoon_french_fries_in_a_red_paper_cup_golden-2026-03-30-091332.glb',          icon: '🍟' },
         { id: 16, name: 'Trumpet',         file: './models/lowpoly_3d_game_asset_cartoon_trumpet_shiny_gold_color_bell_end_facing-2026-03-30-091325.glb',        icon: '🎺' },
         { id: 17, name: 'Piano',           file: './models/lowpoly_3d_game_asset_cartoon_upright_piano_black_and_white_keys_dark-2026-03-30-091815.glb',         icon: '🎹' },
-        { id: 18, name: 'Airplane',        file: './models/lowpoly_3d_game_asset_cute_cartoon_airplane_white_body_with_blue-2026-03-30-091336.glb',              icon: '✈️' },
+        { id: 18, name: 'Airplane',     file: './models/lowpoly_3d_game_asset_cute_cartoon_airplane_white_body_with_blue-2026-03-30-091336.glb',                    icon: '✈️' },
+        { id: 19, name: 'Basketball',  file: './models/lowpoly_3d_game_asset_cartoon_basketball_orange_with_black_lines-2026-03-30-092500.glb',                    icon: '🏀' },
+        { id: 20, name: 'Cake',        file: './models/lowpoly_3d_game_asset_cartoon_birthday_cake_two_layers_pink_frosting-2026-03-30-092921.glb',               icon: '🎂' },
+        { id: 21, name: 'Chess King',  file: './models/lowpoly_3d_game_asset_cartoon_chess_king_piece_black_color_crown_on_top-2026-03-30-092815.glb',            icon: '♟️' },
+        { id: 22, name: 'Ice Cream',   file: './models/lowpoly_3d_game_asset_cartoon_ice_cream_cone_two_scoops_pink_and_brown-2026-03-30-092834.glb',             icon: '🍦' },
+        { id: 23, name: 'Cat',         file: './models/lowpoly_3d_game_asset_cute_cartoon_cat_sitting_orange_tabby_color-2026-03-30-092905.glb',                  icon: '🐱' },
+        { id: 24, name: 'Dog',         file: './models/lowpoly_3d_game_asset_cute_cartoon_dog_sitting_golden_retriever_brown-2026-03-30-092840.glb',              icon: '🐶' },
+        { id: 25, name: 'Joystick',    file: './models/lowpoly_3d_game_asset_cartoon_arcade_joystick_red_stick_black_base-2026-03-30-092902.glb',                 icon: '🕹️' },
     ];
 
     // ── THEMES CONFIG ─────────────────────────────────────────────────────────
     // Each theme = 3 model IDs that share a context. Match one of each to score.
     const THEMES = [
-        { id: 0, name: 'Fast Food',    models: [10, 1, 15]  }, // Burger, Pizza, Fries
-        { id: 1, name: 'Vehicles',     models: [5, 18, 9]   }, // Car, Airplane, Rocket
-        { id: 2, name: 'Fruit',        models: [2, 13, 14]  }, // Apple, Banana, Grapes
-        { id: 3, name: 'Instruments',  models: [4, 17, 16]  }, // Guitar, Piano, Trumpet
-        { id: 4, name: 'Sports',       models: [0, 12, 3]   }, // Soccer Ball, Football, Trophy
-        { id: 5, name: 'Fun & Games',  models: [7, 8, 11]   }, // Duck, Donut, Dice
+        { id: 0, name: 'Fast Food',    models: [10, 1, 15]   }, // Burger, Pizza, Fries
+        { id: 1, name: 'Vehicles',     models: [5, 18, 9]    }, // Car, Airplane, Rocket
+        { id: 2, name: 'Fruit',        models: [2, 13, 14]   }, // Apple, Banana, Grapes
+        { id: 3, name: 'Instruments',  models: [4, 17, 16]   }, // Guitar, Piano, Trumpet
+        { id: 4, name: 'Sport Balls',  models: [0, 19, 12]   }, // Soccer Ball, Basketball, Football
+        { id: 5, name: 'Animals',      models: [7, 23, 24]   }, // Duck, Cat, Dog
+        { id: 6, name: 'Sweets',       models: [8, 22, 20]   }, // Donut, Ice Cream, Cake
+        { id: 7, name: 'Games',        models: [11, 21, 25]  }, // Dice, Chess King, Joystick
     ];
 
     const MODEL_SCALE_TARGET = 1.2; // max dimension in world units
