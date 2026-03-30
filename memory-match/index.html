@@ -193,6 +193,27 @@ body {
 .status-pill.shield { border:1px solid #4fc3f7;color:#4fc3f7; }
 
 /* ================================================================
+   RECALL BUTTON
+================================================================ */
+#recall-bar {
+  width:100%;max-width:500px;display:flex;justify-content:flex-end;
+  padding:4px 8px 2px;background:transparent;
+}
+.recall-btn {
+  padding:7px 14px;font-size:13px;font-weight:700;
+  border:2px solid #3a3a6a;border-radius:20px;
+  background:#2a2a4a;color:#ccc;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;gap:5px;
+}
+.recall-btn:active { transform:scale(.93); }
+.recall-btn:hover:not(.disabled) { border-color:#4fc3f7;color:#4fc3f7;background:#2a2a5a; }
+.recall-btn.disabled { opacity:.25;pointer-events:none; }
+
+/* LEGO skin recall */
+.skin-lego .recall-btn { background:#E8C000;border-color:#D01012;color:#555; }
+.skin-lego .recall-btn:hover:not(.disabled) { background:#FFD700;color:#D01012; }
+
+/* ================================================================
    OVERLAYS — base
 ================================================================ */
 .overlay-screen { display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;flex-direction:column; }
@@ -355,6 +376,9 @@ body {
 <div id="chain-timer-wrap"><div id="chain-timer-bar"></div></div>
 <div class="status-badge" id="status-badge"></div>
 <div id="board-container"><div id="board"></div></div>
+<div id="recall-bar">
+  <button id="recall-btn" class="recall-btn disabled" onclick="recallCards()">🔄 Recall</button>
+</div>
 <div id="booster-bar"></div>
 
 <!-- ===== OVERLAYS ===== -->
@@ -1040,6 +1064,7 @@ let board = [], score = 0, turns = 0;
 let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = [], lastSelectedIdx = -1;
 let turnActive = false, inputLocked = false;
 let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
+let lastRevealedCards = []; // indices of most recently revealed cards (for recall)
 
 const BOOSTERS = [
   { id:'peek',      icon:'👁',  desc:'Reveal one card by tapping it',                               needsTap:true  },
@@ -1483,6 +1508,7 @@ function startGame(preplacedSpecials) {
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
+  lastRevealedCards = [];
   stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 
@@ -1514,7 +1540,7 @@ function startGame(preplacedSpecials) {
   }
 
   targetEl.textContent = TARGET;
-  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge();
+  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton();
 
   // Booster tutorial: highlight bar and show hint on first level with boosters
   if (!progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0)) {
@@ -2332,6 +2358,10 @@ function endTurn(manual, perfectSweep) {
   shieldCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
+  // Capture the chain as recallable before cards flip back
+  const chainNormal = chainCards.filter(i => board[i] && !board[i].special);
+  if (chainNormal.length > 0) lastRevealedCards = [...chainNormal];
+
   const isWildCard = (i) => board[i].special && getSpecialType(board[i].special)?.isWild;
   const normalCards = chainCards.filter(i => !board[i].special || isWildCard(i));
   const mismatchIdx = manual ? -1 : (normalCards.length>0 && !isWildCard(normalCards[normalCards.length-1]) ? normalCards[normalCards.length-1] : -1);
@@ -2438,6 +2468,7 @@ function endTurn(manual, perfectSweep) {
           if (showNewCards) revealCardsNoHide(nc);
           // Hide everything together after 2.2s
           const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
+          if (allRevealed.length > 0) lastRevealedCards = allRevealed;
           if (allRevealed.length > 0) {
             setTimeout(() => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
@@ -2501,12 +2532,39 @@ function doSimultaneousReveal(targets, cb) {
 }
 
 // ============================================================
+// RECALL — re-reveal the last shown cards
+// ============================================================
+function recallCards() {
+  if (inputLocked || !lastRevealedCards.length) return;
+  const targets = lastRevealedCards.filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
+  if (!targets.length) return;
+  SFX.booster();
+  inputLocked = true;
+  targets.forEach(idx => {
+    board[idx].flipped = true;
+    const el = getCardEl(idx);
+    if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+  });
+  setTimeout(() => {
+    targets.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
+    inputLocked = false; updateBoosterUI(); updateChainIndicator(); updateRecallButton();
+  }, 1800);
+}
+
+function updateRecallButton() {
+  const btn = document.getElementById('recall-btn');
+  if (!btn) return;
+  const hasCards = lastRevealedCards.some(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
+  btn.classList.toggle('disabled', !hasCards || inputLocked);
+}
+
+// ============================================================
 // FINISH TURN
 // ============================================================
 function finishTurn() {
   chainColor=null; chainColors=new Set(); chainCards=[]; specialsUsed=[];
   turnActive=false; inputLocked=false; activeBooster=null;
-  updateChainIndicator(); updateBoosterUI();
+  updateChainIndicator(); updateBoosterUI(); updateRecallButton();
   if (score >= TARGET) levelWon();
   else if (turns <= 0) levelFailed();
 }
@@ -2643,6 +2701,7 @@ function revealEntireBoard() {
 
   // Briefly flash only streak-awarded cards, then hide them
   if (streakIndices.size > 0) {
+    lastRevealedCards = [...streakIndices];
     board.forEach((c, i) => {
       if (!streakIndices.has(i)) return;
       c.flipped = true;
@@ -2656,7 +2715,7 @@ function revealEntireBoard() {
 
   const unlockDelay = streakIndices.size > 0 ? TOTAL * staggerMs + revealMs + 200 : 200;
   setTimeout(() => {
-    inputLocked = false; updateBoosterUI();
+    inputLocked = false; updateBoosterUI(); updateRecallButton();
     advanceTutorial('boardRevealed');
   }, unlockDelay);
 }

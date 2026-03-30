@@ -9,7 +9,9 @@
       "Bash(git -C /Users/MladenD_1/Downloads/batrovci log --oneline)",
       "Bash(grep -l \"initTracking\" *.html)",
       "Bash(grep -l \"ErrorBoundary\" *.html)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls \"/Users/djordjevu/HTML Prototypes/\"*memory* \"/Users/djordjevu/HTML Prototypes/\"*Memory*)",
+      "Bash(xargs kill:*)"
     ]
   }
 }
