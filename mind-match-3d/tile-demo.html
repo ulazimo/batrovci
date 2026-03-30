@@ -529,7 +529,17 @@
 
         const loader = new THREE.GLTFLoader();
 
-        MODELS.forEach(modelDef => {
+        function loadNext(index) {
+            if (index >= total) {
+                setTimeout(() => {
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    init();
+                }, 300);
+                return;
+            }
+
+            const modelDef = MODELS[index];
+
             loader.load(
                 modelDef.file,
                 (gltf) => {
@@ -556,30 +566,21 @@
                     document.getElementById('loading-bar').style.width = pct + '%';
                     document.getElementById('loading-text').textContent = `${loadedCount} / ${total}`;
 
-                    if (loadedCount >= total) {
-                        setTimeout(() => {
-                            document.getElementById('loading-screen').classList.add('hidden');
-                            init();
-                        }, 300);
-                    }
+                    loadNext(index + 1);
                 },
                 null,
                 (err) => {
                     console.error('Failed to load:', modelDef.file, err);
-                    // Count the failure so the game can still start with remaining models
                     loadedCount++;
                     const pct = (loadedCount / total) * 100;
                     document.getElementById('loading-bar').style.width = pct + '%';
-                    document.getElementById('loading-text').textContent = `Error: ${modelDef.name} — skipping`;
-                    if (loadedCount >= total) {
-                        setTimeout(() => {
-                            document.getElementById('loading-screen').classList.add('hidden');
-                            init();
-                        }, 300);
-                    }
+                    document.getElementById('loading-text').textContent = `${loadedCount} / ${total}`;
+                    loadNext(index + 1);
                 }
             );
-        });
+        }
+
+        loadNext(0);
     }
 
     // ── INIT ──────────────────────────────────────────────────────────────────
