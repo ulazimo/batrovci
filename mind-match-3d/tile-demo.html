@@ -423,8 +423,9 @@
     <h1>MIND MATCH 3D</h1>
     <p>
         <strong>THE RULES</strong><br><br>
-        Collect <u>3 of the same</u> 3D object<br>into the tray to match them!<br><br>
-        Click or drag objects down.<br>
+        Match 3 objects by <u>CATEGORY</u>.<br><br>
+        ✅ 🍕 + 🍔 + 🍩 (Food)<br>
+        ✅ ⚽ + 🏆 + 🎲 (Sports)<br><br>
         Clear the pile before time runs out!
     </p>
     <button onclick="startGame()">PLAY NOW</button>
@@ -459,6 +460,15 @@
         { id: 9, name: 'Rocket',      file: './models/lowpoly_3d_game_asset_cartoon_rocket_ship_white_and_red_color_scheme-2026-03-30-083247.glb', icon: '🚀' },
         { id: 10, name: 'Burger',     file: './models/lowpoly_3d_game_asset_hamburger_with_sesame_seed_bun_lettuce_and_patty-2026-03-30-083702.glb', icon: '🍔' },
         { id: 11, name: 'Dice',       file: './models/lowpoly_3d_game_asset_sixsided_dice_white_with_black_dots_rounded-2026-03-30-083807.glb',      icon: '🎲' },
+    ];
+
+    // ── THEMES CONFIG ─────────────────────────────────────────────────────────
+    // Each theme = 3 model IDs that share a context. Match one of each to score.
+    const THEMES = [
+        { id: 0, name: 'Food',           models: [1, 10, 8]  }, // Pizza, Burger, Donut
+        { id: 1, name: 'Sports & Games', models: [0, 3, 11]  }, // Soccer Ball, Trophy, Dice
+        { id: 2, name: 'Toys',           models: [5, 9, 7]   }, // Car, Rocket, Duck
+        { id: 3, name: 'Treasures',      models: [2, 6, 4]   }, // Apple, Gem, Guitar
     ];
 
     const MODEL_SCALE_TARGET = 1.2; // max dimension in world units
@@ -640,7 +650,7 @@
     }
 
     // ── OBJECT CREATION ───────────────────────────────────────────────────────
-    function createModelObject(modelDef) {
+    function createModelObject(modelDef, themeId) {
         const tmpl = modelTemplates[modelDef.id];
         if (!tmpl) return;
 
@@ -684,7 +694,8 @@
         objects.push({
             mesh,
             body,
-            typeId: modelDef.id,
+            modelId: modelDef.id,   // which 3D model (for display)
+            typeId: themeId,         // which theme (for matching)
             centerOffset: tmpl.centerOffset.clone(),
             isMovingToTray: false,
             inTray: false,
@@ -734,11 +745,14 @@
         document.getElementById('timer').classList.remove('frozen');
         updateBoostersUI();
 
-        const availableModels = MODELS.filter(m => modelTemplates[m.id]);
-        const numModels = Math.min(2 + (lvl - 1), availableModels.length);
-        const selectedModels = [...availableModels].sort(() => 0.5 - Math.random()).slice(0, numModels);
-        selectedModels.forEach(modelDef => {
-            for (let k = 0; k < 3; k++) createModelObject(modelDef);
+        const availableThemes = THEMES.filter(t => t.models.every(id => modelTemplates[id]));
+        const numThemes = Math.min(2 + (lvl - 1), availableThemes.length);
+        const selectedThemes = [...availableThemes].sort(() => 0.5 - Math.random()).slice(0, numThemes);
+        selectedThemes.forEach(theme => {
+            theme.models.forEach(modelId => {
+                const modelDef = MODELS.find(m => m.id === modelId);
+                if (modelDef) createModelObject(modelDef, theme.id);
+            });
         });
 
         timeLeft = 60 + (lvl * 25);
@@ -772,16 +786,20 @@
 
         let targetTypeId = -1;
 
+        // Strategy A: complete a theme already partially in tray
         const trayTypeIds = Object.keys(trayCounts).map(Number).sort((a, b) => trayCounts[b] - trayCounts[a]);
         for (let id of trayTypeIds) {
-            if (objects.filter(o => o.typeId === id && !o.pendingRemoval).length >= 3) {
-                targetTypeId = id; break;
-            }
+            const totalForTheme = objects.filter(o => o.typeId === id && !o.pendingRemoval).length
+                                + tray.filter(o => o.typeId === id && !o.pendingRemoval).length;
+            if (totalForTheme >= 3) { targetTypeId = id; break; }
         }
 
         if (targetTypeId === -1) {
+            // Strategy B: pick any theme that has all 3 objects available
             const allCounts = {};
-            objects.forEach(o => { if (!o.pendingRemoval) allCounts[o.typeId] = (allCounts[o.typeId] || 0) + 1; });
+            [...objects, ...tray].forEach(o => {
+                if (!o.pendingRemoval) allCounts[o.typeId] = (allCounts[o.typeId] || 0) + 1;
+            });
             const possible = Object.keys(allCounts).map(Number).filter(id => allCounts[id] >= 3);
             if (possible.length > 0) targetTypeId = possible[Math.floor(Math.random() * possible.length)];
         }
@@ -790,7 +808,7 @@
             fanCount--;
             updateBoostersUI();
 
-            const allOfTarget = objects
+            const allOfTarget = [...tray, ...objects]
                 .filter(o => o.typeId === targetTypeId && !o.pendingRemoval)
                 .sort((a, b) => (a.inTray ? -1 : 1) - (b.inTray ? -1 : 1));
 
@@ -977,7 +995,7 @@
             slot.className = 'tray-slot';
             slot.innerText = '';
             if (obj && obj.isDocked) {
-                const modelDef = MODELS.find(m => m.id === obj.typeId);
+                const modelDef = MODELS.find(m => m.id === obj.modelId);
                 slot.innerText = modelDef ? modelDef.icon : '●';
                 slot.classList.add('filled');
             }
