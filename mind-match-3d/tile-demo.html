@@ -358,7 +358,7 @@
 </div>
 
 <!-- Loading Screen -->
-<div id="loading-screen">
+<div id="loading-screen" class="hidden">
     <h2>MIND MATCH 3D</h2>
     <p>Loading models…</p>
     <div id="loading-bar-wrap">
@@ -520,26 +520,36 @@
 
     // Preloaded model data: id → { scene (template), scale, halfExtents, centerOffset }
     const modelTemplates = {};
-    let loadedCount = 0;
+    let currentSelectedThemes = [];
 
-    // ── PRELOADER ─────────────────────────────────────────────────────────────
-    function loadAllModels() {
-        const total = MODELS.length;
-        document.getElementById('loading-text').textContent = `0 / ${total}`;
+    // ── LAZY LOADER — loads only models needed for a given level ──────────────
+    function loadModelsForLevel(lvl, callback) {
+        const numThemes = Math.min(2 + (lvl - 1), THEMES.length);
+        currentSelectedThemes = [...THEMES].sort(() => 0.5 - Math.random()).slice(0, numThemes);
+
+        const neededIds = new Set();
+        currentSelectedThemes.forEach(t => t.models.forEach(id => neededIds.add(id)));
+        const toLoad = [...neededIds].filter(id => !modelTemplates[id]);
+
+        if (toLoad.length === 0) { callback(); return; }
+
+        const loadingEl = document.getElementById('loading-screen');
+        const barEl     = document.getElementById('loading-bar');
+        const textEl    = document.getElementById('loading-text');
+        barEl.style.width = '0%';
+        textEl.textContent = `0 / ${toLoad.length}`;
+        loadingEl.classList.remove('hidden');
 
         const loader = new THREE.GLTFLoader();
+        let done = 0;
 
-        function loadNext(index) {
-            if (index >= total) {
-                setTimeout(() => {
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    init();
-                }, 300);
+        function loadNext(i) {
+            if (i >= toLoad.length) {
+                loadingEl.classList.add('hidden');
+                callback();
                 return;
             }
-
-            const modelDef = MODELS[index];
-
+            const modelDef = MODELS.find(m => m.id === toLoad[i]);
             loader.load(
                 modelDef.file,
                 (gltf) => {
@@ -547,35 +557,24 @@
                     const box = new THREE.Box3().setFromObject(template);
                     const size = box.getSize(new THREE.Vector3());
                     const center = box.getCenter(new THREE.Vector3());
-
                     const maxDim = Math.max(size.x, size.y, size.z);
                     const scale = MODEL_SCALE_TARGET / maxDim;
-
                     const scaledSize = size.clone().multiplyScalar(scale);
-                    const halfExtents = new CANNON.Vec3(
-                        scaledSize.x / 2,
-                        scaledSize.y / 2,
-                        scaledSize.z / 2
-                    );
+                    const halfExtents = new CANNON.Vec3(scaledSize.x / 2, scaledSize.y / 2, scaledSize.z / 2);
                     const centerOffset = center.clone().multiplyScalar(scale);
-
                     modelTemplates[modelDef.id] = { scene: template, scale, halfExtents, centerOffset };
-
-                    loadedCount++;
-                    const pct = (loadedCount / total) * 100;
-                    document.getElementById('loading-bar').style.width = pct + '%';
-                    document.getElementById('loading-text').textContent = `${loadedCount} / ${total}`;
-
-                    loadNext(index + 1);
+                    done++;
+                    barEl.style.width = (done / toLoad.length * 100) + '%';
+                    textEl.textContent = `${done} / ${toLoad.length}`;
+                    loadNext(i + 1);
                 },
                 null,
                 (err) => {
-                    console.error('Failed to load:', modelDef.file, err);
-                    loadedCount++;
-                    const pct = (loadedCount / total) * 100;
-                    document.getElementById('loading-bar').style.width = pct + '%';
-                    document.getElementById('loading-text').textContent = `${loadedCount} / ${total}`;
-                    loadNext(index + 1);
+                    console.error('Failed:', modelDef.file, err);
+                    done++;
+                    barEl.style.width = (done / toLoad.length * 100) + '%';
+                    textEl.textContent = `${done} / ${toLoad.length}`;
+                    loadNext(i + 1);
                 }
             );
         }
@@ -729,17 +728,18 @@
         document.getElementById('game-over-screen').classList.add('hidden');
         document.getElementById('win-screen').classList.add('hidden');
         level = 1;
-        setupLevel(level);
+        loadModelsForLevel(level, () => setupLevel(level));
     }
 
     function nextLevel() {
         document.getElementById('win-screen').classList.add('hidden');
         level++;
-        setupLevel(level);
+        loadModelsForLevel(level, () => setupLevel(level));
     }
 
     function restartLevel() {
         document.getElementById('game-over-screen').classList.add('hidden');
+        // Keep same themes for this level — no reload needed
         setupLevel(level);
     }
 
@@ -764,13 +764,10 @@
         document.getElementById('timer').classList.remove('frozen');
         updateBoostersUI();
 
-        const availableThemes = THEMES.filter(t => t.models.every(id => modelTemplates[id]));
-        const numThemes = Math.min(2 + (lvl - 1), availableThemes.length);
-        const selectedThemes = [...availableThemes].sort(() => 0.5 - Math.random()).slice(0, numThemes);
-        selectedThemes.forEach(theme => {
+        currentSelectedThemes.forEach(theme => {
             theme.models.forEach(modelId => {
                 const modelDef = MODELS.find(m => m.id === modelId);
-                if (modelDef) createModelObject(modelDef, theme.id);
+                if (modelDef && modelTemplates[modelDef.id]) createModelObject(modelDef, theme.id);
             });
         });
 
@@ -1146,7 +1143,7 @@
     }
 
     // ── BOOT ──────────────────────────────────────────────────────────────────
-    loadAllModels();
+    init();
 </script>
 </body>
 </html>
