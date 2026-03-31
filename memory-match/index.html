@@ -746,6 +746,23 @@ function isDeploySpecialsActive() {
   return LEVELS[currentLevelIndex].id >= getDeploySpecialsStartLevel();
 }
 
+function getRecallStartLevel() { return progress.recallStartLevel ?? 1; }
+function setRecallStartLevel(lvl) { progress.recallStartLevel = lvl; saveProgress(); }
+function adjustRecallStartLevel(delta) {
+  const newVal = Math.max(1, Math.min(LEVELS.length, getRecallStartLevel() + delta));
+  setRecallStartLevel(newVal);
+  const el = document.getElementById('recall-start-level');
+  if (el) el.textContent = newVal;
+  updateRecallBar();
+}
+function isRecallActive() {
+  return LEVELS[currentLevelIndex].id >= getRecallStartLevel();
+}
+function updateRecallBar() {
+  const bar = document.getElementById('recall-bar');
+  if (bar) bar.style.display = isRecallActive() ? '' : 'none';
+}
+
 function getStreakRevealPct() {
   if (getStreakEffect() !== 'reveal') return 0;
   let pct = 0;
@@ -932,6 +949,25 @@ function showSettings(returnTo) {
       </div>
     `;
     list.appendChild(dsStartRow);
+
+    // Recall start level
+    const recallStartRow = document.createElement('div');
+    recallStartRow.className = 'setting-row';
+    recallStartRow.innerHTML = `
+      <span class="setting-icon">🔄</span>
+      <div class="setting-info">
+        <div class="setting-name">Recall from Level</div>
+        <div class="setting-desc">Recall button appears from this level onwards</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustRecallStartLevel(-1)">−</button>
+          <span class="qty-value" id="recall-start-level">${getRecallStartLevel()}</span>
+          <button class="qty-btn" onclick="adjustRecallStartLevel(1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(recallStartRow);
 
     // Combo → Special mapping section
     const comboHeader = document.createElement('div');
@@ -1540,7 +1576,7 @@ function startGame(preplacedSpecials) {
   }
 
   targetEl.textContent = TARGET;
-  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton();
+  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar();
 
   // Booster tutorial: highlight bar and show hint on first level with boosters
   if (!progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0)) {
