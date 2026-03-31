@@ -958,10 +958,11 @@
             }
 
             cars.forEach(car => {
+                if (car.r !== undefined) return; // Car is on the grid, not in cars row
                 const wrapper = document.createElement('div');
                 wrapper.className = 'flex justify-center items-start relative';
                 wrapper.style.gridColumnStart = car.col + 1;
-                wrapper.style.gridRowStart = 1; 
+                wrapper.style.gridRowStart = 1;
                 
                 if (draggedBooster === 'straightClear' && hoveredCarCol === car.col) {
                     wrapper.innerHTML = `<div class="absolute inset-x-0 top-0 h-full bg-red-500/30 blur-sm rounded-full z-0"></div>`;
@@ -1199,73 +1200,84 @@
                     let targetGarage = garages.find(g => g.color === car.color);
                     if (!targetGarage) return;
 
-                    const startCell = currentGrid[GRID_SIZE - 1][car.col];
-                    const canStart = startCell !== null && startCell !== 'blocker' && (car.color === 'hybrid' || startCell === car.color);
+                    let onGrid = car.r !== undefined;
+                    let startR, startC;
 
-                    if (canStart) {
-                        let queue = [[GRID_SIZE - 1, car.col]];
-                        let visited = new Set([`${GRID_SIZE - 1},${car.col}`]);
-                        let parent = new Map();
-                        let successPath = null;
-                        let farthestCell = [GRID_SIZE - 1, car.col];
-                        let farthestDist = 0;
-                        let dist = new Map();
-                        dist.set(`${GRID_SIZE - 1},${car.col}`, 0);
+                    if (onGrid) {
+                        // Car is already on the grid (Drive First partial stop)
+                        startR = car.r;
+                        startC = car.c;
+                    } else {
+                        // Car is in the cars row, check if it can enter the grid
+                        startR = GRID_SIZE - 1;
+                        startC = car.col;
+                        const startCell = currentGrid[startR][startC];
+                        const canStart = startCell !== null && startCell !== 'blocker' && (car.color === 'hybrid' || startCell === car.color);
+                        if (!canStart) return;
+                    }
 
-                        while (queue.length > 0) {
-                            let [r, c] = queue.shift();
-                            let currentDist = dist.get(`${r},${c}`);
+                    let queue = [[startR, startC]];
+                    let visited = new Set([`${startR},${startC}`]);
+                    let parent = new Map();
+                    let successPath = null;
+                    let farthestCell = [startR, startC];
+                    let farthestDist = 0;
+                    let dist = new Map();
+                    dist.set(`${startR},${startC}`, 0);
 
-                            // Has the car reached the top row at the exact column of its matching garage?
-                            if (r === 0 && c === targetGarage.col) {
-                                let path = [];
-                                let curr = `${r},${c}`;
-                                while (curr) {
-                                    let [pr, pc] = curr.split(',').map(Number);
-                                    path.unshift({ r: pr, c: pc });
-                                    curr = parent.get(curr);
-                                }
-                                successPath = path;
-                                break;
-                            }
+                    while (queue.length > 0) {
+                        let [r, c] = queue.shift();
+                        let currentDist = dist.get(`${r},${c}`);
 
-                            if (currentDist > farthestDist) {
-                                farthestDist = currentDist;
-                                farthestCell = [r, c];
-                            }
-
-                            const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-                            for (let [dr, dc] of dirs) {
-                                let nr = r + dr, nc = c + dc;
-                                if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-                                    const neighborCell = currentGrid[nr][nc];
-                                    const canTraverse = neighborCell !== null && neighborCell !== 'blocker' && (car.color === 'hybrid' || neighborCell === car.color);
-
-                                    if (canTraverse && !visited.has(`${nr},${nc}`)) {
-                                        visited.add(`${nr},${nc}`);
-                                        parent.set(`${nr},${nc}`, `${r},${c}`);
-                                        dist.set(`${nr},${nc}`, currentDist + 1);
-                                        queue.push([nr, nc]);
-                                    }
-                                }
-                            }
-                        }
-                        if (successPath) {
-                            successPath.unshift({ r: GRID_SIZE, c: car.col }); // Enter grid from Cars Row
-                            successPath.push({ r: -1, c: targetGarage.col });  // Exit grid into Garages Row
-                            pathsFound.push({ car, path: successPath });
-                        } else if (gameMode === 'drivefirst' && farthestDist > 0) {
-                            // Drive First: car drives as far as it can, consuming road cells
+                        // Has the car reached the top row at the exact column of its matching garage?
+                        if (r === 0 && c === targetGarage.col) {
                             let path = [];
-                            let curr = `${farthestCell[0]},${farthestCell[1]}`;
+                            let curr = `${r},${c}`;
                             while (curr) {
                                 let [pr, pc] = curr.split(',').map(Number);
                                 path.unshift({ r: pr, c: pc });
                                 curr = parent.get(curr);
                             }
-                            path.unshift({ r: GRID_SIZE, c: car.col }); // Enter from Cars Row
-                            pathsFound.push({ car, path: path, partial: true });
+                            successPath = path;
+                            break;
                         }
+
+                        if (currentDist > farthestDist) {
+                            farthestDist = currentDist;
+                            farthestCell = [r, c];
+                        }
+
+                        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                        for (let [dr, dc] of dirs) {
+                            let nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                                const neighborCell = currentGrid[nr][nc];
+                                const canTraverse = neighborCell !== null && neighborCell !== 'blocker' && (car.color === 'hybrid' || neighborCell === car.color);
+
+                                if (canTraverse && !visited.has(`${nr},${nc}`)) {
+                                    visited.add(`${nr},${nc}`);
+                                    parent.set(`${nr},${nc}`, `${r},${c}`);
+                                    dist.set(`${nr},${nc}`, currentDist + 1);
+                                    queue.push([nr, nc]);
+                                }
+                            }
+                        }
+                    }
+                    if (successPath) {
+                        if (!onGrid) successPath.unshift({ r: GRID_SIZE, c: car.col }); // Enter grid from Cars Row
+                        successPath.push({ r: -1, c: targetGarage.col });  // Exit grid into Garages Row
+                        pathsFound.push({ car, path: successPath });
+                    } else if (gameMode === 'drivefirst' && farthestDist > 0) {
+                        // Drive First: car drives as far as it can, consuming road cells
+                        let path = [];
+                        let curr = `${farthestCell[0]},${farthestCell[1]}`;
+                        while (curr) {
+                            let [pr, pc] = curr.split(',').map(Number);
+                            path.unshift({ r: pr, c: pc });
+                            curr = parent.get(curr);
+                        }
+                        if (!onGrid) path.unshift({ r: GRID_SIZE, c: car.col }); // Enter from Cars Row
+                        pathsFound.push({ car, path: path, partial: true });
                     }
                 });
             } else {
@@ -1687,6 +1699,21 @@
                 replaceEscapedCars(paths.length);
                 renderCarsRow();
                 pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+
+                // Drive First: move partially-driven cars to their final grid position
+                if (gameMode === 'drivefirst') {
+                    paths.forEach(p => {
+                        if (p.partial) {
+                            let lastCell = p.path[p.path.length - 1];
+                            let car = cars.find(c => c.id === p.car.id);
+                            if (car && lastCell.r >= 0 && lastCell.r < GRID_SIZE) {
+                                car.r = lastCell.r;
+                                car.c = lastCell.c;
+                            }
+                        }
+                    });
+                    renderCarsRow();
+                }
             }
 
             const { fullRows, fullCols } = findFullRowsCols(grid);
