@@ -990,12 +990,53 @@
         async function swapTiles(r1, c1, r2, c2) {
             if (r1 < 0 || r2 < 0 || c1 < 0 || c2 < 0 || r1 >= GRID_SIZE || r2 >= GRID_SIZE || c1 >= GRID_SIZE || c2 >= GRID_SIZE || !board[r1] || !board[r2] || !board[r1][c1] || !board[r2][c2]) return;
             SFX.swap();
-            const t1 = board[r1][c1], t2 = board[r2][c2]; 
+            // Swap board data
+            const t1 = board[r1][c1], t2 = board[r2][c2];
             board[r1][c1] = t2; board[r2][c2] = t1;
-            const e1 = tileElements[r1][c1], e2 = tileElements[r2][c2]; 
+            const e1 = tileElements[r1][c1], e2 = tileElements[r2][c2];
             tileElements[r1][c1] = e2; tileElements[r2][c2] = e1;
-            updateTilePosition(e1, r2, c2); updateTilePosition(e2, r1, c1);
-            await new Promise(r => setTimeout(r, 200));
+
+            // Arc swap animation — primary tile leaps over secondary
+            const boardSize = boardEl.offsetWidth;
+            const tilePx = boardSize / GRID_SIZE;
+            const dx = (c2 - c1) * tilePx, dy = (r2 - r1) * tilePx;
+            const isHoriz = r1 === r2, isVert = c1 === c2;
+            // Perpendicular arc offset (tile arcs over the other)
+            const arc = tilePx * 0.28;
+            const perpX = isHoriz ? 0 : isVert ? ((Math.random() > 0.5 ? 1 : -1) * arc) : 0;
+            const perpY = isHoriz ? -arc : isVert ? 0 : -arc * 0.7;
+            const dur = 320;
+
+            // Disable CSS transitions — we're using WAAPI for the full animation
+            e1.style.transition = 'none'; e2.style.transition = 'none';
+            e1.style.zIndex = '30'; e2.style.zIndex = '25';
+
+            // Primary tile: lifts up, scales up, arcs to destination
+            e1.animate([
+                { transform: 'translate(0px,0px) scale(1)', offset: 0 },
+                { transform: `translate(${dx*0.5+perpX}px,${dy*0.5+perpY-4}px) scale(1.22)`, offset: 0.42 },
+                { transform: `translate(${dx}px,${dy}px) scale(1)`, offset: 1 }
+            ], { duration: dur, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+
+            // Secondary tile: shrinks, slides under to origin
+            e2.animate([
+                { transform: 'translate(0px,0px) scale(1)', offset: 0 },
+                { transform: `translate(${-dx*0.5-perpX}px,${-dy*0.5-perpY+3}px) scale(0.82)`, offset: 0.42 },
+                { transform: `translate(${-dx}px,${-dy}px) scale(1)`, offset: 1 }
+            ], { duration: dur, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
+
+            await new Promise(r => setTimeout(r, dur + 15));
+
+            // Set final CSS positions (transitions still off)
+            updateTilePosition(e1, r2, c2);
+            updateTilePosition(e2, r1, c1);
+            // Clear WAAPI animations — CSS positions are now correct
+            e1.getAnimations().forEach(a => a.cancel());
+            e2.getAnimations().forEach(a => a.cancel());
+            void e1.offsetHeight; // force layout
+            // Restore
+            e1.style.zIndex = ''; e2.style.zIndex = '';
+            e1.style.transition = ''; e2.style.transition = '';
         }
 
         async function checkMatches(triggerR, triggerC) {
