@@ -1034,7 +1034,7 @@ function executeJoker(index) {
 
 function boosterReveal(indices) {
   const targets = indices.filter(i => i>=0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
-  if (!targets.length) { updateBoosterUI(); return; }
+  if (!targets.length) { inputLocked = false; updateBoosterUI(); return; }
   inputLocked = true;
   pauseChainTimer();
   targets.forEach((idx, i) => {
@@ -1078,6 +1078,18 @@ function pickColor(color) {
   if (!color) { inputLocked = false; boosterCounts['colorpick']++; saveBoosterCounts(); updateBoosterUI(); return; }
   const m = board.filter(c=>!c.flipped&&!c.special&&c.color===color&&!c.locked).map(c=>c.index).sort(()=>Math.random()-.5);
   const picks = m.slice(0, 3);
+
+  // No face-down cards of that color — refund and notify
+  if (picks.length === 0) {
+    boosterCounts['colorpick']++;
+    saveBoosterCounts();
+    inputLocked = false;
+    updateBoosterUI();
+    const prev = chainEl.innerHTML;
+    chainEl.innerHTML = `<span style="color:#e74c3c">No hidden ${color} cards found — refunded 🎨</span>`;
+    setTimeout(() => { chainEl.innerHTML = prev; }, 1800);
+    return;
+  }
 
   // If chain is active and picked color matches a chain color, add to chain
   const colorMatchesChain = turnActive && (color === chainColor || (getRule('coloredBombs') && chainColors.has(color)));
