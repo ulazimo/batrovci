@@ -1207,10 +1207,15 @@
                         let visited = new Set([`${GRID_SIZE - 1},${car.col}`]);
                         let parent = new Map();
                         let successPath = null;
+                        let farthestCell = [GRID_SIZE - 1, car.col];
+                        let farthestDist = 0;
+                        let dist = new Map();
+                        dist.set(`${GRID_SIZE - 1},${car.col}`, 0);
 
                         while (queue.length > 0) {
                             let [r, c] = queue.shift();
-                            
+                            let currentDist = dist.get(`${r},${c}`);
+
                             // Has the car reached the top row at the exact column of its matching garage?
                             if (r === 0 && c === targetGarage.col) {
                                 let path = [];
@@ -1224,16 +1229,22 @@
                                 break;
                             }
 
+                            if (currentDist > farthestDist) {
+                                farthestDist = currentDist;
+                                farthestCell = [r, c];
+                            }
+
                             const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
                             for (let [dr, dc] of dirs) {
                                 let nr = r + dr, nc = c + dc;
                                 if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
                                     const neighborCell = currentGrid[nr][nc];
                                     const canTraverse = neighborCell !== null && neighborCell !== 'blocker' && (car.color === 'hybrid' || neighborCell === car.color);
-                                    
+
                                     if (canTraverse && !visited.has(`${nr},${nc}`)) {
                                         visited.add(`${nr},${nc}`);
                                         parent.set(`${nr},${nc}`, `${r},${c}`);
+                                        dist.set(`${nr},${nc}`, currentDist + 1);
                                         queue.push([nr, nc]);
                                     }
                                 }
@@ -1243,6 +1254,17 @@
                             successPath.unshift({ r: GRID_SIZE, c: car.col }); // Enter grid from Cars Row
                             successPath.push({ r: -1, c: targetGarage.col });  // Exit grid into Garages Row
                             pathsFound.push({ car, path: successPath });
+                        } else if (gameMode === 'drivefirst' && farthestDist > 0) {
+                            // Drive First: car drives as far as it can, consuming road cells
+                            let path = [];
+                            let curr = `${farthestCell[0]},${farthestCell[1]}`;
+                            while (curr) {
+                                let [pr, pc] = curr.split(',').map(Number);
+                                path.unshift({ r: pr, c: pc });
+                                curr = parent.get(curr);
+                            }
+                            path.unshift({ r: GRID_SIZE, c: car.col }); // Enter from Cars Row
+                            pathsFound.push({ car, path: path, partial: true });
                         }
                     }
                 });
@@ -1657,9 +1679,9 @@
                 const comboMultiplier = paths.length;
                 animatingCells = paths.flatMap(p => p.path.slice(1));
                 renderGrid(); 
-                cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
+                cars = cars.filter(c => !paths.find(p => p.car.id === c.id && !p.partial));
                 if (gameMode === 'parking' || gameMode === 'drivefirst') {
-                    garages = garages.filter(g => !paths.find(p => p.car.color === g.color));
+                    garages = garages.filter(g => !paths.find(p => !p.partial && p.car.color === g.color));
                     renderGaragesRow();
                 }
                 replaceEscapedCars(paths.length);
