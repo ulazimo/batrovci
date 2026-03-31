@@ -2502,9 +2502,10 @@ function endTurn(manual, perfectSweep) {
       spawnParticles(matched.length>0 ? matched : specialsUsed, chainColor);
       if (perfectSweep) { SFX.win(); launchConfetti(); }
     }
-    // Unlock cards orthogonally adjacent to removed combo cards
+    // Unlock cards orthogonally adjacent to removed combo cards (include newSP — it's consumed too)
     const unlocked = new Set();
-    toRemove.forEach(idx => {
+    const unlockSources = newSP >= 0 ? [...toRemove, newSP] : toRemove;
+    unlockSources.forEach(idx => {
       const {r, c} = toRC(idx);
       [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => {
         const adj = toIndex(r+dr, c+dc);
