@@ -17,6 +17,7 @@
   <div class="top-bar-right">
     <button id="btn-load" class="bar-btn">📂 Load JSON</button>
     <button id="btn-download" class="bar-btn primary">💾 Download JSON</button>
+    <button id="btn-download-js" class="bar-btn primary">💾 Download JS</button>
     <input type="file" id="file-input" accept=".json" hidden>
   </div>
 </header>
@@ -63,10 +64,6 @@
           <span class="prop-label">Turns</span>
           <input type="number" id="prop-turns" min="1" max="99" value="10">
         </label>
-        <label class="prop">
-          <span class="prop-label">Target</span>
-          <input type="number" id="prop-target" min="0" max="99999" step="50" value="500">
-        </label>
       </div>
       <!-- Board -->
       <div id="board-wrap">
@@ -75,10 +72,13 @@
     </div>
   </section>
 
-  <!-- RIGHT: TOOL PALETTE -->
+  <!-- RIGHT: TOOL PALETTE + GOALS -->
   <aside id="tool-panel">
     <h3 class="panel-title">Tools</h3>
     <div id="tool-list"></div>
+    <h3 class="panel-title" style="margin-top:16px">Goals</h3>
+    <div id="goal-list"></div>
+    <button id="btn-add-goal" class="bar-btn" style="width:100%;margin-top:8px">+ Add Goal</button>
   </aside>
 
 </main>

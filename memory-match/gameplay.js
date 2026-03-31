@@ -850,9 +850,17 @@ function startGame(preplacedSpecials) {
   stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 
+  // Disable cells — set to null so no card is placed there
+  const lvlData = LEVELS[currentLevelIndex];
+  const disabledPositions = lvlData.disabled || [];
+  disabledPositions.forEach(([r, c]) => {
+    const idx = r * COLS + c;
+    if (idx >= 0 && idx < TOTAL) board[idx] = null;
+  });
+
   // Place pre-selected special cards at random positions
   if (preplacedSpecials && preplacedSpecials.length > 0) {
-    const available = board.map((_, i) => i);
+    const available = board.map((_, i) => i).filter(i => board[i] !== null);
     // Shuffle available positions
     for (let i = available.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -1063,8 +1071,13 @@ function renderBoard() {
   boardEl.innerHTML = '';
   board.forEach(card => {
     const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.innerHTML = buildCardHTML(card);
+    if (card === null) {
+      cell.className = 'cell disabled-cell';
+      cell.innerHTML = '<img src="blocks/disabled.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px;opacity:.5">';
+    } else {
+      cell.className = 'cell';
+      cell.innerHTML = buildCardHTML(card);
+    }
     boardEl.appendChild(cell);
   });
 }
@@ -1478,7 +1491,7 @@ function boosterReveal(indices) {
 }
 
 function executeRandom3() {
-  const fd = board.filter(c=>!c.flipped&&!c.special).map(c=>c.index).sort(()=>Math.random()-.5);
+  const fd = board.filter(c=>c&&!c.flipped&&!c.special).map(c=>c.index).sort(()=>Math.random()-.5);
   boosterReveal(fd.slice(0,3));
 }
 function executeNeighbor() {
@@ -1503,7 +1516,7 @@ function executeColorPick() {
 function pickColor(color) {
   colorPickerEl.classList.remove('active');
   if (!color) { inputLocked = false; boosterCounts['colorpick']++; saveBoosterCounts(); updateBoosterUI(); return; }
-  const m = board.filter(c=>!c.flipped&&!c.special&&c.color===color&&!c.locked).map(c=>c.index).sort(()=>Math.random()-.5);
+  const m = board.filter(c=>c&&!c.flipped&&!c.special&&c.color===color&&!c.locked).map(c=>c.index).sort(()=>Math.random()-.5);
   const picks = m.slice(0, 3);
 
   // No face-down cards of that color — refund and notify
@@ -1933,7 +1946,7 @@ function endTurn(manual, perfectSweep) {
 function placeNewCards(toRemove, skip) {
   const nc = [];
   toRemove.forEach(idx => {
-    if (idx===skip) return;
+    if (idx===skip || board[idx]===null) return;
     board[idx]=createCard(idx); replaceCell(idx); nc.push(idx);
     const el=getCardEl(idx);
     if (el) { el.classList.add('dropping'); el.addEventListener('animationend',()=>el.classList.remove('dropping'),{once:true}); }
@@ -2190,7 +2203,7 @@ function revealEntireBoard() {
   // Decide which cards get the streak pre-reveal (stay face-up permanently)
   const streakIndices = new Set();
   if (pct > 0) {
-    const indices = board.map((_, i) => i).filter(i => !board[i].locked && !board[i].special);
+    const indices = board.map((_, i) => i).filter(i => board[i] && !board[i].locked && !board[i].special);
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
@@ -2203,7 +2216,7 @@ function revealEntireBoard() {
   if (streakIndices.size > 0) {
     lastRevealedCards = [...streakIndices];
     board.forEach((c, i) => {
-      if (!streakIndices.has(i)) return;
+      if (!c || !streakIndices.has(i)) return;
       c.flipped = true;
       const el = getCardEl(i);
       if (el) setTimeout(() => {
@@ -2221,6 +2234,13 @@ function revealEntireBoard() {
 }
 
 // ============================================================
-// BOOT — show home screen
+// BOOT — LEVELS already loaded via levels_default.js script tag
 // ============================================================
-document.getElementById('home-screen').classList.add('active');
+(function boot() {
+  // Resize stars array to match loaded levels
+  const oldStars = progress.stars || [];
+  progress.stars = new Array(LEVELS.length).fill(0);
+  oldStars.forEach((s, i) => { if (i < progress.stars.length) progress.stars[i] = s; });
+  if (currentLevelIndex >= LEVELS.length) currentLevelIndex = Math.max(0, LEVELS.length - 1);
+  document.getElementById('home-screen').classList.add('active');
+})();

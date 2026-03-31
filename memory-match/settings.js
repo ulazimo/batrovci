@@ -303,7 +303,7 @@ function saveProgress() {
 
 let progress = loadProgress();
 if (!progress.highestUnlocked) progress.highestUnlocked = 0;
-if (!progress.stars) progress.stars = new Array(LEVELS.length).fill(0);
+if (!progress.stars) progress.stars = [];
 if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.gameplayRules) progress.gameplayRules = {};
 if (!progress.boosterCounts) progress.boosterCounts = {};
