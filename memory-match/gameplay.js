@@ -945,7 +945,7 @@ function executePeek(index) {
       updateChainIndicator();
       // Check perfect sweep
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-      const remaining = board.filter(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
+      const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
       if (remaining.length === 0 && chainLen >= 3) {
         stopChainTimer();
         inputLocked = true;
@@ -1102,7 +1102,7 @@ function pickColor(color) {
       updateChainIndicator();
       // Check perfect sweep
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-      const remaining = board.filter(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
+      const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
       if (remaining.length === 0 && chainLen >= 3) {
         stopChainTimer();
         inputLocked = true;
@@ -1289,7 +1289,7 @@ function onCardClick(index) {
     updateChainIndicator();
     // Check if all cards of ALL active chain colors have been found (perfect sweep)
     const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-    const remaining = board.filter(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
+    const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
     if (remaining.length === 0 && chainLen >= 3) {
       stopChainTimer();
       inputLocked = true;
