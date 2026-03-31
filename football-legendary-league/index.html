@@ -438,18 +438,6 @@
         // ── SOUND EFFECTS (Web Audio API, no external files) ──────────────
         const SFX = (() => {
             let ctx = null;
-            let goalBuffer = null;
-            // Pre-load real crowd cheer sample (CC0, archive.org)
-            const GOAL_MP3 = 'https://archive.org/download/Red_Library_Crowds_Sports/R07-01-Crowd%20Cheering%20at%20Sporting%20Event.mp3';
-            fetch(GOAL_MP3)
-                .then(r => r.arrayBuffer())
-                .then(ab => {
-                    const tmpCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    return tmpCtx.decodeAudioData(ab);
-                })
-                .then(buf => { goalBuffer = buf; })
-                .catch(() => {});
-
             function gc() {
                 if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (ctx.state === 'suspended') ctx.resume();
@@ -492,25 +480,13 @@
                 rocket:  ()  => { tone(800, 'sawtooth', 0.32, 0.14, 200); noiseBurst(0.15, 0.08, 1200); },
                 bomb:    ()  => { noiseBurst(0.45, 0.32, 140); tone(75, 'sine', 0.45, 0.18, 155); },
                 goal: () => { try {
-                    const c = gc();
-                    if (goalBuffer) {
-                        // Play real crowd cheer sample (first ~4 seconds)
-                        const src = c.createBufferSource(), g = c.createGain();
-                        src.buffer = goalBuffer;
-                        src.connect(g); g.connect(c.destination);
-                        g.gain.setValueAtTime(0.9, c.currentTime);
-                        // Fade out after 4 seconds
-                        g.gain.setValueAtTime(0.9, c.currentTime + 3.5);
-                        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 4.5);
-                        src.start(c.currentTime);
-                        src.stop(c.currentTime + 4.5);
-                    } else {
-                        // Fallback: quick cheer synth while buffer still loading
-                        const now = c.currentTime;
-                        noiseBurst(2.0, 0.28, 400, 0);
-                        noiseBurst(2.0, 0.18, 900, 0.1);
-                        tone(260, 'sawtooth', 1.4, 0.1, 180, 0);
-                    }
+                    // Simple ascending major chord fanfare: C-E-G-C
+                    tone(523, 'sine', 0.5, 0.16, null, 0);      // C5
+                    tone(659, 'sine', 0.5, 0.14, null, 0.1);    // E5
+                    tone(784, 'sine', 0.5, 0.14, null, 0.2);    // G5
+                    tone(1047,'sine', 0.7, 0.18, null, 0.3);    // C6 (hold longer)
+                    // Soft whistle accent on top
+                    tone(1568,'sine', 0.35, 0.06, 1200, 0.32);
                 } catch(e) {} },
                 match:   (n) => { const p=[440,528,660,784,880]; for(let i=0;i<Math.min(n,5);i++) tone(p[i],'sine',0.22,0.11,null,i*0.045); }
             };
@@ -1102,13 +1078,17 @@
                 else if(tile.booster==='bomb'){const tc=tile.type;for(let i=0;i<GRID_SIZE;i++)for(let j=0;j<GRID_SIZE;j++)if(board[i][j]?.type===tc)matches.add(i+","+j);}
             });
             // Accumulate gains for NEW (not already pending) tiles
+            let newCount = 0;
             matches.forEach(m => {
                 if (pendingKeys.has(m)) return;
                 const [r,c]=m.split(',').map(Number), tile=board[r][c]; if(!tile) return;
                 pendingGains[tile.type] = (pendingGains[tile.type]||0) + 1;
                 pendingKeys.add(m);
                 if (tileElements[r]?.[c]) tileElements[r][c].classList.add('pending-break');
+                newCount++;
             });
+            // If ALL matched tiles were already pending, this swap added nothing
+            if (newCount === 0) return false;
             tickCombo();
             // Sound feedback (so player knows a match was registered)
             let hasRocket=false, hasBomb=false;
