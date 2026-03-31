@@ -85,7 +85,7 @@ body {
   background: #6a4a2a; border: 1px solid #f0c040;
 }
 .mini-cell.disabled {
-  background: #111118; border: 1px solid #222230; opacity: 0.4;
+  background: #888; border: 1px solid #666; opacity: 0.5; border-radius: 2px;
 }
 
 /* Delete button on hover */
@@ -207,10 +207,20 @@ body {
 .board-cell.locked::after { content: '🔒'; font-size: 18px; }
 
 .board-cell.disabled {
-  background: #111118; border-color: #222230;
-  cursor: not-allowed; opacity: 0.45;
+    background: url(../blocks/disabled.png);
+    border-color: transparent;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+    background-size: 110% auto;
+    background-repeat: no-repeat;
+    background-position: center;
+	opacity: 0.7;
 }
-.board-cell.disabled::after { content: '⛔'; font-size: 18px; opacity: 0.7; }
+
+.board-cell.disabled img {  
+  display: none;
+}
 
 /* ================================================================
    RIGHT PANEL — Tool Palette

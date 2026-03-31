@@ -14,7 +14,7 @@ let loadedFileName = 'levels';
 const TOOLS = [
   { id: 'normal',   icon: '🟦', name: 'Normal',   desc: 'Regular card cell' },
   { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Locked until adjacent combo' },
-  { id: 'disabled', icon: '⛔', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
+  { id: 'disabled', icon: '<img src="../blocks/disabled.png" style="width:32px;height:32px;border-radius:4px;opacity:.7">', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
 
@@ -349,8 +349,13 @@ function renderBoard() {
       const key = `${r},${c}`;
       const cell = document.createElement('div');
       cell.className = 'board-cell';
-      if (disabledSet.has(key))    cell.classList.add('disabled');
-      else if (lockedSet.has(key)) cell.classList.add('locked');
+      if (disabledSet.has(key)) {
+        cell.classList.add('disabled');
+        const img = document.createElement('img');
+        img.src = '../blocks/disabled.png';
+        img.alt = 'disabled';
+        cell.appendChild(img);
+      } else if (lockedSet.has(key)) cell.classList.add('locked');
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => onCellClick(r, c));
