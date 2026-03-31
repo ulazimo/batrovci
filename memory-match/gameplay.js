@@ -1649,7 +1649,7 @@ function showSweepBanner() {
   if (banner) banner.remove();
   banner = document.createElement('div');
   banner.className = 'sweep-banner';
-  banner.innerHTML = '<div class="sweep-title">🧹 PERFECT SWEEP!</div><div class="sweep-sub">Revealing the board...</div>';
+  banner.innerHTML = '<div class="sweep-title">🧹 PERFECT SWEEP!</div><div class="sweep-sub">Revealing the NEW board...</div>';
   boardContainerEl.appendChild(banner);
 }
 
@@ -1664,6 +1664,13 @@ function sweepRevealBoard(cb) {
   const targets = [];
   board.forEach((c, i) => { if (c && !c.special && !c.flipped && !c.locked) targets.push(i); });
   if (!targets.length) { cb(); return; }
+
+  // Regenerate colors and update DOM
+  targets.forEach(idx => {
+    board[idx].color = randomColor();
+    replaceCell(idx);
+  });
+
   lastRevealedCards = targets;
   const stagger = 30;
   targets.forEach((idx, i) => {
