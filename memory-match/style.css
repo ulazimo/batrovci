@@ -37,16 +37,24 @@ body {
 ================================================================ */
 /* Goal HUD */
 #goal-hud {
-  width:100%;max-width:500px;display:none;flex-wrap:wrap;gap:5px;
-  padding:5px 10px;background:#16213e;border-bottom:1px solid #0f3460;justify-content:center;
+  width:100%;max-width:500px;display:none;flex-direction:column;gap:6px;
+  padding:10px 14px;background:linear-gradient(180deg,#1a2744,#16213e);
+  border-bottom:2px solid #0f3460;
 }
+#goal-hud .goal-hud-title {
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+  color:#4fc3f7;text-align:center;margin-bottom:2px;
+}
+#goal-hud .goal-items { display:flex;flex-wrap:wrap;gap:8px;justify-content:center; }
 .goal-pill {
-  display:flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;
-  background:rgba(255,255,255,.08);font-size:11px;color:#ccc;white-space:nowrap;
+  display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:16px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  font-size:14px;color:#ddd;white-space:nowrap;transition:all .3s;
 }
-.goal-pill.goal-done { background:rgba(46,204,113,.2);color:#2ecc71; }
-.goal-icon { font-size:12px; }
-.goal-count { font-weight:700;color:#f0c040; }
+.goal-pill.goal-done { background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:#2ecc71; }
+.goal-icon { font-size:16px; }
+.goal-text { font-weight:500; }
+.goal-count { font-weight:800;color:#f0c040;font-size:15px; }
 .goal-pill.goal-done .goal-count { color:#2ecc71; }
 
 /* Marked cards */

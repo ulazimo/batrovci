@@ -305,7 +305,7 @@ function updateGoalHUD() {
   const nonScore = levelGoals.definitions.filter(g => g.type !== 'score');
   if (nonScore.length === 0) { el.style.display = 'none'; return; }
   el.style.display = 'flex';
-  el.innerHTML = levelGoals.definitions.map(g => {
+  const pills = levelGoals.definitions.map(g => {
     const d = getGoalDisplay(g);
     return `<div class="goal-pill ${d.done ? 'goal-done' : ''}">
       <span class="goal-icon">${d.icon}</span>
@@ -313,6 +313,7 @@ function updateGoalHUD() {
       <span class="goal-count">${d.current}/${d.target}</span>
     </div>`;
   }).join('');
+  el.innerHTML = `<div class="goal-hud-title">Goals</div><div class="goal-items">${pills}</div>`;
   updateCoverageIndicators();
 }
 
