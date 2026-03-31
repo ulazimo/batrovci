@@ -167,6 +167,14 @@ body {
 @keyframes confettiFall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
 .confetto { position:fixed;top:-12px;pointer-events:none;z-index:500;animation:confettiFall linear forwards; }
 
+/* Sweep reveal banner overlay */
+@keyframes sweepBannerIn { 0%{opacity:0;transform:scale(.6)} 50%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
+@keyframes sweepBannerOut { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.2)} }
+.sweep-banner { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,.55) 0%,transparent 70%);animation:sweepBannerIn .5s ease-out forwards; }
+.sweep-banner.hiding { animation:sweepBannerOut .4s ease-in forwards; }
+.sweep-banner .sweep-title { font-size:clamp(22px,6vw,36px);font-weight:900;color:#f0c040;text-shadow:0 0 20px rgba(240,192,64,.6),0 2px 8px rgba(0,0,0,.8); }
+.sweep-banner .sweep-sub { font-size:clamp(12px,3.5vw,18px);font-weight:600;color:#ccc;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-top:6px; }
+
 /* ================================================================
    BOOSTER BAR
 ================================================================ */
@@ -532,6 +540,9 @@ const GAMEPLAY_RULES = [
   { id: 'revealOnUnlock', name: 'Reveal on Unlock', icon: '🔓',
     desc: 'When a locked card is unlocked, briefly reveal its color',
     default: false },
+  { id: 'sweepReveal', name: 'Perfect Sweep Reveal', icon: '🧹',
+    desc: 'A perfect sweep briefly reveals the entire board before hiding it again',
+    default: true },
   { id: 'coloredBombs', name: 'Colored Bombs', icon: '🎨',
     desc: 'Bombs inherit the color of the combo that created them. Using a bomb opens a parallel chain of that color — match either color to continue. If all board colors have active chains, auto-reveal all cards for a 500pt bonus!',
     default: false },
@@ -744,6 +755,18 @@ function adjustDeploySpecialsStartLevel(delta) {
 }
 function isDeploySpecialsActive() {
   return LEVELS[currentLevelIndex].id >= getDeploySpecialsStartLevel();
+}
+
+function getSweepRevealStartLevel() { return progress.sweepRevealStartLevel || 1; }
+function setSweepRevealStartLevel(lvl) { progress.sweepRevealStartLevel = lvl; saveProgress(); }
+function adjustSweepRevealStartLevel(delta) {
+  const cur = getSweepRevealStartLevel();
+  const newVal = Math.max(1, Math.min(LEVELS.length, cur + delta));
+  setSweepRevealStartLevel(newVal);
+  document.getElementById('sweep-reveal-start-level').textContent = newVal;
+}
+function isSweepRevealActive() {
+  return getRule('sweepReveal') && LEVELS[currentLevelIndex].id >= getSweepRevealStartLevel();
 }
 
 function getRecallStartLevel() { return progress.recallStartLevel ?? 1; }
@@ -968,6 +991,25 @@ function showSettings(returnTo) {
       </div>
     `;
     list.appendChild(recallStartRow);
+
+    // Sweep Reveal start level
+    const srStartRow = document.createElement('div');
+    srStartRow.className = 'setting-row';
+    srStartRow.innerHTML = `
+      <span class="setting-icon">🧹</span>
+      <div class="setting-info">
+        <div class="setting-name">Sweep Reveal from Level</div>
+        <div class="setting-desc">Perfect sweep board reveal unlocks at this level</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustSweepRevealStartLevel(-1)">−</button>
+          <span class="qty-value" id="sweep-reveal-start-level">${getSweepRevealStartLevel()}</span>
+          <button class="qty-btn" onclick="adjustSweepRevealStartLevel(1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(srStartRow);
 
     // Combo → Special mapping section
     const comboHeader = document.createElement('div');
@@ -2539,25 +2581,34 @@ function endTurn(manual, perfectSweep) {
       }
       // Step 2: After bomb reveal animation, drop in new cards
       const bombRevealTime = revealTargets.length > 0 ? 300 : 0;
+      const willSweepReveal = perfectSweep && isSweepRevealActive();
       setTimeout(() => {
         const nc = placeNewCards(toRemove, newSP);
-        const showNewCards = nc.length > 0 && !getRule('hiddenNewCards');
+        const showNewCards = nc.length > 0 && !getRule('hiddenNewCards') && !willSweepReveal;
         const dropDelay = nc.length > 0 ? 450 : 0;
+
+        // Show sweep banner in parallel with new cards dropping
+        if (willSweepReveal) showSweepBanner();
+
         setTimeout(() => {
-          // Reveal new cards (no auto-hide)
+          // Reveal new cards (no auto-hide) — skip if sweep reveal is coming
           if (showNewCards) revealCardsNoHide(nc);
           // Hide everything together after 2.2s
           const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
           if (allRevealed.length > 0) lastRevealedCards = allRevealed;
+          const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
           if (allRevealed.length > 0) {
             setTimeout(() => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
-              finishTurn();
+              doFinish();
             }, 2200);
-          } else finishTurn();
+          } else doFinish();
         }, dropDelay);
       }, bombRevealTime);
     }, 500);
+  } else if (perfectSweep && isSweepRevealActive()) {
+    showSweepBanner();
+    setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1600);
   } else setTimeout(finishTurn, 400);
 }
 
@@ -2609,6 +2660,48 @@ function doSimultaneousReveal(targets, cb) {
     targets.forEach(rIdx => { const c = board[rIdx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(rIdx); if (el) el.classList.remove('flipped'); } });
     cb();
   }, 2200);
+}
+
+// ============================================================
+// PERFECT SWEEP BOARD REVEAL
+// ============================================================
+function showSweepBanner() {
+  let banner = boardContainerEl.querySelector('.sweep-banner');
+  if (banner) banner.remove();
+  banner = document.createElement('div');
+  banner.className = 'sweep-banner';
+  banner.innerHTML = '<div class="sweep-title">🧹 PERFECT SWEEP!</div><div class="sweep-sub">Revealing the board...</div>';
+  boardContainerEl.appendChild(banner);
+}
+
+function hideSweepBanner(cb) {
+  const banner = boardContainerEl.querySelector('.sweep-banner');
+  if (!banner) { cb(); return; }
+  banner.classList.add('hiding');
+  banner.addEventListener('animationend', () => { banner.remove(); cb(); }, { once: true });
+}
+
+function sweepRevealBoard(cb) {
+  const targets = [];
+  board.forEach((c, i) => { if (c && !c.special && !c.flipped && !c.locked) targets.push(i); });
+  if (!targets.length) { cb(); return; }
+  lastRevealedCards = targets;
+  const stagger = 30;
+  targets.forEach((idx, i) => {
+    setTimeout(() => {
+      board[idx].flipped = true;
+      const el = getCardEl(idx);
+      if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+    }, i * stagger);
+  });
+  const holdMs = Math.min(1500 + targets.length * 80, 3000);
+  setTimeout(() => {
+    targets.forEach(idx => {
+      const c = board[idx];
+      if (c && c.flipped && !c.special) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); }
+    });
+    cb();
+  }, targets.length * stagger + holdMs);
 }
 
 // ============================================================
