@@ -2503,7 +2503,7 @@ function endTurn(manual, perfectSweep) {
     toRemove = [...matched];
     if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
-    newST = getSpecialForCombo(combo);
+    if (!perfectSweep) newST = getSpecialForCombo(combo);
     if (newST) { newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1); advanceTutorial('comboReward'); }
     if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
   }
