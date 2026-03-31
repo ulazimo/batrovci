@@ -1,17 +1,32 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc -l /Users/MladenD_1/Downloads/batrovci/*.html)",
-      "Bash(ls -lhS /Users/MladenD_1/Downloads/batrovci/*.html)",
-      "Bash(grep -r \"TODO\\\\|FIXME\\\\|HACK\\\\|BUG\\\\|XXX\" /Users/MladenD_1/Downloads/batrovci/*.html)",
-      "Bash(grep -c \"^\" /Users/MladenD_1/Downloads/batrovci/*.html)",
-      "Bash(sort -t: -k2 -rn)",
-      "Bash(git -C /Users/MladenD_1/Downloads/batrovci log --oneline)",
-      "Bash(grep -l \"initTracking\" *.html)",
-      "Bash(grep -l \"ErrorBoundary\" *.html)",
+      "Bash(open dice-roller.html)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(ls \"/Users/djordjevu/HTML Prototypes/\"*memory* \"/Users/djordjevu/HTML Prototypes/\"*Memory*)",
-      "Bash(xargs kill:*)"
+      "Bash(git rm:*)",
+      "Bash(rm -rf batrovci/.git)",
+      "Bash(rm -f /Users/MladenD/batrovci/.git/index.lock)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(mkdir -p /tmp/claude_backup)",
+      "Bash(mv .claude/launch.json .claude/settings.local.json /tmp/claude_backup/)",
+      "Bash(mv /tmp/claude_backup/* .claude/)",
+      "Bash(ls -lh /Users/MladenD/batrovci/mind-match-3d/models/*.glb)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Bash(npx --yes @gltf-transform/cli webp \"$f\" \"$f\")",
+      "Bash(done)",
+      "Bash(git stash:*)"
     ]
   }
 }

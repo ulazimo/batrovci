@@ -38,21 +38,54 @@
         .tile-inner {
             width: 100%;
             height: 100%;
-            border-radius: 8px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 3px 6px rgba(255,255,255,0.25);
         }
+
+        /* Football panel pattern overlay */
+        .tile-inner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 68% 22%, rgba(255,255,255,0.18) 0%, transparent 45%),
+                radial-gradient(circle at 30% 75%, rgba(0,0,0,0.15) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Pentagon seam lines */
+        .tile-inner::after {
+            content: '';
+            position: absolute;
+            inset: 10%;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.25);
+            box-shadow:
+                4px -8px 0 -5px rgba(0,0,0,0.2),
+                -8px 4px 0 -5px rgba(0,0,0,0.2),
+                8px 6px 0 -5px rgba(0,0,0,0.2);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bg-attack   { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
+        .bg-defense  { background: radial-gradient(circle at 35% 35%, #74b9ff, #2563eb); }
+        .bg-pass     { background: radial-gradient(circle at 35% 35%, #55efc4, #16a34a); }
+        .bg-stamina  { background: radial-gradient(circle at 35% 35%, #ffeaa7, #d97706); }
 
         .booster-rocket::after {
             content: '';
             position: absolute;
             inset: -2px;
             border: 2px dashed white;
-            border-radius: 10px;
+            border-radius: 50%;
             animation: rotate 4s linear infinite;
         }
 
@@ -130,10 +163,7 @@
         }
         .shake { animation: shake 0.5s; animation-iteration-count: 2; }
 
-        .bg-attack { background-color: #ef4444; } 
-        .bg-defense { background-color: #3b82f6; }
-        .bg-pass { background-color: #22c55e; }
-        .bg-stamina { background-color: #eab308; }
+        /* bg-* ball colors now defined with tile-inner above */
         
         #sim-logs::-webkit-scrollbar, #results-list::-webkit-scrollbar, #standings-list::-webkit-scrollbar { width: 4px; }
         #sim-logs::-webkit-scrollbar-thumb, #results-list::-webkit-scrollbar-thumb, #standings-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
@@ -301,6 +331,23 @@
         </div>
     </div>
 
+    <!-- SEASON END VIEW -->
+    <div id="view-season-end" class="app-view view-hidden flex flex-col items-center justify-center text-center gap-6">
+        <div class="text-8xl" id="season-end-trophy">🏆</div>
+        <div>
+            <h1 class="text-4xl font-black italic uppercase tracking-tighter text-red-600">Season Over</h1>
+            <p class="text-xs uppercase tracking-widest text-slate-400 mt-1">Liverpool FC finished</p>
+        </div>
+        <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-6 w-full shadow-xl">
+            <div class="text-5xl font-black text-white" id="season-end-position">1st Place</div>
+            <div class="text-xl font-bold text-yellow-400 mt-2" id="season-end-msg">Champions!</div>
+            <div class="text-xs font-mono text-slate-400 mt-3" id="season-end-stats"></div>
+        </div>
+        <button onclick="restartGame()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95">
+            Play Again
+        </button>
+    </div>
+
     <!-- TUTORIAL POPUP -->
     <div id="tutorial-modal" class="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6 view-hidden">
         <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -389,8 +436,31 @@
             schedule = schedule.concat(secondHalf);
         }
 
+        function showSeasonEnd() {
+            const sorted = [...teams].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+            const lfcPos = sorted.findIndex(t => t.isPlayer) + 1;
+            const lfc = teams.find(t => t.isPlayer);
+            const suffix = lfcPos === 1 ? 'st' : lfcPos === 2 ? 'nd' : lfcPos === 3 ? 'rd' : 'th';
+            const trophy = lfcPos === 1 ? '🏆' : lfcPos <= 4 ? '🎉' : lfcPos <= 6 ? '👍' : '😔';
+            const msg = lfcPos === 1 ? 'Champions!' : lfcPos <= 4 ? 'Champions League!' : lfcPos <= 6 ? 'Europa League!' : 'Better luck next season.';
+            document.getElementById('season-end-position').innerText = `${lfcPos}${suffix} Place`;
+            document.getElementById('season-end-trophy').innerText = trophy;
+            document.getElementById('season-end-msg').innerText = msg;
+            document.getElementById('season-end-stats').innerText = `W${lfc.w} D${lfc.d} L${lfc.l}  •  ${lfc.gf}-${lfc.ga}  •  ${lfc.pts} pts`;
+            switchView('view-season-end');
+        }
+
+        function restartGame() {
+            teams = teamNames.map((name, i) => ({
+                id: i, name: name, mp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0,
+                ovr: i === 0 ? 65 : 45 + Math.floor(Math.random() * 35), isPlayer: i === 0
+            }));
+            currentRound = 1; history = []; schedule = [];
+            generateSchedule(); switchView('view-standings'); updateStandingsUI();
+        }
+
         function startSquadSelection() {
-            if (currentRound > totalRounds) return alert("Season Over!");
+            if (currentRound > totalRounds) return showSeasonEnd();
             selectedPlayerIds = [];
             updateSquadUI();
             switchView('view-squad');
@@ -427,7 +497,7 @@
         }
 
         function switchView(viewId) {
-            ['view-standings', 'view-puzzle', 'view-sim', 'view-squad'].forEach(id => {
+            ['view-standings', 'view-puzzle', 'view-sim', 'view-squad', 'view-season-end'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('view-hidden');
             });
@@ -453,6 +523,7 @@
         }
 
         function startMatchPreparation() {
+            if (selectedPlayerIds.length !== 5) return;
             const playerMatch = schedule[currentRound - 1].find(m => m.home.isPlayer || m.away.isPlayer);
             const isHome = playerMatch.home.isPlayer;
             currentOpponent = isHome ? playerMatch.away : playerMatch.home;
@@ -588,9 +659,10 @@
             } else {
                 // Second selection - check if neighbor
                 const prev = selectedTile;
-                const dist = Math.abs(prev.r - r) + Math.abs(prev.c - c);
+                const dr = Math.abs(prev.r - r), dc = Math.abs(prev.c - c);
+                const isNeighbor = dr <= 1 && dc <= 1 && (dr + dc > 0);
 
-                if (dist === 1) {
+                if (isNeighbor) {
                     // Valid neighbor swap
                     if (tileElements[prev.r] && tileElements[prev.r][prev.c]) {
                         tileElements[prev.r][prev.c].classList.remove('selected');
@@ -652,7 +724,7 @@
         }
 
         async function swapTiles(r1, c1, r2, c2) {
-            if (r1 < 0 || r2 < 0 || !board[r1] || !board[r2] || !board[r1][c1] || !board[r2][c2]) return;
+            if (r1 < 0 || r2 < 0 || c1 < 0 || c2 < 0 || r1 >= GRID_SIZE || r2 >= GRID_SIZE || c1 >= GRID_SIZE || c2 >= GRID_SIZE || !board[r1] || !board[r2] || !board[r1][c1] || !board[r2][c2]) return;
             const t1 = board[r1][c1], t2 = board[r2][c2]; 
             board[r1][c1] = t2; board[r2][c2] = t1;
             const e1 = tileElements[r1][c1], e2 = tileElements[r2][c2]; 
@@ -711,7 +783,7 @@
                     const el = createTileElement(-1-i, c, type);
                     tileElements[r][c] = el;
                     boardEl.appendChild(el);
-                    setTimeout(() => updateTilePosition(tileElements[r][c], r, c), 50);
+                    setTimeout(() => updateTilePosition(el, r, c), 50);
                 }
             }
             await new Promise(r => setTimeout(r, 300));
@@ -816,8 +888,12 @@
 
 <!-- FIREBASE TRACKING -->
 <script type="module">
-    import { initTracking } from '../firebase-tracker.js';
-    initTracking('football-legendary-league');
+    try {
+        const { initTracking } = await import('../firebase-tracker.js');
+        initTracking('football-legendary-league');
+    } catch (e) {
+        // Firebase tracking unavailable
+    }
 </script>
 </body>
 </html>

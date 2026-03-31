@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
+      "name": "mind-match-3d",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", ".", "-p", "8080", "-c-1"],
-      "port": 8080
+      "runtimeArgs": ["serve", "-p", "3456", "."],
+      "port": 3456
     }
   ]
 }
