@@ -72,6 +72,10 @@
             <button onclick="startGame('parking')" class="w-[70%] max-w-[280px] bg-purple-500 hover:bg-purple-600 text-white font-black text-2xl sm:text-3xl py-4 rounded-[1.5rem] shadow-[0_6px_0_#7e22ce] active:translate-y-[6px] active:shadow-none transition-all mb-4 uppercase tracking-widest border-4 border-[#7e22ce]">
                 Parking
             </button>
+
+            <button onclick="startGame('drivefirst')" class="w-[70%] max-w-[280px] bg-indigo-500 hover:bg-indigo-600 text-white font-black text-2xl sm:text-3xl py-4 rounded-[1.5rem] shadow-[0_6px_0_#3730a3] active:translate-y-[6px] active:shadow-none transition-all mb-4 uppercase tracking-widest border-4 border-[#4338ca]">
+                Drive First
+            </button>
             
             <button onclick="startGame('classic')" class="w-[70%] max-w-[280px] bg-[#facc15] hover:bg-[#eab308] text-white font-black text-2xl sm:text-3xl py-4 rounded-[1.5rem] shadow-[0_6px_0_#a16207] active:translate-y-[6px] active:shadow-none transition-all mb-4 uppercase tracking-widest border-4 border-[#a16207]">
                 Classic
@@ -332,7 +336,7 @@
         const svgGem = `<svg viewBox="0 0 24 24" fill="#a855f7" stroke="#e9d5ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full drop-shadow-md"><polygon points="12 2 2 7 12 22 22 7 12 2"></polygon><polyline points="2 7 12 11 22 7"></polyline><line x1="12" y1="22" x2="12" y2="11"></line></svg>`;
 
         // --- STATE VARIABLES ---
-        let gameMode = 'roadtrip'; // 'roadtrip', 'classic', or 'parking'
+        let gameMode = 'roadtrip'; // 'roadtrip', 'classic', 'parking', or 'drivefirst'
         let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
         let fogGrid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(1)); // 1=opaque fog, 0.7=transparent fog, 0=no fog
 
@@ -341,6 +345,7 @@
         
         let level = parseInt(localStorage.getItem('blockBlastLevel') || '1', 10);
         let parkingLevel = parseInt(localStorage.getItem('blockBlastParkingLevel') || '1', 10);
+        let driveFirstLevel = parseInt(localStorage.getItem('blockBlastDriveFirstLevel') || '1', 10);
         
         let maxLevelCompleted = parseInt(localStorage.getItem('blockBlastMaxLevel') || '0', 10);
         let gems = parseInt(localStorage.getItem('blockBlastGems') || '0', 10);
@@ -501,6 +506,9 @@
                 } else if (gameMode === 'parking') {
                     parkingLevel = 1;
                     localStorage.setItem('blockBlastParkingLevel', parkingLevel);
+                } else if (gameMode === 'drivefirst') {
+                    driveFirstLevel = 1;
+                    localStorage.setItem('blockBlastDriveFirstLevel', driveFirstLevel);
                 }
             }
             updateScoreUI();
@@ -515,7 +523,7 @@
             elCarsRow.innerHTML = '';
             
             const elGaragesRow = document.getElementById('garages-row');
-            if (gameMode === 'parking') {
+            if (gameMode === 'parking' || gameMode === 'drivefirst') {
                 elGaragesRow.classList.remove('hidden');
             } else {
                 elGaragesRow.classList.add('hidden');
@@ -611,6 +619,48 @@
                 }
 
                 // Boosters are fully disabled in Parking mode to focus strictly on path puzzle
+                boosters = { straightClear: 0, colorChange: 0, hybrid: 0, colorClear: 0 };
+
+            } else if (gameMode === 'drivefirst') {
+
+                let availableCols = [0, 1, 2, 3, 4, 5, 6, 7];
+                availableCols.sort(() => Math.random() - 0.5);
+
+                let numPairs = Math.min(driveFirstLevel, 8);
+                let numObstacles = Math.max(0, driveFirstLevel - 8);
+
+                let carCols = availableCols.slice(0, numPairs);
+
+                let availableGarageCols = [0, 1, 2, 3, 4, 5, 6, 7];
+                availableGarageCols.sort(() => Math.random() - 0.5);
+                let garCols = availableGarageCols.slice(0, numPairs);
+
+                let selectedColors = [...COLOR_KEYS];
+                selectedColors.sort(() => Math.random() - 0.5);
+
+                // Spawn Car & Garage Pairs
+                for(let i=0; i<numPairs; i++) {
+                    let color = COLORS[selectedColors[i]];
+                    cars.push({col: carCols[i], color: color, id: Math.random().toString(36).substr(2, 9)});
+                    garages.push({col: garCols[i], color: color, id: Math.random().toString(36).substr(2, 9)});
+                }
+
+                // Spawn Obstacles (Blockers)
+                let gridSpots = [];
+                for(let r=0; r<GRID_SIZE; r++){
+                    for(let c=0; c<GRID_SIZE; c++){
+                        gridSpots.push({r, c});
+                    }
+                }
+                gridSpots.sort(() => Math.random() - 0.5);
+                for(let i=0; i<numObstacles; i++) {
+                    if (gridSpots.length > 0) {
+                        let obsSpot = gridSpots.pop();
+                        grid[obsSpot.r][obsSpot.c] = 'blocker';
+                    }
+                }
+
+                // Boosters disabled in Drive First mode
                 boosters = { straightClear: 0, colorChange: 0, hybrid: 0, colorClear: 0 };
 
             } else {
@@ -821,7 +871,7 @@
                     }
 
                     // 3. Parking Entities, Collectibles & Portals
-                    if (gameMode === 'parking') {
+                    if (gameMode === 'parking' || gameMode === 'drivefirst') {
                         let pGarage = garages.find(g => g.r === r && g.c === c);
                         if (pGarage) {
                             const gEl = document.createElement('div');
@@ -864,7 +914,7 @@
 
         function renderGaragesRow() {
             const elGaragesRow = document.getElementById('garages-row');
-            if (gameMode !== 'parking') {
+            if (gameMode !== 'parking' && gameMode !== 'drivefirst') {
                 elGaragesRow.innerHTML = '';
                 return;
             }
@@ -981,8 +1031,8 @@
         function renderBoosters() {
             elBoostersContainer.innerHTML = '';
 
-            // Hide boosters entirely in Parking mode to focus on pure puzzle routing
-            if (gameMode === 'parking') {
+            // Hide boosters entirely in Parking/Drive First mode to focus on pure puzzle routing
+            if (gameMode === 'parking' || gameMode === 'drivefirst') {
                 for(let i = 0; i < 4; i++) {
                     const slot = document.createElement('div');
                     slot.className = "h-full aspect-square rounded-full bg-[#3b66c4] opacity-30 shadow-[0_4px_0_#2a4b99] sm:shadow-[0_6px_0_#2a4b99]";
@@ -1045,6 +1095,10 @@
                 elLevel.innerText = 'PARKING ' + parkingLevel;
                 elLevel.classList.remove('pointer-events-none');
                 elGemContainer.style.opacity = '0';
+            } else if (gameMode === 'drivefirst') {
+                elLevel.innerText = 'DRIVE FIRST ' + driveFirstLevel;
+                elLevel.classList.remove('pointer-events-none');
+                elGemContainer.style.opacity = '0';
             } else {
                 elLevel.innerText = 'LEVEL ' + level;
                 elLevel.classList.remove('pointer-events-none');
@@ -1057,6 +1111,9 @@
             if (gameMode === 'parking') {
                 parkingLevel++;
                 localStorage.setItem('blockBlastParkingLevel', parkingLevel);
+            } else if (gameMode === 'drivefirst') {
+                driveFirstLevel++;
+                localStorage.setItem('blockBlastDriveFirstLevel', driveFirstLevel);
             } else {
                 level++;
                 localStorage.setItem('blockBlastLevel', level);
@@ -1110,7 +1167,7 @@
 
         function openLevelSwitch() {
             if (gameMode === 'classic') return;
-            document.getElementById('level-input').value = gameMode === 'parking' ? parkingLevel : level;
+            document.getElementById('level-input').value = gameMode === 'parking' ? parkingLevel : gameMode === 'drivefirst' ? driveFirstLevel : level;
             document.getElementById('modal-levelswitch').classList.remove('hidden');
         }
 
@@ -1121,6 +1178,9 @@
                 if (gameMode === 'parking') {
                     parkingLevel = parsed;
                     localStorage.setItem('blockBlastParkingLevel', parkingLevel);
+                } else if (gameMode === 'drivefirst') {
+                    driveFirstLevel = parsed;
+                    localStorage.setItem('blockBlastDriveFirstLevel', driveFirstLevel);
                 } else {
                     level = parsed;
                     localStorage.setItem('blockBlastLevel', level);
@@ -1134,7 +1194,7 @@
         function findCarPaths(currentGrid) {
             let pathsFound = [];
 
-            if (gameMode === 'parking') {
+            if (gameMode === 'parking' || gameMode === 'drivefirst') {
                 cars.forEach(car => {
                     let targetGarage = garages.find(g => g.color === car.color);
                     if (!targetGarage) return;
@@ -1365,7 +1425,7 @@
         }
 
         async function handleBoosterUseStraight(car) {
-            if (gameMode === 'parking') return; 
+            if (gameMode === 'parking' || gameMode === 'drivefirst') return;
             isProcessing = true;
             
             let path = [];
@@ -1598,7 +1658,7 @@
                 animatingCells = paths.flatMap(p => p.path.slice(1));
                 renderGrid(); 
                 cars = cars.filter(c => !paths.find(p => p.car.id === c.id));
-                if (gameMode === 'parking') {
+                if (gameMode === 'parking' || gameMode === 'drivefirst') {
                     garages = garages.filter(g => !paths.find(p => p.car.color === g.color));
                     renderGaragesRow();
                 }
@@ -1636,8 +1696,8 @@
             if (cars.length === 0) {
                 if (gameMode === 'roadtrip') {
                     triggerLevelCompleteAnimation();
-                } else if (gameMode === 'parking') {
-                    document.getElementById('lc-title').innerText = "Parking Cleared!";
+                } else if (gameMode === 'parking' || gameMode === 'drivefirst') {
+                    document.getElementById('lc-title').innerText = gameMode === 'parking' ? "Parking Cleared!" : "Drive First Cleared!";
                     document.getElementById('lc-desc').innerText = "All cars safely routed!";
                     elLcScore.innerText = score;
                     elModalLC.classList.remove('hidden');
@@ -1656,7 +1716,7 @@
                         const nr = startR + r, nc = startC + c;
                         if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE || targetGrid[nr][nc] !== null) return false;
                         
-                        if (gameMode === 'parking') {
+                        if (gameMode === 'parking' || gameMode === 'drivefirst') {
                             if (cars.some(car => car.r === nr && car.c === nc)) return false;
                             if (garages.some(g => g.r === nr && g.c === nc)) return false;
                         }
