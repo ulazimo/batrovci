@@ -88,6 +88,11 @@ function startNudgeIdleTimer() {
 // ============================================================
 let levelGoals = null;
 
+// Normalize row/col coverage targets: supports both uniform number and per-index array
+// e.g. { timesEachRow: 2 } → [2,2,2,2,2,2]  or  { rows: [1,2,1,1,2,1] } → [1,2,1,1,2,1]
+function getRowTargets(g) { return g.rows || Array(ROWS).fill(g.timesEachRow || 1); }
+function getColTargets(g) { return g.cols || Array(COLS).fill(g.timesEachCol || 1); }
+
 function initLevelGoals() {
   const lvl = LEVELS[currentLevelIndex];
   const defs = lvl.goals ? [...lvl.goals] : [{ type: 'score', target: lvl.target }];
@@ -226,8 +231,8 @@ function checkAllGoalsMet() {
       case 'markedCards':   return levelGoals.progress.markedCards.collected >= g.totalToCollect;
       case 'orderedCards':  return levelGoals.progress.orderedCards.nextRequired > g.count;
       case 'colorAvoid':    return levelGoals.progress.colorAvoid.flips <= g.maxFlips;
-      case 'rowCoverage':   return levelGoals.progress.rowCoverage.every(c => c >= g.timesEachRow);
-      case 'colCoverage':   return levelGoals.progress.colCoverage.every(c => c >= g.timesEachCol);
+      case 'rowCoverage':   { const t = getRowTargets(g); return levelGoals.progress.rowCoverage.every((c, i) => c >= t[i]); }
+      case 'colCoverage':   { const t = getColTargets(g); return levelGoals.progress.colCoverage.every((c, i) => c >= t[i]); }
       case 'breakLocks':   return levelGoals.progress.breakLocks.broken >= levelGoals.progress.breakLocks.total;
       default: return true;
     }
@@ -248,8 +253,8 @@ function goalDescription(g) {
     case 'markedCards':   return `Collect ${g.totalToCollect} marked ⭐ cards`;
     case 'orderedCards':  return `Collect ${g.count} numbered cards in order`;
     case 'colorAvoid':    return `Open fewer than ${g.maxFlips} ${g.color} cards`;
-    case 'rowCoverage':   return `Use every row in combos ${g.timesEachRow} time${g.timesEachRow>1?'s':''}`;
-    case 'colCoverage':   return `Use every column in combos ${g.timesEachCol} time${g.timesEachCol>1?'s':''}`;
+    case 'rowCoverage':   { const t = getRowTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every row ${u[0]} time${u[0]>1?'s':''}` : `Use rows (${t.join(',')} times)`; }
+    case 'colCoverage':   { const t = getColTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every column ${u[0]} time${u[0]>1?'s':''}` : `Use cols (${t.join(',')} times)`; }
     case 'breakLocks':   return `Break all ${g.locked ? g.locked.length : ''} locked tiles`;
     default: return '';
   }
@@ -278,11 +283,13 @@ function getGoalDisplay(g) {
       return { icon:'🚫', label:`Avoid ${g.color}`, current: p.colorAvoid.flips, target: g.maxFlips, done: left >= 0 };
     }
     case 'rowCoverage': {
-      const done = p.rowCoverage.filter(c => c >= g.timesEachRow).length;
+      const t = getRowTargets(g);
+      const done = p.rowCoverage.filter((c, i) => c >= t[i]).length;
       return { icon:'↔', label:'Rows', current: done, target: ROWS, done: done >= ROWS };
     }
     case 'colCoverage': {
-      const done = p.colCoverage.filter(c => c >= g.timesEachCol).length;
+      const t = getColTargets(g);
+      const done = p.colCoverage.filter((c, i) => c >= t[i]).length;
       return { icon:'↕', label:'Cols', current: done, target: COLS, done: done >= COLS };
     }
     case 'breakLocks':
@@ -306,6 +313,64 @@ function updateGoalHUD() {
       <span class="goal-count">${d.current}/${d.target}</span>
     </div>`;
   }).join('');
+  updateCoverageIndicators();
+}
+
+function renderCoverageIndicators() {
+  const colEl = document.getElementById('col-indicators');
+  const rowEl = document.getElementById('row-indicators');
+  if (!colEl || !rowEl) return;
+  const hasCol = levelGoals?.definitions.some(g => g.type === 'colCoverage');
+  const hasRow = levelGoals?.definitions.some(g => g.type === 'rowCoverage');
+
+  if (hasCol) {
+    colEl.classList.add('active');
+    colEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+    // Offset for row indicators if both active
+    if (hasRow) colEl.style.marginLeft = '19px';
+    else colEl.style.marginLeft = '';
+    colEl.innerHTML = Array.from({ length: COLS }, (_, c) => `<div class="cov-ind" data-col="${c}">C${c + 1}</div>`).join('');
+  } else {
+    colEl.classList.remove('active');
+    colEl.innerHTML = '';
+  }
+
+  if (hasRow) {
+    rowEl.classList.add('active');
+    rowEl.innerHTML = Array.from({ length: ROWS }, (_, r) => `<div class="cov-ind" data-row="${r}">R${r + 1}</div>`).join('');
+  } else {
+    rowEl.classList.remove('active');
+    rowEl.innerHTML = '';
+  }
+}
+
+function updateCoverageIndicators() {
+  if (!levelGoals) return;
+  const p = levelGoals.progress;
+
+  const rowGoal = levelGoals.definitions.find(g => g.type === 'rowCoverage');
+  if (rowGoal) {
+    const targets = getRowTargets(rowGoal);
+    document.querySelectorAll('#row-indicators .cov-ind').forEach(el => {
+      const r = parseInt(el.dataset.row);
+      const count = p.rowCoverage[r] || 0;
+      const needed = targets[r];
+      el.classList.toggle('done', count >= needed);
+      el.textContent = count >= needed ? '✓' : `${count}/${needed}`;
+    });
+  }
+
+  const colGoal = levelGoals.definitions.find(g => g.type === 'colCoverage');
+  if (colGoal) {
+    const targets = getColTargets(colGoal);
+    document.querySelectorAll('#col-indicators .cov-ind').forEach(el => {
+      const c = parseInt(el.dataset.col);
+      const count = p.colCoverage[c] || 0;
+      const needed = targets[c];
+      el.classList.toggle('done', count >= needed);
+      el.textContent = count >= needed ? '✓' : `${count}/${needed}`;
+    });
+  }
 }
 
 const BOOSTERS = [
@@ -801,7 +866,7 @@ function startGame(preplacedSpecials) {
 
   targetEl.textContent = TARGET > 0 ? TARGET : '—';
   initLevelGoals();
-  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  renderBoard(); renderCoverageIndicators(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
   // Booster tutorial: highlight bar and show hint on first level with boosters
   if (!progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0)) {
