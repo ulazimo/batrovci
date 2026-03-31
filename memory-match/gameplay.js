@@ -10,6 +10,79 @@ let turnActive = false, inputLocked = false;
 let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 let lastRevealedCards = []; // indices of most recently revealed cards (for recall)
 
+// Nudge system
+let consecutiveFailedCombos = 0;
+let nudgeIdleTimer = null;
+let activeNudge = null; // 'booster' | 'recall' | null
+
+function showNudge(type) {
+  if (activeNudge) dismissNudge();
+  activeNudge = type;
+  if (type === 'booster') {
+    const bar = document.getElementById('booster-bar');
+    bar.classList.add('nudge');
+    let hand = bar.querySelector('.nudge-hand');
+    if (!hand) { hand = document.createElement('span'); hand.className = 'nudge-hand'; hand.textContent = '👇'; bar.appendChild(hand); }
+  } else if (type === 'recall') {
+    const wrap = document.querySelector('.recall-wrap');
+    const btn = document.getElementById('recall-btn');
+    if (wrap && btn && !btn.classList.contains('disabled')) {
+      wrap.classList.add('nudge');
+      btn.classList.add('nudge');
+      let hand = wrap.querySelector('.nudge-hand');
+      if (!hand) { hand = document.createElement('span'); hand.className = 'nudge-hand'; hand.textContent = '👇'; wrap.appendChild(hand); }
+    }
+  }
+}
+
+function dismissNudge() {
+  if (!activeNudge) return;
+  activeNudge = null;
+  const bar = document.getElementById('booster-bar');
+  bar.classList.remove('nudge');
+  const barHand = bar.querySelector('.nudge-hand');
+  if (barHand) barHand.remove();
+  const wrap = document.querySelector('.recall-wrap');
+  if (wrap) {
+    wrap.classList.remove('nudge');
+    const wrapHand = wrap.querySelector('.nudge-hand');
+    if (wrapHand) wrapHand.remove();
+  }
+  const btn = document.getElementById('recall-btn');
+  if (btn) btn.classList.remove('nudge');
+}
+
+function clearNudgeTimer() {
+  if (nudgeIdleTimer) { clearTimeout(nudgeIdleTimer); nudgeIdleTimer = null; }
+}
+
+function startNudgeIdleTimer() {
+  clearNudgeTimer();
+  if (!turnActive || inputLocked) return;
+  nudgeIdleTimer = setTimeout(() => {
+    if (!turnActive || inputLocked) return;
+    const chainLen = chainCards.length + specialsUsed.length;
+
+    // Recall nudge: combo active + recall has matching cards
+    if (chainLen >= 1 && chainColor && lastRevealedCards.length > 0) {
+      const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+      const hasMatch = lastRevealedCards.some(i =>
+        i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked && activeColors.includes(board[i].color)
+      );
+      const btn = document.getElementById('recall-btn');
+      if (hasMatch && btn && !btn.classList.contains('disabled')) {
+        showNudge('recall');
+        return;
+      }
+    }
+
+    // Power-up nudge: sitting on combo 1 or 2 for 5s
+    if (chainLen >= 1 && chainLen <= 2) {
+      showNudge('booster');
+    }
+  }, 5000);
+}
+
 const BOOSTERS = [
   { id:'peek',      icon:'👁',  desc:'Reveal one card by tapping it',                               needsTap:true  },
   { id:'random3',   icon:'🎲',  desc:'Reveal 3 random face-down cards',                             needsTap:false },
@@ -453,6 +526,7 @@ function startGame(preplacedSpecials) {
   turnActive = false; inputLocked = false;
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   lastRevealedCards = [];
+  consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 
@@ -815,10 +889,27 @@ function updateChainFaces(mismatchIdx) {
   });
 }
 
+function updateSweepCountdown() {
+  const el = document.getElementById('sweep-countdown');
+  if (!el) return;
+  if (!turnActive || !chainColor) { el.classList.remove('active','urgent'); el.textContent = ''; return; }
+  const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+  const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color)).length;
+  if (remaining >= 1 && remaining <= 3) {
+    el.classList.add('active');
+    el.classList.toggle('urgent', remaining === 1);
+    if (remaining === 1) el.textContent = '🧹 1 card away from PERFECT SWEEP!';
+    else el.textContent = `🧹 ${remaining} cards away from Perfect Sweep!`;
+  } else {
+    el.classList.remove('active','urgent'); el.textContent = '';
+  }
+}
+
 function updateChainIndicator() {
   updateChainTension();
   updateComboSpawnIndicator();
   updateChainFaces();
+  updateSweepCountdown();
   if (!turnActive) {
     chainEl.innerHTML = spotlightMode
       ? '🔦 Tap a face-down card to reveal it'
@@ -906,6 +997,7 @@ function hideTooltip() { tooltipEl.classList.remove('visible'); }
 
 function activateBooster(id) {
   if (inputLocked || boosterCounts[id] <= 0) return;
+  dismissNudge(); clearNudgeTimer();
   if (activeBooster === id) { activeBooster = null; updateBoosterUI(); updateChainIndicator(); return; }
   const b = BOOSTERS.find(x => x.id === id);
   SFX.booster();
@@ -1134,6 +1226,10 @@ function onCardClick(index) {
   const card = board[index];
   if (!card || turns <= 0) return;
 
+  // Nudge: dismiss on any action, restart idle timer
+  dismissNudge();
+  clearNudgeTimer();
+
   if (activeBooster) { if (card.special) return; executeBoosterTap(activeBooster, index); return; }
 
   // Spotlight mode: next tap on a face-down card permanently reveals it
@@ -1286,8 +1382,8 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; updateChainIndicator(); advanceTutorial('firstFlip'); return; }
-  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; updateChainIndicator(); return; }
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; updateChainIndicator(); advanceTutorial('firstFlip'); startNudgeIdleTimer(); return; }
+  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; updateChainIndicator(); startNudgeIdleTimer(); return; }
   // Match: primary chain color OR any parallel chain color (colored bombs)
   const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
   if (colorMatch) {
@@ -1311,6 +1407,7 @@ function onCardClick(index) {
     if (getRule('coloredBombs') && chainColors.size >= ACTIVE_COLORS.length) {
       checkAllColorsBonus();
     }
+    startNudgeIdleTimer();
     return;
   }
 
@@ -1376,6 +1473,10 @@ function endTurn(manual, perfectSweep) {
   let specialActivated = matched.length>=2 && specialsUsed.length>0;
   let pts=0, toRemove=[], newST=null, newSP=-1;
   const PERFECT_SWEEP_BONUS = 0;
+
+  // Track failed combos for nudge system
+  if (combo >= 3) { consecutiveFailedCombos = 0; }
+  else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge) showNudge('booster'); }, 2000); }
 
   if (combo >= 3) {
     toRemove = [...matched];
@@ -1586,6 +1687,7 @@ function sweepRevealBoard(cb) {
 // RECALL — re-reveal the last shown cards
 // ============================================================
 function recallCards() {
+  dismissNudge(); clearNudgeTimer();
   if (inputLocked || !lastRevealedCards.length) return;
   const targets = lastRevealedCards.filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
   if (!targets.length) return;
@@ -1615,6 +1717,7 @@ function updateRecallButton() {
 function finishTurn() {
   chainColor=null; chainColors=new Set(); chainCards=[]; specialsUsed=[];
   turnActive=false; inputLocked=false; activeBooster=null;
+  clearNudgeTimer();
   updateChainIndicator(); updateBoosterUI(); updateRecallButton();
   if (score >= TARGET) levelWon();
   else if (turns <= 0) levelFailed();

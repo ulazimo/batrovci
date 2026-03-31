@@ -55,6 +55,16 @@ body {
 #chain-timer-wrap.urgent #chain-timer-bar { background:linear-gradient(90deg,#e74c3c,#c0392b); }
 #chain-timer-wrap.urgent #chain-timer-bar::after { animation-duration:.15s; }
 
+/* Sweep countdown */
+#sweep-countdown {
+  width:100%;max-width:500px;text-align:center;font-size:13px;font-weight:700;
+  height:0;overflow:hidden;transition:height .25s ease,opacity .25s ease;opacity:0;
+  color:#f0c040;text-shadow:0 0 8px rgba(240,192,64,.4);
+}
+#sweep-countdown.active { height:24px;opacity:1; }
+#sweep-countdown.urgent { color:#e74c3c;text-shadow:0 0 8px rgba(231,76,60,.5);animation:sweepPulse .6s ease-in-out infinite; }
+@keyframes sweepPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+
 /* ================================================================
    BOARD
 ================================================================ */
@@ -160,12 +170,22 @@ body {
 .sweep-banner .sweep-title { font-size:clamp(22px,6vw,36px);font-weight:900;color:#f0c040;text-shadow:0 0 20px rgba(240,192,64,.6),0 2px 8px rgba(0,0,0,.8); }
 .sweep-banner .sweep-sub { font-size:clamp(12px,3.5vw,18px);font-weight:600;color:#ccc;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-top:6px; }
 
+/* Nudge system */
+@keyframes nudgeBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+@keyframes nudgeGlow { 0%,100%{box-shadow:0 0 8px 2px rgba(240,192,64,.3)} 50%{box-shadow:0 0 20px 6px rgba(240,192,64,.7)} }
+.nudge-hand { position:absolute;font-size:24px;pointer-events:none;z-index:100;animation:nudgeBounce .8s ease-in-out infinite;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+#booster-bar.nudge { animation:nudgeGlow 1s ease-in-out infinite;position:relative; }
+#booster-bar.nudge .nudge-hand { bottom:100%;left:50%;margin-left:-12px;margin-bottom:4px; }
+.recall-btn.nudge { animation:nudgeGlow 1s ease-in-out infinite; }
+.recall-wrap.nudge .nudge-hand { bottom:100%;left:50%;margin-left:-12px;margin-bottom:4px; }
+
 /* ================================================================
    BOOSTER BAR
 ================================================================ */
 #booster-bar {
   width:100%;max-width:500px;background:#16213e;border-top:2px solid #0f3460;
   padding:6px 4px;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;
+  position:relative;overflow:visible;
 }
 #booster-bar.highlight { animation:boosterBarPulse 1.5s ease-in-out 3; }
 @keyframes boosterBarPulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px 4px rgba(240,192,64,.6), inset 0 0 8px rgba(240,192,64,.3)} }
@@ -194,6 +214,7 @@ body {
 }
 .recall-wrap {
   display:flex;flex-direction:column;align-items:center;gap:2px;
+  position:relative;
 }
 .recall-label {
   font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;
