@@ -83,6 +83,231 @@ function startNudgeIdleTimer() {
   }, 5000);
 }
 
+// ============================================================
+// LEVEL GOALS SYSTEM
+// ============================================================
+let levelGoals = null;
+
+function initLevelGoals() {
+  const lvl = LEVELS[currentLevelIndex];
+  const defs = lvl.goals ? [...lvl.goals] : [{ type: 'score', target: lvl.target }];
+  const progress = {};
+
+  defs.forEach(g => {
+    switch (g.type) {
+      case 'colorCollect':
+        progress.colorCollect = {};
+        Object.keys(g.requirements).forEach(c => progress.colorCollect[c] = 0);
+        break;
+      case 'specificCombos':
+        progress.specificCombos = { count: 0 };
+        break;
+      case 'markedCards':
+        progress.markedCards = { collected: 0, currentMarked: new Set() };
+        // Place initial marked cards on random non-special non-locked positions
+        const avail = board.map((c, i) => i).filter(i => board[i] && !board[i].special && !board[i].locked);
+        const shuffled = avail.sort(() => Math.random() - 0.5);
+        for (let k = 0; k < Math.min(g.onBoardCount, shuffled.length); k++) {
+          board[shuffled[k]].marked = true;
+          progress.markedCards.currentMarked.add(shuffled[k]);
+        }
+        break;
+      case 'orderedCards':
+        progress.orderedCards = { nextRequired: 1 };
+        if (g.positions) {
+          g.positions.forEach(([r, c], idx) => {
+            const bi = r * COLS + c;
+            if (bi >= 0 && bi < TOTAL && board[bi] && !board[bi].special && !board[bi].locked) {
+              board[bi].ordered = idx + 1;
+            }
+          });
+        }
+        break;
+      case 'colorAvoid':
+        progress.colorAvoid = { flips: 0 };
+        break;
+      case 'rowCoverage':
+        progress.rowCoverage = Array(ROWS).fill(0);
+        break;
+      case 'colCoverage':
+        progress.colCoverage = Array(COLS).fill(0);
+        break;
+      case 'breakLocks':
+        progress.breakLocks = { total: board.filter(c => c && c.locked).length, broken: 0 };
+        break;
+    }
+  });
+  levelGoals = { definitions: defs, progress };
+}
+
+function updateGoalProgress(matched, combo) {
+  if (!levelGoals) return;
+  levelGoals.definitions.forEach(g => {
+    switch (g.type) {
+      case 'colorCollect':
+        matched.forEach(idx => {
+          const col = board[idx]?.color;
+          if (col && g.requirements[col] !== undefined) {
+            levelGoals.progress.colorCollect[col] = (levelGoals.progress.colorCollect[col] || 0) + 1;
+          }
+        });
+        break;
+      case 'specificCombos':
+        if (combo >= g.minLength) levelGoals.progress.specificCombos.count++;
+        break;
+      case 'markedCards':
+        matched.forEach(idx => {
+          if (board[idx]?.marked) {
+            levelGoals.progress.markedCards.collected++;
+            levelGoals.progress.markedCards.currentMarked.delete(idx);
+            board[idx].marked = false;
+          }
+        });
+        break;
+      case 'orderedCards': {
+        const orderedInChain = matched.filter(idx => board[idx]?.ordered).sort((a, b) => board[a].ordered - board[b].ordered);
+        let next = levelGoals.progress.orderedCards.nextRequired;
+        orderedInChain.forEach(idx => {
+          if (board[idx].ordered === next) { next++; board[idx].ordered = null; }
+        });
+        levelGoals.progress.orderedCards.nextRequired = next;
+        break;
+      }
+      case 'rowCoverage': {
+        const rows = new Set();
+        matched.forEach(idx => rows.add(toRC(idx).r));
+        rows.forEach(r => levelGoals.progress.rowCoverage[r]++);
+        break;
+      }
+      case 'colCoverage': {
+        const cols = new Set();
+        matched.forEach(idx => cols.add(toRC(idx).c));
+        cols.forEach(c => levelGoals.progress.colCoverage[c]++);
+        break;
+      }
+    }
+  });
+  updateGoalHUD();
+}
+
+function trackColorAvoidFlip(color) {
+  if (!levelGoals) return;
+  const g = levelGoals.definitions.find(d => d.type === 'colorAvoid');
+  if (g && g.color === color) {
+    levelGoals.progress.colorAvoid.flips++;
+    updateGoalHUD();
+  }
+}
+
+function spawnMarkedCards() {
+  if (!levelGoals) return;
+  const g = levelGoals.definitions.find(d => d.type === 'markedCards');
+  if (!g) return;
+  const mp = levelGoals.progress.markedCards;
+  while (mp.currentMarked.size < g.onBoardCount && mp.collected + mp.currentMarked.size < g.totalToCollect) {
+    const avail = board.map((c, i) => i).filter(i =>
+      board[i] && !board[i].special && !board[i].locked && !board[i].marked && !board[i].flipped
+    );
+    if (!avail.length) break;
+    const idx = avail[Math.floor(Math.random() * avail.length)];
+    board[idx].marked = true;
+    mp.currentMarked.add(idx);
+    replaceCell(idx);
+  }
+}
+
+function checkAllGoalsMet() {
+  if (!levelGoals) return score >= TARGET;
+  return levelGoals.definitions.every(g => {
+    switch (g.type) {
+      case 'score':         return score >= g.target;
+      case 'colorCollect':  return Object.entries(g.requirements).every(([c, n]) => (levelGoals.progress.colorCollect[c] || 0) >= n);
+      case 'specificCombos': return levelGoals.progress.specificCombos.count >= g.count;
+      case 'markedCards':   return levelGoals.progress.markedCards.collected >= g.totalToCollect;
+      case 'orderedCards':  return levelGoals.progress.orderedCards.nextRequired > g.count;
+      case 'colorAvoid':    return levelGoals.progress.colorAvoid.flips <= g.maxFlips;
+      case 'rowCoverage':   return levelGoals.progress.rowCoverage.every(c => c >= g.timesEachRow);
+      case 'colCoverage':   return levelGoals.progress.colCoverage.every(c => c >= g.timesEachCol);
+      case 'breakLocks':   return levelGoals.progress.breakLocks.broken >= levelGoals.progress.breakLocks.total;
+      default: return true;
+    }
+  });
+}
+
+function goalIcon(type) {
+  return { score:'🎯', colorCollect:'🎨', specificCombos:'🔗', markedCards:'⭐',
+           orderedCards:'🔢', colorAvoid:'🚫', rowCoverage:'↔', colCoverage:'↕',
+           breakLocks:'🔓' }[type] || '📋';
+}
+
+function goalDescription(g) {
+  switch (g.type) {
+    case 'score':         return `Reach a score of ${g.target}`;
+    case 'colorCollect':  return 'Collect ' + Object.entries(g.requirements).map(([c, n]) => `${n} ${c}`).join(' and ');
+    case 'specificCombos': return `Make ${g.count} combo${g.count>1?'s':''} of ${g.minLength}+ cards`;
+    case 'markedCards':   return `Collect ${g.totalToCollect} marked ⭐ cards`;
+    case 'orderedCards':  return `Collect ${g.count} numbered cards in order`;
+    case 'colorAvoid':    return `Open fewer than ${g.maxFlips} ${g.color} cards`;
+    case 'rowCoverage':   return `Use every row in combos ${g.timesEachRow} time${g.timesEachRow>1?'s':''}`;
+    case 'colCoverage':   return `Use every column in combos ${g.timesEachCol} time${g.timesEachCol>1?'s':''}`;
+    case 'breakLocks':   return `Break all ${g.locked ? g.locked.length : ''} locked tiles`;
+    default: return '';
+  }
+}
+
+function getGoalDisplay(g) {
+  const p = levelGoals.progress;
+  switch (g.type) {
+    case 'score':
+      return { icon:'🎯', label:'Score', current: score, target: g.target, done: score >= g.target };
+    case 'colorCollect': {
+      const entries = Object.entries(g.requirements);
+      const cur = entries.reduce((s, [c]) => s + (p.colorCollect[c] || 0), 0);
+      const tot = entries.reduce((s, [, n]) => s + n, 0);
+      const label = entries.map(([c, n]) => `${p.colorCollect[c]||0}/${n} ${c}`).join(', ');
+      return { icon:'🎨', label, current: cur, target: tot, done: cur >= tot };
+    }
+    case 'specificCombos':
+      return { icon:'🔗', label:`${g.minLength}+ combos`, current: p.specificCombos.count, target: g.count, done: p.specificCombos.count >= g.count };
+    case 'markedCards':
+      return { icon:'⭐', label:'Marked', current: p.markedCards.collected, target: g.totalToCollect, done: p.markedCards.collected >= g.totalToCollect };
+    case 'orderedCards':
+      return { icon:'🔢', label:'In order', current: p.orderedCards.nextRequired - 1, target: g.count, done: p.orderedCards.nextRequired > g.count };
+    case 'colorAvoid': {
+      const left = g.maxFlips - p.colorAvoid.flips;
+      return { icon:'🚫', label:`Avoid ${g.color}`, current: p.colorAvoid.flips, target: g.maxFlips, done: left >= 0 };
+    }
+    case 'rowCoverage': {
+      const done = p.rowCoverage.filter(c => c >= g.timesEachRow).length;
+      return { icon:'↔', label:'Rows', current: done, target: ROWS, done: done >= ROWS };
+    }
+    case 'colCoverage': {
+      const done = p.colCoverage.filter(c => c >= g.timesEachCol).length;
+      return { icon:'↕', label:'Cols', current: done, target: COLS, done: done >= COLS };
+    }
+    case 'breakLocks':
+      return { icon:'🔓', label:'Locks', current: p.breakLocks.broken, target: p.breakLocks.total, done: p.breakLocks.broken >= p.breakLocks.total };
+    default: return { icon:'📋', label:'', current: 0, target: 0, done: true };
+  }
+}
+
+function updateGoalHUD() {
+  const el = document.getElementById('goal-hud');
+  if (!el) return;
+  if (!levelGoals) { el.style.display = 'none'; return; }
+  const nonScore = levelGoals.definitions.filter(g => g.type !== 'score');
+  if (nonScore.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = levelGoals.definitions.map(g => {
+    const d = getGoalDisplay(g);
+    return `<div class="goal-pill ${d.done ? 'goal-done' : ''}">
+      <span class="goal-icon">${d.icon}</span>
+      <span class="goal-text">${d.label}</span>
+      <span class="goal-count">${d.current}/${d.target}</span>
+    </div>`;
+  }).join('');
+}
+
 const BOOSTERS = [
   { id:'peek',      icon:'👁',  desc:'Reveal one card by tapping it',                               needsTap:true  },
   { id:'random3',   icon:'🎲',  desc:'Reveal 3 random face-down cards',                             needsTap:false },
@@ -316,7 +541,9 @@ function initLevelConfig() {
   const lvl = LEVELS[currentLevelIndex];
   COLS = lvl.cols; ROWS = lvl.rows; TOTAL = COLS * ROWS;
   ACTIVE_COLORS = ALL_COLORS.slice(0, lvl.colorCount);
-  MAX_TURNS = lvl.turns; TARGET = lvl.target;
+  MAX_TURNS = lvl.turns;
+  const scoreGoal = lvl.goals?.find(g => g.type === 'score');
+  TARGET = scoreGoal ? scoreGoal.target : (lvl.target || 0);
   boardEl.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
   boardEl.style.gridTemplateRows    = `repeat(${ROWS}, 1fr)`;
   updateBanner();
@@ -368,6 +595,19 @@ function showPreLevel() {
   } else {
     streakEl.textContent = '';
     breakdownEl.innerHTML = '';
+  }
+
+  // Level goals display
+  const goalInfoEl = document.getElementById('pre-level-goals');
+  const lvlGoals = LEVELS[currentLevelIndex].goals;
+  if (goalInfoEl) {
+    if (lvlGoals && lvlGoals.length > 0) {
+      goalInfoEl.style.display = '';
+      goalInfoEl.innerHTML = '<div class="pre-level-goal-title">Level Goals</div>' +
+        lvlGoals.map(g => `<div class="pre-level-goal-item">${goalIcon(g.type)} ${goalDescription(g)}</div>`).join('');
+    } else {
+      goalInfoEl.style.display = 'none';
+    }
   }
 
   // Special card grid — only show if deploy specials is unlocked for this level
@@ -546,10 +786,12 @@ function startGame(preplacedSpecials) {
     });
   }
 
-  // Place locked cards at fixed positions from level config
+  // Place locked cards from breakLocks goal (or legacy lvl.locked)
   const lvl = LEVELS[currentLevelIndex];
-  if (lvl.locked && lvl.locked.length > 0) {
-    lvl.locked.forEach(([r, c]) => {
+  const lockGoal = lvl.goals?.find(g => g.type === 'breakLocks');
+  const lockedPositions = lockGoal?.locked || lvl.locked || [];
+  if (lockedPositions.length > 0) {
+    lockedPositions.forEach(([r, c]) => {
       const idx = r * COLS + c;
       if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special) {
         board[idx].locked = true;
@@ -557,8 +799,9 @@ function startGame(preplacedSpecials) {
     });
   }
 
-  targetEl.textContent = TARGET;
-  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar();
+  targetEl.textContent = TARGET > 0 ? TARGET : '—';
+  initLevelGoals();
+  renderBoard(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
   // Booster tutorial: highlight bar and show hint on first level with boosters
   if (!progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0)) {
@@ -729,7 +972,11 @@ function buildCardHTML(card) {
     const bombCls = card.bombColor ? ' bomb-colored' : '';
     return `<div class="card special${bombCls}" data-index="${i}"${bombStyle}><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}"><span class="special-icon">${specialIcon(card.special)}</span></div></div>`;
   }
-  return `<div class="card${lockedCls}" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div></div>`;
+  const markedCls = card.marked ? ' marked' : '';
+  const orderedCls = card.ordered ? ' ordered' : '';
+  const markedBadge = card.marked ? '<span class="marked-badge">⭐</span>' : '';
+  const orderedNum = card.ordered ? `<span class="ordered-number">${card.ordered}</span>` : '';
+  return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}</div>`;
 }
 
 function renderBoard() {
@@ -1377,6 +1624,7 @@ function onCardClick(index) {
   if (card.flipped || card.locked) return;
 
   card.flipped = true;
+  trackColorAvoidFlip(card.color);
   const el = getCardEl(index); el.classList.add('flipped');
   // Remove tint hint when card is flipped
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
@@ -1479,6 +1727,7 @@ function endTurn(manual, perfectSweep) {
   else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge) showNudge('booster'); }, 2000); }
 
   if (combo >= 3) {
+    updateGoalProgress(matched, combo);
     toRemove = [...matched];
     if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
@@ -1535,6 +1784,7 @@ function endTurn(manual, perfectSweep) {
     });
     unlocked.forEach(idx => {
       board[idx].locked = false;
+      if (levelGoals?.progress?.breakLocks) levelGoals.progress.breakLocks.broken++;
       const el = getCardEl(idx);
       if (el) {
         el.classList.remove('locked');
@@ -1600,6 +1850,7 @@ function placeNewCards(toRemove, skip) {
     const el=getCardEl(idx);
     if (el) { el.classList.add('dropping'); el.addEventListener('animationend',()=>el.classList.remove('dropping'),{once:true}); }
   });
+  spawnMarkedCards();
   return nc;
 }
 
@@ -1725,8 +1976,8 @@ function finishTurn() {
   chainColor=null; chainColors=new Set(); chainCards=[]; specialsUsed=[];
   turnActive=false; inputLocked=false; activeBooster=null;
   clearNudgeTimer();
-  updateChainIndicator(); updateBoosterUI(); updateRecallButton();
-  if (score >= TARGET) levelWon();
+  updateChainIndicator(); updateBoosterUI(); updateRecallButton(); updateGoalHUD();
+  if (checkAllGoalsMet()) levelWon();
   else if (turns <= 0) levelFailed();
 }
 
