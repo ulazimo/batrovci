@@ -201,6 +201,12 @@ function trackColorAvoidFlip(color) {
   if (g && g.color === color) {
     levelGoals.progress.colorAvoid.flips++;
     updateGoalHUD();
+    if (levelGoals.progress.colorAvoid.flips >= g.maxFlips) {
+      // Immediate fail — let the current card flip animation finish first
+      stopChainTimer();
+      inputLocked = true;
+      setTimeout(() => levelFailed(), 600);
+    }
   }
 }
 
@@ -230,7 +236,7 @@ function checkAllGoalsMet() {
       case 'specificCombos': return levelGoals.progress.specificCombos.count >= g.count;
       case 'markedCards':   return levelGoals.progress.markedCards.collected >= g.totalToCollect;
       case 'orderedCards':  return levelGoals.progress.orderedCards.nextRequired > g.count;
-      case 'colorAvoid':    return levelGoals.progress.colorAvoid.flips <= g.maxFlips;
+      case 'colorAvoid':    return levelGoals.progress.colorAvoid.flips < g.maxFlips;
       case 'rowCoverage':   { const t = getRowTargets(g); return levelGoals.progress.rowCoverage.every((c, i) => c >= t[i]); }
       case 'colCoverage':   { const t = getColTargets(g); return levelGoals.progress.colCoverage.every((c, i) => c >= t[i]); }
       case 'breakLocks':   return levelGoals.progress.breakLocks.broken >= levelGoals.progress.breakLocks.total;
@@ -252,7 +258,7 @@ function goalDescription(g) {
     case 'specificCombos': return `Make ${g.count} combo${g.count>1?'s':''} of ${g.minLength}+ cards`;
     case 'markedCards':   return `Collect ${g.totalToCollect} marked ⭐ cards`;
     case 'orderedCards':  return `Collect ${g.count} numbered cards in order`;
-    case 'colorAvoid':    return `Open fewer than ${g.maxFlips} ${g.color} cards`;
+    case 'colorAvoid':    return `Don't open ${g.maxFlips} ${g.color} cards (${g.maxFlips} lives)`;
     case 'rowCoverage':   { const t = getRowTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every row ${u[0]} time${u[0]>1?'s':''}` : `Use rows (${t.join(',')} times)`; }
     case 'colCoverage':   { const t = getColTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every column ${u[0]} time${u[0]>1?'s':''}` : `Use cols (${t.join(',')} times)`; }
     case 'breakLocks':   return `Break all ${g.locked ? g.locked.length : ''} locked tiles`;
@@ -280,7 +286,7 @@ function getGoalDisplay(g) {
       return { icon:'🔢', label:'In order', current: p.orderedCards.nextRequired - 1, target: g.count, done: p.orderedCards.nextRequired > g.count };
     case 'colorAvoid': {
       const left = g.maxFlips - p.colorAvoid.flips;
-      return { icon:'🚫', label:`Avoid ${g.color}`, current: p.colorAvoid.flips, target: g.maxFlips, done: left >= 0 };
+      return { icon:'🚫', label:`Avoid ${g.color}`, current: left, target: g.maxFlips, done: left > 0, livesOnly: true };
     }
     case 'rowCoverage': {
       const t = getRowTargets(g);
@@ -310,7 +316,7 @@ function updateGoalHUD() {
     return `<div class="goal-pill ${d.done ? 'goal-done' : ''}">
       <span class="goal-icon">${d.icon}</span>
       <span class="goal-text">${d.label}</span>
-      <span class="goal-count">${d.current}/${d.target}</span>
+      <span class="goal-count">${d.livesOnly ? d.current : d.current + '/' + d.target}</span>
     </div>`;
   }).join('');
   el.innerHTML = `<div class="goal-hud-title">Goals</div><div class="goal-items">${pills}</div>`;
