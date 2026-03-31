@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match — Level Editor</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header id="top-bar">
+  <div class="top-bar-left">
+    <a href="../index.html" class="back-link">← Back to Game</a>
+    <h1>Level Editor</h1>
+  </div>
+  <div class="top-bar-right">
+    <button id="btn-load" class="bar-btn">📂 Load JSON</button>
+    <button id="btn-download" class="bar-btn primary">💾 Download JSON</button>
+    <input type="file" id="file-input" accept=".json" hidden>
+  </div>
+</header>
+
+<!-- MAIN 3-COLUMN LAYOUT -->
+<main id="layout">
+
+  <!-- LEFT: LEVEL LIST -->
+  <aside id="level-list-panel">
+    <div id="level-list"></div>
+  </aside>
+
+  <!-- CENTER: EDITOR -->
+  <section id="editor-panel">
+    <div id="editor-empty-state">
+      <p>Load a JSON file or add a new level to begin editing.</p>
+    </div>
+    <div id="editor-content" class="hidden">
+      <!-- Action bar -->
+      <div id="action-bar">
+        <button id="btn-undo" class="action-btn" title="Undo (Ctrl+Z)">↩ Undo</button>
+        <button id="btn-redo" class="action-btn" title="Redo (Ctrl+Y)">↪ Redo</button>
+      </div>
+      <!-- Level properties -->
+      <div id="props-bar">
+        <label class="prop">
+          <span class="prop-label">Width</span>
+          <select id="prop-cols"></select>
+        </label>
+        <label class="prop">
+          <span class="prop-label">Height</span>
+          <select id="prop-rows"></select>
+        </label>
+        <label class="prop">
+          <span class="prop-label">Colors</span>
+          <select id="prop-colors">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label class="prop">
+          <span class="prop-label">Turns</span>
+          <input type="number" id="prop-turns" min="1" max="99" value="10">
+        </label>
+        <label class="prop">
+          <span class="prop-label">Target</span>
+          <input type="number" id="prop-target" min="0" max="99999" step="50" value="500">
+        </label>
+      </div>
+      <!-- Board -->
+      <div id="board-wrap">
+        <div id="board"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: TOOL PALETTE -->
+  <aside id="tool-panel">
+    <h3 class="panel-title">Tools</h3>
+    <div id="tool-list"></div>
+  </aside>
+
+</main>
+
+<script src="editor.js"></script>
+</body>
+</html>
