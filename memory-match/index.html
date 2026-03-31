@@ -104,7 +104,7 @@ body {
 
 /* locked cards */
 .card.locked .card-back { background: linear-gradient(135deg, #1a1a2a, #252540); border-color: #3a3a5a; filter: brightness(0.7); }
-.card.locked .card-back::after { content:'🔒'; font-size:clamp(12px,3vw,20px); color:#6a6a8a; filter:none; }
+.card.locked .card-back::after { content:'🔒'; font-size:clamp(12px,3vw,20px); color:#6a6a8a; filter:none; font-size: 2rem; }
 .card.locked { pointer-events: none; }
 @keyframes unlockCard { 0%{transform:scale(1);filter:brightness(.7)} 30%{transform:scale(1.15);filter:brightness(1.3)} 60%{transform:scale(.95);filter:brightness(1)} 100%{transform:scale(1);filter:brightness(1)} }
 .card.unlocking { animation: unlockCard .5s ease-out; pointer-events: auto; }
