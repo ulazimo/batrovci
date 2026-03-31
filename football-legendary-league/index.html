@@ -114,6 +114,18 @@
         .ball-pop  { animation: ball-pop  0.28s cubic-bezier(0.4, 0, 1, 1) forwards !important; pointer-events: none; z-index: 20; }
         .ball-land { animation: ball-land 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) !important; }
 
+        /* Collect-mode: tiles queued for breaking pulse with golden glow */
+        @keyframes pending-pulse {
+            from { transform: scale(0.93); filter: brightness(1.1) saturate(1.4); }
+            to   { transform: scale(1.08); filter: brightness(1.7) saturate(2.2) drop-shadow(0 0 10px rgba(255,220,50,0.85)); }
+        }
+        .pending-break { pointer-events: none; z-index: 10; }
+        .pending-break .tile-inner {
+            animation: pending-pulse 0.45s ease-in-out infinite alternate !important;
+            outline: 2px solid rgba(255,220,50,0.6);
+            outline-offset: -2px;
+        }
+
         @keyframes timer-drain {
             from { width: 100%; }
             to   { width: 0%; }
@@ -426,6 +438,18 @@
         // ── SOUND EFFECTS (Web Audio API, no external files) ──────────────
         const SFX = (() => {
             let ctx = null;
+            let goalBuffer = null;
+            // Pre-load real crowd cheer sample (CC0, archive.org)
+            const GOAL_MP3 = 'https://archive.org/download/Red_Library_Crowds_Sports/R07-01-Crowd%20Cheering%20at%20Sporting%20Event.mp3';
+            fetch(GOAL_MP3)
+                .then(r => r.arrayBuffer())
+                .then(ab => {
+                    const tmpCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    return tmpCtx.decodeAudioData(ab);
+                })
+                .then(buf => { goalBuffer = buf; })
+                .catch(() => {});
+
             function gc() {
                 if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (ctx.state === 'suspended') ctx.resume();
@@ -468,42 +492,25 @@
                 rocket:  ()  => { tone(800, 'sawtooth', 0.32, 0.14, 200); noiseBurst(0.15, 0.08, 1200); },
                 bomb:    ()  => { noiseBurst(0.45, 0.32, 140); tone(75, 'sine', 0.45, 0.18, 155); },
                 goal: () => { try {
-                    const c = gc(), now = c.currentTime;
-                    // Crowd roar — multiple layers of bandpass-filtered noise
-                    const dur = 3.0;
-                    const bufLen = Math.ceil(c.sampleRate * dur);
-                    const buf = c.createBuffer(1, bufLen, c.sampleRate);
-                    const d = buf.getChannelData(0);
-                    for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
-                    [
-                        { hz: 180,  Q: 2.5, peak: 0.30, rise: 0.08 },  // deep roar
-                        { hz: 420,  Q: 2.0, peak: 0.22, rise: 0.12 },  // mid crowd
-                        { hz: 900,  Q: 1.5, peak: 0.14, rise: 0.18 },  // excited voices
-                        { hz: 2200, Q: 1.2, peak: 0.07, rise: 0.25 },  // high screams
-                        { hz: 600,  Q: 3.0, peak: 0.18, rise: 0.05 },  // chant body
-                    ].forEach(({ hz, Q, peak, rise }) => {
-                        const src = c.createBufferSource(), filt = c.createBiquadFilter(), g = c.createGain();
-                        filt.type = 'bandpass'; filt.frequency.value = hz; filt.Q.value = Q;
-                        src.buffer = buf; src.connect(filt); filt.connect(g); g.connect(c.destination);
-                        g.gain.setValueAtTime(0, now);
-                        g.gain.linearRampToValueAtTime(peak, now + rise);
-                        g.gain.setValueAtTime(peak, now + 0.8);
-                        g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-                        src.start(now); src.stop(now + dur);
-                    });
-                    // Ascending "GOOAL" tone sweep
-                    const sw = c.createOscillator(), swg = c.createGain();
-                    sw.type = 'sawtooth'; sw.connect(swg); swg.connect(c.destination);
-                    sw.frequency.setValueAtTime(180, now); sw.frequency.linearRampToValueAtTime(320, now + 0.6);
-                    swg.gain.setValueAtTime(0.12, now); swg.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
-                    sw.start(now); sw.stop(now + 1.8);
-                    // Whistle-like high shriek
-                    const wh = c.createOscillator(), whg = c.createGain();
-                    wh.type = 'sine'; wh.connect(whg); whg.connect(c.destination);
-                    wh.frequency.setValueAtTime(2400, now + 0.05); wh.frequency.linearRampToValueAtTime(2800, now + 0.4);
-                    whg.gain.setValueAtTime(0, now); whg.gain.linearRampToValueAtTime(0.09, now + 0.07);
-                    whg.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-                    wh.start(now + 0.05); wh.stop(now + 0.7);
+                    const c = gc();
+                    if (goalBuffer) {
+                        // Play real crowd cheer sample (first ~4 seconds)
+                        const src = c.createBufferSource(), g = c.createGain();
+                        src.buffer = goalBuffer;
+                        src.connect(g); g.connect(c.destination);
+                        g.gain.setValueAtTime(0.9, c.currentTime);
+                        // Fade out after 4 seconds
+                        g.gain.setValueAtTime(0.9, c.currentTime + 3.5);
+                        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 4.5);
+                        src.start(c.currentTime);
+                        src.stop(c.currentTime + 4.5);
+                    } else {
+                        // Fallback: quick cheer synth while buffer still loading
+                        const now = c.currentTime;
+                        noiseBurst(2.0, 0.28, 400, 0);
+                        noiseBurst(2.0, 0.18, 900, 0.1);
+                        tone(260, 'sawtooth', 1.4, 0.1, 180, 0);
+                    }
                 } catch(e) {} },
                 match:   (n) => { const p=[440,528,660,784,880]; for(let i=0;i<Math.min(n,5);i++) tone(p[i],'sine',0.22,0.11,null,i*0.045); }
             };
@@ -569,13 +576,31 @@
         const COMBO_COLORS  = ['#22c55e','#eab308','#f97316','#ef4444','#a855f7','#ec4899'];
         const COMBO_DURATION = 2400; // ms
         let combo = 0, comboTimerId = null;
+        // ── COLLECT MODE (tiles queue up during combo, flush on timer or bad move) ─
+        let pendingKeys  = new Set();  // "r,c" strings
+        let pendingGains = { attack: 0, defense: 0, pass: 0, stamina: 0 };
+        let pendingFlushRequested = false;
 
         function getComboColor() { return COMBO_COLORS[Math.min(combo - 1, COMBO_COLORS.length - 1)]; }
 
         function resetCombo() {
+            const cont = document.getElementById('combo-container');
+            if (cont) cont.style.opacity = '0';
+            // Flush pending tiles (collect mode) using the current combo multiplier
+            if (pendingKeys.size > 0) {
+                if (!isAnimating) {
+                    isAnimating = true;
+                    flushPending().finally(() => {
+                        isAnimating = false;
+                        combo = 0; comboTimerId = null;
+                        if (moves <= 0) triggerMatchTransition();
+                    });
+                    return; // combo zeroed inside finally after flush
+                } else {
+                    pendingFlushRequested = true;
+                }
+            }
             combo = 0; comboTimerId = null;
-            const c = document.getElementById('combo-container');
-            if (c) c.style.opacity = '0';
         }
 
         function updateComboUI() {
@@ -771,7 +796,11 @@
             }
 
             moves = 15; stats = { attack: 10, defense: 10, pass: 10, stamina: 10 };
-            selectedTile = null; resetCombo();
+            selectedTile = null;
+            // Clear collect-mode state
+            pendingKeys.forEach(m => { const [r,c]=m.split(',').map(Number); if(tileElements[r]?.[c]) tileElements[r][c].classList.remove('pending-break'); });
+            pendingKeys = new Set(); pendingGains = { attack:0,defense:0,pass:0,stamina:0 }; pendingFlushRequested = false;
+            resetCombo();
             updateUI(); createBoard(); switchView('view-puzzle');
             if (!tutorialShown) { showTutorial(); tutorialShown = true; }
         }
@@ -904,13 +933,32 @@
                 moves--;
                 updateUI();
                 await swapTiles(r1, c1, r2, c2);
-                const matched = await checkMatches(r2, c2);
+                // Use collectMatches (queue-mode) for player moves
+                const matched = await collectMatches(r2, c2);
                 if (!matched) {
                     SFX.noMatch();
                     await swapTiles(r1, c1, r2, c2); // Swap back
+                    // Bad move during combo: revert first, then flush all pending + end combo
+                    if (pendingKeys.size > 0) {
+                        if (comboTimerId) { clearTimeout(comboTimerId); comboTimerId = null; }
+                        await flushPending();
+                        combo = 0;
+                        const cont = document.getElementById('combo-container');
+                        if (cont) cont.style.opacity = '0';
+                    }
                 }
             } finally {
                 isAnimating = false;
+                // If resetCombo fired while animating, run flush now
+                if (pendingFlushRequested && pendingKeys.size > 0) {
+                    pendingFlushRequested = false;
+                    isAnimating = true;
+                    await flushPending();
+                    combo = 0; comboTimerId = null;
+                    const cont = document.getElementById('combo-container');
+                    if (cont) cont.style.opacity = '0';
+                    isAnimating = false;
+                }
                 if (moves <= 0) triggerMatchTransition();
             }
         }
@@ -994,6 +1042,78 @@
                 }
             });
             updateUI(); await applyGravity(); await checkMatches(-1, -1); return true;
+        }
+
+        // ── COLLECT MODE FUNCTIONS ────────────────────────────────────────
+        // Like checkMatches but queues tiles as pending instead of breaking them
+        async function collectMatches(triggerR, triggerC) {
+            let matches = new Set();
+            for(let r=0; r<GRID_SIZE; r++) for(let c=0; c<GRID_SIZE-2; c++) { let t=board[r][c]?.type; if(t && board[r][c+1]?.type===t && board[r][c+2]?.type===t){matches.add(r+","+c);matches.add(r+","+(c+1));matches.add(r+","+(c+2));} }
+            for(let c=0; c<GRID_SIZE; c++) for(let r=0; r<GRID_SIZE-2; r++) { let t=board[r][c]?.type; if(t && board[r+1][c]?.type===t && board[r+2][c]?.type===t){matches.add(r+","+c);matches.add((r+1)+","+c);matches.add((r+2)+","+c);} }
+            if (!matches.size) return false;
+            const initialMatchCount = matches.size;
+            if(matches.size===4 && triggerR!==-1 && board[triggerR]?.[triggerC]) board[triggerR][triggerC].nextBooster='rocket';
+            if(matches.size>=5 && triggerR!==-1 && board[triggerR]?.[triggerC]) board[triggerR][triggerC].nextBooster='bomb';
+            // Expand for boosters
+            matches.forEach(m => {
+                const [r,c]=m.split(',').map(Number), tile=board[r][c]; if(!tile) return;
+                if(tile.booster==='rocket') for(let i=0;i<GRID_SIZE;i++){if(board[r][i])matches.add(r+","+i);if(board[i][c])matches.add(i+","+c);}
+                else if(tile.booster==='bomb'){const tc=tile.type;for(let i=0;i<GRID_SIZE;i++)for(let j=0;j<GRID_SIZE;j++)if(board[i][j]?.type===tc)matches.add(i+","+j);}
+            });
+            // Accumulate gains for NEW (not already pending) tiles
+            matches.forEach(m => {
+                if (pendingKeys.has(m)) return;
+                const [r,c]=m.split(',').map(Number), tile=board[r][c]; if(!tile) return;
+                pendingGains[tile.type] = (pendingGains[tile.type]||0) + 1;
+                pendingKeys.add(m);
+                if (tileElements[r]?.[c]) tileElements[r][c].classList.add('pending-break');
+            });
+            tickCombo();
+            // Sound feedback (so player knows a match was registered)
+            let hasRocket=false, hasBomb=false;
+            matches.forEach(m=>{const[r,c]=m.split(',').map(Number),tile=board[r][c];if(tile?.booster==='rocket')hasRocket=true;if(tile?.booster==='bomb')hasBomb=true;});
+            if(hasBomb) SFX.bomb(); else if(hasRocket) SFX.rocket(); else SFX.match(initialMatchCount);
+            return true;
+        }
+
+        // Break all pending tiles at once, apply combo multiplier, then gravity + cascade
+        async function flushPending() {
+            if (!pendingKeys.size) return;
+            const mult = Math.max(1, combo); // capture before any reset
+            // Apply gains with combo multiplier
+            for (const k in pendingGains) {
+                if (pendingGains[k]) {
+                    const earned = pendingGains[k] * 2 * mult;
+                    stats[k] = (stats[k]||0) + earned;
+                    spawnStatIndicator(k, earned);
+                }
+            }
+            // Big combo indicator if mult > 1
+            if (mult >= 2) spawnComboIndicator();
+            // Pop animation + particles on all pending tiles
+            pendingKeys.forEach(m => {
+                const [r,c]=m.split(',').map(Number);
+                if (tileElements[r]?.[c]) {
+                    tileElements[r][c].classList.remove('pending-break');
+                    tileElements[r][c].classList.add('ball-pop');
+                    const tile=board[r][c]; if(tile) spawnParticles(r,c,BALL_COLORS[tile.type]||'#fff');
+                }
+            });
+            await new Promise(r => setTimeout(r, 300));
+            // Remove tiles from board
+            pendingKeys.forEach(m => {
+                const [r,c]=m.split(',').map(Number);
+                const nextB=board[r][c]?.nextBooster, type=board[r][c]?.type;
+                if(tileElements[r]?.[c]) tileElements[r][c].remove();
+                if(nextB){ board[r][c]={type,booster:nextB}; const el=createTileElement(r,c,type,nextB); tileElements[r][c]=el; boardEl.appendChild(el); }
+                else { board[r][c]=null; tileElements[r][c]=null; }
+            });
+            // Reset pending state
+            pendingKeys  = new Set();
+            pendingGains = { attack:0, defense:0, pass:0, stamina:0 };
+            updateUI();
+            await applyGravity();
+            await checkMatches(-1, -1); // cascade breaks immediately (not queued)
         }
 
         async function applyGravity() {
