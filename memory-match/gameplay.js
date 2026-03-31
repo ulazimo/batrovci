@@ -245,6 +245,12 @@ function checkAllGoalsMet() {
   });
 }
 
+function colorSwatch(c) {
+  const hex = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[c] || '#fff';
+  return `<span class="color-swatch" style="background:${hex}"></span>`;
+}
+function capColor(c) { return c.charAt(0).toUpperCase() + c.slice(1); }
+
 function goalIcon(type) {
   return { score:'🎯', colorCollect:'🎨', specificCombos:'🔗', markedCards:'⭐',
            orderedCards:'🔢', colorAvoid:'🚫', rowCoverage:'↔', colCoverage:'↕',
@@ -254,11 +260,11 @@ function goalIcon(type) {
 function goalDescription(g) {
   switch (g.type) {
     case 'score':         return `Reach a score of ${g.target}`;
-    case 'colorCollect':  return 'Collect ' + Object.entries(g.requirements).map(([c, n]) => `${n} ${c}`).join(' and ');
+    case 'colorCollect':  return 'Collect ' + Object.entries(g.requirements).map(([c, n]) => `${n} ${colorSwatch(c)}`).join(' and ');
     case 'specificCombos': return `Make ${g.count} combo${g.count>1?'s':''} of ${g.minLength}+ cards`;
     case 'markedCards':   return `Collect ${g.totalToCollect} marked ⭐ cards`;
     case 'orderedCards':  return `Collect ${g.count} numbered cards in order`;
-    case 'colorAvoid':    return `Don't open ${g.maxFlips} ${g.color} cards (${g.maxFlips} lives)`;
+    case 'colorAvoid':    return `Don't open ${g.maxFlips} ${colorSwatch(g.color)} cards (${g.maxFlips} lives)`;
     case 'rowCoverage':   { const t = getRowTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every row ${u[0]} time${u[0]>1?'s':''}` : `Use rows (${t.join(',')} times)`; }
     case 'colCoverage':   { const t = getColTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every column ${u[0]} time${u[0]>1?'s':''}` : `Use cols (${t.join(',')} times)`; }
     case 'breakLocks':   return `Break all ${g.locked ? g.locked.length : ''} locked tiles`;
@@ -275,7 +281,7 @@ function getGoalDisplay(g) {
       const entries = Object.entries(g.requirements);
       const cur = entries.reduce((s, [c]) => s + (p.colorCollect[c] || 0), 0);
       const tot = entries.reduce((s, [, n]) => s + n, 0);
-      const label = entries.map(([c, n]) => `${p.colorCollect[c]||0}/${n} ${c}`).join(', ');
+      const label = entries.map(([c, n]) => `${p.colorCollect[c]||0}/${n} ${colorSwatch(c)}`).join(', ');
       return { icon:'🎨', label, current: cur, target: tot, done: cur >= tot };
     }
     case 'specificCombos':
@@ -286,7 +292,7 @@ function getGoalDisplay(g) {
       return { icon:'🔢', label:'In order', current: p.orderedCards.nextRequired - 1, target: g.count, done: p.orderedCards.nextRequired > g.count };
     case 'colorAvoid': {
       const left = g.maxFlips - p.colorAvoid.flips;
-      return { icon:'🚫', label:`Avoid ${g.color}`, current: left, target: g.maxFlips, done: left > 0, livesOnly: true };
+      return { icon:'🚫', label:`Avoid ${colorSwatch(g.color)}`, current: left, target: g.maxFlips, done: left > 0, livesOnly: true };
     }
     case 'rowCoverage': {
       const t = getRowTargets(g);
