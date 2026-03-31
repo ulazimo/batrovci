@@ -190,17 +190,25 @@ body {
 ================================================================ */
 #recall-bar {
   width:100%;max-width:500px;display:flex;justify-content:flex-end;
-  padding:4px 8px 2px;background:transparent;
+  padding:4px 8px 10px;background:transparent;
+}
+.recall-wrap {
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.recall-label {
+  font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;
 }
 .recall-btn {
-  padding:7px 14px;font-size:13px;font-weight:700;
-  border:2px solid #3a3a6a;border-radius:20px;
+  width:52px;height:52px;font-size:22px;font-weight:700;
+  border:2px solid #3a3a6a;border-radius:50%;
   background:#2a2a4a;color:#ccc;cursor:pointer;
-  transition:all .15s;display:flex;align-items:center;gap:5px;
+  transition:all .15s;display:flex;align-items:center;justify-content:center;
+  padding:0;
 }
 .recall-btn:active { transform:scale(.93); }
 .recall-btn:hover:not(.disabled) { border-color:#4fc3f7;color:#4fc3f7;background:#2a2a5a; }
 .recall-btn.disabled { opacity:.25;pointer-events:none; }
+.recall-btn.disabled + .recall-label, .recall-wrap:has(.disabled) .recall-label { opacity:.25; }
 
 /* LEGO skin recall */
 .skin-lego .recall-btn { background:#E8C000;border-color:#D01012;color:#555; }
