@@ -551,9 +551,9 @@
         }
 
         const POS_COLORS = {
-            attack:  { border: '#c0392b', bg: 'rgba(192,57,43,0.18)',  bgSel: 'rgba(192,57,43,0.38)',  text: '#ff6b6b' },
-            pass:    { border: '#16a34a', bg: 'rgba(22,163,74,0.15)',   bgSel: 'rgba(22,163,74,0.32)',   text: '#55efc4' },
-            defense: { border: '#2563eb', bg: 'rgba(37,99,235,0.15)',   bgSel: 'rgba(37,99,235,0.32)',   text: '#74b9ff' },
+            attack:  { border: 'rgba(192,57,43,0.25)',  borderSel: '#e74c3c', bg: 'rgba(192,57,43,0.06)',  bgSel: 'rgba(192,57,43,0.28)', text: 'rgba(255,107,107,0.5)',  textSel: '#ff6b6b',  badge: '#c0392b' },
+            pass:    { border: 'rgba(22,163,74,0.25)',   borderSel: '#22c55e', bg: 'rgba(22,163,74,0.05)',   bgSel: 'rgba(22,163,74,0.25)',  text: 'rgba(85,239,196,0.5)',   textSel: '#55efc4',  badge: '#16a34a' },
+            defense: { border: 'rgba(37,99,235,0.25)',   borderSel: '#3b82f6', bg: 'rgba(37,99,235,0.05)',   bgSel: 'rgba(37,99,235,0.25)',  text: 'rgba(116,185,255,0.5)',  textSel: '#74b9ff',  badge: '#2563eb' },
         };
 
         function updateSquadUI() {
@@ -565,18 +565,21 @@
                 const col = POS_COLORS[player.pos] || POS_COLORS.defense;
                 const card = document.createElement('div');
                 card.className = `player-card p-3 rounded-xl border-2 flex justify-between items-center cursor-pointer ${isSelected ? 'selected' : ''}`;
-                card.style.borderColor = col.border;
-                card.style.background = isSelected ? col.bgSel : col.bg;
+                card.style.borderColor = isSelected ? col.borderSel : col.border;
+                card.style.background  = isSelected ? col.bgSel    : col.bg;
                 card.onclick = () => togglePlayer(player.id);
+                const badgeBg    = isSelected ? col.badge : 'rgba(255,255,255,0.06)';
+                const badgeColor = isSelected ? '#fff'    : 'rgba(255,255,255,0.25)';
+                const nameColor  = isSelected ? '#fff'    : 'rgba(255,255,255,0.55)';
                 card.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-md" style="background:${col.border};color:#fff">${player.pos.slice(0,3).toUpperCase()}</div>
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs" style="background:${badgeBg};color:${badgeColor}">${player.pos.slice(0,3).toUpperCase()}</div>
                         <div>
-                            <div class="text-sm font-bold text-white">${player.name}</div>
-                            <div class="text-[10px] uppercase font-bold" style="color:${col.text}">${player.pos}</div>
+                            <div class="text-sm font-bold" style="color:${nameColor}">${player.name}</div>
+                            <div class="text-[10px] uppercase font-bold" style="color:${isSelected ? col.textSel : col.text}">${player.pos}</div>
                         </div>
                     </div>
-                    <div class="text-xs font-black uppercase" style="color:${isSelected ? col.text : '#475569'}">${isSelected ? '✓ IN' : 'PICK'}</div>
+                    <div class="text-xs font-black uppercase" style="color:${isSelected ? col.textSel : 'rgba(255,255,255,0.2)'}">${isSelected ? '✓ IN' : 'PICK'}</div>
                 `;
                 grid.appendChild(card);
             });
