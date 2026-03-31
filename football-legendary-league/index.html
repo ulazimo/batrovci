@@ -912,15 +912,18 @@
                 // Use collectMatches (queue-mode) for player moves
                 const matched = await collectMatches(r2, c2);
                 if (!matched) {
-                    SFX.noMatch();
-                    await swapTiles(r1, c1, r2, c2); // Swap back
-                    // Bad move during combo: revert first, then flush all pending + end combo
                     if (pendingKeys.size > 0) {
+                        // During combo: swap stays (no revert), but flush pending + end combo
+                        SFX.noMatch();
                         if (comboTimerId) { clearTimeout(comboTimerId); comboTimerId = null; }
                         await flushPending();
                         combo = 0;
                         const cont = document.getElementById('combo-container');
                         if (cont) cont.style.opacity = '0';
+                    } else {
+                        // No combo active: normal bad move, revert swap
+                        SFX.noMatch();
+                        await swapTiles(r1, c1, r2, c2);
                     }
                 }
             } finally {
