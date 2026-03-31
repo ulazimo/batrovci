@@ -151,7 +151,9 @@ function updateGoalProgress(matched, combo) {
     switch (g.type) {
       case 'colorCollect':
         matched.forEach(idx => {
-          const col = board[idx]?.color;
+          let col = board[idx]?.color;
+          // Wild/rainbow cards count as the chain color
+          if (!col && board[idx]?.special && getSpecialType(board[idx].special)?.isWild) col = chainColor;
           if (col && g.requirements[col] !== undefined) {
             levelGoals.progress.colorCollect[col] = (levelGoals.progress.colorCollect[col] || 0) + 1;
           }
@@ -1243,7 +1245,8 @@ function updateChainIndicator() {
       : 'Tap a card to begin';
     return;
   }
-  const nc = chainCards.filter(i => !board[i].special).length;
+  const isWild = (i) => board[i]?.special && getSpecialType(board[i].special)?.isWild;
+  const nc = chainCards.filter(i => !board[i].special || isWild(i)).length;
   const sc = specialsUsed.length;
   let extra = '';
   if (shieldCharges > 0) extra += ' 🛡' + shieldCharges;
@@ -1255,6 +1258,10 @@ function updateChainIndicator() {
       return `<span class="chain-dot" style="background:${bc ? cssColor(bc) : '#fff'};border:2px solid ${bc ? cssColor(bc) : '#999'}">⚡</span>`;
     }).join('');
     let lines = '';
+    // Wild cards shown as rainbow dots
+    const wildCards = chainCards.filter(i => isWild(i));
+    const wildDots = wildCards.map(() =>
+      `<span class="chain-dot" style="background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#e74c3c);border:1px solid #fff"></span>`).join('');
     [...chainColors].forEach(color => {
       const colorCards = chainCards.filter(i => !board[i].special && board[i].color === color);
       if (colorCards.length === 0) return;
@@ -1262,10 +1269,13 @@ function updateChainIndicator() {
         `<span class="chain-dot" style="background:${cssColor(color)}"></span>`).join('');
       lines += `<div class="chain-color-row">${dots} <span style="color:${cssColor(color)}">(${colorCards.length})</span></div>`;
     });
-    chainEl.innerHTML = `Chain: ${lines}<div class="chain-color-row">${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span></div>`;
+    chainEl.innerHTML = `Chain: ${lines}${wildDots?`<div class="chain-color-row">${wildDots}</div>`:''}<div class="chain-color-row">${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span></div>`;
   } else {
-    const nDots = chainCards.filter(i => !board[i].special).map(i =>
-      `<span class="chain-dot" style="background:${cssColor(board[i].color || chainColor)}"></span>`).join('');
+    const nDots = chainCards.filter(i => !board[i].special || isWild(i)).map(i =>
+      isWild(i)
+        ? `<span class="chain-dot" style="background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#e74c3c);border:1px solid #fff"></span>`
+        : `<span class="chain-dot" style="background:${cssColor(board[i].color || chainColor)}"></span>`
+    ).join('');
     const sDots = specialsUsed.map(() =>
       `<span class="chain-dot" style="background:#fff;border:2px solid #999"></span>`).join('');
     chainEl.innerHTML = `Chain: ${nDots}${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span>`;
