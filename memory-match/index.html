@@ -87,6 +87,8 @@ body {
   transition: transform 0.35s ease; border-radius: 4px;
 }
 .card.flipped { transform: rotateY(180deg); }
+
+
 .card-face {
   position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
   border-radius: 4px; display: flex; align-items: center; justify-content: center;
@@ -95,12 +97,10 @@ body {
   background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
   border: 2px solid #4a4a7a; box-shadow: inset 0 0 8px rgba(100,100,180,0.3);
 }
-.card-back::after { content:'?'; font-size:clamp(10px,2.5vw,18px); color:#6a6a9a; font-weight:700; }
+.card-back::after { content:'?'; font-size:clamp(10px,2.5vw,18px); color:#6a6a9a; font-weight:700; font-size: 2rem; }
 .card-front { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,0.3); }
-.card-front.red    { background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b); border-color: #e74c3c; }
-.card-front.green  { background: radial-gradient(circle at 30% 30%, #6bff6b, #27ae60); border-color: #2ecc71; }
-.card-front.blue   { background: radial-gradient(circle at 30% 30%, #6b9bff, #2980b9); border-color: #3498db; }
-.card-front.yellow { background: radial-gradient(circle at 30% 30%, #ffe66b, #f39c12); border-color: #f1c40f; }
+.card-front.red, .card-front.green, .card-front.blue, .card-front.yellow { background: transparent; border: none; }
+.card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
 
 /* locked cards */
 .card.locked .card-back { background: linear-gradient(135deg, #1a1a2a, #252540); border-color: #3a3a5a; filter: brightness(0.7); }
@@ -1711,7 +1711,7 @@ function buildCardHTML(card) {
     const bombCls = card.bombColor ? ' bomb-colored' : '';
     return `<div class="card special${bombCls}" data-index="${i}"${bombStyle}><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}"><span class="special-icon">${specialIcon(card.special)}</span></div></div>`;
   }
-  return `<div class="card${lockedCls}" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${card.color}"></div></div>`;
+  return `<div class="card${lockedCls}" data-index="${i}"><div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div></div>`;
 }
 
 function renderBoard() {
@@ -1830,9 +1830,51 @@ function checkAllColorsBonus() {
   setTimeout(() => endTurn(true, false), 1500);
 }
 
+function getChainFaceSuffix(colorCount) {
+  if (colorCount <= 1) return '1';
+  if (colorCount === 2) return '5';
+  if (colorCount === 3) return '2';
+  if (colorCount === 4) return '3';
+  return '6'; // 5+
+}
+
+function updateChainFaces(mismatchIdx) {
+  // Count cards per color in the chain (excluding specials)
+  const colorCounts = {};
+  chainCards.forEach(i => {
+    const card = board[i];
+    if (card && !card.special && card.color) {
+      colorCounts[card.color] = (colorCounts[card.color] || 0) + 1;
+    }
+  });
+
+  // Update images for all chain cards
+  chainCards.forEach(i => {
+    const card = board[i];
+    if (!card || card.special || !card.color) return;
+    const el = getCardEl(i);
+    if (!el) return;
+    const img = el.querySelector('.card-front img');
+    if (!img) return;
+
+    const count = colorCounts[card.color] || 1;
+    const totalChainLen = chainCards.filter(j => board[j] && !board[j].special).length;
+    let suffix;
+    if (i === mismatchIdx && totalChainLen > 2) {
+      suffix = '4';
+    } else if (i === mismatchIdx) {
+      suffix = '1';
+    } else {
+      suffix = getChainFaceSuffix(count);
+    }
+    img.src = `blocks/block_${card.color}_${suffix}.png`;
+  });
+}
+
 function updateChainIndicator() {
   updateChainTension();
   updateComboSpawnIndicator();
+  updateChainFaces();
   if (!turnActive) {
     chainEl.innerHTML = spotlightMode
       ? '🔦 Tap a face-down card to reveal it'
@@ -2031,7 +2073,7 @@ function executeJoker(index) {
     card.color = srcCard.color;
     if (el) {
       const front = el.querySelector('.card-front');
-      if (front) { ALL_COLORS.forEach(cl => front.classList.remove(cl)); front.classList.add(card.color); }
+      if (front) { ALL_COLORS.forEach(cl => front.classList.remove(cl)); front.classList.add(card.color); const img = front.querySelector('img'); if (img) img.src = `blocks/block_${card.color}_1.png`; }
     }
   } else {
     // Nothing useful to copy — refund
@@ -2346,6 +2388,7 @@ function onCardClick(index) {
   SFX.mismatch(); shakeBoard();
   advanceTutorial('mismatch');
   chainCards.push(index); inputLocked = true;
+  updateChainFaces(index);
   setTimeout(() => endTurn(false), 500);
 }
 
@@ -2402,7 +2445,7 @@ function endTurn(manual, perfectSweep) {
     const el = getCardEl(idx);
     if (el) {
       if (!manual && idx===mismatchIdx) { el.classList.add('wrong'); el.addEventListener('animationend', ()=>el.classList.remove('wrong'), {once:true}); }
-      setTimeout(() => { el.classList.remove('flipped'); board[idx].flipped=false; }, 300);
+      setTimeout(() => { el.classList.remove('flipped'); board[idx].flipped=false; const img=el.querySelector('.card-front img'); if(img) img.src=`blocks/block_${board[idx].color}_1.png`; }, 300);
     }
   });
 
