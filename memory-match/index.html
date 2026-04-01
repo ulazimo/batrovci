@@ -61,7 +61,29 @@
     <h1 style="font-size:42px;margin:0;">🎴</h1>
     <h1 style="color:#4fc3f7;margin:0;font-size:28px;">Memory Match</h1>
     <p style="color:#888;font-size:14px;margin:0;">Match colors. Build combos. Beat the score.</p>
-    <button class="overlay-btn primary" style="font-size:18px;padding:14px 48px;" onclick="document.getElementById('home-screen').classList.remove('active'); showLevelSelect();">Play</button>
+    <button class="overlay-btn primary" style="font-size:18px;padding:14px 48px;" onclick="document.getElementById('home-screen').classList.remove('active'); document.getElementById('progression-picker').classList.add('active');">Play</button>
+  </div>
+</div>
+
+<!-- Progression Picker -->
+<div id="progression-picker" class="overlay-screen">
+  <div class="overlay-box" style="text-align:center;gap:16px;max-width:360px;">
+    <h2 style="color:#4fc3f7;margin:0;">Choose Journey</h2>
+    <p style="color:#888;font-size:13px;margin:0;">Select a progression style</p>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:8px;">
+      <button class="overlay-btn prog-pick-btn" onclick="loadProgression('short')">
+        <span class="prog-pick-icon">⚡</span>
+        <span class="prog-pick-info"><strong>Short</strong><br><span style="font-size:12px;color:#aaa;">36 levels · ~30 min</span></span>
+      </button>
+      <button class="overlay-btn prog-pick-btn" onclick="loadProgression('long')">
+        <span class="prog-pick-icon">🏔</span>
+        <span class="prog-pick-info"><strong>Long</strong><br><span style="font-size:12px;color:#aaa;">213 levels · Full journey</span></span>
+      </button>
+      <button class="overlay-btn prog-pick-btn" onclick="loadProgression('default')">
+        <span class="prog-pick-icon">🎯</span>
+        <span class="prog-pick-info"><strong>Default</strong><br><span style="font-size:12px;color:#aaa;">Original levels</span></span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -157,7 +179,11 @@
 
 <script src="config.js"></script>
 <script src="levels_default.js"></script>
+<script src="levels_short.js"></script>
+<script src="levels_long.js"></script>
 <script src="progression_default.js"></script>
+<script src="progression_short.js"></script>
+<script src="progression_long.js"></script>
 <script src="settings.js"></script>
 <script src="gameplay.js"></script>
 
