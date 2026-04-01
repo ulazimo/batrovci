@@ -1906,6 +1906,14 @@ function endTurn(manual, perfectSweep) {
       }
     });
 
+    // Check if all goals are met — if so, skip animations and finish immediately
+    if (checkAllGoalsMet()) {
+      // Brief delay for score popup / particles to show, then win
+      toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
+      setTimeout(() => finishTurn(), 800);
+      return;
+    }
+
     toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
     setTimeout(() => {
       if (newSP>=0) { const bColor = (getRule('coloredBombs') && isBombType(newST)) ? chainColor : null; board[newSP]=createSpecialCard(newSP,newST,bColor); replaceCell(newSP); }
@@ -2000,21 +2008,24 @@ function doSimultaneousReveal(targets, cb) {
 // ============================================================
 // PERFECT SWEEP BOARD REVEAL
 // ============================================================
-function showSweepBanner() {
-  let banner = boardContainerEl.querySelector('.sweep-banner');
+function showBoardBanner(type, title, sub) {
+  let banner = boardContainerEl.querySelector('.board-banner');
   if (banner) banner.remove();
   banner = document.createElement('div');
-  banner.className = 'sweep-banner';
-  banner.innerHTML = '<div class="sweep-title">🧹 PERFECT SWEEP!</div><div class="sweep-sub">Revealing the NEW board...</div>';
+  banner.className = `board-banner ${type}`;
+  banner.innerHTML = `<div class="banner-title">${title}</div>${sub ? `<div class="banner-sub">${sub}</div>` : ''}`;
   boardContainerEl.appendChild(banner);
 }
 
-function hideSweepBanner(cb) {
-  const banner = boardContainerEl.querySelector('.sweep-banner');
-  if (!banner) { cb(); return; }
+function hideBoardBanner(cb) {
+  const banner = boardContainerEl.querySelector('.board-banner');
+  if (!banner) { cb?.(); return; }
   banner.classList.add('hiding');
-  banner.addEventListener('animationend', () => { banner.remove(); cb(); }, { once: true });
+  banner.addEventListener('animationend', () => { banner.remove(); cb?.(); }, { once: true });
 }
+
+function showSweepBanner() { showBoardBanner('sweep', '🧹 PERFECT SWEEP!', 'Revealing the NEW board...'); }
+function hideSweepBanner(cb) { hideBoardBanner(cb); }
 
 function sweepRevealBoard(cb) {
   const targets = [];
@@ -2096,6 +2107,15 @@ function levelWon() {
   saveProgress();
   updateBanner();
 
+  // Show win banner over the board, then open overlay
+  showBoardBanner('win', '🎉 LEVEL COMPLETE!', `Score: ${score}`);
+  setTimeout(() => hideBoardBanner(() => showWinOverlay()), 1800);
+  SFX.win();
+  launchConfetti();
+}
+
+function showWinOverlay() {
+
   // Grant level rewards
   const granted = grantLevelRewards(LEVELS[currentLevelIndex].id);
 
@@ -2128,8 +2148,6 @@ function levelWon() {
 
   document.getElementById('next-level-btn').style.display = currentLevelIndex >= LEVELS.length-1 ? 'none' : '';
   document.getElementById('overlay-win').classList.add('active');
-  SFX.win();
-  launchConfetti();
 }
 
 function levelFailed() {
@@ -2139,6 +2157,14 @@ function levelFailed() {
   saveProgress();
   updateBanner();
 
+  // Show fail banner over the board, then open overlay
+  showBoardBanner('fail', '💔 LEVEL FAILED', `Score: ${score} / ${TARGET}`);
+  SFX.fail();
+  shakeBoard();
+  setTimeout(() => hideBoardBanner(() => showFailOverlay(hadStreak)), 1800);
+}
+
+function showFailOverlay(hadStreak) {
   document.getElementById('fail-sub').textContent = `Score: ${score} / ${TARGET}`;
 
   // Show keep-streak option if player had a streak and scored enough to pay
@@ -2158,8 +2184,6 @@ function levelFailed() {
   }
 
   document.getElementById('overlay-fail').classList.add('active');
-  SFX.fail();
-  shakeBoard();
 }
 
 let _failSavedStreak = 0;
