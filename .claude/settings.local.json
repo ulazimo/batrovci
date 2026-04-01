@@ -27,7 +27,9 @@
       "Bash(npx --yes @gltf-transform/cli webp \"$f\" \"$f\")",
       "Bash(done)",
       "Bash(git stash:*)",
-      "Bash(grep -E '\\\\.\\(js|html|json\\)$')"
+      "Bash(grep -E '\\\\.\\(js|html|json\\)$')",
+      "Bash(python3 -c \"import json; data=json.load\\(open\\(''levels_long.json''\\)\\); print\\(f''{len\\(data\\)} levels total''\\); cats={};:*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }
