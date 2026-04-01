@@ -559,10 +559,10 @@
         };
     }
 
-    const SPEAR_SPEED = 28; // pixels per frame
-    state.spears = [];      // active projectiles
+    const SPEAR_FLIGHT_FRAMES = 14; // how many frames the spear takes to reach the target
+    state.spears = [];
 
-    // FIRE — launch a spear projectile
+    // FIRE — launch a first-person spear toward the aim point
     function fire() {
         if(state.gameOver||state.analysisActive) return;
         if(mode==='dive'&&(state.isWaitingForAnalysis||state.ammo<=0)) return;
@@ -571,32 +571,29 @@
         state.shake=18;
         triggerFlash(0.22);
         const wm=worldMouse();
-        // launch from bottom-center of viewport toward aim point
-        const startX=state.camX, startY=CANVAS_HEIGHT+20;
-        const dx=wm.x-startX, dy=wm.y-startY;
-        const dist=Math.hypot(dx,dy)||1;
         state.spears.push({
-            x:startX, y:startY,
-            vx:(dx/dist)*SPEAR_SPEED, vy:(dy/dist)*SPEAR_SPEED,
-            targetX:wm.x, targetY:wm.y,
-            trail:[],
-            hit:false, done:false,
+            // Origin = player's viewpoint (camera center)
+            originX: state.camX, originY: state.camY,
+            targetX: wm.x, targetY: wm.y,
+            progress: 0, // 0 = at player, 1 = at target
+            done: false,
             diveShot: mode==='dive'
         });
         updateUI();
     }
 
-    // Check spear collision against animals
+    // Check spear collision against animals at the target point
     function checkSpearHit(spear){
-        let shotData={hit:false,tier:'miss',animal:null,bulletX:spear.x,bulletY:spear.y};
+        const sx=spear.targetX, sy=spear.targetY;
+        let shotData={hit:false,tier:'miss',animal:null,bulletX:sx,bulletY:sy};
         state.animals.forEach(animal=>{
             if(animal.dead) return;
             const s=animal.type.size;
             const visCY=animal.y-s; const bodyR=s*1.1;
-            const distBody=Math.hypot(spear.x-animal.x,spear.y-visCY);
+            const distBody=Math.hypot(sx-animal.x,sy-visCY);
             const hx=animal.x+(animal.dir*s*animal.type.hX);
             const hy=animal.y-(s*animal.type.hY);
-            const dH=Math.hypot(spear.x-hx,spear.y-hy);
+            const dH=Math.hypot(sx-hx,sy-hy);
             let tier=null;
             if(dH<animal.type.heartSize){
                 if(dH<animal.type.heartSize*0.25) tier='perfect';
@@ -616,7 +613,7 @@
     // Resolve spear outcome (hit or miss)
     function resolveSpear(spear, shotData){
         spear.done=true;
-        state.spearLines.push({x1:spear.x,y1:spear.y,life:1.0});
+        state.spearLines.push({x1:spear.targetX,y1:spear.targetY,life:1.0});
         if(spear.diveShot){
             setTimeout(()=>{
                 if(shotData.hit) showShotAnalysis(shotData);
@@ -627,7 +624,7 @@
                 }
             },500);
         } else {
-            if(!shotData.hit){ breakCombo(); showFloatingText('MISS',spear.x,spear.y-40,'#ef4444'); }
+            if(!shotData.hit){ breakCombo(); showFloatingText('MISS',spear.targetX,spear.targetY-40,'#ef4444'); }
         }
     }
 
@@ -878,22 +875,16 @@
             state.spearLines[i].life-=0.12;
             if(state.spearLines[i].life<=0) state.spearLines.splice(i,1);
         }
-        // Update spear projectiles
+        // Update spear projectiles (first-person perspective flight)
         for(let i=state.spears.length-1;i>=0;i--){
             const sp=state.spears[i];
             if(sp.done){ state.spears.splice(i,1); continue; }
-            sp.trail.push({x:sp.x,y:sp.y});
-            if(sp.trail.length>12) sp.trail.shift();
-            sp.x+=sp.vx; sp.y+=sp.vy;
-            // Check hit each frame
-            const shotData=checkSpearHit(sp);
-            if(shotData.hit){
+            sp.progress+=1/SPEAR_FLIGHT_FRAMES;
+            if(sp.progress>=1){
+                sp.progress=1;
+                // Spear arrived — check hit at target
+                const shotData=checkSpearHit(sp);
                 resolveSpear(sp,shotData);
-            } else {
-                // Reached target or out of bounds?
-                const pastTarget=Math.hypot(sp.x-sp.targetX,sp.y-sp.targetY)<SPEAR_SPEED*1.2;
-                const oob=sp.x<-50||sp.x>CANVAS_WIDTH+50||sp.y<-50||sp.y>CANVAS_HEIGHT+50;
-                if(pastTarget||oob) resolveSpear(sp,shotData);
             }
         }
         for(let i=state.bubbles.length-1;i>=0;i--){
@@ -996,34 +987,48 @@
             ctx.moveTo(sl.x1,sl.y1-18); ctx.lineTo(sl.x1,sl.y1+18);
             ctx.stroke(); ctx.restore();
         });
-        // Draw active spear projectiles
+        // Draw active spear projectiles (first-person perspective)
         state.spears.forEach(sp=>{
             if(sp.done) return;
-            // Trail
+            const p=sp.progress;
+            // Ease-in: spear accelerates as it flies toward the target
+            const ep=p*p;
+            // Current position: interpolate from origin to target
+            const cx=sp.originX+(sp.targetX-sp.originX)*ep;
+            const cy=sp.originY+(sp.targetY-sp.originY)*ep;
+            // Scale grows as it approaches (fake depth: 0.1 near player → 1.0 at target)
+            const scale=0.1+ep*0.9;
+            const angle=Math.atan2(sp.targetY-sp.originY, sp.targetX-sp.originX);
+
+            // Perspective trail — dots along the path, growing in size
             ctx.save();
-            for(let i=0;i<sp.trail.length;i++){
-                const t=sp.trail[i];
-                const a=(i/sp.trail.length)*0.4;
-                ctx.globalAlpha=a;
+            const trailSteps=8;
+            for(let i=0;i<trailSteps;i++){
+                const tp=ep*(i/trailSteps);
+                const tx=sp.originX+(sp.targetX-sp.originX)*tp;
+                const ty=sp.originY+(sp.targetY-sp.originY)*tp;
+                const ts=0.1+tp*0.9;
+                const alpha=(i/trailSteps)*0.35*p;
+                ctx.globalAlpha=alpha;
                 ctx.fillStyle='rgba(0,230,255,0.8)';
-                ctx.beginPath(); ctx.arc(t.x,t.y,2,0,Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(tx,ty,1.5*ts+1,0,Math.PI*2); ctx.fill();
             }
             ctx.restore();
-            // Spear head — draw as a line along velocity direction
+
+            // Spear body
             ctx.save();
-            const angle=Math.atan2(sp.vy,sp.vx);
-            ctx.translate(sp.x,sp.y); ctx.rotate(angle);
+            ctx.translate(cx,cy); ctx.rotate(angle); ctx.scale(scale,scale);
             // Shaft
             ctx.strokeStyle='#8B7355'; ctx.lineWidth=3;
-            ctx.beginPath(); ctx.moveTo(-28,0); ctx.lineTo(8,0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-32,0); ctx.lineTo(8,0); ctx.stroke();
             // Metal tip
             ctx.fillStyle='#c0c0c0';
-            ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(18,0); ctx.lineTo(6,-5); ctx.lineTo(6,5); ctx.closePath(); ctx.fill();
             // Glow
-            ctx.globalAlpha=0.5;
-            ctx.shadowColor='#00e5ff'; ctx.shadowBlur=12;
-            ctx.strokeStyle='#00e5ff'; ctx.lineWidth=1;
-            ctx.beginPath(); ctx.moveTo(-28,0); ctx.lineTo(16,0); ctx.stroke();
+            ctx.globalAlpha=0.6;
+            ctx.shadowColor='#00e5ff'; ctx.shadowBlur=14*scale;
+            ctx.strokeStyle='#00e5ff'; ctx.lineWidth=1.5;
+            ctx.beginPath(); ctx.moveTo(-32,0); ctx.lineTo(18,0); ctx.stroke();
             ctx.restore();
         });
         state.animals.forEach(a=>{
