@@ -329,17 +329,6 @@ body {
 .overlay-btn:active { transform:scale(.95); }
 .overlay-btn.primary   { background:linear-gradient(135deg,#0f3460,#533483); }
 .overlay-btn.secondary { background:#2a2a4a;border:1px solid #3a3a6a; }
-
-/* Progression picker buttons */
-.prog-pick-btn {
-  display:flex;align-items:center;gap:14px;text-align:left;
-  padding:14px 18px;background:#2a2a4a;border:2px solid #3a3a6a;border-radius:12px;
-  color:#ddd;transition:all .15s;
-}
-.prog-pick-btn:hover { border-color:#4fc3f7;background:#2a2a5a; }
-.prog-pick-icon { font-size:28px;flex-shrink:0; }
-.prog-pick-info { line-height:1.4; }
-.prog-pick-info strong { font-size:15px;color:#fff; }
 .stars { font-size:30px;letter-spacing:4px; }
 
 /* ================================================================

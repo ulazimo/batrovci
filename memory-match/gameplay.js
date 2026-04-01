@@ -1,40 +1,4 @@
 // ============================================================
-// PROGRESSION LOADING
-// ============================================================
-function loadProgression(style) {
-  document.getElementById('progression-picker').classList.remove('active');
-
-  const PRESETS = {
-    default: { levels: LEVELS,       progression: PROGRESSION_UNLOCK_LEVELS, rewards: DEFAULT_LEVEL_REWARDS },
-    short:   { levels: LEVELS_SHORT, progression: PROGRESSION_SHORT,         rewards: PROGRESSION_SHORT.levelRewards },
-    long:    { levels: LEVELS_LONG,  progression: PROGRESSION_LONG,          rewards: PROGRESSION_LONG.levelRewards },
-  };
-  const preset = PRESETS[style];
-  if (!preset) return;
-
-  LEVELS = preset.levels;
-  PROGRESSION_UNLOCK_LEVELS = {
-    winStreakStartLevel: preset.progression.winStreakStartLevel || 1,
-    deploySpecialsStartLevel: preset.progression.deploySpecialsStartLevel || 1,
-    recallStartLevel: preset.progression.recallStartLevel || 1,
-    sweepRevealStartLevel: preset.progression.sweepRevealStartLevel || 1,
-  };
-  DEFAULT_LEVEL_REWARDS = preset.rewards || [];
-
-  // Reset progress for new journey
-  progress.highestUnlocked = 0;
-  progress.stars = {};
-  progress.winStreak = 0;
-  delete progress.levelRewards;
-  delete progress.comboMapping;
-  Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
-  saveBoosterCounts();
-  saveProgress();
-  currentLevelIndex = 0;
-  showLevelSelect();
-}
-
-// ============================================================
 // GAME STATE
 // ============================================================
 let COLS, ROWS, TOTAL, ACTIVE_COLORS, MAX_TURNS, TARGET;
