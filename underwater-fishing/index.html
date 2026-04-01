@@ -839,8 +839,11 @@
                 },{a:aliveArr[0],d:Infinity}).a;
             }
             if(alive&&state.isAiming){
-                state.camX+=(alive.x-state.camX)*0.25;
-                state.camY+=((alive.y-alive.type.size)-state.camY)*0.25;
+                // Blend camera between fish (40%) and cursor (60%) so player can pan
+                const tx=alive.x*0.4+state.mouseX*0.6;
+                const ty=(alive.y-alive.type.size)*0.4+state.mouseY*0.6;
+                state.camX+=(tx-state.camX)*0.18;
+                state.camY+=(ty-state.camY)*0.18;
             } else {
                 state.camX+=(state.mouseX-state.camX)*0.12;
                 state.camY+=(state.mouseY-state.camY)*0.12;
