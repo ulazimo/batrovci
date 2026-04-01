@@ -479,7 +479,7 @@
     function startDiveMode(num) {
         state.currentHunt=num; state.harvested=0;
         state.goal=(num===1)?3:Math.min(5,3+Math.floor(num/2));
-        state.ammo=state.goal+Math.max(1,5-Math.floor(num/3));
+        state.ammo=state.goal+Math.max(2,6-Math.floor(num/3));
         state.animals=[]; state.particles=[]; state.floatingTexts=[]; state.spearLines=[];
         state.gameOver=false; state.analysisActive=false; state.isWaitingForAnalysis=false;
         state.zoom=1.0; state.targetZoom=1.0; state.frenzyRunning=false;
@@ -498,9 +498,15 @@
     function spawnAnimal() {
         if(mode!=='dive') return;
         if(state.gameOver||state.analysisActive||state.isWaitingForAnalysis||state.harvested>=state.goal) return;
-        if(state.animals.filter(a=>!a.dead).length>0) return;
+        const aliveCount=state.animals.filter(a=>!a.dead).length;
+        if(aliveCount>=2) return;
         const key=state.currentLevelSpecies[Math.floor(Math.random()*state.currentLevelSpecies.length)];
         spawnFish(key,false);
+        // Spawn a second fish if this was the first
+        if(aliveCount===0){
+            const key2=state.currentLevelSpecies[Math.floor(Math.random()*state.currentLevelSpecies.length)];
+            spawnFish(key2,false);
+        }
         statusEl.textContent='FISH SPOTTED'; statusEl.className='text-xl font-bold text-cyan-400';
     }
 
@@ -797,9 +803,17 @@
         state.waveOffset+=0.015;
         state.targetZoom=state.isAiming?2.5:1.0;
         state.zoom+=(state.targetZoom-state.zoom)*0.15;
-        // In dive mode, camera tracks the active animal; in frenzy, follows mouse
+        // In dive mode, camera tracks the closest living animal to cursor; in frenzy, follows mouse
         if(mode==='dive'){
-            const alive=state.animals.find(a=>!a.dead);
+            const aliveArr=state.animals.filter(a=>!a.dead);
+            let alive=null;
+            if(aliveArr.length===1) alive=aliveArr[0];
+            else if(aliveArr.length>1){
+                alive=aliveArr.reduce((best,a)=>{
+                    const d=Math.hypot(a.x-state.mouseX,a.y-state.mouseY);
+                    return d<best.d?{a,d}:best;
+                },{a:aliveArr[0],d:Infinity}).a;
+            }
             if(alive&&state.isAiming){
                 state.camX+=(alive.x-state.camX)*0.18;
                 state.camY+=((alive.y-alive.type.size)-state.camY)*0.18;
