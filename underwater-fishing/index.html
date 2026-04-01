@@ -954,7 +954,7 @@
             ctx.fillText(t.text,t.x,t.y);
         });
         ctx.globalAlpha=1;
-        if(!state.analysisActive) drawCrosshair();
+        if(!state.analysisActive&&state.isAiming) drawCrosshair();
     }
 
     function drawCrosshair(){
