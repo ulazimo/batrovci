@@ -281,10 +281,13 @@ function getGoalDisplay(g) {
       return { icon:'🎯', label:'Score', current: score, target: g.target, done: score >= g.target };
     case 'colorCollect': {
       const entries = Object.entries(g.requirements);
-      const cur = entries.reduce((s, [c]) => s + (p.colorCollect[c] || 0), 0);
-      const tot = entries.reduce((s, [, n]) => s + n, 0);
-      const label = entries.map(([c, n]) => `${p.colorCollect[c]||0}/${n} ${colorSwatch(c)}`).join(', ');
-      return { icon:'🎨', label, current: cur, target: tot, done: cur >= tot };
+      const allDone = entries.every(([c, n]) => (p.colorCollect[c] || 0) >= n);
+      const label = entries.map(([c, n]) => {
+        const have = p.colorCollect[c] || 0;
+        const met = have >= n;
+        return `<span class="goal-color-item${met ? ' done' : ''}">${have}/${n} ${colorSwatch(c)}</span>`;
+      }).join(' ');
+      return { icon:'🎨', label, current: 0, target: 0, done: allDone, customLabel: true };
     }
     case 'specificCombos':
       return { icon:'🔗', label:`${g.minLength}+ combos`, current: p.specificCombos.count, target: g.count, done: p.specificCombos.count >= g.count };
@@ -321,10 +324,11 @@ function updateGoalHUD() {
   el.style.display = 'flex';
   const pills = levelGoals.definitions.map(g => {
     const d = getGoalDisplay(g);
+    const countHtml = d.customLabel ? '' : `<span class="goal-count">${d.livesOnly ? d.current : d.current + '/' + d.target}</span>`;
     return `<div class="goal-pill ${d.done ? 'goal-done' : ''}">
       <span class="goal-icon">${d.icon}</span>
       <span class="goal-text">${d.label}</span>
-      <span class="goal-count">${d.livesOnly ? d.current : d.current + '/' + d.target}</span>
+      ${countHtml}
     </div>`;
   }).join('');
   el.innerHTML = `<div class="goal-hud-title">Goals</div><div class="goal-items">${pills}</div>`;
