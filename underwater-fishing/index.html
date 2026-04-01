@@ -1116,19 +1116,22 @@
         requestAnimationFrame(gameLoop);
     }
 
+    const TOUCH_Y_OFFSET = -80; // offset crosshair above finger on touch devices
+    let isTouch = false;
     const updateMouse=(e)=>{
         const rect=canvas.getBoundingClientRect();
         const cx=e.clientX||(e.touches?e.touches[0].clientX:0);
         const cy=e.clientY||(e.touches?e.touches[0].clientY:0);
         state.mouseX=(cx-rect.left)*(CANVAS_WIDTH/rect.width);
         state.mouseY=(cy-rect.top)*(CANVAS_HEIGHT/rect.height);
+        if(isTouch) state.mouseY+=TOUCH_Y_OFFSET;
     };
     canvas.addEventListener('mousemove',updateMouse);
     canvas.addEventListener('mousedown',()=>{if(!state.analysisActive&&!state.isWaitingForAnalysis) state.isAiming=true;});
     canvas.addEventListener('mouseup',()=>{if(state.isAiming) fire(); state.isAiming=false;});
-    canvas.addEventListener('touchstart',(e)=>{e.preventDefault();updateMouse(e);if(!state.analysisActive&&!state.isWaitingForAnalysis) state.isAiming=true;},{passive:false});
+    canvas.addEventListener('touchstart',(e)=>{e.preventDefault();isTouch=true;updateMouse(e);if(!state.analysisActive&&!state.isWaitingForAnalysis) state.isAiming=true;},{passive:false});
     canvas.addEventListener('touchmove',(e)=>{e.preventDefault();updateMouse(e);},{passive:false});
-    canvas.addEventListener('touchend',(e)=>{e.preventDefault();if(state.isAiming) fire(); state.isAiming=false;},{passive:false});
+    canvas.addEventListener('touchend',(e)=>{e.preventDefault();if(state.isAiming) fire(); state.isAiming=false; isTouch=false;},{passive:false});
 
     function createExplosion(x,y,color,count){
         for(let i=0;i<count;i++) state.particles.push({x,y,vx:(Math.random()-0.5)*18,vy:(Math.random()-0.5)*18-4,life:1.0,color,size:Math.random()*5+3});
