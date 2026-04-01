@@ -309,6 +309,21 @@
         for (let i = 0; i < w; i++) FRENZY_POOL.push(key);
     });
 
+    // Pre-render emoji to offscreen canvases for reliable cross-platform display
+    const emojiCache = {};
+    Object.entries(FISH_TYPES).forEach(([key, t]) => {
+        const s = Math.ceil(t.size * 2.2);
+        const pad = 4;
+        const dim = s + pad * 2;
+        const oc = document.createElement('canvas');
+        oc.width = dim; oc.height = dim;
+        const octx = oc.getContext('2d');
+        octx.font = `${s}px serif`;
+        octx.textAlign = 'center'; octx.textBaseline = 'middle';
+        octx.fillText(t.emoji, dim / 2, dim / 2);
+        emojiCache[key] = { canvas: oc, dim };
+    });
+
     let mode = null;
     let state = {
         score: 0, ammo: 10, currentHunt: 1, harvested: 0, goal: 3,
@@ -752,8 +767,17 @@
     function renderEmoji(tCtx,typeObj,size,dir,isXray){
         tCtx.save(); tCtx.scale(dir===1?-1:1,1);
         if(isXray) tCtx.globalAlpha=0.25;
-        tCtx.font=`${size*2.2}px serif`; tCtx.textAlign='center'; tCtx.textBaseline='middle';
-        tCtx.fillText(typeObj.emoji,0,-size); tCtx.restore();
+        // Find cached emoji by matching the type object
+        const key = Object.keys(FISH_TYPES).find(k=>FISH_TYPES[k]===typeObj);
+        const cached = key && emojiCache[key];
+        if(cached){
+            const d=cached.dim;
+            tCtx.drawImage(cached.canvas, -d/2, -size-d/2, d, d);
+        } else {
+            tCtx.font=`${size*2.2}px serif`; tCtx.textAlign='center'; tCtx.textBaseline='middle';
+            tCtx.fillText(typeObj.emoji,0,-size);
+        }
+        tCtx.restore();
     }
 
     function triggerFlash(i){ flash.style.opacity=i; }
