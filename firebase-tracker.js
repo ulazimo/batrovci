@@ -16,7 +16,9 @@ export function initTracking(gameId) {
     let db, auth, currentUser = null;
     let startTime = Date.now();
 
-    function saveTime() {
+    let paused = false;
+
+    function flushTime() {
         if (!db || !currentUser) return;
         const s = Math.floor((Date.now() - startTime) / 1000);
         if (s > 0) {
@@ -41,7 +43,7 @@ export function initTracking(gameId) {
             currentUser = user;
             setDoc(doc(db, "game_stats", gameId), { plays: increment(1) }, { merge: true })
                 .catch(e => console.warn("Stats error:", e));
-            setInterval(saveTime, 30000);
+            setInterval(() => { if (!paused) flushTime(); }, 30000);
         } catch (e) {
             console.error("Tracking error:", e);
         }
@@ -50,8 +52,13 @@ export function initTracking(gameId) {
     init();
 
     window.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") saveTime();
-        else startTime = Date.now();
+        if (document.visibilityState === "hidden") {
+            flushTime();   // save time accumulated while playing
+            paused = true; // stop counting while tab is hidden
+        } else {
+            paused = false;
+            startTime = Date.now(); // restart counting from now
+        }
     });
-    window.addEventListener("beforeunload", saveTime);
+    window.addEventListener("beforeunload", flushTime);
 }

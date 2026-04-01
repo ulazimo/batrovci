@@ -370,7 +370,7 @@
                 <p class="text-sm text-cyber-muted font-mono">
                     &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
                 </p>
-                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-03-31 17:56:25">v2026-03-31 17:56:25</p>
+                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-04-01 09:02:54">v2026-04-01 09:02:54</p>
             </div>
             <div class="flex gap-6 text-sm font-mono text-cyber-muted">
                 <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LINKEDIN</a>
@@ -734,15 +734,10 @@
 
             // Fire-and-forget: don't await Firebase, navigate immediately
             // Note: plays are tracked by the game file itself on load — no double-counting here
-            if (db && currentUser) {
-                const statsRef = doc(db, "game_stats", gameId);
-                getDoc(statsRef).then(docSnap => {
-                    if (!docSnap.exists()) {
-                        // Only create the document if it doesn't exist yet (no play increment)
-                        setDoc(statsRef, { plays: 0, timePlayed: 0 }).catch(e => console.warn("Stats init error:", e));
-                    }
-                }).catch(e => console.warn("Stats check error:", e));
-            }
+            // No pre-creation needed — firebase-tracker.js in each game
+            // handles document creation via setDoc with merge:true + increment(1).
+            // Pre-creating with {plays:0} here caused a race condition that
+            // overwrote the game's increment, resetting stats to 0.
             window.location.href = url;
         };
 
