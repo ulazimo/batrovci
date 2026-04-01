@@ -24,7 +24,7 @@
             display: flex; justify-content: center; align-items: center;
             background: #0c1a2e;
         }
-        canvas { background-color: #000; cursor: crosshair; max-width: 100%; max-height: 100%; display: block; }
+        canvas { background-color: #000; cursor: crosshair; display: block; }
         .ui-panel { position: absolute; pointer-events: none; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.9); padding: 0 20px; box-sizing: border-box; }
         .top-hud { top: env(safe-area-inset-top, 20px); display: flex; justify-content: space-between; align-items: flex-start; }
         .bottom-hud { bottom: env(safe-area-inset-bottom, 40px); text-align: center; }
@@ -405,6 +405,15 @@
     }
 
     function syncHudToCanvas() {
+        // Scale canvas to fill viewport while preserving aspect ratio
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
+        let w, h;
+        if (vw / vh < aspect) { w = vw; h = vw / aspect; }
+        else { h = vh; w = vh * aspect; }
+        canvas.style.width  = w + 'px';
+        canvas.style.height = h + 'px';
+
         const rect = canvas.getBoundingClientRect();
         if (rect.width === 0) return;
         document.querySelectorAll('.ui-panel').forEach(el => {
