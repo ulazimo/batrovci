@@ -520,6 +520,15 @@
         state.animals.push({ x:side===-1?-130:CANVAS_WIDTH+130, y:startY, vy:(Math.random()-0.5)*0.8, type, typeKey:key, dir:side===-1?1:-1, dead:false, fallY:0, alpha:1, spawnTime:performance.now(), wobble:Math.random()*Math.PI*2, speedMult, frenzy });
     }
 
+    // Convert screen-space mouse coords to world-space (accounting for zoom offset)
+    function worldMouse(){
+        if(state.zoom<=1.0) return {x:state.mouseX, y:state.mouseY};
+        return {
+            x: state.camX+(state.mouseX-state.camX)/state.zoom,
+            y: state.camY+(state.mouseY-state.camY)/state.zoom
+        };
+    }
+
     // FIRE
     function fire() {
         if(state.gameOver||state.analysisActive) return;
@@ -528,17 +537,18 @@
         if(mode==='dive'){state.ammo--; state.isWaitingForAnalysis=true;}
         state.shake=18;
         triggerFlash(0.22);
-        state.spearLines.push({x1:state.mouseX,y1:state.mouseY,life:1.0});
+        const wm=worldMouse();
+        state.spearLines.push({x1:wm.x,y1:wm.y,life:1.0});
         updateUI();
-        let shotData={hit:false,tier:'miss',animal:null,bulletX:state.mouseX,bulletY:state.mouseY};
+        let shotData={hit:false,tier:'miss',animal:null,bulletX:wm.x,bulletY:wm.y};
         state.animals.forEach(animal=>{
             if(animal.dead) return;
             const s=animal.type.size;
             const visCY=animal.y-s; const bodyR=s*1.1;
-            const distBody=Math.hypot(state.mouseX-animal.x,state.mouseY-visCY);
+            const distBody=Math.hypot(wm.x-animal.x,wm.y-visCY);
             const hx=animal.x+(animal.dir*s*animal.type.hX);
             const hy=animal.y-(s*animal.type.hY);
-            const dH=Math.hypot(state.mouseX-hx,state.mouseY-hy);
+            const dH=Math.hypot(wm.x-hx,wm.y-hy);
             let tier=null;
             if(dH<animal.type.heartSize){
                 if(dH<animal.type.heartSize*0.25) tier='perfect';
@@ -563,7 +573,7 @@
                 }
             },850);
         } else {
-            if(!shotData.hit){ breakCombo(); showFloatingText('MISS',state.mouseX,state.mouseY-40,'#ef4444'); }
+            if(!shotData.hit){ breakCombo(); showFloatingText('MISS',wm.x,wm.y-40,'#ef4444'); }
         }
     }
 
