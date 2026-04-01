@@ -559,7 +559,10 @@
         };
     }
 
-    // FIRE
+    const SPEAR_SPEED = 28; // pixels per frame
+    state.spears = [];      // active projectiles
+
+    // FIRE — launch a spear projectile
     function fire() {
         if(state.gameOver||state.analysisActive) return;
         if(mode==='dive'&&(state.isWaitingForAnalysis||state.ammo<=0)) return;
@@ -568,17 +571,32 @@
         state.shake=18;
         triggerFlash(0.22);
         const wm=worldMouse();
-        state.spearLines.push({x1:wm.x,y1:wm.y,life:1.0});
+        // launch from bottom-center of viewport toward aim point
+        const startX=state.camX, startY=CANVAS_HEIGHT+20;
+        const dx=wm.x-startX, dy=wm.y-startY;
+        const dist=Math.hypot(dx,dy)||1;
+        state.spears.push({
+            x:startX, y:startY,
+            vx:(dx/dist)*SPEAR_SPEED, vy:(dy/dist)*SPEAR_SPEED,
+            targetX:wm.x, targetY:wm.y,
+            trail:[],
+            hit:false, done:false,
+            diveShot: mode==='dive'
+        });
         updateUI();
-        let shotData={hit:false,tier:'miss',animal:null,bulletX:wm.x,bulletY:wm.y};
+    }
+
+    // Check spear collision against animals
+    function checkSpearHit(spear){
+        let shotData={hit:false,tier:'miss',animal:null,bulletX:spear.x,bulletY:spear.y};
         state.animals.forEach(animal=>{
             if(animal.dead) return;
             const s=animal.type.size;
             const visCY=animal.y-s; const bodyR=s*1.1;
-            const distBody=Math.hypot(wm.x-animal.x,wm.y-visCY);
+            const distBody=Math.hypot(spear.x-animal.x,spear.y-visCY);
             const hx=animal.x+(animal.dir*s*animal.type.hX);
             const hy=animal.y-(s*animal.type.hY);
-            const dH=Math.hypot(wm.x-hx,wm.y-hy);
+            const dH=Math.hypot(spear.x-hx,spear.y-hy);
             let tier=null;
             if(dH<animal.type.heartSize){
                 if(dH<animal.type.heartSize*0.25) tier='perfect';
@@ -588,12 +606,18 @@
                 tier='body';
             }
             if(tier){
-                // first hit is used for dive analysis display
                 if(!shotData.hit){ shotData.hit=true; shotData.animal={...animal}; shotData.tier=tier; }
                 processHit(animal,tier);
             }
         });
-        if(mode==='dive'){
+        return shotData;
+    }
+
+    // Resolve spear outcome (hit or miss)
+    function resolveSpear(spear, shotData){
+        spear.done=true;
+        state.spearLines.push({x1:spear.x,y1:spear.y,life:1.0});
+        if(spear.diveShot){
             setTimeout(()=>{
                 if(shotData.hit) showShotAnalysis(shotData);
                 else{
@@ -601,9 +625,9 @@
                     statusEl.textContent='MISSED!'; statusEl.className='text-xl font-bold text-red-500';
                     if(state.animals.filter(a=>!a.dead).length===0) spawnAnimal();
                 }
-            },850);
+            },500);
         } else {
-            if(!shotData.hit){ breakCombo(); showFloatingText('MISS',wm.x,wm.y-40,'#ef4444'); }
+            if(!shotData.hit){ breakCombo(); showFloatingText('MISS',spear.x,spear.y-40,'#ef4444'); }
         }
     }
 
@@ -815,8 +839,8 @@
                 },{a:aliveArr[0],d:Infinity}).a;
             }
             if(alive&&state.isAiming){
-                state.camX+=(alive.x-state.camX)*0.18;
-                state.camY+=((alive.y-alive.type.size)-state.camY)*0.18;
+                state.camX+=(alive.x-state.camX)*0.25;
+                state.camY+=((alive.y-alive.type.size)-state.camY)*0.25;
             } else {
                 state.camX+=(state.mouseX-state.camX)*0.12;
                 state.camY+=(state.mouseY-state.camY)*0.12;
@@ -850,6 +874,24 @@
         for(let i=state.spearLines.length-1;i>=0;i--){
             state.spearLines[i].life-=0.12;
             if(state.spearLines[i].life<=0) state.spearLines.splice(i,1);
+        }
+        // Update spear projectiles
+        for(let i=state.spears.length-1;i>=0;i--){
+            const sp=state.spears[i];
+            if(sp.done){ state.spears.splice(i,1); continue; }
+            sp.trail.push({x:sp.x,y:sp.y});
+            if(sp.trail.length>12) sp.trail.shift();
+            sp.x+=sp.vx; sp.y+=sp.vy;
+            // Check hit each frame
+            const shotData=checkSpearHit(sp);
+            if(shotData.hit){
+                resolveSpear(sp,shotData);
+            } else {
+                // Reached target or out of bounds?
+                const pastTarget=Math.hypot(sp.x-sp.targetX,sp.y-sp.targetY)<SPEAR_SPEED*1.2;
+                const oob=sp.x<-50||sp.x>CANVAS_WIDTH+50||sp.y<-50||sp.y>CANVAS_HEIGHT+50;
+                if(pastTarget||oob) resolveSpear(sp,shotData);
+            }
         }
         for(let i=state.bubbles.length-1;i>=0;i--){
             const b=state.bubbles[i];
@@ -950,6 +992,36 @@
             ctx.beginPath(); ctx.moveTo(sl.x1-18,sl.y1); ctx.lineTo(sl.x1+18,sl.y1);
             ctx.moveTo(sl.x1,sl.y1-18); ctx.lineTo(sl.x1,sl.y1+18);
             ctx.stroke(); ctx.restore();
+        });
+        // Draw active spear projectiles
+        state.spears.forEach(sp=>{
+            if(sp.done) return;
+            // Trail
+            ctx.save();
+            for(let i=0;i<sp.trail.length;i++){
+                const t=sp.trail[i];
+                const a=(i/sp.trail.length)*0.4;
+                ctx.globalAlpha=a;
+                ctx.fillStyle='rgba(0,230,255,0.8)';
+                ctx.beginPath(); ctx.arc(t.x,t.y,2,0,Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+            // Spear head — draw as a line along velocity direction
+            ctx.save();
+            const angle=Math.atan2(sp.vy,sp.vx);
+            ctx.translate(sp.x,sp.y); ctx.rotate(angle);
+            // Shaft
+            ctx.strokeStyle='#8B7355'; ctx.lineWidth=3;
+            ctx.beginPath(); ctx.moveTo(-28,0); ctx.lineTo(8,0); ctx.stroke();
+            // Metal tip
+            ctx.fillStyle='#c0c0c0';
+            ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(6,-4); ctx.lineTo(6,4); ctx.closePath(); ctx.fill();
+            // Glow
+            ctx.globalAlpha=0.5;
+            ctx.shadowColor='#00e5ff'; ctx.shadowBlur=12;
+            ctx.strokeStyle='#00e5ff'; ctx.lineWidth=1;
+            ctx.beginPath(); ctx.moveTo(-28,0); ctx.lineTo(16,0); ctx.stroke();
+            ctx.restore();
         });
         state.animals.forEach(a=>{
             ctx.save(); ctx.translate(a.x,a.y+a.fallY); ctx.globalAlpha=a.alpha;
