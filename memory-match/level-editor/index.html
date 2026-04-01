@@ -14,6 +14,10 @@
     <a href="../index.html" class="back-link">← Back to Game</a>
     <h1>Level Editor</h1>
   </div>
+  <div class="top-bar-center">
+    <button class="tab-btn active" data-tab="levels">Levels</button>
+    <button class="tab-btn" data-tab="progression">Progression</button>
+  </div>
   <div class="top-bar-right">
     <button id="btn-load" class="bar-btn">📂 Load JSON</button>
     <button id="btn-download" class="bar-btn primary">💾 Download JSON</button>
@@ -22,8 +26,8 @@
   </div>
 </header>
 
-<!-- MAIN 3-COLUMN LAYOUT -->
-<main id="layout">
+<!-- TAB: LEVELS (3-COLUMN LAYOUT) -->
+<main id="layout" data-tab="levels">
 
   <!-- LEFT: LEVEL LIST -->
   <aside id="level-list-panel">
@@ -81,6 +85,35 @@
     <button id="btn-add-goal" class="bar-btn" style="width:100%;margin-top:8px">+ Add Goal</button>
   </aside>
 
+</main>
+
+<!-- TAB: PROGRESSION -->
+<main id="progression-layout" data-tab="progression" style="display:none">
+  <div id="progression-panel">
+    <h2 class="section-heading">Feature Unlock Levels</h2>
+    <div class="prog-grid">
+      <label class="prog-row">
+        <span class="prog-label">🔥 Winstreak Enabled from Level</span>
+        <input type="number" id="prog-winstreak-level" min="1" max="99" value="1">
+      </label>
+      <label class="prog-row">
+        <span class="prog-label">🎴 Deploy Specials from Level</span>
+        <input type="number" id="prog-deploy-level" min="1" max="99" value="1">
+      </label>
+      <label class="prog-row">
+        <span class="prog-label">🔄 Recall from Level</span>
+        <input type="number" id="prog-recall-level" min="1" max="99" value="1">
+      </label>
+      <label class="prog-row">
+        <span class="prog-label">🧹 Sweep Reveal from Level</span>
+        <input type="number" id="prog-sweep-level" min="1" max="99" value="1">
+      </label>
+    </div>
+
+    <h2 class="section-heading" style="margin-top:24px">Level Rewards</h2>
+    <div id="rewards-list"></div>
+    <button id="btn-add-reward" class="bar-btn" style="width:100%;margin-top:8px">+ Add Reward</button>
+  </div>
 </main>
 
 <script src="editor.js"></script>

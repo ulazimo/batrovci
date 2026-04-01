@@ -201,8 +201,6 @@ const WIN_STREAK_LEVELS = [
   { streak: 5, revealPct: 1.0,  shields: 5 },
 ];
 const KEEP_STREAK_COST = 100;
-
-// Winstreak effect types
 const STREAK_EFFECTS = [
   { id: 'reveal', name: 'Reveal', icon: '👁', desc: 'Reveal a % of the board at level start' },
   { id: 'shield', name: 'Shield', icon: '🛡', desc: 'Start with shields that protect your combo' },
@@ -211,7 +209,7 @@ const STREAK_EFFECTS = [
 function getStreakEffect() { return progress.streakEffect || 'reveal'; }
 function setStreakEffect(id) { progress.streakEffect = id; saveProgress(); }
 
-function getWinStreakStartLevel() { return progress.winStreakStartLevel || 1; }
+function getWinStreakStartLevel() { return progress.winStreakStartLevel || PROGRESSION_UNLOCK_LEVELS?.winStreakStartLevel || 1; }
 function setWinStreakStartLevel(lvl) { progress.winStreakStartLevel = lvl; saveProgress(); }
 function adjustWinStreakStartLevel(delta) {
   const cur = getWinStreakStartLevel();
@@ -223,7 +221,7 @@ function isWinStreakActive() {
   return LEVELS[currentLevelIndex].id >= getWinStreakStartLevel();
 }
 
-function getDeploySpecialsStartLevel() { return progress.deploySpecialsStartLevel || 1; }
+function getDeploySpecialsStartLevel() { return progress.deploySpecialsStartLevel || PROGRESSION_UNLOCK_LEVELS?.deploySpecialsStartLevel || 1; }
 function setDeploySpecialsStartLevel(lvl) { progress.deploySpecialsStartLevel = lvl; saveProgress(); }
 function adjustDeploySpecialsStartLevel(delta) {
   const cur = getDeploySpecialsStartLevel();
@@ -235,7 +233,7 @@ function isDeploySpecialsActive() {
   return LEVELS[currentLevelIndex].id >= getDeploySpecialsStartLevel();
 }
 
-function getSweepRevealStartLevel() { return progress.sweepRevealStartLevel || 1; }
+function getSweepRevealStartLevel() { return progress.sweepRevealStartLevel || PROGRESSION_UNLOCK_LEVELS?.sweepRevealStartLevel || 1; }
 function setSweepRevealStartLevel(lvl) { progress.sweepRevealStartLevel = lvl; saveProgress(); }
 function adjustSweepRevealStartLevel(delta) {
   const cur = getSweepRevealStartLevel();
@@ -247,7 +245,7 @@ function isSweepRevealActive() {
   return getRule('sweepReveal') && LEVELS[currentLevelIndex].id >= getSweepRevealStartLevel();
 }
 
-function getRecallStartLevel() { return progress.recallStartLevel ?? 1; }
+function getRecallStartLevel() { return progress.recallStartLevel ?? PROGRESSION_UNLOCK_LEVELS?.recallStartLevel ?? 1; }
 function setRecallStartLevel(lvl) { progress.recallStartLevel = lvl; saveProgress(); }
 function adjustRecallStartLevel(delta) {
   const newVal = Math.max(1, Math.min(LEVELS.length, getRecallStartLevel() + delta));

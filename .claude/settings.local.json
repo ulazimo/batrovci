@@ -26,7 +26,8 @@
       "Bash(do echo:*)",
       "Bash(npx --yes @gltf-transform/cli webp \"$f\" \"$f\")",
       "Bash(done)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(grep -E '\\\\.\\(js|html|json\\)$')"
     ]
   }
 }

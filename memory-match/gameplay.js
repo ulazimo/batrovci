@@ -963,11 +963,8 @@ initInventoryDefaults();
 // COMBO → SPECIAL MAPPING
 // ============================================================
 // ============================================================
-// LEVEL REWARDS
+// LEVEL REWARDS — DEFAULT_LEVEL_REWARDS loaded from progression_default.js
 // ============================================================
-const DEFAULT_LEVEL_REWARDS = [
-  { afterLevel: 1, boosterId: 'peek', qty: 3 },
-];
 
 function getLevelRewards() {
   return progress.levelRewards || DEFAULT_LEVEL_REWARDS;

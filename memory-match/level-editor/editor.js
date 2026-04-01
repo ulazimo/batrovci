@@ -775,6 +775,237 @@ function updateGoalProp(goalIndex, prop, value) {
 }
 
 // ============================================================
+// TAB SWITCHING
+// ============================================================
+let activeTab = 'levels';
+
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTab = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+      document.querySelectorAll('main[data-tab]').forEach(m => m.style.display = m.dataset.tab === activeTab ? '' : 'none');
+      // Update top bar buttons based on active tab
+      updateTopBarForTab();
+    });
+  });
+}
+
+function updateTopBarForTab() {
+  const isLevels = activeTab === 'levels';
+  btnLoad.textContent = isLevels ? '📂 Load JSON' : '📂 Load Progression';
+  document.getElementById('btn-download').textContent = isLevels ? '💾 Download JSON' : '💾 Download Progression';
+  document.getElementById('btn-download-js').textContent = isLevels ? '💾 Download JS' : '💾 Download JS';
+}
+
+// ============================================================
+// PROGRESSION STATE
+// ============================================================
+let progression = {
+  winStreakStartLevel: 1,
+  deploySpecialsStartLevel: 1,
+  recallStartLevel: 1,
+  sweepRevealStartLevel: 1,
+  levelRewards: [],
+};
+
+const BOOSTER_TYPES = [
+  { id: 'peek',      icon: '👁',  name: 'Peek' },
+  { id: 'random3',   icon: '🎲',  name: 'Random 3' },
+  { id: 'cross',     icon: '✚',  name: 'Cross' },
+  { id: 'row',       icon: '↔',  name: 'Row' },
+  { id: 'col',       icon: '↕',  name: 'Column' },
+  { id: 'neighbor',  icon: '🔗',  name: 'Neighbor' },
+  { id: 'colorpick', icon: '🎨',  name: 'Color Pick' },
+  { id: 'shield',    icon: '🛡',  name: 'Shield' },
+  { id: 'joker',     icon: '🃏',  name: 'Joker' },
+];
+
+const SPECIAL_TYPES_EDITOR = [
+  { id: 'cross',     icon: '💣', name: 'Baby Bomb' },
+  { id: 'ring',      icon: '💥', name: 'BIG Bomb' },
+  { id: 'diamond',   icon: '☢︎', name: 'Nuke!' },
+  { id: 'peek',      icon: '👁', name: 'Peek' },
+  { id: 'tint',      icon: '🎯', name: 'Tint' },
+  { id: 'spotlight', icon: '🔦', name: 'Spotlight' },
+  { id: 'echo',      icon: '🔔', name: 'Echo' },
+  { id: 'wild',      icon: '🌈', name: 'Wild' },
+];
+
+function initProgression() {
+  // Bind inputs
+  ['winstreak', 'deploy', 'recall', 'sweep'].forEach(key => {
+    const el = document.getElementById(`prog-${key}-level`);
+    const propMap = { winstreak: 'winStreakStartLevel', deploy: 'deploySpecialsStartLevel', recall: 'recallStartLevel', sweep: 'sweepRevealStartLevel' };
+    el.addEventListener('change', () => { progression[propMap[key]] = parseInt(el.value) || 1; });
+  });
+  document.getElementById('btn-add-reward').addEventListener('click', addReward);
+}
+
+function loadProgressionIntoUI() {
+  document.getElementById('prog-winstreak-level').value = progression.winStreakStartLevel;
+  document.getElementById('prog-deploy-level').value = progression.deploySpecialsStartLevel;
+  document.getElementById('prog-recall-level').value = progression.recallStartLevel;
+  document.getElementById('prog-sweep-level').value = progression.sweepRevealStartLevel;
+  renderRewards();
+}
+
+function renderRewards() {
+  const list = document.getElementById('rewards-list');
+  list.innerHTML = '';
+  progression.levelRewards.forEach((r, i) => {
+    const isSpecial = (r.type || 'booster') === 'special';
+    const card = document.createElement('div');
+    card.className = 'reward-card';
+    card.innerHTML = `
+      <button class="goal-remove" data-ri="${i}">×</button>
+      <label>After Level <input type="number" class="rw-level" data-ri="${i}" value="${r.afterLevel || 1}" min="1" max="99" style="width:50px"></label>
+      <label>Type
+        <select class="rw-type" data-ri="${i}">
+          <option value="booster" ${!isSpecial ? 'selected' : ''}>Power-Up</option>
+          <option value="special" ${isSpecial ? 'selected' : ''}>Special Card</option>
+        </select>
+      </label>
+      <label>Item
+        <select class="rw-item" data-ri="${i}">
+          ${isSpecial
+            ? SPECIAL_TYPES_EDITOR.map(s => `<option value="${s.id}" ${r.specialId === s.id ? 'selected' : ''}>${s.icon} ${s.name}</option>`).join('')
+            : BOOSTER_TYPES.map(b => `<option value="${b.id}" ${r.boosterId === b.id ? 'selected' : ''}>${b.icon} ${b.name}</option>`).join('')}
+        </select>
+      </label>
+      <label>Qty <input type="number" class="rw-qty" data-ri="${i}" value="${r.qty || 1}" min="1" max="99" style="width:50px"></label>
+    `;
+    list.appendChild(card);
+  });
+
+  // Bind events
+  list.querySelectorAll('.goal-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      progression.levelRewards.splice(parseInt(btn.dataset.ri), 1);
+      renderRewards();
+    });
+  });
+  list.querySelectorAll('.rw-level').forEach(el => {
+    el.addEventListener('change', () => { progression.levelRewards[parseInt(el.dataset.ri)].afterLevel = parseInt(el.value) || 1; });
+  });
+  list.querySelectorAll('.rw-type').forEach(el => {
+    el.addEventListener('change', () => {
+      const ri = parseInt(el.dataset.ri);
+      const r = progression.levelRewards[ri];
+      const newType = el.value;
+      if (newType === 'special') {
+        r.type = 'special';
+        r.specialId = SPECIAL_TYPES_EDITOR[0].id;
+        delete r.boosterId;
+      } else {
+        delete r.type;
+        r.boosterId = BOOSTER_TYPES[0].id;
+        delete r.specialId;
+      }
+      renderRewards();
+    });
+  });
+  list.querySelectorAll('.rw-item').forEach(el => {
+    el.addEventListener('change', () => {
+      const ri = parseInt(el.dataset.ri);
+      const r = progression.levelRewards[ri];
+      if ((r.type || 'booster') === 'special') r.specialId = el.value;
+      else r.boosterId = el.value;
+    });
+  });
+  list.querySelectorAll('.rw-qty').forEach(el => {
+    el.addEventListener('change', () => { progression.levelRewards[parseInt(el.dataset.ri)].qty = parseInt(el.value) || 1; });
+  });
+}
+
+function addReward() {
+  progression.levelRewards.push({ afterLevel: 1, boosterId: 'peek', qty: 1 });
+  renderRewards();
+}
+
+// ============================================================
+// PROGRESSION LOAD / DOWNLOAD
+// ============================================================
+function loadProgressionFromJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      progression.winStreakStartLevel = data.winStreakStartLevel || 1;
+      progression.deploySpecialsStartLevel = data.deploySpecialsStartLevel || 1;
+      progression.recallStartLevel = data.recallStartLevel || 1;
+      progression.sweepRevealStartLevel = data.sweepRevealStartLevel || 1;
+      progression.levelRewards = Array.isArray(data.levelRewards) ? data.levelRewards : [];
+      loadProgressionIntoUI();
+    } catch (err) { alert('Failed to parse progression JSON: ' + err.message); }
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+}
+
+function downloadProgressionJSON() {
+  const blob = new Blob([JSON.stringify(progression, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'progression.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadProgressionJS() {
+  let js = '// Auto-generated by level-editor — edit via level-editor\n';
+  js += `PROGRESSION_UNLOCK_LEVELS = ${JSON.stringify({
+    winStreakStartLevel: progression.winStreakStartLevel,
+    deploySpecialsStartLevel: progression.deploySpecialsStartLevel,
+    recallStartLevel: progression.recallStartLevel,
+    sweepRevealStartLevel: progression.sweepRevealStartLevel,
+  }, null, 2)};\n\n`;
+  js += `DEFAULT_LEVEL_REWARDS = ${JSON.stringify(progression.levelRewards, null, 2)};\n`;
+  const blob = new Blob([js], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'progression_default.js';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// OVERRIDE LOAD/DOWNLOAD BASED ON TAB
+// ============================================================
+const origLoadFromJSON = loadFromJSON;
+function routedLoad(e) {
+  if (activeTab === 'progression') loadProgressionFromJSON(e);
+  else origLoadFromJSON(e);
+}
+
+const origDownloadJSON = downloadJSON;
+function routedDownloadJSON() {
+  if (activeTab === 'progression') downloadProgressionJSON();
+  else origDownloadJSON();
+}
+
+const origDownloadJS = downloadJS;
+function routedDownloadJS() {
+  if (activeTab === 'progression') downloadProgressionJS();
+  else origDownloadJS();
+}
+
+// ============================================================
 // BOOT
 // ============================================================
 init();
+initTabs();
+initProgression();
+loadProgressionIntoUI();
+
+// Re-bind file/download buttons to routed versions
+fileInput.removeEventListener('change', origLoadFromJSON);
+fileInput.addEventListener('change', routedLoad);
+btnDownload.removeEventListener('click', origDownloadJSON);
+btnDownload.addEventListener('click', routedDownloadJSON);
+document.getElementById('btn-download-js').removeEventListener('click', origDownloadJS);
+document.getElementById('btn-download-js').addEventListener('click', routedDownloadJS);
