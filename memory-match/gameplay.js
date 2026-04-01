@@ -1116,9 +1116,9 @@ function updateChainTension() {
   if (!turnActive || chainLen < 3 || !getRule('chainPulse')) {
     boardEl.removeAttribute('data-tension');
     if (tensionRAF) { cancelAnimationFrame(tensionRAF); tensionRAF = null; }
-    // Reset any inline scale
-    boardEl.querySelectorAll('.card.flipped:not(.special) .card-front').forEach(el => {
-      el.style.scale = '';
+    // Reset any inline scale on all cards
+    boardEl.querySelectorAll('.card-front').forEach(el => {
+      if (el.style.scale) el.style.scale = '';
     });
     return;
   }
@@ -1132,12 +1132,27 @@ function updateChainTension() {
 }
 
 function tensionPulseLoop() {
+  // Self-terminate if turn ended or input locked (end-of-turn animations)
+  if (!turnActive || inputLocked) {
+    boardEl.removeAttribute('data-tension');
+    boardEl.querySelectorAll('.card-front').forEach(el => { if (el.style.scale) el.style.scale = ''; });
+    tensionRAF = null;
+    return;
+  }
   const t = performance.now();
-  // Shared sine wave — all cards read the same phase
   const phase = (t % tensionSpeed) / tensionSpeed;
   const s = 1 + tensionScale * Math.sin(phase * Math.PI * 2);
-  boardEl.querySelectorAll('#board[data-tension] .card.flipped:not(.special):not(.exploding) .card-front').forEach(el => {
-    el.style.scale = s;
+  // Only pulse cards actually in the chain, clear scale on everything else
+  const chainSet = new Set(chainCards);
+  boardEl.querySelectorAll('.card-front').forEach(el => {
+    const card = el.closest('.card');
+    if (!card) return;
+    const idx = parseInt(card.dataset.index, 10);
+    if (chainSet.has(idx) && board[idx] && !board[idx].special && board[idx].flipped) {
+      el.style.scale = s;
+    } else if (el.style.scale) {
+      el.style.scale = '';
+    }
   });
   tensionRAF = requestAnimationFrame(tensionPulseLoop);
 }
@@ -1803,6 +1818,10 @@ function onCardClick(index) {
 // ============================================================
 function endTurn(manual, perfectSweep) {
   stopChainTimer();
+  // Kill chain tension immediately — turn is resolving, no more pulsing
+  boardEl.removeAttribute('data-tension');
+  if (tensionRAF) { cancelAnimationFrame(tensionRAF); tensionRAF = null; }
+  boardEl.querySelectorAll('.card-front').forEach(el => { if (el.style.scale) el.style.scale = ''; });
   inputLocked = true; turns--;
   shieldCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
