@@ -691,8 +691,8 @@ function initControls() {
     });
     renderer.domElement.addEventListener('mouseup', () => {
         if (state.isAiming) fire();
-        state.isAiming = false;
-        crosshairEl.style.display = 'none';
+        // Don't clear isAiming yet if tracking spear — camera needs to stay zoomed
+        if (!state.trackingSpear) { state.isAiming = false; crosshairEl.style.display = 'none'; }
     });
 
     // Touch
@@ -718,9 +718,8 @@ function initControls() {
     renderer.domElement.addEventListener('touchend', (e) => {
         e.preventDefault();
         if (state.isAiming) fire();
-        state.isAiming = false;
         isTouching = false;
-        crosshairEl.style.display = 'none';
+        if (!state.trackingSpear) { state.isAiming = false; crosshairEl.style.display = 'none'; }
     }, {passive:false});
 }
 
@@ -749,6 +748,8 @@ function updateCamera(dt) {
             state.shotFeedbackTimer += dt;
             if (state.shotFeedbackTimer > 1.0) {
                 state.trackingSpear = false;
+                state.isAiming = false;
+                crosshairEl.style.display = 'none';
             }
         }
     } else if (state.isAiming) {
