@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <radialGradient id="ballGrad" cx="0.4" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="80%" stop-color="#f5f5f0"/>
+      <stop offset="100%" stop-color="#d8d8d0"/>
+    </radialGradient>
+    <radialGradient id="holeGrad" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#000"/>
+      <stop offset="70%" stop-color="#111"/>
+      <stop offset="100%" stop-color="#222"/>
+    </radialGradient>
+    <radialGradient id="bumperGrad" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FF6B7A"/>
+      <stop offset="100%" stop-color="#E63946"/>
+    </radialGradient>
+    <linearGradient id="cueGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E8D8B8"/>
+      <stop offset="15%" stop-color="#6B3A1E"/>
+      <stop offset="85%" stop-color="#6B3A1E"/>
+      <stop offset="100%" stop-color="#2A1A0A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="360" fill="#0a1a0f"/>
+
+  <!-- Rail outer -->
+  <rect x="48" y="38" width="504" height="284" rx="0" fill="none" stroke="#8B5E3C" stroke-width="2"/>
+
+  <!-- Felt -->
+  <rect x="50" y="40" width="500" height="280" fill="#1B6B3A"/>
+
+  <!-- Felt pattern -->
+  <g opacity="0.3">
+    <rect x="50" y="40" width="20" height="20" fill="#1A6538"/>
+    <rect x="90" y="40" width="20" height="20" fill="#1A6538"/>
+    <rect x="130" y="40" width="20" height="20" fill="#1A6538"/>
+    <rect x="170" y="40" width="20" height="20" fill="#1A6538"/>
+    <rect x="210" y="40" width="20" height="20" fill="#1A6538"/>
+    <rect x="70" y="60" width="20" height="20" fill="#1A6538"/>
+    <rect x="110" y="60" width="20" height="20" fill="#1A6538"/>
+    <rect x="150" y="60" width="20" height="20" fill="#1A6538"/>
+    <rect x="190" y="60" width="20" height="20" fill="#1A6538"/>
+  </g>
+
+  <!-- Rail inner -->
+  <rect x="50" y="40" width="500" height="280" rx="0" fill="none" stroke="#5C3A1E" stroke-width="5"/>
+
+  <!-- Water hazard -->
+  <rect x="350" y="80" width="120" height="60" fill="#2A7BC4" opacity="0.8"/>
+  <circle cx="375" cy="100" r="3" fill="#4A9BE4" opacity="0.6"/>
+  <circle cx="400" cy="115" r="2.5" fill="#4A9BE4" opacity="0.5"/>
+  <circle cx="440" cy="95" r="2" fill="#4A9BE4" opacity="0.6"/>
+
+  <!-- Water hazard 2 -->
+  <rect x="350" y="220" width="120" height="60" fill="#2A7BC4" opacity="0.8"/>
+  <circle cx="390" cy="240" r="3" fill="#4A9BE4" opacity="0.6"/>
+  <circle cx="420" cy="255" r="2" fill="#4A9BE4" opacity="0.5"/>
+
+  <!-- Sand trap -->
+  <rect x="200" y="130" width="80" height="100" fill="#D4A843"/>
+  <g fill="#B8923A">
+    <rect x="210" y="140" width="1.5" height="1.5"/>
+    <rect x="230" y="155" width="1.5" height="1.5"/>
+    <rect x="245" y="170" width="1.5" height="1.5"/>
+    <rect x="220" y="185" width="1.5" height="1.5"/>
+    <rect x="260" y="145" width="1.5" height="1.5"/>
+    <rect x="250" y="200" width="1.5" height="1.5"/>
+  </g>
+
+  <!-- Interior wall -->
+  <line x1="300" y1="80" x2="300" y2="150" stroke="#5C3A1E" stroke-width="5" stroke-linecap="round"/>
+  <line x1="300" y1="80" x2="300" y2="150" stroke="#8B5E3C" stroke-width="1.5"/>
+
+  <!-- Interior wall 2 -->
+  <line x1="300" y1="210" x2="300" y2="280" stroke="#5C3A1E" stroke-width="5" stroke-linecap="round"/>
+  <line x1="300" y1="210" x2="300" y2="280" stroke="#8B5E3C" stroke-width="1.5"/>
+
+  <!-- Bumper -->
+  <circle cx="170" cy="120" r="14" fill="url(#bumperGrad)"/>
+  <circle cx="170" cy="120" r="14" fill="none" stroke="#FF6B7A" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- Bumper 2 -->
+  <circle cx="170" cy="240" r="14" fill="url(#bumperGrad)"/>
+  <circle cx="170" cy="240" r="14" fill="none" stroke="#FF6B7A" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- Hole -->
+  <circle cx="460" cy="180" r="14" fill="url(#holeGrad)"/>
+  <circle cx="460" cy="180" r="14" fill="none" stroke="#333" stroke-width="1.5"/>
+
+  <!-- Guideline (dashed) -->
+  <line x1="120" y1="180" x2="290" y2="180" stroke="white" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+
+  <!-- Guideline cap (dotted) -->
+  <line x1="290" y1="180" x2="300" y2="180" stroke="white" stroke-width="1.5" stroke-dasharray="2,6" opacity="0.2"/>
+
+  <!-- Ball shadow -->
+  <ellipse cx="122" cy="184" rx="8" ry="5" fill="rgba(0,0,0,0.25)"/>
+
+  <!-- Ball -->
+  <circle cx="120" cy="180" r="8" fill="url(#ballGrad)"/>
+  <circle cx="117.5" cy="177.5" r="2.5" fill="white" opacity="0.7"/>
+
+  <!-- Cue stick -->
+  <g transform="translate(120, 180) rotate(0)">
+    <polygon points="20,-2 170,-4.5 170,4.5 20,2" fill="url(#cueGrad)"/>
+    <rect x="20" y="-1.5" width="3" height="3" fill="white"/>
+  </g>
+
+  <!-- HUD: Level name -->
+  <g transform="translate(60, 50)">
+    <text font-family="monospace" font-size="10" fill="#7ab891" letter-spacing="1">LEVEL 4: ISLAND GREEN</text>
+    <text y="16" font-family="monospace" font-size="14" font-weight="bold" fill="white">Strokes: 1</text>
+    <text y="28" font-family="monospace" font-size="9" fill="#5a9a72">Par: 3</text>
+  </g>
+
+  <!-- HUD: Pause -->
+  <g transform="translate(520, 48)">
+    <rect width="28" height="28" rx="5" fill="rgba(10,30,18,0.7)" stroke="#2a5a3a" stroke-width="1"/>
+    <text x="14" y="19" font-family="monospace" font-size="14" fill="#7ab891" text-anchor="middle">⏸</text>
+  </g>
+
+  <!-- Spin selector -->
+  <g transform="translate(70, 290)">
+    <circle r="28" fill="rgba(10,30,18,0.8)" stroke="#2a5a3a" stroke-width="1.5"/>
+    <circle r="14" fill="white" opacity="0.15"/>
+    <circle cx="5" cy="-4" r="4" fill="#E63946" stroke="white" stroke-width="1"/>
+    <text y="-22" font-family="monospace" font-size="6" fill="#5a9a72" text-anchor="middle">TOP</text>
+    <text y="27" font-family="monospace" font-size="6" fill="#5a9a72" text-anchor="middle">BACK</text>
+  </g>
+
+  <!-- Power bar -->
+  <g transform="translate(520, 240)">
+    <rect width="20" height="70" rx="4" fill="rgba(10,30,18,0.7)" stroke="#2a5a3a" stroke-width="1"/>
+    <rect x="2" y="40" width="16" height="28" rx="2" fill="#1a7a3a"/>
+    <rect x="2" y="30" width="16" height="10" rx="0" fill="#e6c619"/>
+  </g>
+</svg>
