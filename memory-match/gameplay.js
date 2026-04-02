@@ -736,6 +736,16 @@ function showNextItemTutorial() {
   saveProgress();
 }
 
+function resetTutorials() {
+  progress.seenSpecials = [];
+  progress.seenBoosters = [];
+  progress.tutorialComplete = false;
+  progress.boosterTutorialDone = false;
+  saveJourneySnapshot();
+  saveProgress();
+  alert('Tutorials reset! They will appear again on the next level.');
+}
+
 function dismissSpecialTutorial() {
   document.getElementById('special-tutorial').classList.remove('active');
   if (itemTutorialQueue.length > 0) {

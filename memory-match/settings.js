@@ -564,6 +564,22 @@ function showSettings(returnTo) {
     list.appendChild(row);
   });
 
+  // Reset tutorials button
+  const tutResetRow = document.createElement('div');
+  tutResetRow.className = 'setting-row';
+  tutResetRow.style.cursor = 'pointer';
+  tutResetRow.innerHTML = `
+    <span class="setting-icon">📖</span>
+    <div class="setting-info">
+      <div class="setting-name">Reset Tutorials</div>
+      <div class="setting-desc">Show all special card and power-up tutorials again</div>
+    </div>
+    <div class="setting-controls">
+      <button class="qty-btn" style="padding:4px 12px;font-size:12px;" onclick="resetTutorials()">Reset</button>
+    </div>
+  `;
+  list.appendChild(tutResetRow);
+
   closeAllOverlays();
   document.getElementById('settings-panel').classList.add('active');
 }
