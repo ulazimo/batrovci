@@ -261,8 +261,8 @@ function cleanupScene() {
 function initScene() {
     clock = new THREE.Clock();
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x041525);
-    scene.fog = new THREE.FogExp2(0x062a48, 0.018);
+    scene.background = new THREE.Color(0x0a2a40);
+    scene.fog = new THREE.FogExp2(0x0a2a40, 0.012);
 
     camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 200);
     camera.position.set(0, 5, 0);
@@ -275,12 +275,16 @@ function initScene() {
     container.insertBefore(renderer.domElement, container.firstChild);
 
     // Lights
-    const ambient = new THREE.AmbientLight(0x4488aa, 0.5);
+    const ambient = new THREE.AmbientLight(0x88bbdd, 0.9);
     scene.add(ambient);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
     dirLight.position.set(5, 30, 5);
     scene.add(dirLight);
-    const diveLight = new THREE.PointLight(0x00aaff, 0.4, 30);
+    // Fill light from below to soften dark undersides
+    const fillLight = new THREE.DirectionalLight(0x4488aa, 0.4);
+    fillLight.position.set(0, -5, 0);
+    scene.add(fillLight);
+    const diveLight = new THREE.PointLight(0x44ccff, 0.6, 40);
     diveLight.position.copy(camera.position);
     scene.add(diveLight);
     state.diveLight = diveLight;
