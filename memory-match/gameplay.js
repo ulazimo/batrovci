@@ -2299,34 +2299,44 @@ function levelFailed() {
 function showFailOverlay(hadStreak) {
   document.getElementById('fail-sub').textContent = `Score: ${score} / ${TARGET}`;
 
-  // Show keep-streak option if player had a streak and scored enough to pay
-  const keepBtn = document.getElementById('keep-streak-btn');
   const streakInfo = document.getElementById('fail-streak-info');
   if (hadStreak > 0) {
     streakInfo.textContent = `You lost your 🔥 ${hadStreak} win streak!`;
-    if (score >= KEEP_STREAK_COST) {
-      keepBtn.style.display = '';
-      document.getElementById('keep-streak-cost').textContent = KEEP_STREAK_COST;
-    } else {
-      keepBtn.style.display = 'none';
-    }
   } else {
     streakInfo.textContent = '';
-    keepBtn.style.display = 'none';
   }
+
+  // Show continue option — disabled if player can't afford it
+  const continueBtn = document.getElementById('keep-streak-btn');
+  const canAfford = (progress.coins || 0) >= KEEP_STREAK_COST;
+  document.getElementById('keep-streak-cost').textContent = KEEP_STREAK_COST;
+  continueBtn.disabled = !canAfford;
+  continueBtn.style.opacity = canAfford ? '1' : '0.4';
+  continueBtn.style.cursor = canAfford ? 'pointer' : 'not-allowed';
 
   document.getElementById('overlay-fail').classList.add('active');
 }
 
 let _failSavedStreak = 0;
-function keepStreak() {
+function continueLevelWithCoins() {
+  progress.coins = (progress.coins || 0) - KEEP_STREAK_COST;
+  updateCoinDisplay();
+  saveJourneySnapshot();
+  saveProgress();
+
+  // Restore streak that was lost
   progress.winStreak = _failSavedStreak;
   saveProgress();
+
+  // Close fail overlay and resume the game with 5 extra turns
+  document.getElementById('overlay-fail').classList.remove('active');
+  turns += 5;
+  inputLocked = false;
+  turnsEl.textContent = turns;
   updateBanner();
-  document.getElementById('keep-streak-btn').style.display = 'none';
-  document.getElementById('fail-streak-info').textContent = `🔥 Streak restored to ${progress.winStreak}!`;
-  document.getElementById('fail-streak-info').style.color = '#2ecc71';
-  setTimeout(() => { document.getElementById('fail-streak-info').style.color = '#f39c12'; }, 2000);
+  updateChainIndicator();
+  updateBoosterUI();
+  updateGoalHUD();
 }
 
 // ============================================================

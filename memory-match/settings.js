@@ -200,7 +200,7 @@ const WIN_STREAK_LEVELS = [
   { streak: 4, revealPct: 0.75, shields: 4 },
   { streak: 5, revealPct: 1.0,  shields: 5 },
 ];
-const KEEP_STREAK_COST = 100;
+const KEEP_STREAK_COST = 90;
 const STREAK_EFFECTS = [
   { id: 'reveal', name: 'Reveal', icon: '👁', desc: 'Reveal a % of the board at level start' },
   { id: 'shield', name: 'Shield', icon: '🛡', desc: 'Start with shields that protect your combo' },
