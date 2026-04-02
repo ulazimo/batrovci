@@ -366,12 +366,8 @@ const SAND_FRICTION = 0.955;
 const WALL_RESTITUTION = 0.75;
 const BUMPER_RESTITUTION = 1.3;
 const MIN_SPEED = 0.12;
-const MAX_POWER = 16;
 const MAX_PULL_DIST = 180;
 const HOLE_CAPTURE_SPEED = 3.2;
-const CUE_LENGTH = 160;
-const CUE_TIP_WIDTH = 4;
-const CUE_BUTT_WIDTH = 9;
 const GUIDELINE_MAX = 500;
 
 // ── Cue Definitions ──
@@ -865,13 +861,18 @@ function completeLevel() {
     else if (diff === 1) stars = 2;
     else if (diff === 2) stars = 1;
 
-    // Coin reward
-    const coinReward = stars === 3 ? 30 : stars === 2 ? 20 : stars === 1 ? 10 : 5;
-    progress.coins += coinReward;
-
     // Update progress
     const p = progress.levels[level.id] || { unlocked: true, stars: 0, best: null };
     p.unlocked = true;
+
+    // Coin reward — only for new star improvements
+    const oldStars = p.stars || 0;
+    const COIN_BY_STARS = [5, 10, 20, 30]; // 0★, 1★, 2★, 3★
+    const coinReward = stars > oldStars
+        ? COIN_BY_STARS[stars] - COIN_BY_STARS[oldStars]
+        : 0;
+    progress.coins += coinReward;
+
     if (stars > p.stars) p.stars = stars;
     if (p.best === null || strokes < p.best) p.best = strokes;
     progress.levels[level.id] = p;
@@ -891,7 +892,7 @@ function completeLevel() {
     document.getElementById('lc-stats').innerHTML =
         `Strokes: ${strokes}<br>Par: ${level.par}` +
         (diff <= 0 ? '<br><span style="color:#1a7a3a">Perfect!</span>' : '') +
-        `<br><span style="color:#e6c619">+${coinReward} 🪙</span>`;
+        (coinReward > 0 ? `<br><span style="color:#e6c619">+${coinReward} 🪙</span>` : '');
     document.getElementById('lc-next-btn').style.display =
         (currentLevelIdx + 1 < LEVELS.length) ? 'inline-block' : 'none';
     show('level-complete');
