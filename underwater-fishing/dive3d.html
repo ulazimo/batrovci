@@ -230,6 +230,8 @@ let seaweedMeshes=[], waterMesh=null; // cached refs (avoid scene.traverse per f
 // Scratch vectors (reused every frame to avoid GC pressure)
 const _v1 = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
+const _bbox = new THREE.Box3();
+const _bboxSize = new THREE.Vector3();
 
 // Shared particle geometry + material (pool instead of per-particle Mesh)
 let sharedBubbleGeo, sharedBubbleMat, sharedBurstGeo, sharedBurstMats={};
@@ -289,7 +291,7 @@ function cleanupScene() {
     state.spears.forEach(sp => {
         disposeMesh(sp.mesh); scene.remove(sp.mesh);
         if (sp.impactRing) { sp.impactRing.geometry.dispose(); sp.impactRing.material.dispose(); scene.remove(sp.impactRing); }
-        sp.trailParticles.forEach(p => { scene.remove(p); });
+        sp.trailParticles.forEach(p => { p.material.dispose(); scene.remove(p); });
     });
     state.spears = [];
     state.particles.forEach(p => { scene.remove(p); });
@@ -519,9 +521,10 @@ function animateEnvironment(time, dt) {
     }
 
     // God rays pulse
-    godRays.forEach(r => {
+    for (let i = 0; i < godRays.length; i++) {
+        const r = godRays[i];
         r.material.opacity = r.userData.baseOpacity * (0.6 + 0.4*Math.sin(time*0.5 + r.userData.phase));
-    });
+    }
 
     // Caustics (update every 3rd frame)
     state._caustFrame = (state._caustFrame || 0) + 1;
@@ -808,14 +811,14 @@ function spawnAnimal() {
         }
 
         // Face swimming direction
-        const lookTarget = mesh.position.clone().add(swimDir);
-        mesh.lookAt(lookTarget);
+        _v1.copy(mesh.position).add(swimDir);
+        mesh.lookAt(_v1);
 
         scene.add(mesh);
 
-        // Compute organ positions from bounding box
-        const bbox = new THREE.Box3().setFromObject(mesh);
-        const bMin = bbox.min, bSize = bbox.getSize(new THREE.Vector3());
+        // Compute organ positions from bounding box (scratch objects)
+        _bbox.setFromObject(mesh);
+        const bMin = _bbox.min, bSize = _bbox.getSize(_bboxSize);
         // Brain/heart positions in local mesh space (fraction of bbox)
         const brainLocal = new THREE.Vector3(
             bMin.x + bSize.x * type.brain.x,
