@@ -1067,11 +1067,10 @@ const _hitHeart = new THREE.Vector3();
 function checkSpearHit(spear) {
     _hitRay.origin.copy(spear.origin);
     _hitRay.direction.copy(spear.dir).normalize();
-    let shotData = { hit:false, organ:'none', tier:'miss', animal:null };
+    let shotData = { hit:false, organ:'none', tier:'body', animal:null, nearestOrganDist:Infinity };
 
     for (const animal of state.animals) {
         if (animal.dead) continue;
-        // First check body bounding sphere
         _hitSphere.center.copy(animal.mesh.position);
         _hitSphere.radius = animal.bodyRadius;
         if (!_hitRay.intersectSphere(_hitSphere, _hitPoint)) continue;
@@ -1079,31 +1078,39 @@ function checkSpearHit(spear) {
         const impactWorld = _hitPoint.clone();
         let organ = 'none';
 
-        // Check if ray passes THROUGH brain sphere (not distance from surface hit)
-        _hitHeart.copy(animal.brainLocal).applyMatrix4(animal.mesh.matrixWorld);
-        _hitSphere.center.copy(_hitHeart);
+        // Brain world position
+        const brainWorld = _v2.copy(animal.brainLocal).applyMatrix4(animal.mesh.matrixWorld).clone();
+        // Heart world position
+        const heartWorld = _hitHeart.copy(animal.heartLocal).applyMatrix4(animal.mesh.matrixWorld).clone();
+
+        // Check ray-sphere intersection for organs
+        _hitSphere.center.copy(brainWorld);
         _hitSphere.radius = animal.brainRadius;
-        if (_hitRay.intersectsSphere(_hitSphere)) {
-            organ = 'brain';
+        if (_hitRay.intersectsSphere(_hitSphere)) organ = 'brain';
+
+        if (organ === 'none') {
+            _hitSphere.center.copy(heartWorld);
+            _hitSphere.radius = animal.heartRadius;
+            if (_hitRay.intersectsSphere(_hitSphere)) organ = 'heart';
         }
 
-        // Check if ray passes through heart sphere
-        if (organ === 'none') {
-            _hitHeart.copy(animal.heartLocal).applyMatrix4(animal.mesh.matrixWorld);
-            _hitSphere.center.copy(_hitHeart);
-            _hitSphere.radius = animal.heartRadius;
-            if (_hitRay.intersectsSphere(_hitSphere)) {
-                organ = 'heart';
-            }
-        }
+        // Compute closest distance from ray to each organ center (for scoring body hits)
+        const brainClosest = new THREE.Vector3();
+        _hitRay.closestPointToPoint(brainWorld, brainClosest);
+        const brainDist = brainClosest.distanceTo(brainWorld);
+
+        const heartClosest = new THREE.Vector3();
+        _hitRay.closestPointToPoint(heartWorld, heartClosest);
+        const heartDist = heartClosest.distanceTo(heartWorld);
+
+        const nearestOrganDist = Math.min(brainDist, heartDist);
+        const nearestOrgan = brainDist < heartDist ? 'brain' : 'heart';
 
         let tier = 'body';
         if (organ === 'brain') tier = 'brain';
         else if (organ === 'heart') tier = 'heart';
 
-        if (!shotData.hit || organ !== 'none') {
-            shotData = { hit:true, organ, tier, animal, impactPoint:impactWorld };
-        }
+        shotData = { hit:true, organ, tier, animal, impactPoint:impactWorld, nearestOrganDist, nearestOrgan, bodyRadius:animal.bodyRadius };
         break;
     }
     return shotData;
@@ -1152,33 +1159,18 @@ function resolveSpear(spear, shotData) {
         scene.add(flashSphere);
     }
 
-    const organHit = shotData.organ === 'brain' || shotData.organ === 'heart';
-
-    if (shotData.hit && organHit) {
-        // Organ hit — fish is killed
-        state.shake = 25;
-        triggerFlash(0.35);
-        processHit(shotData.animal, shotData.tier);
-        const tierLabels = { brain:'BRAIN SHOT!', heart:'HEART SHOT!' };
-        const tierColors = { brain:'#ff88cc', heart:'#ef4444' };
-        statusEl.textContent = tierLabels[shotData.organ];
+    if (shotData.hit) {
+        // All body hits kill the fish — scoring varies by proximity to organs
+        const isOrgan = shotData.organ === 'brain' || shotData.organ === 'heart';
+        state.shake = isOrgan ? 25 : 12;
+        triggerFlash(isOrgan ? 0.35 : 0.15);
+        processHit(shotData.animal, shotData);
+        const labels = { brain:'BRAIN SHOT!', heart:'HEART SHOT!', body:'BODY HIT' };
+        const colors = { brain:'#ff88cc', heart:'#ef4444', body:'#fbbf24' };
+        statusEl.textContent = labels[shotData.tier];
         statusEl.className = 'text-xl font-bold';
-        statusEl.style.color = tierColors[shotData.organ];
+        statusEl.style.color = colors[shotData.tier];
         setTimeout(() => showShotAnalysis(shotData), 1200);
-    } else if (shotData.hit) {
-        // Body hit — fish survives
-        state.shake = 10;
-        triggerFlash(0.15);
-        state.isWaitingForAnalysis = false;
-        statusEl.textContent = 'BODY SHOT — NO KILL';
-        statusEl.className = 'text-xl font-bold text-yellow-500';
-        statusEl.style.color = '';
-        // Fish flinches but lives
-        if (shotData.animal) {
-            shotData.animal.speed *= 1.5; // scared, swims faster
-            shotData.animal.baseSpeed *= 1.3;
-        }
-        checkOutOfAmmo();
     } else {
         // Complete miss
         state.shake = 5;
@@ -1192,13 +1184,24 @@ function resolveSpear(spear, shotData) {
     }
 }
 
-function processHit(animal, tier) {
+function processHit(animal, shotData) {
     animal.dead = true;
     state.harvested++;
     let mult = 1;
-    if (tier === 'brain') mult = 5;      // brain shot = 5x points
-    else if (tier === 'heart') mult = 3;  // heart shot = 3x points
-    state.score += animal.type.points * mult;
+    if (shotData.organ === 'brain') {
+        mult = 5; // direct brain hit
+    } else if (shotData.organ === 'heart') {
+        mult = 3; // direct heart hit
+    } else {
+        // Body hit — multiplier scales with proximity to nearest organ
+        // Close to organ = up to 2x, far from organ = 1x
+        const proximity = 1 - Math.min(shotData.nearestOrganDist / shotData.bodyRadius, 1);
+        mult = 1 + proximity; // 1x to 2x
+    }
+    const pts = Math.round(animal.type.points * mult);
+    shotData.finalPoints = pts;
+    shotData.multiplier = mult;
+    state.score += pts;
     updateUI();
 }
 
@@ -1259,12 +1262,17 @@ function showShotAnalysis(data) {
 
     const { tier, animal, impactPoint } = data;
     if (animal) analysisAnimalName.textContent = animal.type.name;
-    let label = 'BODY HIT', pts = animal.type.points;
-    if (tier === 'brain') { label = 'BRAIN SHOT!'; pts *= 5; }
-    else if (tier === 'heart') { label = 'HEART SHOT!'; pts *= 3; }
+    const pts = data.finalPoints || animal.type.points;
+    const mult = data.multiplier || 1;
+    let label = 'BODY HIT';
+    if (tier === 'brain') label = 'BRAIN SHOT!';
+    else if (tier === 'heart') label = 'HEART SHOT!';
+    if (tier === 'body' && data.nearestOrgan) {
+        label = 'BODY HIT — near ' + data.nearestOrgan;
+    }
     analysisResult.textContent = label;
     analysisResult.className = tier === 'brain' ? 'text-2xl font-black text-pink-400' : tier === 'heart' ? 'text-2xl font-black text-red-400' : 'text-2xl font-black text-yellow-500';
-    analysisScore.textContent = '+' + pts + ' Points';
+    analysisScore.textContent = '+' + pts + ' Points (×' + mult.toFixed(1) + ')';
 
     // Setup 3D feedback scene
     setupFeedback3D(animal, tier, impactPoint);
