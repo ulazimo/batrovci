@@ -202,7 +202,7 @@ let state = {
 let clock, scene, camera, renderer;
 let modelCache = {};
 let yaw = 0, pitch = 0;
-let useGyro = false, gyroAvailable = false, gyroAlpha=0, gyroBeta=0, gyroGamma=0;
+let useGyro = false;
 let lastTouchX = 0, lastTouchY = 0, isTouching = false;
 const SENSITIVITY = 0.003;
 const TOUCH_SENSITIVITY = 0.005;
@@ -565,13 +565,28 @@ function createFishMesh(typeKey) {
     const mesh = template.clone();
     const s = type.scale3d;
     mesh.scale.set(s, s, s);
-    // Tint color
+    // Tint color — use cached materials per species to avoid redundant clones
+    if (!tintedMaterialCache[typeKey]) {
+        tintedMaterialCache[typeKey] = [];
+        template.traverse(child => {
+            if (child.isMesh && child.material) {
+                const m = child.material.clone();
+                m.color.lerp(new THREE.Color(type.color), 0.4);
+                tintedMaterialCache[typeKey].push(m);
+            }
+        });
+    }
+    const cached = tintedMaterialCache[typeKey];
+    let idx = 0;
     mesh.traverse(child => {
-        if (child.isMesh && child.material) {
-            child.material = child.material.clone();
-            child.material.color.lerp(new THREE.Color(type.color), 0.4);
+        if (child.isMesh && child.material && idx < cached.length) {
+            child.material = cached[idx++];
         }
     });
+    // Cache mesh children for fast opacity updates on death
+    const meshChildren = [];
+    mesh.traverse(c => { if (c.isMesh) meshChildren.push(c); });
+    mesh.userData.meshChildren = meshChildren;
     return mesh;
 }
 
@@ -811,7 +826,10 @@ function updateFish(dt) {
             // Death: sink and fade
             a.mesh.position.y -= dt * 3;
             a.fadeAlpha -= dt * 0.8;
-            a.mesh.traverse(c => { if (c.isMesh) { c.material.transparent = true; c.material.opacity = Math.max(0, a.fadeAlpha); }});
+            // Use cached children list (no traverse per frame)
+            const children = a.mesh.userData.meshChildren || [];
+            const op = Math.max(0, a.fadeAlpha);
+            for (const c of children) { c.material.transparent = true; c.material.opacity = op; }
             if (a.fadeAlpha <= 0) {
                 scene.remove(a.mesh);
                 state.animals.splice(i, 1);
@@ -923,7 +941,7 @@ function updateSpears(dt) {
             const p = sp.trailParticles[j];
             p.material.opacity -= dt * 2;
             p.position.y += dt * 0.3;
-            if (p.material.opacity <= 0) { scene.remove(p); sp.trailParticles.splice(j, 1); }
+            if (p.material.opacity <= 0) { p.material.dispose(); scene.remove(p); sp.trailParticles.splice(j, 1); }
         }
 
         if (progress >= 1) {
@@ -936,19 +954,24 @@ function updateSpears(dt) {
 // ============================================================
 // HIT DETECTION
 // ============================================================
+// Reusable objects for hit detection (avoid per-call allocations)
+const _hitRay = new THREE.Ray();
+const _hitSphere = new THREE.Sphere();
+const _hitPoint = new THREE.Vector3();
+const _hitHeart = new THREE.Vector3();
+
 function checkSpearHit(spear) {
-    const ray = new THREE.Ray(spear.origin.clone(), spear.dir.clone().normalize());
+    _hitRay.origin.copy(spear.origin);
+    _hitRay.direction.copy(spear.dir).normalize();
     let shotData = { hit:false, tier:'miss', animal:null };
 
     for (const animal of state.animals) {
         if (animal.dead) continue;
-        const sphere = new THREE.Sphere(animal.mesh.position.clone(), animal.bodyRadius);
-        const intersectPoint = new THREE.Vector3();
-        if (ray.intersectSphere(sphere, intersectPoint)) {
-            // Heart point in world space
-            const heartLocal = animal.heartOffset3D.clone();
-            const heartWorld = heartLocal.applyMatrix4(animal.mesh.matrixWorld);
-            const dist = intersectPoint.distanceTo(heartWorld);
+        _hitSphere.center.copy(animal.mesh.position);
+        _hitSphere.radius = animal.bodyRadius;
+        if (_hitRay.intersectSphere(_hitSphere, _hitPoint)) {
+            _hitHeart.copy(animal.heartOffset3D).applyMatrix4(animal.mesh.matrixWorld);
+            const dist = _hitPoint.distanceTo(_hitHeart);
             const hs = animal.heartRadius3D;
 
             let tier = 'body';
@@ -957,7 +980,7 @@ function checkSpearHit(spear) {
             else if (dist < hs) tier = 'heart';
 
             if (!shotData.hit) {
-                shotData = { hit:true, tier, animal, impactPoint:intersectPoint.clone() };
+                shotData = { hit:true, tier, animal, impactPoint:_hitPoint.clone() };
             }
         }
     }
@@ -1017,7 +1040,8 @@ function processHit(animal, tier) {
 }
 
 function checkOutOfAmmo() {
-    if (state.ammo <= 0 && state.animals.filter(a=>!a.dead).length === 0 && !state.gameOver) {
+    if (state.ammo <= 0 && state.animals.filter(a=>!a.dead).length === 0
+        && state.spears.filter(s=>!s.done).length === 0 && !state.gameOver) {
         setTimeout(() => showEndScreen('DIVE FAILED', 'Out of Spears', 'Retry'), 500);
     }
 }
@@ -1034,6 +1058,7 @@ function updateParticles(dt) {
         p.userData.life -= dt * 2;
         p.material.opacity = p.userData.life * 0.7;
         if (p.userData.life <= 0) {
+            p.material.dispose();
             scene.remove(p);
             state.particles.splice(i, 1);
         }
