@@ -11,8 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deep Sea Spearfishing 3D</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
     <style>
         body { margin:0; overflow:hidden; background:#041525; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; touch-action:none; user-select:none; }
         #game-container { position:relative; width:100vw; height:100vh; }
@@ -135,7 +134,9 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // ============================================================
 // CONSTANTS & FISH DATA
 // ============================================================
@@ -225,7 +226,7 @@ function initScene() {
     renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.insertBefore(renderer.domElement, container.firstChild);
 
     // Lights
@@ -386,7 +387,7 @@ function createEnvironment() {
 }
 
 function loadCorals() {
-    const loader = new THREE.GLTFLoader();
+    const loader = new GLTFLoader();
     loader.load(MODEL_FILES.coral, (gltf) => {
         for (let i = 0; i < 4; i++) {
             const coral = gltf.scene.clone();
@@ -466,7 +467,7 @@ function animateEnvironment(time, dt) {
 // ============================================================
 function loadModels() {
     return new Promise((resolve) => {
-        const loader = new THREE.GLTFLoader();
+        const loader = new GLTFLoader();
         const keys = ['common','round','long','tentacle'];
         let loaded = 0;
         keys.forEach(key => {
