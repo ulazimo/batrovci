@@ -38,7 +38,6 @@
         #mode-select { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,12,28,0.97); z-index:200; }
         .mode-btn { width:90%; max-width:380px; padding:1.3rem 1.4rem; border-radius:1.2rem; border:2px solid #1e3a52; background:#071525; color:white; cursor:pointer; text-align:left; transition:all 0.2s; margin-bottom:1rem; pointer-events:all; }
         .mode-btn:hover { background:#0a1e35; transform:scale(1.02); border-color:#2dd4bf; }
-        #gyro-prompt { position:absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,12,28,0.97); z-index:250; }
     </style>
 </head>
 <body>
@@ -73,16 +72,6 @@
         </button>
     </div>
 
-    <!-- GYRO PERMISSION PROMPT (iOS) -->
-    <div id="gyro-prompt">
-        <div style="text-align:center; color:white; padding:2rem;">
-            <div style="font-size:3rem; margin-bottom:1rem;">📱</div>
-            <div style="font-size:1.2rem; font-weight:900; margin-bottom:0.5rem;">Enable Motion Controls?</div>
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:1.5rem;">Tilt your phone to look around underwater</div>
-            <button id="gyro-yes-btn" style="background:#2dd4bf; color:#0c1a2e; border:none; padding:1rem 2.5rem; border-radius:1rem; font-weight:900; font-size:1rem; cursor:pointer; margin-right:0.5rem;">Enable</button>
-            <button id="gyro-no-btn" style="background:#1e3a52; color:#94a3b8; border:none; padding:1rem 2rem; border-radius:1rem; font-weight:700; font-size:1rem; cursor:pointer;">Use Touch</button>
-        </div>
-    </div>
 
     <!-- TOP HUD -->
     <div class="ui-panel top-hud">
@@ -201,18 +190,11 @@ let state = {
 };
 let clock, scene, camera, renderer;
 let modelCache = {};
-let yaw = 0, pitch = 0;
-let useGyro = false;
-let lastTouchX = 0, lastTouchY = 0, isTouching = false;
-const SENSITIVITY = 0.003;
-const TOUCH_SENSITIVITY = 0.005;
-const YAW_LIMIT = Math.PI / 4;    // ±45 degrees left/right
-const PITCH_LIMIT = Math.PI / 6;  // ±30 degrees up/down
+let isTouching = false;
 
 // Environments
 let seabed, godRays=[], bubbleSystem, causticsPlane;
 let seaweedMeshes=[], waterMesh=null; // cached refs (avoid scene.traverse per frame)
-let gyroEnabled = false; // guard against duplicate listeners
 
 // Scratch vectors (reused every frame to avoid GC pressure)
 const _v1 = new THREE.Vector3();
@@ -594,16 +576,7 @@ function createFishMesh(typeKey) {
 // CAMERA CONTROLS
 // ============================================================
 function initControls() {
-    // Mouse look (desktop)
-    document.addEventListener('mousemove', (e) => {
-        if (state.gameOver || state.analysisActive) return;
-        yaw   -= e.movementX * SENSITIVITY;
-        yaw   = Math.max(-YAW_LIMIT, Math.min(YAW_LIMIT, yaw));
-        pitch -= e.movementY * SENSITIVITY;
-        pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
-    });
-
-    // Mouse aim
+    // Mouse: click to aim, release to fire
     renderer.domElement.addEventListener('mousedown', (e) => {
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         state.isAiming = true;
@@ -615,28 +588,15 @@ function initControls() {
         crosshairEl.classList.remove('aiming');
     });
 
-    // Touch controls
+    // Touch: tap to aim, release to fire
     renderer.domElement.addEventListener('touchstart', (e) => {
         e.preventDefault();
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         isTouching = true;
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
         state.isAiming = true;
         crosshairEl.classList.add('aiming');
     }, {passive:false});
-    renderer.domElement.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (!isTouching || useGyro) return;
-        const dx = e.touches[0].clientX - lastTouchX;
-        const dy = e.touches[0].clientY - lastTouchY;
-        yaw   -= dx * TOUCH_SENSITIVITY;
-        yaw   = Math.max(-YAW_LIMIT, Math.min(YAW_LIMIT, yaw));
-        pitch -= dy * TOUCH_SENSITIVITY;
-        pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
-    }, {passive:false});
+    renderer.domElement.addEventListener('touchmove', (e) => { e.preventDefault(); }, {passive:false});
     renderer.domElement.addEventListener('touchend', (e) => {
         e.preventDefault();
         if (state.isAiming) fire();
@@ -644,88 +604,39 @@ function initControls() {
         isTouching = false;
         crosshairEl.classList.remove('aiming');
     }, {passive:false});
-
-    // Gyroscope
-    initGyro();
 }
 
-function initGyro() {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobile) return;
-
-    const gyroPrompt = document.getElementById('gyro-prompt');
-    const yesBtn = document.getElementById('gyro-yes-btn');
-    const noBtn = document.getElementById('gyro-no-btn');
-
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS — needs permission
-        gyroPrompt.style.display = 'flex';
-        yesBtn.onclick = async () => {
-            try {
-                const perm = await DeviceOrientationEvent.requestPermission();
-                if (perm === 'granted') { useGyro = true; enableGyro(); }
-            } catch(e) {}
-            gyroPrompt.style.display = 'none';
-        };
-        noBtn.onclick = () => { gyroPrompt.style.display = 'none'; };
-    } else if ('DeviceOrientationEvent' in window) {
-        // Android — try directly
-        window.addEventListener('deviceorientation', (e) => {
-            if (e.alpha !== null) { useGyro = true; enableGyro(); }
-        }, { once: true });
-    }
-}
-
-function enableGyro() {
-    if (gyroEnabled) return;
-    gyroEnabled = true;
-    let initialAlpha = null, initialBeta = null;
-    window.addEventListener('deviceorientation', (e) => {
-        if (initialAlpha === null) { initialAlpha = e.alpha; initialBeta = e.beta; }
-        const da = (e.alpha - initialAlpha) * Math.PI / 180;
-        const db = (e.beta - initialBeta) * Math.PI / 180;
-        yaw   = Math.max(-YAW_LIMIT, Math.min(YAW_LIMIT, -da));
-        pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, -db));
-    });
-}
+// Camera target yaw/pitch for smooth tracking
+let camYaw = 0, camPitch = 0;
 
 function updateCamera(dt) {
     const targetFov = state.isAiming ? 40 : 65;
     camera.fov += (targetFov - camera.fov) * 0.12;
     camera.updateProjectionMatrix();
 
-    // When aiming, track the closest alive fish (blend camera toward it)
+    let targetYaw = 0, targetPitch = 0;
+
+    // When aiming, smoothly track the closest alive fish
     if (state.isAiming) {
         const aliveArr = state.animals.filter(a => !a.dead);
         if (aliveArr.length > 0) {
-            // Find closest fish to camera center ray
             let closest = null, closestDist = Infinity;
-            const camForward = _v1.set(0,0,-1).applyQuaternion(camera.quaternion);
             for (const a of aliveArr) {
-                _v2.copy(a.mesh.position).sub(camera.position);
-                const dot = _v2.dot(camForward);
-                if (dot > 0) { // in front
-                    const d = _v2.length();
-                    if (d < closestDist) { closestDist = d; closest = a; }
-                }
+                const d = a.mesh.position.distanceTo(camera.position);
+                if (d < closestDist) { closestDist = d; closest = a; }
             }
-            if (!closest) closest = aliveArr[0];
-
-            // Compute yaw/pitch to look at the fish
-            _v2.copy(closest.mesh.position).sub(camera.position);
-            const targetYaw = Math.atan2(-_v2.x, -_v2.z);
-            const targetPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
-
-            // Blend: 40% fish tracking + 60% player input (allows aiming around the fish)
-            const blendedYaw = targetYaw * 0.4 + yaw * 0.6;
-            const blendedPitch = targetPitch * 0.4 + pitch * 0.6;
-            camera.rotation.set(blendedPitch, blendedYaw, 0, 'YXZ');
-        } else {
-            camera.rotation.set(pitch, yaw, 0, 'YXZ');
+            if (closest) {
+                _v2.copy(closest.mesh.position).sub(camera.position);
+                targetYaw = Math.atan2(-_v2.x, -_v2.z);
+                targetPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
+            }
         }
-    } else {
-        camera.rotation.set(pitch, yaw, 0, 'YXZ');
     }
+
+    // Smooth lerp toward target
+    camYaw += (targetYaw - camYaw) * 0.08;
+    camPitch += (targetPitch - camPitch) * 0.08;
+    camera.rotation.set(camPitch, camYaw, 0, 'YXZ');
 
     // Screen shake
     if (state.shake > 0.01) {
@@ -1170,7 +1081,7 @@ window.goModeSelect = function() {
     modeSelect.style.display = 'flex';
     cleanupScene();
     state.gameOver = true;
-    yaw = 0; pitch = 0;
+    camYaw = 0; camPitch = 0;
 };
 
 // ============================================================
