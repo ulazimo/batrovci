@@ -33,6 +33,7 @@ function saveJourneySnapshot() {
     highestUnlocked: progress.highestUnlocked,
     stars: Array.isArray(progress.stars) ? [...progress.stars] : [],
     winStreak: progress.winStreak,
+    coins: progress.coins || 0,
     boosterCounts: { ...boosterCounts },
     specialInventory: progress.specialInventory ? { ...progress.specialInventory } : {},
   };
@@ -45,6 +46,7 @@ function restoreJourneySnapshot(style) {
     progress.highestUnlocked = snap.highestUnlocked || 0;
     progress.stars = Array.isArray(snap.stars) ? [...snap.stars] : new Array(LEVELS.length).fill(0);
     progress.winStreak = snap.winStreak || 0;
+    progress.coins = snap.coins || 0;
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
     if (snap.boosterCounts) Object.assign(boosterCounts, snap.boosterCounts);
     if (snap.specialInventory) progress.specialInventory = { ...snap.specialInventory };
@@ -53,6 +55,7 @@ function restoreJourneySnapshot(style) {
     progress.highestUnlocked = 0;
     progress.stars = new Array(LEVELS.length).fill(0);
     progress.winStreak = 0;
+    progress.coins = 0;
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
   }
   // Ensure stars array matches LEVELS length
@@ -85,6 +88,7 @@ function resetJourneyProgress() {
   progress.highestUnlocked = 0;
   progress.stars = new Array(LEVELS.length).fill(0);
   progress.winStreak = 0;
+  progress.coins = 0;
   delete progress.levelRewards;
   delete progress.comboMapping;
   Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
@@ -866,6 +870,12 @@ function confirmPreLevel() {
 function updateBanner() {
   const levelEl = document.getElementById('banner-level');
   if (levelEl) levelEl.textContent = `Level ${LEVELS[currentLevelIndex].id}`;
+  updateCoinDisplay();
+}
+
+function updateCoinDisplay() {
+  const el = document.getElementById('coin-count');
+  if (el) el.textContent = progress.coins || 0;
 }
 
 // ============================================================
@@ -2221,12 +2231,15 @@ function levelWon() {
   if (currentLevelIndex+1 > progress.highestUnlocked && currentLevelIndex+1 < LEVELS.length)
     progress.highestUnlocked = currentLevelIndex+1;
   if (isWinStreakActive()) progress.winStreak++;
+  const coinsEarned = Math.floor(Math.random() * 5) + 8; // 8-12
+  progress.coins = (progress.coins || 0) + coinsEarned;
+  updateCoinDisplay();
   saveJourneySnapshot();
   saveProgress();
   updateBanner();
 
   // Show win banner over the board, then open overlay
-  showBoardBanner('win', '🎉 LEVEL COMPLETE!', `Score: ${score}`);
+  showBoardBanner('win', '🎉 LEVEL COMPLETE!', `Score: ${score} · +${coinsEarned} <img src="icons/coin_icon.png" class="coin-icon" alt="coins">`);
   setTimeout(() => hideBoardBanner(() => showWinOverlay()), 1800);
   SFX.win();
   launchConfetti();
