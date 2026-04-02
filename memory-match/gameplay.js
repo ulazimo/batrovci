@@ -864,16 +864,8 @@ function confirmPreLevel() {
 }
 
 function updateBanner() {
-  document.getElementById('banner-level').textContent = `Level ${LEVELS[currentLevelIndex].id}`;
-  const pct = getStreakRevealPct();
-  const streakText = progress.winStreak > 0
-    ? `🔥 ${progress.winStreak} (${Math.round(pct * 100)}% reveal)`
-    : '';
-  document.getElementById('banner-streak').textContent = streakText;
-  document.getElementById('banner-dots').innerHTML = LEVELS.map((_, i) => {
-    const cls = i < currentLevelIndex ? 'dot done' : i === currentLevelIndex ? 'dot current' : 'dot';
-    return `<div class="${cls}"></div>`;
-  }).join('');
+  const levelEl = document.getElementById('banner-level');
+  if (levelEl) levelEl.textContent = `Level ${LEVELS[currentLevelIndex].id}`;
 }
 
 // ============================================================

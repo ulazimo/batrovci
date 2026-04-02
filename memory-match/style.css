@@ -14,12 +14,18 @@ body {
   width: 100%; max-width: 500px; background: #0f3460;
   padding: 5px 16px; display: flex; align-items: center; justify-content: space-between;
 }
-#level-banner .level-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #4fc3f7; text-transform: uppercase; }
-#level-banner .streak-label { font-size: 11px; color: #f0c040; }
+#level-banner .level-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #4fc3f7; text-transform: uppercase; flex:1; }
+#level-banner .settings-gear { flex:1; text-align:right; }
 #level-banner .level-dots { display: flex; gap: 4px; }
 #level-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6a; }
-#level-banner .dot.done { background: #4fc3f7; }
-#level-banner .dot.current { background: #f0c040; }
+.coin-pill {
+  display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,215,0,.3);
+  font-size:14px;font-weight:800;color:#f0c040;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+.coin-icon { width:14px;height:14px;object-fit:contain; }
+.coin-pill #coin-count { font-weight:900; }
 
 #header {
   width: 100%; max-width: 500px; display: flex; justify-content: space-between;
@@ -345,7 +351,7 @@ body {
 /* ================================================================
    LEVEL SELECT
 ================================================================ */
-#level-select .overlay-box { max-width:400px;max-height:90vh;overflow:hidden; }
+#level-select .overlay-box { max-width:400px; }
 #level-select h2 { color:#4fc3f7; }
 #level-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;max-height:55vh;overflow-y:scroll;padding:4px 2px; }
 #level-grid::-webkit-scrollbar { width:6px; }
