@@ -133,7 +133,7 @@
             font-size: 20px; color: #3a5a48;
         }
         .ls-back {
-            margin-top: 28px;
+            margin-top: 0;
         }
 
         /* ── HUD ── */
@@ -195,6 +195,56 @@
         }
         #level-complete .btn { margin-bottom: 10px; width: 200px; text-align: center; }
 
+        /* ── Shop ── */
+        #shop { z-index: 55; }
+        #shop .shop-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px; font-weight: 700;
+            color: #fff; margin-bottom: 6px;
+            letter-spacing: 2px;
+        }
+        .shop-coins {
+            font-size: 20px; color: #e6c619;
+            margin-bottom: 20px;
+        }
+        .shop-grid {
+            display: flex; flex-wrap: wrap;
+            gap: 12px; justify-content: center;
+            max-width: 500px; padding: 0 16px;
+        }
+        .cue-card {
+            width: 110px;
+            background: linear-gradient(180deg, #1a3a28, #0f2a1a);
+            border: 2px solid #2a5a3a;
+            border-radius: 10px;
+            padding: 12px 8px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 6px;
+            transition: border-color 0.2s;
+        }
+        .cue-card.equipped { border-color: #1a7a3a; box-shadow: 0 0 12px rgba(26,122,58,0.4); }
+        .cue-card .cue-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; color: #fff; font-weight: 700;
+        }
+        .cue-card .cue-preview {
+            width: 90px; height: 20px;
+            border-radius: 4px;
+            margin: 4px 0;
+        }
+        .cue-card .cue-stats {
+            font-size: 10px; color: #7ab891;
+            text-align: center; line-height: 1.4;
+        }
+        .cue-card .cue-price {
+            font-size: 13px; color: #e6c619; font-weight: 700;
+        }
+        .cue-card .btn { font-size: 11px; padding: 5px 16px; }
+        .cue-card .btn.btn-equipped {
+            background: #2a5a3a; border-color: #3a8a5a;
+            cursor: default; opacity: 0.7;
+        }
+
         /* ── Spin Selector ── */
         #spin-selector {
             position: fixed;
@@ -243,7 +293,10 @@
     <div id="level-select" class="overlay hidden">
         <div class="ls-title">SELECT LEVEL</div>
         <div class="levels-grid" id="levels-grid"></div>
-        <button class="btn btn-small btn-outline ls-back" onclick="showTitle()">BACK</button>
+        <div style="display:flex;gap:10px;margin-top:28px">
+            <button class="btn btn-small" onclick="openShop()">🪙 SHOP</button>
+            <button class="btn btn-small btn-outline" onclick="showTitle()">BACK</button>
+        </div>
     </div>
 
     <!-- HUD -->
@@ -252,6 +305,7 @@
             <div class="hud-level" id="hud-level-name"></div>
             <div class="hud-strokes" id="hud-strokes">Strokes: 0</div>
             <div class="hud-par" id="hud-par">Par: 3</div>
+            <div style="font-size:13px;color:#e6c619;margin-top:4px" id="hud-coins">🪙 0</div>
         </div>
         <div class="hud-right">
             <div class="hud-pause" onclick="togglePause()">⏸</div>
@@ -274,6 +328,14 @@
         <button class="btn btn-small" onclick="togglePause()">RESUME</button>
         <button class="btn btn-small btn-outline" onclick="restartLevel()">RESTART</button>
         <button class="btn btn-small btn-outline" onclick="exitToLevelSelect()">LEVEL SELECT</button>
+    </div>
+
+    <!-- Shop -->
+    <div id="shop" class="overlay hidden">
+        <div class="shop-title">CUE SHOP</div>
+        <div class="shop-coins" id="shop-coins">🪙 0</div>
+        <div class="shop-grid" id="shop-grid"></div>
+        <button class="btn btn-small btn-outline" style="margin-top:20px" onclick="closeShop()">BACK</button>
     </div>
 
     <!-- Level Complete -->
@@ -311,6 +373,42 @@ const CUE_LENGTH = 160;
 const CUE_TIP_WIDTH = 4;
 const CUE_BUTT_WIDTH = 9;
 const GUIDELINE_MAX = 500;
+
+// ── Cue Definitions ──
+const CUES = [
+    {
+        id: 'starter', name: 'Starter', price: 0,
+        guidelineCap: 250, maxPower: 16,
+        tipWidth: 4, buttWidth: 9, length: 160,
+        colors: { tip: '#E8D8B8', wood: '#6B3A1E', butt: '#2A1A0A', highlight: '#fff' },
+        glow: false
+    },
+    {
+        id: 'bronze', name: 'Bronze', price: 50,
+        guidelineCap: 320, maxPower: 18,
+        tipWidth: 4.5, buttWidth: 10, length: 170,
+        colors: { tip: '#F0D0A0', wood: '#8B4513', butt: '#3A1A0A', highlight: '#CD7F32' },
+        glow: false
+    },
+    {
+        id: 'silver', name: 'Silver', price: 150,
+        guidelineCap: 400, maxPower: 20,
+        tipWidth: 4.5, buttWidth: 10, length: 175,
+        colors: { tip: '#F5F5F5', wood: '#708090', butt: '#2F4F4F', highlight: '#C0C0C0' },
+        glow: false
+    },
+    {
+        id: 'gold', name: 'Gold', price: 400,
+        guidelineCap: 500, maxPower: 22,
+        tipWidth: 5, buttWidth: 11, length: 180,
+        colors: { tip: '#FFF8DC', wood: '#DAA520', butt: '#8B6914', highlight: '#FFD700' },
+        glow: true
+    }
+];
+
+function getEquippedCue() {
+    return CUES.find(c => c.id === progress.equippedCue) || CUES[0];
+}
 
 // ── Colors ──
 const C = {
@@ -354,9 +452,14 @@ let progress = loadProgress();
 function loadProgress() {
     try {
         const d = JSON.parse(localStorage.getItem('poolBattle_progress'));
-        if (d && d.version === 1) return d;
+        if (d && d.version === 1) {
+            if (d.coins == null) d.coins = 0;
+            if (!d.ownedCues) d.ownedCues = ['starter'];
+            if (!d.equippedCue) d.equippedCue = 'starter';
+            return d;
+        }
     } catch(e) {}
-    return { version: 1, levels: { 1: { unlocked: true, stars: 0, best: null } } };
+    return { version: 1, levels: { 1: { unlocked: true, stars: 0, best: null } }, coins: 0, ownedCues: ['starter'], equippedCue: 'starter' };
 }
 function saveProgress() {
     localStorage.setItem('poolBattle_progress', JSON.stringify(progress));
@@ -649,6 +752,7 @@ function updateHUD() {
     document.getElementById('hud-level-name').textContent = `Level ${level.id}: ${level.name}`;
     document.getElementById('hud-strokes').textContent = `Strokes: ${strokes}`;
     document.getElementById('hud-par').textContent = `Par: ${level.par}`;
+    document.getElementById('hud-coins').textContent = `🪙 ${progress.coins}`;
 }
 
 function togglePause() {
@@ -676,6 +780,73 @@ function exitToLevelSelect() {
     showLevelSelect();
 }
 
+// ── Shop ──
+function openShop() {
+    hide('level-select');
+    show('shop');
+    renderShop();
+}
+
+function closeShop() {
+    hide('shop');
+    show('level-select');
+    renderLevelGrid();
+}
+
+function renderShop() {
+    document.getElementById('shop-coins').textContent = `🪙 ${progress.coins}`;
+    const grid = document.getElementById('shop-grid');
+    grid.innerHTML = '';
+    for (const cue of CUES) {
+        const owned = progress.ownedCues.includes(cue.id);
+        const equipped = progress.equippedCue === cue.id;
+        const canAfford = progress.coins >= cue.price;
+
+        const card = document.createElement('div');
+        card.className = 'cue-card' + (equipped ? ' equipped' : '');
+
+        // Preview bar with cue gradient
+        const previewStyle = `background:linear-gradient(90deg, ${cue.colors.tip}, ${cue.colors.wood} 15%, ${cue.colors.wood} 85%, ${cue.colors.butt})`;
+
+        let btnHtml;
+        if (equipped) {
+            btnHtml = `<button class="btn btn-small btn-equipped">EQUIPPED</button>`;
+        } else if (owned) {
+            btnHtml = `<button class="btn btn-small" onclick="equipCue('${cue.id}')">EQUIP</button>`;
+        } else if (canAfford) {
+            btnHtml = `<button class="btn btn-small" onclick="buyCue('${cue.id}')">BUY</button>`;
+        } else {
+            btnHtml = `<button class="btn btn-small btn-outline" style="opacity:0.4;cursor:default">🪙 ${cue.price}</button>`;
+        }
+
+        card.innerHTML = `
+            <div class="cue-name">${cue.name}</div>
+            <div class="cue-preview" style="${previewStyle}"></div>
+            <div class="cue-stats">Power: ${cue.maxPower}<br>Guide: ${cue.guidelineCap}</div>
+            ${owned ? '' : `<div class="cue-price">🪙 ${cue.price}</div>`}
+            ${btnHtml}
+        `;
+        grid.appendChild(card);
+    }
+}
+
+function buyCue(id) {
+    const cue = CUES.find(c => c.id === id);
+    if (!cue || progress.coins < cue.price) return;
+    progress.coins -= cue.price;
+    progress.ownedCues.push(cue.id);
+    progress.equippedCue = cue.id;
+    saveProgress();
+    renderShop();
+}
+
+function equipCue(id) {
+    if (!progress.ownedCues.includes(id)) return;
+    progress.equippedCue = id;
+    saveProgress();
+    renderShop();
+}
+
 function nextLevel() {
     if (currentLevelIdx + 1 < LEVELS.length) {
         loadLevel(currentLevelIdx + 1);
@@ -693,6 +864,10 @@ function completeLevel() {
     if (diff <= 0) stars = 3;
     else if (diff === 1) stars = 2;
     else if (diff === 2) stars = 1;
+
+    // Coin reward
+    const coinReward = stars === 3 ? 30 : stars === 2 ? 20 : stars === 1 ? 10 : 5;
+    progress.coins += coinReward;
 
     // Update progress
     const p = progress.levels[level.id] || { unlocked: true, stars: 0, best: null };
@@ -715,7 +890,8 @@ function completeLevel() {
     document.getElementById('lc-stars').style.color = '#e6c619';
     document.getElementById('lc-stats').innerHTML =
         `Strokes: ${strokes}<br>Par: ${level.par}` +
-        (diff <= 0 ? '<br><span style="color:#1a7a3a">Perfect!</span>' : '');
+        (diff <= 0 ? '<br><span style="color:#1a7a3a">Perfect!</span>' : '') +
+        `<br><span style="color:#e6c619">+${coinReward} 🪙</span>`;
     document.getElementById('lc-next-btn').style.display =
         (currentLevelIdx + 1 < LEVELS.length) ? 'inline-block' : 'none';
     show('level-complete');
@@ -909,6 +1085,17 @@ function updateBall(dt) {
     // Move (dt-scaled)
     ball.x += ball.vx * scale;
     ball.y += ball.vy * scale;
+
+    // Out of bounds check - reset ball if it escapes
+    if (ball.x < -BALL_RADIUS * 2 || ball.x > level.width + BALL_RADIUS * 2 ||
+        ball.y < -BALL_RADIUS * 2 || ball.y > level.height + BALL_RADIUS * 2) {
+        ball.x = ball.lastSafeX;
+        ball.y = ball.lastSafeY;
+        ball.vx = 0; ball.vy = 0;
+        state = 'PLAYING';
+        show('spin-selector');
+        return;
+    }
 
     // Friction (with spin influence)
     let fric = getSurfaceFriction();
@@ -1153,7 +1340,7 @@ function handleEnd(e) {
     }
 
     // Shoot!
-    const power = aim.power * MAX_POWER;
+    const power = aim.power * getEquippedCue().maxPower;
     // Direction is opposite to where the user is pulling
     ball.vx = -Math.cos(aim.angle) * power;
     ball.vy = -Math.sin(aim.angle) * power;
@@ -1330,18 +1517,18 @@ function drawBall() {
     ctx.fill();
 }
 
-const GUIDELINE_CAP = 250;
-
 function drawGuideline() {
     if (aim.power < 0.05) return;
+    const cue = getEquippedCue();
+    const guidelineCap = cue.guidelineCap;
 
     const dirX = -Math.cos(aim.angle);
     const dirY = -Math.sin(aim.angle);
 
-    // Guideline length scales with power, capped at GUIDELINE_CAP
+    // Guideline length scales with power, capped by equipped cue
     const fullLen = aim.power * GUIDELINE_MAX;
-    const visibleLen = Math.min(fullLen, GUIDELINE_CAP);
-    const capped = fullLen > GUIDELINE_CAP;
+    const visibleLen = Math.min(fullLen, guidelineCap);
+    const capped = fullLen > guidelineCap;
 
     const hit = castRay(ball.x, ball.y, dirX, dirY, visibleLen);
     const rayDist = hit ? hit.t : visibleLen;
@@ -1403,31 +1590,47 @@ function drawGuideline() {
 }
 
 function drawCueStick() {
+    const cue = getEquippedCue();
     const gap = 12 + aim.power * 70;
 
     ctx.save();
     ctx.translate(ball.x, ball.y);
     ctx.rotate(aim.angle);
 
-    // Cue drawn along positive X from ball, with gap
     const startX = gap;
-    const endX = gap + CUE_LENGTH;
+    const endX = gap + cue.length;
+
+    // Glow effect for gold cue
+    if (cue.glow) {
+        ctx.shadowColor = cue.colors.highlight;
+        ctx.shadowBlur = 12;
+    }
 
     // Cue body (tapered)
     ctx.beginPath();
-    ctx.moveTo(startX, -CUE_TIP_WIDTH / 2);
-    ctx.lineTo(endX, -CUE_BUTT_WIDTH / 2);
-    ctx.lineTo(endX, CUE_BUTT_WIDTH / 2);
-    ctx.lineTo(startX, CUE_TIP_WIDTH / 2);
+    ctx.moveTo(startX, -cue.tipWidth / 2);
+    ctx.lineTo(endX, -cue.buttWidth / 2);
+    ctx.lineTo(endX, cue.buttWidth / 2);
+    ctx.lineTo(startX, cue.tipWidth / 2);
     ctx.closePath();
 
     const grad = ctx.createLinearGradient(startX, 0, endX, 0);
-    grad.addColorStop(0, C.cueTip);
-    grad.addColorStop(0.15, C.cueWood);
-    grad.addColorStop(0.85, C.cueWood);
-    grad.addColorStop(1, C.cueButt);
+    grad.addColorStop(0, cue.colors.tip);
+    grad.addColorStop(0.15, cue.colors.wood);
+    grad.addColorStop(0.85, cue.colors.wood);
+    grad.addColorStop(1, cue.colors.butt);
     ctx.fillStyle = grad;
     ctx.fill();
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // Accent stripe
+    if (cue.id !== 'starter') {
+        const midX = startX + (endX - startX) * 0.4;
+        ctx.fillStyle = cue.colors.highlight;
+        ctx.fillRect(midX, -cue.tipWidth / 2 - 0.5, 4, cue.tipWidth + 1);
+    }
 
     // Tip highlight
     ctx.fillStyle = '#fff';
