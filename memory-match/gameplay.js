@@ -36,6 +36,8 @@ function saveJourneySnapshot() {
     coins: progress.coins || 0,
     boosterCounts: { ...boosterCounts },
     specialInventory: progress.specialInventory ? { ...progress.specialInventory } : {},
+    seenSpecials: progress.seenSpecials ? [...progress.seenSpecials] : [],
+    seenBoosters: progress.seenBoosters ? [...progress.seenBoosters] : [],
   };
 }
 
@@ -50,12 +52,16 @@ function restoreJourneySnapshot(style) {
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
     if (snap.boosterCounts) Object.assign(boosterCounts, snap.boosterCounts);
     if (snap.specialInventory) progress.specialInventory = { ...snap.specialInventory };
+    progress.seenSpecials = snap.seenSpecials ? [...snap.seenSpecials] : [];
+    progress.seenBoosters = snap.seenBoosters ? [...snap.seenBoosters] : [];
   } else {
     // Fresh journey
     progress.highestUnlocked = 0;
     progress.stars = new Array(LEVELS.length).fill(0);
     progress.winStreak = 0;
     progress.coins = 0;
+    progress.seenSpecials = [];
+    progress.seenBoosters = [];
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
   }
   // Ensure stars array matches LEVELS length
@@ -506,15 +512,15 @@ function updateCoverageIndicators() {
 }
 
 const BOOSTERS = [
-  { id:'peek',      icon:'👁',  desc:'Reveal one card by tapping it',                               needsTap:true  },
-  { id:'random3',   icon:'🎲',  desc:'Reveal 3 random face-down cards',                             needsTap:false },
-  { id:'cross',     icon:'✚',  desc:'Reveal cards in a cross around the card you tap',              needsTap:true  },
-  { id:'row',       icon:'↔',  desc:'Reveal the entire row of the card you tap',                    needsTap:true  },
-  { id:'col',       icon:'↕',  desc:'Reveal the entire column of the card you tap',                 needsTap:true  },
-  { id:'neighbor',  icon:'🔗',  desc:'Reveal same-color neighbors around the last revealed card',   needsTap:false },
-  { id:'colorpick', icon:'🎨',  desc:'Choose a color and reveal 3 cards of that color',             needsTap:false },
-  { id:'shield',    icon:'🛡',  desc:'Next 2 wrong-color reveals won\'t break your combo',          needsTap:false },
-  { id:'joker',     icon:'🃏',  desc:'Tap a card — it acts as your last-played card (copies its color or special)',  needsTap:true  },
+  { id:'peek',      icon:'👁',  name:'Peek',        desc:'Reveal one card by tapping it',                               needsTap:true  },
+  { id:'random3',   icon:'🎲',  name:'Random 3',    desc:'Reveal 3 random face-down cards',                             needsTap:false },
+  { id:'cross',     icon:'✚',  name:'Cross Reveal', desc:'Reveal cards in a cross around the card you tap',              needsTap:true  },
+  { id:'row',       icon:'↔',  name:'Row Reveal',   desc:'Reveal the entire row of the card you tap',                    needsTap:true  },
+  { id:'col',       icon:'↕',  name:'Col Reveal',   desc:'Reveal the entire column of the card you tap',                 needsTap:true  },
+  { id:'neighbor',  icon:'🔗',  name:'Neighbor',     desc:'Reveal same-color neighbors around the last revealed card',   needsTap:false },
+  { id:'colorpick', icon:'🎨',  name:'Color Pick',   desc:'Choose a color and reveal 3 cards of that color',             needsTap:false },
+  { id:'shield',    icon:'🛡',  name:'Shield',       desc:'Next 2 wrong-color reveals won\'t break your combo',          needsTap:false },
+  { id:'joker',     icon:'🃏',  name:'Joker',        desc:'Tap a card — it acts as your last-played card (copies its color or special)',  needsTap:true  },
 ];
 let boosterCounts = {};
 
@@ -678,49 +684,64 @@ function advanceTutorial(trigger) {
 // ============================================================
 // SPECIAL CARD TUTORIALS — show popup first time each type appears
 // ============================================================
-let specialTutorialQueue = [];
-let specialTutorialShowing = false;
+let itemTutorialQueue = []; // { type:'special'|'booster', icon, name, desc, id }
+let itemTutorialShowing = false;
 
 function checkSpecialTutorials() {
   if (!progress.seenSpecials) progress.seenSpecials = [];
-  const newSpecials = [];
   board.forEach(card => {
     if (card && card.special && !progress.seenSpecials.includes(card.special)) {
-      if (!newSpecials.includes(card.special)) newSpecials.push(card.special);
+      const spec = getSpecialType(card.special);
+      if (spec && !itemTutorialQueue.some(q => q.id === card.special)) {
+        itemTutorialQueue.push({ type:'special', id: card.special, icon: spec.icon, name: spec.name, desc: spec.desc });
+      }
     }
   });
-  if (newSpecials.length > 0) {
-    specialTutorialQueue.push(...newSpecials);
-    showNextSpecialTutorial();
-  }
+  if (itemTutorialQueue.length > 0 && !itemTutorialShowing) showNextItemTutorial();
 }
 
-function showNextSpecialTutorial() {
-  if (specialTutorialQueue.length === 0) {
-    specialTutorialShowing = false;
+function checkBoosterTutorials() {
+  if (!progress.seenBoosters) progress.seenBoosters = [];
+  BOOSTERS.forEach(b => {
+    if (boosterCounts[b.id] > 0 && !progress.seenBoosters.includes(b.id)) {
+      if (!itemTutorialQueue.some(q => q.id === 'booster_' + b.id)) {
+        itemTutorialQueue.push({ type:'booster', id: 'booster_' + b.id, icon: b.icon, name: b.name, desc: b.desc });
+      }
+    }
+  });
+  if (itemTutorialQueue.length > 0 && !itemTutorialShowing) showNextItemTutorial();
+}
+
+function showNextItemTutorial() {
+  if (itemTutorialQueue.length === 0) {
+    itemTutorialShowing = false;
     return;
   }
-  specialTutorialShowing = true;
+  itemTutorialShowing = true;
   inputLocked = true;
-  const specId = specialTutorialQueue.shift();
-  const spec = getSpecialType(specId);
-  if (!spec) { showNextSpecialTutorial(); return; }
+  const item = itemTutorialQueue.shift();
 
-  document.getElementById('special-tut-icon').textContent = spec.icon;
-  document.getElementById('special-tut-name').textContent = spec.name;
-  document.getElementById('special-tut-desc').textContent = spec.desc;
+  document.getElementById('special-tut-icon').textContent = item.icon;
+  document.getElementById('special-tut-name').textContent = item.name;
+  document.getElementById('special-tut-desc').textContent = item.desc;
   document.getElementById('special-tutorial').classList.add('active');
 
-  progress.seenSpecials.push(specId);
+  if (item.type === 'special') {
+    if (!progress.seenSpecials) progress.seenSpecials = [];
+    progress.seenSpecials.push(item.id);
+  } else {
+    if (!progress.seenBoosters) progress.seenBoosters = [];
+    progress.seenBoosters.push(item.id.replace('booster_', ''));
+  }
   saveProgress();
 }
 
 function dismissSpecialTutorial() {
   document.getElementById('special-tutorial').classList.remove('active');
-  if (specialTutorialQueue.length > 0) {
-    setTimeout(showNextSpecialTutorial, 300);
+  if (itemTutorialQueue.length > 0) {
+    setTimeout(showNextItemTutorial, 300);
   } else {
-    specialTutorialShowing = false;
+    itemTutorialShowing = false;
     inputLocked = false;
   }
 }
@@ -1081,7 +1102,8 @@ function startGame(preplacedSpecials) {
   }
 
   // Show special card tutorial popups for any new types on the board
-  setTimeout(() => checkSpecialTutorials(), 500);
+  // Show tutorials for new specials and boosters with a delay
+  setTimeout(() => { checkBoosterTutorials(); checkSpecialTutorials(); }, 500);
 }
 
 function retryLevel() { showPreLevel(); }
@@ -2119,7 +2141,7 @@ function endTurn(manual, perfectSweep) {
           const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
           if (allRevealed.length > 0) lastRevealedCards = allRevealed;
           const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
-          const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!specialTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!specialTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };
+          const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!itemTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!itemTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };
           if (allRevealed.length > 0) {
             setTimeout(() => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
