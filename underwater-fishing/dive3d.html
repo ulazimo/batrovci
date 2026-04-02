@@ -216,8 +216,8 @@ let clock, scene, camera, renderer;
 let modelCache = {};
 let isTouching = false;
 let aimYaw = 0, aimPitch = 0; // absolute aim direction while aiming
-const AIM_SENSITIVITY = 0.0012;
-const AIM_TOUCH_SENSITIVITY = 0.002;
+const AIM_SENSITIVITY = 0.0013;
+const AIM_TOUCH_SENSITIVITY = 0.0022;
 const AIM_LIMIT = Math.PI / 3; // ±60 degrees — full freedom to aim around
 let lastTouchX = 0, lastTouchY = 0;
 
@@ -1480,10 +1480,14 @@ function animate() {
     const dt = Math.min(clock.getDelta(), 0.1);
     const time = clock.getElapsedTime();
 
+    // Slow-mo when zoomed in (aiming or tracking spear)
+    const slowMo = (state.isAiming || state.trackingSpear) ? 0.8 : 1.0;
+    const gameDt = dt * slowMo;
+
     if (!state.gameOver && !state.analysisActive) {
-        updateCamera(dt);
-        updateFish(dt);
-        updateSpears(dt);
+        updateCamera(dt); // camera at full speed
+        updateFish(gameDt);
+        updateSpears(gameDt);
     }
     updateParticles(dt);
     updateFlash(dt);
