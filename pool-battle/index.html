@@ -1570,7 +1570,7 @@ function drawGuideline() {
         const refY = dirY - 2 * dot * hit.ny;
 
         // Reflection also limited by remaining visible budget
-        const refBudget = Math.min(visibleLen - rayDist, GUIDELINE_CAP * 0.4);
+        const refBudget = Math.min(visibleLen - rayDist, guidelineCap * 0.4);
         if (refBudget > 10) {
             ctx.beginPath();
             ctx.moveTo(hit.x, hit.y);
