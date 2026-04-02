@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3457", "."],
       "port": 3457
+    },
+    {
+      "name": "memory-match",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3458", "."],
+      "port": 3458
     }
   ]
 }

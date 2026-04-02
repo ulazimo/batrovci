@@ -89,10 +89,39 @@ body {
   border:1.5px solid #fff;box-shadow:0 0 6px rgba(79,195,247,.6);
 }
 
+/* Pre-level board preview */
+.pre-level-mini-grid {
+  display:grid;gap:3px;width:140px;margin:4px auto 8px;
+}
+.pre-level-mini-cell {
+  width:100%;aspect-ratio:1;background:#2a2a5a;border-radius:3px;
+}
+.pre-level-mini-cell.locked {
+  background:#6a4a2a;border:1px solid #f0c040;
+}
+.pre-level-mini-cell.disabled {
+  background:#888;border:1px solid #666;opacity:.5;
+}
+
+/* Pre-level rewards */
+.pre-level-rewards {
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0 8px;
+}
+.pre-level-reward-pill {
+  display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;
+  background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);font-size:12px;font-weight:600;color:#f0c040;
+}
+.pre-level-reward-pill .reward-icon { font-size:14px; }
+
 /* Pre-level goals */
-.pre-level-goals { text-align:left;width:100%;padding:0 10px; }
-.pre-level-goal-title { font-size:14px;font-weight:700;color:#4fc3f7;margin:12px 0 6px;text-transform:uppercase;letter-spacing:1px; }
-.pre-level-goal-item { font-size:13px;color:#ccc;padding:3px 0; }
+.pre-level-goals { width:100%;padding:0; }
+.pre-level-goal-title { font-size:13px;font-weight:700;color:#4fc3f7;margin:10px 0 8px;text-transform:uppercase;letter-spacing:1px;text-align:center; }
+.pre-level-goal-pills { display:flex;flex-wrap:wrap;gap:6px;justify-content:center; }
+.pre-level-goal-pill {
+  display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;
+  background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.3);font-size:14px;font-weight:600;color:#e0e0e0;
+}
+.pre-level-goal-pill .goal-pill-icon { font-size:16px; }
 
 #chain-indicator {
   width: 100%; max-width: 500px; height: 34px; display: flex; align-items: center;
@@ -346,6 +375,10 @@ body {
 .overlay-btn { padding:12px 32px;font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;color:#fff;transition:transform .15s;width:100%; }
 .overlay-btn:active { transform:scale(.95); }
 .overlay-btn.primary   { background:linear-gradient(135deg,#0f3460,#533483); }
+.overlay-btn.btn-green { background:linear-gradient(135deg,#1a8a4a,#2ecc71);color:#fff; }
+.overlay-btn.btn-green:hover { filter:brightness(1.1); }
+.overlay-btn.btn-red   { background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c; }
+.overlay-btn.btn-red:hover { background:rgba(231,76,60,.25); }
 .overlay-btn.secondary { background:#2a2a4a;border:1px solid #3a3a6a; }
 
 /* Progression picker buttons */

@@ -122,8 +122,8 @@
     <div class="stars" id="win-stars"></div>
     <div class="sub" id="win-score"></div>
     <div style="font-size:15px;font-weight:700;min-height:22px;" id="win-streak"></div>
-    <div id="win-rewards" style="font-size:14px;font-weight:700;color:#f0c040;min-height:18px;display:none;"></div>
-    <button class="overlay-btn primary" id="next-level-btn" onclick="nextLevel()">Next Level →</button>
+    <div id="win-rewards" class="pre-level-rewards" style="display:none;"></div>
+    <button class="overlay-btn btn-green" id="next-level-btn" onclick="nextLevel()">Next Level →</button>
     <button class="overlay-btn secondary" onclick="retryLevel()">Play Again</button>
     <button class="overlay-btn secondary" onclick="showLevelSelect()">Level Select</button>
   </div>
@@ -133,13 +133,15 @@
 <div id="pre-level" class="overlay-screen">
   <div class="overlay-box">
     <h2 id="pre-level-title">Prepare</h2>
+    <div id="pre-level-board-preview"></div>
+    <div id="pre-level-rewards" class="pre-level-rewards"></div>
     <div class="pre-level-streak" id="pre-level-streak"></div>
     <div class="pre-level-streak-breakdown" id="pre-level-streak-breakdown"></div>
     <div id="pre-level-goals" class="pre-level-goals"></div>
     <div class="pre-level-section-title" id="pre-level-section-title">Deploy Special Cards</div>
     <div class="pre-level-grid" id="pre-level-grid"></div>
-    <button class="overlay-btn primary" onclick="confirmPreLevel()">Start Level →</button>
-    <button class="overlay-btn secondary" onclick="closeAllOverlays(); showLevelSelect()">← Back</button>
+    <button class="overlay-btn btn-green" onclick="confirmPreLevel()">Start Level →</button>
+    <button class="overlay-btn btn-red" onclick="closeAllOverlays(); showLevelSelect()">← Back</button>
   </div>
 </div>
 

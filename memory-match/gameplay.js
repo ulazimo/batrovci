@@ -918,6 +918,46 @@ function showPreLevelUI() {
   // Title
   document.getElementById('pre-level-title').textContent = `Level ${LEVELS[currentLevelIndex].id} — Prepare`;
 
+  // Board grid preview
+  const lvl = LEVELS[currentLevelIndex];
+  const previewEl = document.getElementById('pre-level-board-preview');
+  if (previewEl) {
+    const lockedSet   = new Set((lvl.locked   || []).map(([r, c]) => `${r},${c}`));
+    const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
+    let html = `<div class="pre-level-mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
+    for (let r = 0; r < lvl.rows; r++) {
+      for (let c = 0; c < lvl.cols; c++) {
+        const key = `${r},${c}`;
+        let cls = 'pre-level-mini-cell';
+        if (disabledSet.has(key))    cls += ' disabled';
+        else if (lockedSet.has(key)) cls += ' locked';
+        html += `<div class="${cls}"></div>`;
+      }
+    }
+    html += '</div>';
+    previewEl.innerHTML = html;
+  }
+
+  // Level rewards preview
+  const rewardsEl = document.getElementById('pre-level-rewards');
+  if (rewardsEl) {
+    const rewards = getLevelRewards().filter(r => r.afterLevel === lvl.id);
+    if (rewards.length > 0) {
+      rewardsEl.style.display = '';
+      rewardsEl.innerHTML = '<div style="width:100%;text-align:center;font-size:11px;font-weight:700;color:#f0c040;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Rewards</div>' +
+        rewards.map(r => {
+          if ((r.type || 'booster') === 'special') {
+            const s = SPECIAL_TYPES.find(x => x.id === r.specialId);
+            return `<span class="pre-level-reward-pill"><span class="reward-icon">${s ? s.icon : '?'}</span> +${r.qty} ${s ? s.name : r.specialId}</span>`;
+          }
+          const b = BOOSTERS.find(x => x.id === r.boosterId);
+          return `<span class="pre-level-reward-pill"><span class="reward-icon">${b ? b.icon : '?'}</span> +${r.qty} ${b ? (b.name || b.id) : r.boosterId}</span>`;
+        }).join('');
+    } else {
+      rewardsEl.style.display = 'none';
+    }
+  }
+
   // Win streak info — only show if winstreak is active for this level
   const streakEl = document.getElementById('pre-level-streak');
   const breakdownEl = document.getElementById('pre-level-streak-breakdown');
@@ -948,14 +988,16 @@ function showPreLevelUI() {
     breakdownEl.innerHTML = '';
   }
 
-  // Level goals display
+  // Level goals display — pill style
   const goalInfoEl = document.getElementById('pre-level-goals');
   const lvlGoals = LEVELS[currentLevelIndex].goals;
   if (goalInfoEl) {
     if (lvlGoals && lvlGoals.length > 0) {
       goalInfoEl.style.display = '';
-      goalInfoEl.innerHTML = '<div class="pre-level-goal-title">Level Goals</div>' +
-        lvlGoals.map(g => `<div class="pre-level-goal-item">${goalIcon(g.type)} ${goalDescription(g)}</div>`).join('');
+      goalInfoEl.innerHTML = '<div class="pre-level-goal-title">Goals</div>' +
+        '<div class="pre-level-goal-pills">' +
+        lvlGoals.map(g => `<span class="pre-level-goal-pill"><span class="goal-pill-icon">${goalIcon(g.type)}</span> ${goalDescription(g)}</span>`).join('') +
+        '</div>';
     } else {
       goalInfoEl.style.display = 'none';
     }
@@ -2505,18 +2547,18 @@ function showWinOverlay() {
     : '';
   document.getElementById('win-streak').textContent = streakMsg;
 
-  // Show rewards
+  // Show rewards as pills
   const rewardsEl = document.getElementById('win-rewards');
   if (granted.length > 0) {
-    const rewardText = granted.map(r => {
-      if ((r.type || 'booster') === 'special') {
-        const s = SPECIAL_TYPES.find(x => x.id === r.specialId);
-        return `+${r.qty} ${s ? s.icon : ''} ${s ? s.name : r.specialId}`;
-      }
-      const b = BOOSTERS.find(x => x.id === r.boosterId);
-      return `+${r.qty} ${b ? b.icon : ''} ${b ? (b.name || b.id) : r.boosterId}`;
-    }).join('  •  ');
-    rewardsEl.textContent = rewardText;
+    rewardsEl.innerHTML = '<div style="width:100%;text-align:center;font-size:11px;font-weight:700;color:#f0c040;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Rewards</div>' +
+      granted.map(r => {
+        if ((r.type || 'booster') === 'special') {
+          const s = SPECIAL_TYPES.find(x => x.id === r.specialId);
+          return `<span class="pre-level-reward-pill"><span class="reward-icon">${s ? s.icon : '?'}</span> +${r.qty} ${s ? s.name : r.specialId}</span>`;
+        }
+        const b = BOOSTERS.find(x => x.id === r.boosterId);
+        return `<span class="pre-level-reward-pill"><span class="reward-icon">${b ? b.icon : '?'}</span> +${r.qty} ${b ? (b.name || b.id) : r.boosterId}</span>`;
+      }).join('');
     rewardsEl.style.display = '';
   } else {
     rewardsEl.style.display = 'none';
