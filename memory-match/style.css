@@ -249,8 +249,7 @@ body {
 /* Board banner overlays (sweep, win, fail) */
 @keyframes boardBannerIn { 0%{opacity:0;transform:scale(.6)} 50%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
 @keyframes boardBannerOut { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.2)} }
-.board-banner { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,.65) 0%,transparent 75%);animation:boardBannerIn .5s ease-out forwards; }
-.board-banner.win, .board-banner.fail { pointer-events:all; }
+.board-banner { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;pointer-events:all;background:radial-gradient(ellipse at center,rgba(0,0,0,.65) 0%,transparent 75%);animation:boardBannerIn .5s ease-out forwards; }
 .board-banner.hiding { animation:boardBannerOut .4s ease-in forwards; }
 .board-banner .banner-title { font-size:clamp(24px,7vw,40px);font-weight:900;text-shadow:0 0 20px currentColor,0 2px 8px rgba(0,0,0,.8); }
 .board-banner .banner-sub { font-size:clamp(13px,3.5vw,18px);font-weight:600;color:#ccc;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-top:8px; }

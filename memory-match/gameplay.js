@@ -2354,6 +2354,7 @@ function doSimultaneousReveal(targets, cb) {
 // PERFECT SWEEP BOARD REVEAL
 // ============================================================
 function showBoardBanner(type, title, sub) {
+  inputLocked = true;
   let banner = boardContainerEl.querySelector('.board-banner');
   if (banner) banner.remove();
   banner = document.createElement('div');
@@ -2364,9 +2365,9 @@ function showBoardBanner(type, title, sub) {
 
 function hideBoardBanner(cb) {
   const banner = boardContainerEl.querySelector('.board-banner');
-  if (!banner) { cb?.(); return; }
+  if (!banner) { inputLocked = false; cb?.(); return; }
   banner.classList.add('hiding');
-  banner.addEventListener('animationend', () => { banner.remove(); cb?.(); }, { once: true });
+  banner.addEventListener('animationend', () => { banner.remove(); inputLocked = false; cb?.(); }, { once: true });
 }
 
 function showGoalIntroBanner(cb) {
