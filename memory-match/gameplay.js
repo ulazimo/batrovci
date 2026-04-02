@@ -1147,7 +1147,8 @@ function chainTimerTick() {
   if (remaining <= 0) {
     stopChainTimer();
     if (turnActive && !inputLocked) {
-      SFX.mismatch(); shakeBoard();
+      const comboLen = chainCards.length + specialsUsed.length;
+      if (comboLen < 3) { SFX.mismatch(); shakeBoard(); }
       inputLocked = true;
       setTimeout(() => endTurn(false), 500);
     }
@@ -2182,7 +2183,8 @@ function onCardClick(index) {
     updateChainIndicator(); return;
   }
 
-  SFX.mismatch(); shakeBoard();
+  const comboLen = chainCards.length + specialsUsed.length;
+  if (comboLen < 3) { SFX.mismatch(); shakeBoard(); }
   advanceTutorial('mismatch');
   chainCards.push(index); inputLocked = true;
   updateChainFaces(index);
