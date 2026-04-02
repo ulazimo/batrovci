@@ -1248,7 +1248,7 @@ function updateChainFaces(mismatchIdx) {
 function updateSweepCountdown() {
   const el = document.getElementById('sweep-countdown');
   if (!el) return;
-  if (!turnActive || !chainColor) { el.classList.remove('active','urgent'); el.textContent = ''; return; }
+  if (!turnActive || !chainColor || !isSweepRevealActive()) { el.classList.remove('active','urgent'); el.textContent = ''; return; }
   const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
   const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color)).length;
   if (remaining >= 1 && remaining <= 3) {
