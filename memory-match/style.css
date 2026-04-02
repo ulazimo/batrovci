@@ -469,16 +469,18 @@ body {
 
 /* Tutorial hint (non-blocking) */
 #tutorial-hint {
-  position:fixed; top:60px; left:50%; transform:translateX(-50%);
-  background:rgba(0,0,0,.85); color:#fff; padding:12px 24px;
-  border-radius:12px; font-size:15px; font-weight:600; z-index:250;
-  pointer-events:none; opacity:0; transition:opacity .3s;
-  box-shadow:0 4px 20px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.15);
-  text-align:center; max-width:90vw;
+  width:100%;max-width:500px;
+  background:linear-gradient(135deg,rgba(15,52,96,.95),rgba(83,52,131,.9));
+  color:#fff; padding:10px 20px;
+  font-size:15px; font-weight:700; z-index:250;
+  pointer-events:none; opacity:0; height:0; overflow:hidden;
+  transition:opacity .3s, height .3s ease;
+  text-align:center;
+  border-bottom:2px solid rgba(79,195,247,.4);
 }
-#tutorial-hint.visible { opacity:1; animation:tutHintIn .4s ease-out; }
-#tutorial-hint.hiding { opacity:0; transition:opacity .6s; }
-@keyframes tutHintIn { from{opacity:0;transform:translateX(-50%) translateY(-20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+#tutorial-hint.visible { opacity:1; height:auto; padding:12px 20px; animation:tutHintIn .4s ease-out; }
+#tutorial-hint.hiding { opacity:0; transition:opacity .5s; }
+@keyframes tutHintIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
 
 /* Special card / booster tutorial popup */
 @keyframes tutPopIn {

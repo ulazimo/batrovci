@@ -1160,15 +1160,11 @@ function startGame(preplacedSpecials) {
   initLevelGoals();
   renderBoard(); renderCoverageIndicators(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
-  // Booster tutorial: highlight bar and show hint on first level with boosters
-  if (!progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0)) {
+  // Booster hint flag — will be shown after all popups are done
+  const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);
+  if (pendingBoosterHint) {
     progress.boosterTutorialDone = true;
     saveProgress();
-    setTimeout(() => {
-      boosterBar.classList.add('highlight');
-      showTutorialHint('You have Power-Ups! Tap one below to use it 👇');
-      setTimeout(() => boosterBar.classList.remove('highlight'), 4600);
-    }, 800);
   }
 
   // Apply winstreak effect (only if enabled for this level)
@@ -1185,7 +1181,21 @@ function startGame(preplacedSpecials) {
       revealEntireBoard();
     }
     // Show tutorials for new features, boosters, and specials with a delay
-    setTimeout(() => { checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials(); }, 500);
+    setTimeout(() => {
+      checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials();
+      // Show booster bar hint after all popups close
+      if (pendingBoosterHint) {
+        const waitAndShow = () => {
+          if (itemTutorialShowing) { setTimeout(waitAndShow, 300); return; }
+          setTimeout(() => {
+            boosterBar.classList.add('highlight');
+            showTutorialHint('You have Power-Ups! Tap one below to use it 👇');
+            setTimeout(() => boosterBar.classList.remove('highlight'), 4600);
+          }, 400);
+        };
+        waitAndShow();
+      }
+    }, 500);
   });
 }
 
