@@ -38,6 +38,7 @@ function saveJourneySnapshot() {
     specialInventory: progress.specialInventory ? { ...progress.specialInventory } : {},
     seenSpecials: progress.seenSpecials ? [...progress.seenSpecials] : [],
     seenBoosters: progress.seenBoosters ? [...progress.seenBoosters] : [],
+    seenFeatures: progress.seenFeatures ? [...progress.seenFeatures] : [],
   };
 }
 
@@ -54,6 +55,7 @@ function restoreJourneySnapshot(style) {
     if (snap.specialInventory) progress.specialInventory = { ...snap.specialInventory };
     progress.seenSpecials = snap.seenSpecials ? [...snap.seenSpecials] : [];
     progress.seenBoosters = snap.seenBoosters ? [...snap.seenBoosters] : [];
+    progress.seenFeatures = snap.seenFeatures ? [...snap.seenFeatures] : [];
   } else {
     // Fresh journey
     progress.highestUnlocked = 0;
@@ -62,6 +64,7 @@ function restoreJourneySnapshot(style) {
     progress.coins = 0;
     progress.seenSpecials = [];
     progress.seenBoosters = [];
+    progress.seenFeatures = [];
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
   }
   // Ensure stars array matches LEVELS length
@@ -684,8 +687,50 @@ function advanceTutorial(trigger) {
 // ============================================================
 // SPECIAL CARD TUTORIALS — show popup first time each type appears
 // ============================================================
-let itemTutorialQueue = []; // { type:'special'|'booster', icon, name, desc, id }
+let itemTutorialQueue = []; // { icon, name, desc, id, markAs }
 let itemTutorialShowing = false;
+
+const FEATURE_TUTORIALS = [
+  { id: 'recall',        icon: '🔄', name: 'Recall',
+    desc: 'Tap the Recall button to re-reveal the last shown cards. Useful when you forget where colors are!',
+    check: () => isRecallActive() },
+  { id: 'deploySpecials', icon: '🎴', name: 'Deploy Special Cards',
+    desc: 'You can now place special cards on the board before starting a level. Choose wisely from your inventory!',
+    check: () => isDeploySpecialsActive() },
+  { id: 'sweepReveal',   icon: '🧹', name: 'Perfect Sweep',
+    desc: 'Match ALL cards of one color in a single chain to trigger a Perfect Sweep — the entire board is reshuffled and revealed!',
+    check: () => isSweepRevealActive() },
+  { id: 'winStreak',     icon: '🔥', name: 'Win Streak',
+    desc: 'Win consecutive levels to build a streak! Higher streaks reveal more of the board at the start of each level.',
+    check: () => isWinStreakActive() },
+];
+
+function checkFeatureTutorials(callback) {
+  if (!progress.seenFeatures) progress.seenFeatures = [];
+  const newFeatures = FEATURE_TUTORIALS.filter(f => f.check() && !progress.seenFeatures.includes(f.id));
+  if (newFeatures.length === 0) { callback?.(); return; }
+  newFeatures.forEach(f => {
+    itemTutorialQueue.push({ id: 'feature_' + f.id, icon: f.icon, name: f.name, desc: f.desc, markAs: f.id });
+  });
+  // Set callback to run after all tutorials are dismissed
+  featureTutorialCallback = callback || null;
+  showNextItemTutorial();
+}
+
+let featureTutorialCallback = null;
+
+function checkFeatureTutorialsAtStart() {
+  if (!progress.seenFeatures) progress.seenFeatures = [];
+  // Show all feature tutorials except deploySpecials (shown at pre-level)
+  FEATURE_TUTORIALS.forEach(f => {
+    if (f.id !== 'deploySpecials' && f.check() && !progress.seenFeatures.includes(f.id)) {
+      if (!itemTutorialQueue.some(q => q.id === 'feature_' + f.id)) {
+        itemTutorialQueue.push({ id: 'feature_' + f.id, icon: f.icon, name: f.name, desc: f.desc, markAs: f.id });
+      }
+    }
+  });
+  if (itemTutorialQueue.length > 0 && !itemTutorialShowing) showNextItemTutorial();
+}
 
 function checkSpecialTutorials() {
   if (!progress.seenSpecials) progress.seenSpecials = [];
@@ -726,12 +771,16 @@ function showNextItemTutorial() {
   document.getElementById('special-tut-desc').textContent = item.desc;
   document.getElementById('special-tutorial').classList.add('active');
 
-  if (item.type === 'special') {
-    if (!progress.seenSpecials) progress.seenSpecials = [];
-    progress.seenSpecials.push(item.id);
-  } else {
+  // Mark as seen based on type
+  if (item.markAs) {
+    if (!progress.seenFeatures) progress.seenFeatures = [];
+    if (!progress.seenFeatures.includes(item.markAs)) progress.seenFeatures.push(item.markAs);
+  } else if (item.id.startsWith('booster_')) {
     if (!progress.seenBoosters) progress.seenBoosters = [];
     progress.seenBoosters.push(item.id.replace('booster_', ''));
+  } else {
+    if (!progress.seenSpecials) progress.seenSpecials = [];
+    progress.seenSpecials.push(item.id);
   }
   saveProgress();
 }
@@ -739,6 +788,7 @@ function showNextItemTutorial() {
 function resetTutorials() {
   progress.seenSpecials = [];
   progress.seenBoosters = [];
+  progress.seenFeatures = [];
   progress.tutorialComplete = false;
   progress.boosterTutorialDone = false;
   saveJourneySnapshot();
@@ -753,6 +803,11 @@ function dismissSpecialTutorial() {
   } else {
     itemTutorialShowing = false;
     inputLocked = false;
+    if (featureTutorialCallback) {
+      const cb = featureTutorialCallback;
+      featureTutorialCallback = null;
+      cb();
+    }
   }
 }
 
@@ -839,6 +894,20 @@ let preLevelSelections = [];
 
 function showPreLevel() {
   initLevelConfig();
+
+  // Deploy Specials tutorial shows before pre-level screen (user needs to understand the UI)
+  if (!progress.seenFeatures) progress.seenFeatures = [];
+  const deployFeature = FEATURE_TUTORIALS.find(f => f.id === 'deploySpecials' && f.check() && !progress.seenFeatures.includes(f.id));
+  if (deployFeature) {
+    itemTutorialQueue.push({ id: 'feature_' + deployFeature.id, icon: deployFeature.icon, name: deployFeature.name, desc: deployFeature.desc, markAs: deployFeature.id });
+    featureTutorialCallback = () => showPreLevelUI();
+    showNextItemTutorial();
+    return;
+  }
+  showPreLevelUI();
+}
+
+function showPreLevelUI() {
   closeAllOverlays();
   preLevelSelections = [];
 
@@ -1113,7 +1182,8 @@ function startGame(preplacedSpecials) {
 
   // Show special card tutorial popups for any new types on the board
   // Show tutorials for new specials and boosters with a delay
-  setTimeout(() => { checkBoosterTutorials(); checkSpecialTutorials(); }, 500);
+  // Show tutorials for new features, boosters, and specials with a delay
+  setTimeout(() => { checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials(); }, 500);
 }
 
 function retryLevel() { showPreLevel(); }
