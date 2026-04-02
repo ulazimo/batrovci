@@ -678,7 +678,39 @@ function updateCamera(dt) {
     const targetFov = state.isAiming ? 40 : 65;
     camera.fov += (targetFov - camera.fov) * 0.12;
     camera.updateProjectionMatrix();
-    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+
+    // When aiming, track the closest alive fish (blend camera toward it)
+    if (state.isAiming) {
+        const aliveArr = state.animals.filter(a => !a.dead);
+        if (aliveArr.length > 0) {
+            // Find closest fish to camera center ray
+            let closest = null, closestDist = Infinity;
+            const camForward = _v1.set(0,0,-1).applyQuaternion(camera.quaternion);
+            for (const a of aliveArr) {
+                _v2.copy(a.mesh.position).sub(camera.position);
+                const dot = _v2.dot(camForward);
+                if (dot > 0) { // in front
+                    const d = _v2.length();
+                    if (d < closestDist) { closestDist = d; closest = a; }
+                }
+            }
+            if (!closest) closest = aliveArr[0];
+
+            // Compute yaw/pitch to look at the fish
+            _v2.copy(closest.mesh.position).sub(camera.position);
+            const targetYaw = Math.atan2(-_v2.x, -_v2.z);
+            const targetPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
+
+            // Blend: 40% fish tracking + 60% player input (allows aiming around the fish)
+            const blendedYaw = targetYaw * 0.4 + yaw * 0.6;
+            const blendedPitch = targetPitch * 0.4 + pitch * 0.6;
+            camera.rotation.set(blendedPitch, blendedYaw, 0, 'YXZ');
+        } else {
+            camera.rotation.set(pitch, yaw, 0, 'YXZ');
+        }
+    } else {
+        camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    }
 
     // Screen shake
     if (state.shake > 0.01) {
@@ -702,18 +734,32 @@ function spawnAnimal() {
         const type = FISH_TYPES[key];
         const mesh = createFishMesh(key);
 
-        // Spawn in front hemisphere of camera
-        const camDir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-        const spawnAngle = (Math.random()-0.5) * Math.PI * 0.8; // ±72 degrees
-        const spawnDir = camDir.clone().applyAxisAngle(new THREE.Vector3(0,1,0), spawnAngle);
-        const dist = FISH_SPAWN_RADIUS_MIN + Math.random()*(FISH_SPAWN_RADIUS_MAX - FISH_SPAWN_RADIUS_MIN);
-        const spawnPos = camera.position.clone().add(spawnDir.multiplyScalar(dist));
-        spawnPos.y = 1 + Math.random()*12;
-        mesh.position.copy(spawnPos);
+        // Spawn fish that swims LEFT↔RIGHT across the view (rarely toward player)
+        const swimDist = FISH_SPAWN_RADIUS_MIN + Math.random()*(FISH_SPAWN_RADIUS_MAX - FISH_SPAWN_RADIUS_MIN);
+        const spawnY = 2 + Math.random()*10;
+        const side = Math.random() > 0.5 ? 1 : -1; // left or right
+        const swimDir = new THREE.Vector3();
 
-        // Swim direction: toward and past the player with some offset
-        const swimTarget = camera.position.clone().add(new THREE.Vector3((Math.random()-0.5)*10, (Math.random()-0.5)*4, (Math.random()-0.5)*10));
-        const swimDir = swimTarget.sub(spawnPos).normalize();
+        if (Math.random() < 0.15) {
+            // 15% chance: swim toward player (from far ahead)
+            const spawnPos = new THREE.Vector3(
+                (Math.random()-0.5)*10,
+                spawnY,
+                -(swimDist + Math.random()*10)
+            );
+            mesh.position.copy(spawnPos);
+            swimDir.set((Math.random()-0.5)*0.3, (Math.random()-0.5)*0.1, 1).normalize();
+        } else {
+            // 85%: swim left-to-right or right-to-left across the view
+            const zDist = 8 + Math.random()*15; // distance in front
+            const spawnPos = new THREE.Vector3(
+                side * (15 + Math.random()*10), // start off-screen left or right
+                spawnY,
+                -(zDist)
+            );
+            mesh.position.copy(spawnPos);
+            swimDir.set(-side, (Math.random()-0.5)*0.15, (Math.random()-0.5)*0.2).normalize();
+        }
 
         // Face swimming direction
         const lookTarget = mesh.position.clone().add(swimDir);
@@ -753,9 +799,10 @@ function updateFish(dt) {
             a.mesh.rotation.z = Math.sin(a.wobblePhase * 2) * 0.05;
             a.mesh.rotation.x += Math.sin(a.wobblePhase * 0.5) * 0.003;
 
-            // Remove if too far away
+            // Remove if swam off screen (far on X) or too far away or timed out
+            const absX = Math.abs(a.mesh.position.x);
             const dist = a.mesh.position.distanceTo(camera.position);
-            if (dist > FISH_SPAWN_RADIUS_MAX * 2 || time - a.spawnTime > 20) {
+            if (absX > 35 || dist > FISH_SPAWN_RADIUS_MAX * 2.5 || time - a.spawnTime > 25) {
                 scene.remove(a.mesh);
                 state.animals.splice(i, 1);
                 if (!state.gameOver) setTimeout(spawnAnimal, 500);
