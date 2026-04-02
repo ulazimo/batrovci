@@ -25,7 +25,7 @@
         #feedback-canvas { background:#071525; border-radius:1rem; margin:1rem auto; border:1px solid #1e4d6b; width:100%; height:auto; }
         @keyframes pulse-ammo { 0%{transform:scale(1);} 50%{transform:scale(1.1);color:#ef4444;} 100%{transform:scale(1);} }
         .low-ammo { animation:pulse-ammo 0.5s infinite; }
-        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:10; transition:all 0.15s; }
+        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:10; transition:all 0.15s; display:none; }
         #crosshair .ring { width:60px; height:60px; border:2px solid rgba(0,220,255,0.5); border-radius:50%; position:relative; }
         #crosshair .h-line, #crosshair .v-line { position:absolute; background:rgba(0,220,255,0.5); }
         #crosshair .h-line { width:40px; height:2px; top:50%; left:50%; transform:translate(-50%,-50%); }
@@ -581,20 +581,50 @@ function createFishMesh(typeKey) {
 // CAMERA CONTROLS
 // ============================================================
 function initControls() {
-    // On aim start, snap aim to closest fish then allow free movement
-    function startAim() {
-        if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
-        state.isAiming = true;
-        crosshairEl.classList.add('aiming');
-        // Snap aim to closest fish as starting point
+    // Raycaster for click-to-fish detection
+    const clickRaycaster = new THREE.Raycaster();
+    const clickMouse = new THREE.Vector2();
+
+    // Find the fish closest to where the user clicked/tapped
+    function findClickedFish(screenX, screenY) {
+        clickMouse.x = (screenX / window.innerWidth) * 2 - 1;
+        clickMouse.y = -(screenY / window.innerHeight) * 2 + 1;
+        clickRaycaster.setFromCamera(clickMouse, camera);
+
+        let closest = null, closestDist = Infinity;
         const aliveArr = state.animals.filter(a => !a.dead);
-        if (aliveArr.length > 0) {
-            let closest = aliveArr[0], closestDist = Infinity;
+        for (const a of aliveArr) {
+            // Check distance from click ray to fish position
+            const fishPos = a.mesh.position;
+            _v2.copy(fishPos).sub(clickRaycaster.ray.origin);
+            const proj = _v2.dot(clickRaycaster.ray.direction);
+            if (proj < 0) continue; // behind camera
+            _v1.copy(clickRaycaster.ray.direction).multiplyScalar(proj).add(clickRaycaster.ray.origin);
+            const d = _v1.distanceTo(fishPos);
+            if (d < a.bodyRadius * 3 && d < closestDist) { // generous click radius
+                closestDist = d; closest = a;
+            }
+        }
+        // Fallback: nearest fish by distance
+        if (!closest && aliveArr.length > 0) {
             for (const a of aliveArr) {
                 const d = a.mesh.position.distanceTo(camera.position);
                 if (d < closestDist) { closestDist = d; closest = a; }
             }
-            _v2.copy(closest.mesh.position).sub(camera.position);
+        }
+        return closest;
+    }
+
+    function startAim(screenX, screenY) {
+        if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
+        state.isAiming = true;
+        crosshairEl.style.display = '';
+        crosshairEl.classList.add('aiming');
+
+        // Snap aim toward the fish closest to where user clicked
+        const fish = findClickedFish(screenX, screenY);
+        if (fish) {
+            _v2.copy(fish.mesh.position).sub(camera.position);
             aimYaw = Math.atan2(-_v2.x, -_v2.z);
             aimPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
         } else {
@@ -603,7 +633,7 @@ function initControls() {
     }
 
     // Mouse
-    renderer.domElement.addEventListener('mousedown', () => startAim());
+    renderer.domElement.addEventListener('mousedown', (e) => startAim(e.clientX, e.clientY));
     document.addEventListener('mousemove', (e) => {
         if (!state.isAiming) return;
         aimYaw -= e.movementX * AIM_SENSITIVITY;
@@ -614,6 +644,7 @@ function initControls() {
     renderer.domElement.addEventListener('mouseup', () => {
         if (state.isAiming) fire();
         state.isAiming = false;
+        crosshairEl.style.display = 'none';
         crosshairEl.classList.remove('aiming');
     });
 
@@ -623,7 +654,7 @@ function initControls() {
         isTouching = true;
         lastTouchX = e.touches[0].clientX;
         lastTouchY = e.touches[0].clientY;
-        startAim();
+        startAim(e.touches[0].clientX, e.touches[0].clientY);
     }, {passive:false});
     renderer.domElement.addEventListener('touchmove', (e) => {
         e.preventDefault();
@@ -642,6 +673,7 @@ function initControls() {
         if (state.isAiming) fire();
         state.isAiming = false;
         isTouching = false;
+        crosshairEl.style.display = 'none';
         crosshairEl.classList.remove('aiming');
     }, {passive:false});
 }
@@ -693,25 +725,25 @@ function spawnAnimal() {
         const side = Math.random() > 0.5 ? 1 : -1; // left or right
         const swimDir = new THREE.Vector3();
 
-        if (Math.random() < 0.15) {
-            // 15% chance: swim toward player (from far ahead)
+        if (Math.random() < 0.2) {
+            // 20% chance: swim toward player (from far ahead, within view)
             const spawnPos = new THREE.Vector3(
-                (Math.random()-0.5)*10,
+                (Math.random()-0.5)*8,
                 spawnY,
-                -(swimDist + Math.random()*10)
+                -(10 + Math.random()*12)
             );
             mesh.position.copy(spawnPos);
             swimDir.set((Math.random()-0.5)*0.3, (Math.random()-0.5)*0.1, 1).normalize();
         } else {
-            // 85%: swim left-to-right or right-to-left across the view
-            const zDist = 8 + Math.random()*15; // distance in front
+            // 80%: swim across the view — spawn just at the edge of visible area
+            const zDist = 6 + Math.random()*10; // visible distance in front
             const spawnPos = new THREE.Vector3(
-                side * (15 + Math.random()*10), // start off-screen left or right
+                side * (8 + Math.random()*4), // just off the edge of view
                 spawnY,
                 -(zDist)
             );
             mesh.position.copy(spawnPos);
-            swimDir.set(-side, (Math.random()-0.5)*0.15, (Math.random()-0.5)*0.2).normalize();
+            swimDir.set(-side, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.15).normalize();
         }
 
         // Face swimming direction
@@ -784,26 +816,32 @@ function updateFish(dt) {
 // ============================================================
 function createSpearMesh() {
     const group = new THREE.Group();
+    // Shaft — thicker, longer
     const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.015, 0.02, 1.2, 6),
-        new THREE.MeshStandardMaterial({ color:0x8B7355, roughness:0.6 })
+        new THREE.CylinderGeometry(0.025, 0.035, 1.8, 8),
+        new THREE.MeshStandardMaterial({ color:0x8B7355, roughness:0.5 })
     );
     shaft.rotation.x = Math.PI/2;
     group.add(shaft);
+    // Metal tip — larger
     const tip = new THREE.Mesh(
-        new THREE.ConeGeometry(0.04, 0.18, 5),
-        new THREE.MeshStandardMaterial({ color:0xd0d0d0, metalness:0.8, roughness:0.2 })
+        new THREE.ConeGeometry(0.06, 0.3, 6),
+        new THREE.MeshStandardMaterial({ color:0xe0e0e0, metalness:0.9, roughness:0.1 })
     );
     tip.rotation.x = -Math.PI/2;
-    tip.position.z = -0.7;
+    tip.position.z = -1.05;
     group.add(tip);
-    // Glow
+    // Outer glow cylinder
     const glow = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6),
-        new THREE.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.15, blending:THREE.AdditiveBlending })
+        new THREE.CylinderGeometry(0.06, 0.06, 2.0, 8),
+        new THREE.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.12, blending:THREE.AdditiveBlending })
     );
     glow.rotation.x = Math.PI/2;
     group.add(glow);
+    // Point light on the spear tip for underwater illumination
+    const spearLight = new THREE.PointLight(0x00e5ff, 1.5, 8);
+    spearLight.position.z = -1.0;
+    group.add(spearLight);
     return group;
 }
 
@@ -866,11 +904,15 @@ function updateSpears(dt) {
         const scale = 0.15 + ep * 0.85;
         sp.mesh.scale.set(scale, scale, scale);
 
-        // Trail bubbles (shared geometry)
-        if (Math.random() < 0.5) {
+        // Trail bubbles — denser, brighter
+        const trailCount = Math.random() < 0.7 ? 2 : 1;
+        for (let t = 0; t < trailCount; t++) {
             const bubble = new THREE.Mesh(sharedBubbleGeo, sharedBubbleMat.clone());
-            _v1.set((Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1);
+            bubble.material.opacity = 0.6;
+            const spread = 0.15 * scale;
+            _v1.set((Math.random()-0.5)*spread, (Math.random()-0.5)*spread, (Math.random()-0.5)*spread);
             bubble.position.copy(sp.mesh.position).add(_v1);
+            bubble.scale.setScalar(0.5 + scale * 1.5);
             scene.add(bubble);
             sp.trailParticles.push(bubble);
         }
@@ -1070,7 +1112,7 @@ function showShotAnalysis(data) {
 window.closeAnalysis = function() {
     state.analysisActive = false;
     analysisBox.style.display = 'none';
-    crosshairEl.style.display = '';
+    crosshairEl.style.display = 'none';
     updateUI();
     if (state.harvested >= state.goal) {
         setTimeout(() => showEndScreen('DIVE SUCCESS', 'Total Score: '+state.score, 'Next Dive'), 300);
@@ -1094,7 +1136,7 @@ function showEndScreen(title, body, btnText) {
 
 window.actionBtn = function() {
     msgBox.style.display = 'none';
-    crosshairEl.style.display = '';
+    crosshairEl.style.display = 'none';
     if (state.lastDiveFailed) {
         state.score = 0;
         startDiveMode(1);
@@ -1140,7 +1182,7 @@ function startDiveMode(num) {
     statusEl.textContent = 'DIVING...';
     statusEl.className = 'text-xl font-bold text-cyan-400';
     statusSub.textContent = 'Aim for the vitals';
-    crosshairEl.style.display = '';
+    crosshairEl.style.display = 'none';
     updateUI();
     msgBox.style.display = 'none';
     analysisBox.style.display = 'none';
