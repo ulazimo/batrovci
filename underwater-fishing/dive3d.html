@@ -25,16 +25,8 @@
         #feedback-canvas { background:#071525; border-radius:1rem; margin:1rem auto; border:1px solid #1e4d6b; width:100%; height:auto; }
         @keyframes pulse-ammo { 0%{transform:scale(1);} 50%{transform:scale(1.1);color:#ef4444;} 100%{transform:scale(1);} }
         .low-ammo { animation:pulse-ammo 0.5s infinite; }
-        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:10; transition:all 0.15s; display:none; }
-        #crosshair .ring { width:60px; height:60px; border:2px solid rgba(0,220,255,0.5); border-radius:50%; position:relative; }
-        #crosshair .h-line, #crosshair .v-line { position:absolute; background:rgba(0,220,255,0.5); }
-        #crosshair .h-line { width:40px; height:2px; top:50%; left:50%; transform:translate(-50%,-50%); }
-        #crosshair .v-line { width:2px; height:40px; top:50%; left:50%; transform:translate(-50%,-50%); }
-        #crosshair .dot { width:4px; height:4px; background:#00e5ff; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); }
-        #crosshair.aiming .ring { width:90px; height:90px; border-color:#00e5ff; box-shadow:0 0 20px rgba(0,229,255,0.3); }
-        #crosshair.aiming .h-line { width:60px; background:#00e5ff; }
-        #crosshair.aiming .v-line { height:60px; background:#00e5ff; }
-        #crosshair.aiming .dot { width:6px; height:6px; box-shadow:0 0 10px #00e5ff; }
+        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:10; display:none; }
+        #crosshair img { width:160px; height:160px; opacity:0.85; filter:drop-shadow(0 0 8px rgba(0,0,0,0.5)); }
         #mode-select { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,12,28,0.97); z-index:200; }
         .mode-btn { width:90%; max-width:380px; padding:1.3rem 1.4rem; border-radius:1.2rem; border:2px solid #1e3a52; background:#071525; color:white; cursor:pointer; text-align:left; transition:all 0.2s; margin-bottom:1rem; pointer-events:all; }
         .mode-btn:hover { background:#0a1e35; transform:scale(1.02); border-color:#2dd4bf; }
@@ -47,11 +39,7 @@
 
     <!-- CROSSHAIR -->
     <div id="crosshair">
-        <div class="ring">
-            <div class="h-line"></div>
-            <div class="v-line"></div>
-            <div class="dot"></div>
-        </div>
+        <img src="crosshair.png" alt="">
     </div>
 
     <!-- MODE SELECT -->
@@ -647,7 +635,6 @@ function initControls() {
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         state.isAiming = true;
         crosshairEl.style.display = 'block';
-        crosshairEl.classList.add('aiming');
 
         // Snap aim toward the fish closest to where user clicked
         const targetFish = findClickedFish(screenX, screenY);
@@ -673,7 +660,6 @@ function initControls() {
         if (state.isAiming) fire();
         state.isAiming = false;
         crosshairEl.style.display = 'none';
-        crosshairEl.classList.remove('aiming');
     });
 
     // Touch
@@ -702,7 +688,6 @@ function initControls() {
         state.isAiming = false;
         isTouching = false;
         crosshairEl.style.display = 'none';
-        crosshairEl.classList.remove('aiming');
     }, {passive:false});
 }
 
