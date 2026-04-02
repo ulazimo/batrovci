@@ -191,10 +191,10 @@ let state = {
 let clock, scene, camera, renderer;
 let modelCache = {};
 let isTouching = false;
-let aimOffsetX = 0, aimOffsetY = 0; // fine-tune aim offset (radians)
-const AIM_SENSITIVITY = 0.002;
-const AIM_TOUCH_SENSITIVITY = 0.004;
-const AIM_OFFSET_LIMIT = 0.25; // ~14 degrees max offset from fish center
+let aimYaw = 0, aimPitch = 0; // absolute aim direction while aiming
+const AIM_SENSITIVITY = 0.003;
+const AIM_TOUCH_SENSITIVITY = 0.005;
+const AIM_LIMIT = Math.PI / 3; // ±60 degrees — full freedom to aim around
 let lastTouchX = 0, lastTouchY = 0;
 
 // Environments
@@ -581,19 +581,35 @@ function createFishMesh(typeKey) {
 // CAMERA CONTROLS
 // ============================================================
 function initControls() {
-    // Mouse: click to aim, move to fine-tune, release to fire
-    renderer.domElement.addEventListener('mousedown', (e) => {
+    // On aim start, snap aim to closest fish then allow free movement
+    function startAim() {
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         state.isAiming = true;
-        aimOffsetX = 0; aimOffsetY = 0;
         crosshairEl.classList.add('aiming');
-    });
+        // Snap aim to closest fish as starting point
+        const aliveArr = state.animals.filter(a => !a.dead);
+        if (aliveArr.length > 0) {
+            let closest = aliveArr[0], closestDist = Infinity;
+            for (const a of aliveArr) {
+                const d = a.mesh.position.distanceTo(camera.position);
+                if (d < closestDist) { closestDist = d; closest = a; }
+            }
+            _v2.copy(closest.mesh.position).sub(camera.position);
+            aimYaw = Math.atan2(-_v2.x, -_v2.z);
+            aimPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
+        } else {
+            aimYaw = camYaw; aimPitch = camPitch;
+        }
+    }
+
+    // Mouse
+    renderer.domElement.addEventListener('mousedown', () => startAim());
     document.addEventListener('mousemove', (e) => {
         if (!state.isAiming) return;
-        aimOffsetX -= e.movementX * AIM_SENSITIVITY;
-        aimOffsetY -= e.movementY * AIM_SENSITIVITY;
-        aimOffsetX = Math.max(-AIM_OFFSET_LIMIT, Math.min(AIM_OFFSET_LIMIT, aimOffsetX));
-        aimOffsetY = Math.max(-AIM_OFFSET_LIMIT, Math.min(AIM_OFFSET_LIMIT, aimOffsetY));
+        aimYaw -= e.movementX * AIM_SENSITIVITY;
+        aimPitch -= e.movementY * AIM_SENSITIVITY;
+        aimYaw = Math.max(-AIM_LIMIT, Math.min(AIM_LIMIT, aimYaw));
+        aimPitch = Math.max(-AIM_LIMIT, Math.min(AIM_LIMIT, aimPitch));
     });
     renderer.domElement.addEventListener('mouseup', () => {
         if (state.isAiming) fire();
@@ -601,26 +617,23 @@ function initControls() {
         crosshairEl.classList.remove('aiming');
     });
 
-    // Touch: tap to aim, drag to fine-tune, release to fire
+    // Touch
     renderer.domElement.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         isTouching = true;
-        state.isAiming = true;
-        aimOffsetX = 0; aimOffsetY = 0;
         lastTouchX = e.touches[0].clientX;
         lastTouchY = e.touches[0].clientY;
-        crosshairEl.classList.add('aiming');
+        startAim();
     }, {passive:false});
     renderer.domElement.addEventListener('touchmove', (e) => {
         e.preventDefault();
         if (!state.isAiming) return;
         const dx = e.touches[0].clientX - lastTouchX;
         const dy = e.touches[0].clientY - lastTouchY;
-        aimOffsetX -= dx * AIM_TOUCH_SENSITIVITY;
-        aimOffsetY -= dy * AIM_TOUCH_SENSITIVITY;
-        aimOffsetX = Math.max(-AIM_OFFSET_LIMIT, Math.min(AIM_OFFSET_LIMIT, aimOffsetX));
-        aimOffsetY = Math.max(-AIM_OFFSET_LIMIT, Math.min(AIM_OFFSET_LIMIT, aimOffsetY));
+        aimYaw -= dx * AIM_TOUCH_SENSITIVITY;
+        aimPitch -= dy * AIM_TOUCH_SENSITIVITY;
+        aimYaw = Math.max(-AIM_LIMIT, Math.min(AIM_LIMIT, aimYaw));
+        aimPitch = Math.max(-AIM_LIMIT, Math.min(AIM_LIMIT, aimPitch));
         lastTouchX = e.touches[0].clientX;
         lastTouchY = e.touches[0].clientY;
     }, {passive:false});
@@ -641,31 +654,16 @@ function updateCamera(dt) {
     camera.fov += (targetFov - camera.fov) * 0.12;
     camera.updateProjectionMatrix();
 
-    let targetYaw = 0, targetPitch = 0;
-
-    // When aiming, smoothly track the closest alive fish
     if (state.isAiming) {
-        const aliveArr = state.animals.filter(a => !a.dead);
-        if (aliveArr.length > 0) {
-            let closest = null, closestDist = Infinity;
-            for (const a of aliveArr) {
-                const d = a.mesh.position.distanceTo(camera.position);
-                if (d < closestDist) { closestDist = d; closest = a; }
-            }
-            if (closest) {
-                _v2.copy(closest.mesh.position).sub(camera.position);
-                targetYaw = Math.atan2(-_v2.x, -_v2.z);
-                targetPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
-            }
-        }
+        // While aiming: camera follows aimYaw/aimPitch (player-controlled)
+        camYaw += (aimYaw - camYaw) * 0.15;
+        camPitch += (aimPitch - camPitch) * 0.15;
+    } else {
+        // Not aiming: return to center
+        camYaw += (0 - camYaw) * 0.06;
+        camPitch += (0 - camPitch) * 0.06;
     }
-
-    // Smooth lerp toward target + aim offset for fine-tuning
-    camYaw += (targetYaw - camYaw) * 0.08;
-    camPitch += (targetPitch - camPitch) * 0.08;
-    const finalYaw = state.isAiming ? camYaw + aimOffsetX : camYaw;
-    const finalPitch = state.isAiming ? camPitch + aimOffsetY : camPitch;
-    camera.rotation.set(finalPitch, finalYaw, 0, 'YXZ');
+    camera.rotation.set(camPitch, camYaw, 0, 'YXZ');
 
     // Screen shake
     if (state.shake > 0.01) {
