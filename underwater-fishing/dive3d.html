@@ -871,7 +871,11 @@ function updateFish(dt) {
 
             // Face swimming direction with body undulation
             const lookYaw = currentYaw + Math.sin(t) * a.swimAmp * 0.5;
-            a.mesh.rotation.y = lookYaw + Math.PI; // face direction of travel
+            // lookAt the swim direction instead of manual rotation
+            _v2.copy(a.mesh.position).add(a.swimDir);
+            a.mesh.lookAt(_v2);
+            // Add undulation yaw on top
+            a.mesh.rotation.y += Math.sin(t) * a.swimAmp * 0.5;
             // Pitch: nose dips slightly with vertical motion
             a.mesh.rotation.x = Math.sin(t * a.vertFreq) * 0.04;
             // Roll: bank into turns
