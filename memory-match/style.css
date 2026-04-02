@@ -257,6 +257,18 @@ body {
 .board-banner.win .banner-title { color:#2ecc71; }
 .board-banner.fail .banner-title { color:#e74c3c; }
 .board-banner.sweep .banner-title { color:#f0c040; }
+.board-banner.goal-intro .banner-title { color:#4fc3f7; }
+.board-banner .banner-goals { display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px; }
+.board-banner .banner-goal-pill {
+  display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:16px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  font-size:14px;color:#ddd;font-weight:600;transition:all .6s ease-in-out;
+}
+.banner-goal-pill.flying {
+  position:fixed;z-index:300;pointer-events:none;
+  transition:all .6s ease-in-out;
+  opacity:0;transform:scale(.5);
+}
 
 /* Nudge system */
 @keyframes nudgeBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }

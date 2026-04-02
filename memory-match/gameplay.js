@@ -1173,17 +1173,16 @@ function startGame(preplacedSpecials) {
     if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
   }
 
-  // Tutorial: show overlay on level 1 if not completed; otherwise reveal normally
-  if (isTutorialLevel()) {
-    showTutorialOverlay();
-  } else {
-    revealEntireBoard();
-  }
-
-  // Show special card tutorial popups for any new types on the board
-  // Show tutorials for new specials and boosters with a delay
-  // Show tutorials for new features, boosters, and specials with a delay
-  setTimeout(() => { checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials(); }, 500);
+  // Show goal intro banner, then proceed with tutorials and board reveal
+  showGoalIntroBanner(() => {
+    if (isTutorialLevel()) {
+      showTutorialOverlay();
+    } else {
+      revealEntireBoard();
+    }
+    // Show tutorials for new features, boosters, and specials with a delay
+    setTimeout(() => { checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials(); }, 500);
+  });
 }
 
 function retryLevel() { showPreLevel(); }
@@ -2336,6 +2335,32 @@ function hideBoardBanner(cb) {
   if (!banner) { cb?.(); return; }
   banner.classList.add('hiding');
   banner.addEventListener('animationend', () => { banner.remove(); cb?.(); }, { once: true });
+}
+
+function showGoalIntroBanner(cb) {
+  if (!levelGoals) { cb?.(); return; }
+  const defs = levelGoals.definitions;
+  if (defs.length === 0) { cb?.(); return; }
+
+  // Build goal pills HTML with full descriptions
+  const pills = defs.map(g => {
+    const d = getGoalDisplay(g);
+    const desc = goalDescription(g);
+    return `<div class="banner-goal-pill"><span>${d.icon}</span><span>${desc}</span></div>`;
+  }).join('');
+
+  let banner = boardContainerEl.querySelector('.board-banner');
+  if (banner) banner.remove();
+  banner = document.createElement('div');
+  banner.className = 'board-banner goal-intro';
+  banner.innerHTML = `<div class="banner-title">Level ${LEVELS[currentLevelIndex].id}</div><div class="banner-goals">${pills}</div>`;
+  boardContainerEl.appendChild(banner);
+
+  // Hold then dismiss
+  setTimeout(() => {
+    banner.classList.add('hiding');
+    banner.addEventListener('animationend', () => { banner.remove(); cb?.(); }, { once: true });
+  }, 1800);
 }
 
 function showSweepBanner() { showBoardBanner('sweep', '🧹 PERFECT SWEEP!', 'Revealing the NEW board...'); }
