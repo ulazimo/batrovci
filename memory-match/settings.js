@@ -307,6 +307,7 @@ if (!progress.highestUnlocked) progress.highestUnlocked = 0;
 if (!progress.stars) progress.stars = [];
 if (!progress.winStreak) progress.winStreak = 0;
 if (!progress.coins) progress.coins = 0;
+if (progress.lives === undefined) progress.lives = 5;
 if (!progress.gameplayRules) progress.gameplayRules = {};
 if (!progress.boosterCounts) progress.boosterCounts = {};
 if (progress.tutorialComplete === undefined) progress.tutorialComplete = false;

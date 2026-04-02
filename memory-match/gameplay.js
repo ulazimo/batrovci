@@ -34,6 +34,7 @@ function saveJourneySnapshot() {
     stars: Array.isArray(progress.stars) ? [...progress.stars] : [],
     winStreak: progress.winStreak,
     coins: progress.coins || 0,
+    lives: progress.lives ?? 5,
     boosterCounts: { ...boosterCounts },
     specialInventory: progress.specialInventory ? { ...progress.specialInventory } : {},
     seenSpecials: progress.seenSpecials ? [...progress.seenSpecials] : [],
@@ -50,6 +51,7 @@ function restoreJourneySnapshot(style) {
     progress.stars = Array.isArray(snap.stars) ? [...snap.stars] : new Array(LEVELS.length).fill(0);
     progress.winStreak = snap.winStreak || 0;
     progress.coins = snap.coins || 0;
+    progress.lives = snap.lives ?? 5;
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
     if (snap.boosterCounts) Object.assign(boosterCounts, snap.boosterCounts);
     if (snap.specialInventory) progress.specialInventory = { ...snap.specialInventory };
@@ -62,6 +64,7 @@ function restoreJourneySnapshot(style) {
     progress.stars = new Array(LEVELS.length).fill(0);
     progress.winStreak = 0;
     progress.coins = 0;
+    progress.lives = 5;
     progress.seenSpecials = [];
     progress.seenBoosters = [];
     progress.seenFeatures = [];
@@ -1067,11 +1070,17 @@ function updateBanner() {
   const levelEl = document.getElementById('banner-level');
   if (levelEl) levelEl.textContent = `Level ${LEVELS[currentLevelIndex].id}`;
   updateCoinDisplay();
+  updateLivesDisplay();
 }
 
 function updateCoinDisplay() {
   const el = document.getElementById('coin-count');
   if (el) el.textContent = progress.coins || 0;
+}
+
+function updateLivesDisplay() {
+  const el = document.getElementById('lives-count');
+  if (el) el.textContent = progress.lives ?? 5;
 }
 
 // ============================================================
@@ -2572,6 +2581,7 @@ function levelFailed() {
   const hadStreak = progress.winStreak;
   _failSavedStreak = hadStreak;   // stash so keepStreak() can restore it
   progress.winStreak = 0;
+  progress.lives = Math.max(0, (progress.lives ?? 5) - 1);
   saveJourneySnapshot();
   saveProgress();
   updateBanner();
@@ -2607,7 +2617,10 @@ function showFailOverlay(hadStreak) {
 let _failSavedStreak = 0;
 function continueLevelWithCoins() {
   progress.coins = (progress.coins || 0) - KEEP_STREAK_COST;
+  // Restore life that was lost on fail
+  progress.lives = Math.min(5, (progress.lives ?? 0) + 1);
   updateCoinDisplay();
+  updateLivesDisplay();
   saveJourneySnapshot();
   saveProgress();
 

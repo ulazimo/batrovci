@@ -15,8 +15,8 @@
     },
     {
       "name": "memory-match",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "3458", "."],
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["-m", "http.server", "3458", "-d", "."],
       "port": 3458
     }
   ]

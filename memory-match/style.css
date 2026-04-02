@@ -18,6 +18,13 @@ body {
 #level-banner .settings-gear { flex:1; text-align:right; }
 #level-banner .level-dots { display: flex; gap: 4px; }
 #level-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6a; }
+.lives-pill {
+  display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(231,76,60,.3);
+  font-size:14px;font-weight:800;color:#e74c3c;margin-right:6px;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+.lives-icon { width:14px;height:14px;object-fit:contain; }
 .coin-pill {
   display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,215,0,.3);
