@@ -198,8 +198,8 @@ function startNudgeIdleTimer() {
       }
     }
 
-    // Power-up nudge: sitting on combo 1 or 2 for 5s
-    if (chainLen >= 1 && chainLen <= 2) {
+    // Power-up nudge: sitting on combo 1 or 2 for 5s (only if player has power-ups)
+    if (chainLen >= 1 && chainLen <= 2 && hasAnyBoosters()) {
       showNudge('booster');
     }
   }, 5000);
