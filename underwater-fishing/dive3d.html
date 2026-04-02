@@ -148,19 +148,21 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // ============================================================
 // CONSTANTS & FISH DATA
 // ============================================================
+// Organ positions: fractions of bounding box (0=min, 1=max for each axis)
+// brain: front-top of head, heart: center-lower chest
 const FISH_TYPES = {
-    FISH:      { name:'Blue Fish',  emoji:'🐟', size:30, speed:4.0, points:100,  heartSize:8,  hX:0.3, hY:0.9, rarity:'common',   modelKey:'common', scale3d:0.8, color:0x4488ff },
-    CLOWNFISH: { name:'Clownfish',  emoji:'🐠', size:32, speed:3.0, points:150,  heartSize:9,  hX:0.3, hY:0.85,rarity:'common',   modelKey:'common', scale3d:0.85,color:0xff8833 },
-    CRAB:      { name:'Crab',       emoji:'🦀', size:38, speed:1.8, points:250,  heartSize:10, hX:0.0, hY:0.75,rarity:'common',   modelKey:'round',  scale3d:0.7, color:0xcc3322 },
-    BLOWFISH:  { name:'Pufferfish', emoji:'🐡', size:42, speed:1.5, points:300,  heartSize:13, hX:0.05,hY:0.9, rarity:'uncommon', modelKey:'round',  scale3d:1.0, color:0xddcc55 },
-    LOBSTER:   { name:'Lobster',    emoji:'🦞', size:44, speed:2.0, points:350,  heartSize:11, hX:0.2, hY:0.8, rarity:'uncommon', modelKey:'tentacle',scale3d:0.9,color:0xcc4422 },
-    TURTLE:    { name:'Sea Turtle', emoji:'🐢', size:50, speed:1.1, points:450,  heartSize:13, hX:0.1, hY:0.9, rarity:'uncommon', modelKey:'round',  scale3d:1.2, color:0x44aa55 },
-    OCTOPUS:   { name:'Octopus',    emoji:'🐙', size:55, speed:1.2, points:600,  heartSize:16, hX:0.0, hY:0.7, rarity:'rare',     modelKey:'tentacle',scale3d:1.3,color:0x9944cc },
-    SQUID:     { name:'Squid',      emoji:'🦑', size:48, speed:4.5, points:700,  heartSize:12, hX:0.1, hY:0.65,rarity:'rare',     modelKey:'long',   scale3d:1.0, color:0xcc5577 },
-    SHARK:     { name:'Shark',      emoji:'🦈', size:75, speed:2.5, points:1000, heartSize:20, hX:0.25,hY:0.85,rarity:'epic',     modelKey:'long',   scale3d:2.0, color:0x778899 },
-    DOLPHIN:   { name:'Dolphin',    emoji:'🐬', size:65, speed:3.8, points:1200, heartSize:15, hX:0.28,hY:0.88,rarity:'epic',     modelKey:'long',   scale3d:1.6, color:0x5588bb },
-    WHALE:     { name:'Blue Whale', emoji:'🐳', size:100,speed:0.9, points:2000, heartSize:26, hX:0.2, hY:0.9, rarity:'legendary',modelKey:'long',   scale3d:3.5, color:0x3366aa },
-    NARWHAL:   { name:'Narwhal',    emoji:'🦭', size:70, speed:2.2, points:2500, heartSize:17, hX:0.22,hY:0.85,rarity:'legendary',modelKey:'long',   scale3d:1.8, color:0x6688aa },
+    FISH:      { name:'Blue Fish',  emoji:'🐟', size:30, speed:4.0, points:100,  rarity:'common',   modelKey:'common', scale3d:0.8, color:0x4488ff, brain:{x:0.75,y:0.65,z:0.5,r:0.12}, heart:{x:0.45,y:0.4,z:0.5,r:0.14} },
+    CLOWNFISH: { name:'Clownfish',  emoji:'🐠', size:32, speed:3.0, points:150,  rarity:'common',   modelKey:'common', scale3d:0.85,color:0xff8833, brain:{x:0.75,y:0.65,z:0.5,r:0.12}, heart:{x:0.45,y:0.4,z:0.5,r:0.14} },
+    CRAB:      { name:'Crab',       emoji:'🦀', size:38, speed:1.8, points:250,  rarity:'common',   modelKey:'round',  scale3d:0.7, color:0xcc3322, brain:{x:0.55,y:0.7,z:0.5,r:0.13},  heart:{x:0.45,y:0.4,z:0.5,r:0.15} },
+    BLOWFISH:  { name:'Pufferfish', emoji:'🐡', size:42, speed:1.5, points:300,  rarity:'uncommon', modelKey:'round',  scale3d:1.0, color:0xddcc55, brain:{x:0.6,y:0.7,z:0.5,r:0.13},  heart:{x:0.4,y:0.35,z:0.5,r:0.15} },
+    LOBSTER:   { name:'Lobster',    emoji:'🦞', size:44, speed:2.0, points:350,  rarity:'uncommon', modelKey:'tentacle',scale3d:0.9,color:0xcc4422, brain:{x:0.7,y:0.65,z:0.5,r:0.11}, heart:{x:0.4,y:0.35,z:0.5,r:0.13} },
+    TURTLE:    { name:'Sea Turtle', emoji:'🐢', size:50, speed:1.1, points:450,  rarity:'uncommon', modelKey:'round',  scale3d:1.2, color:0x44aa55, brain:{x:0.7,y:0.65,z:0.5,r:0.12}, heart:{x:0.4,y:0.35,z:0.5,r:0.15} },
+    OCTOPUS:   { name:'Octopus',    emoji:'🐙', size:55, speed:1.2, points:600,  rarity:'rare',     modelKey:'tentacle',scale3d:1.3,color:0x9944cc, brain:{x:0.5,y:0.7,z:0.5,r:0.14},  heart:{x:0.4,y:0.4,z:0.5,r:0.16} },
+    SQUID:     { name:'Squid',      emoji:'🦑', size:48, speed:4.5, points:700,  rarity:'rare',     modelKey:'long',   scale3d:1.0, color:0xcc5577, brain:{x:0.75,y:0.6,z:0.5,r:0.11}, heart:{x:0.45,y:0.4,z:0.5,r:0.13} },
+    SHARK:     { name:'Shark',      emoji:'🦈', size:75, speed:2.5, points:1000, rarity:'epic',     modelKey:'long',   scale3d:2.0, color:0x778899, brain:{x:0.8,y:0.6,z:0.5,r:0.1},   heart:{x:0.4,y:0.35,z:0.5,r:0.12} },
+    DOLPHIN:   { name:'Dolphin',    emoji:'🐬', size:65, speed:3.8, points:1200, rarity:'epic',     modelKey:'long',   scale3d:1.6, color:0x5588bb, brain:{x:0.8,y:0.6,z:0.5,r:0.1},   heart:{x:0.4,y:0.35,z:0.5,r:0.12} },
+    WHALE:     { name:'Blue Whale', emoji:'🐳', size:100,speed:0.9, points:2000, rarity:'legendary',modelKey:'long',   scale3d:3.5, color:0x3366aa, brain:{x:0.8,y:0.55,z:0.5,r:0.08}, heart:{x:0.4,y:0.35,z:0.5,r:0.1}  },
+    NARWHAL:   { name:'Narwhal',    emoji:'🦭', size:70, speed:2.2, points:2500, rarity:'legendary',modelKey:'long',   scale3d:1.8, color:0x6688aa, brain:{x:0.8,y:0.6,z:0.5,r:0.09},  heart:{x:0.4,y:0.35,z:0.5,r:0.11} },
 };
 const RARITY_COLOR = { common:'#94a3b8', uncommon:'#4ade80', rare:'#60a5fa', epic:'#c084fc', legendary:'#f59e0b' };
 const MODEL_FILES = {
@@ -811,27 +813,56 @@ function spawnAnimal() {
 
         scene.add(mesh);
 
-        const heartOffset3D = new THREE.Vector3(type.hX * type.scale3d, type.hY * type.scale3d * 0.5, 0);
+        // Compute organ positions from bounding box
+        const bbox = new THREE.Box3().setFromObject(mesh);
+        const bMin = bbox.min, bSize = bbox.getSize(new THREE.Vector3());
+        // Brain/heart positions in local mesh space (fraction of bbox)
+        const brainLocal = new THREE.Vector3(
+            bMin.x + bSize.x * type.brain.x,
+            bMin.y + bSize.y * type.brain.y,
+            bMin.z + bSize.z * type.brain.z
+        );
+        const heartLocal = new THREE.Vector3(
+            bMin.x + bSize.x * type.heart.x,
+            bMin.y + bSize.y * type.heart.y,
+            bMin.z + bSize.z * type.heart.z
+        );
+        const brainRadius = Math.max(bSize.x, bSize.y, bSize.z) * type.brain.r;
+        const heartRadius = Math.max(bSize.x, bSize.y, bSize.z) * type.heart.r;
+
+        // Visual organ meshes (slightly visible inside fish)
+        const brainMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(brainRadius, 8, 8),
+            new THREE.MeshBasicMaterial({ color:0xff88cc, transparent:true, opacity:0.35, depthTest:false })
+        );
+        brainMesh.position.copy(brainLocal);
+        mesh.add(brainMesh);
+        const heartMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(heartRadius, 8, 8),
+            new THREE.MeshBasicMaterial({ color:0xff2222, transparent:true, opacity:0.35, depthTest:false })
+        );
+        heartMesh.position.copy(heartLocal);
+        mesh.add(heartMesh);
 
         state.animals.push({
             mesh, type, typeKey: key, dead: false,
             swimDir, speed: type.speed * 0.9,
             baseSpeed: type.speed * 0.9,
             wobblePhase: Math.random()*Math.PI*2,
-            // Swimming style parameters (vary per fish for variety)
-            swimFreq: 1.5 + Math.random()*1.5,      // body undulation frequency
-            swimAmp: 0.08 + Math.random()*0.06,      // yaw amplitude (S-curve)
-            vertFreq: 0.4 + Math.random()*0.3,       // vertical wave frequency
-            vertAmp: 0.3 + Math.random()*0.4,         // vertical wave amplitude
-            speedPulseFreq: 0.8 + Math.random()*0.6, // speed variation frequency
-            speedPulseAmp: 0.2 + Math.random()*0.15, // speed varies ±this fraction
-            rollAmp: 0.06 + Math.random()*0.04,       // roll on turns
+            swimFreq: 1.5 + Math.random()*1.5,
+            swimAmp: 0.08 + Math.random()*0.06,
+            vertFreq: 0.4 + Math.random()*0.3,
+            vertAmp: 0.3 + Math.random()*0.4,
+            speedPulseFreq: 0.8 + Math.random()*0.6,
+            speedPulseAmp: 0.2 + Math.random()*0.15,
+            rollAmp: 0.06 + Math.random()*0.04,
             bodyRadius: type.scale3d * 1.0,
-            heartRadius3D: type.heartSize * type.scale3d * 0.03,
-            heartOffset3D,
+            // Organ data for hit detection
+            brainLocal, heartLocal, brainRadius, heartRadius,
+            brainMesh, heartMesh,
             fadeAlpha: 1,
             spawnTime: clock.getElapsedTime(),
-            baseYaw: Math.atan2(swimDir.x, swimDir.z), // initial heading
+            baseYaw: Math.atan2(swimDir.x, swimDir.z),
         });
     }
     statusEl.textContent = 'FISH SPOTTED';
@@ -1033,26 +1064,38 @@ const _hitHeart = new THREE.Vector3();
 function checkSpearHit(spear) {
     _hitRay.origin.copy(spear.origin);
     _hitRay.direction.copy(spear.dir).normalize();
-    let shotData = { hit:false, tier:'miss', animal:null };
+    let shotData = { hit:false, organ:'none', tier:'miss', animal:null };
 
     for (const animal of state.animals) {
         if (animal.dead) continue;
+        // First check body bounding sphere
         _hitSphere.center.copy(animal.mesh.position);
         _hitSphere.radius = animal.bodyRadius;
-        if (_hitRay.intersectSphere(_hitSphere, _hitPoint)) {
-            _hitHeart.copy(animal.heartOffset3D).applyMatrix4(animal.mesh.matrixWorld);
-            const dist = _hitPoint.distanceTo(_hitHeart);
-            const hs = animal.heartRadius3D;
+        if (!_hitRay.intersectSphere(_hitSphere, _hitPoint)) continue;
 
-            let tier = 'body';
-            if (dist < hs * 0.25) tier = 'perfect';
-            else if (dist < hs * 0.6) tier = 'great';
-            else if (dist < hs) tier = 'heart';
+        const impactWorld = _hitPoint.clone();
 
-            if (!shotData.hit) {
-                shotData = { hit:true, tier, animal, impactPoint:_hitPoint.clone() };
-            }
+        // Check brain (world position = local position transformed by mesh matrix)
+        _hitHeart.copy(animal.brainLocal).applyMatrix4(animal.mesh.matrixWorld);
+        const brainDist = impactWorld.distanceTo(_hitHeart);
+
+        // Check heart
+        const heartWorld = new THREE.Vector3().copy(animal.heartLocal).applyMatrix4(animal.mesh.matrixWorld);
+        const heartDist = impactWorld.distanceTo(heartWorld);
+
+        let organ = 'none';
+        if (brainDist < animal.brainRadius) organ = 'brain';
+        else if (heartDist < animal.heartRadius) organ = 'heart';
+
+        // Tier based on organ
+        let tier = 'body'; // body = miss, fish survives
+        if (organ === 'brain') tier = 'brain';
+        else if (organ === 'heart') tier = 'heart';
+
+        if (!shotData.hit || organ !== 'none') {
+            shotData = { hit:true, organ, tier, animal, impactPoint:impactWorld };
         }
+        break; // first fish hit
     }
     return shotData;
 }
@@ -1100,21 +1143,37 @@ function resolveSpear(spear, shotData) {
         scene.add(flashSphere);
     }
 
-    if (shotData.hit) {
+    const organHit = shotData.organ === 'brain' || shotData.organ === 'heart';
+
+    if (shotData.hit && organHit) {
+        // Organ hit — fish is killed
         state.shake = 25;
         triggerFlash(0.35);
         processHit(shotData.animal, shotData.tier);
-        // Show tier label immediately as floating 3D text feedback
-        const tierLabels = { perfect:'BULLSEYE!', great:'VITAL HIT!', heart:'GILL SHOT', body:'HIT' };
-        const tierColors = { perfect:'#ef4444', great:'#f87171', heart:'#fca5a5', body:'#fbbf24' };
-        statusEl.textContent = tierLabels[shotData.tier];
+        const tierLabels = { brain:'BRAIN SHOT!', heart:'HEART SHOT!' };
+        const tierColors = { brain:'#ff88cc', heart:'#ef4444' };
+        statusEl.textContent = tierLabels[shotData.organ];
         statusEl.className = 'text-xl font-bold';
-        statusEl.style.color = tierColors[shotData.tier];
-        // Delay analysis to let player see the hit
+        statusEl.style.color = tierColors[shotData.organ];
         setTimeout(() => showShotAnalysis(shotData), 1200);
+    } else if (shotData.hit) {
+        // Body hit — fish survives
+        state.shake = 10;
+        triggerFlash(0.15);
+        state.isWaitingForAnalysis = false;
+        statusEl.textContent = 'BODY SHOT — NO KILL';
+        statusEl.className = 'text-xl font-bold text-yellow-500';
+        statusEl.style.color = '';
+        // Fish flinches but lives
+        if (shotData.animal) {
+            shotData.animal.speed *= 1.5; // scared, swims faster
+            shotData.animal.baseSpeed *= 1.3;
+        }
+        checkOutOfAmmo();
     } else {
-        state.shake = 8;
-        triggerFlash(0.1);
+        // Complete miss
+        state.shake = 5;
+        triggerFlash(0.08);
         state.isWaitingForAnalysis = false;
         statusEl.textContent = 'MISSED!';
         statusEl.className = 'text-xl font-bold text-red-500';
@@ -1128,9 +1187,8 @@ function processHit(animal, tier) {
     animal.dead = true;
     state.harvested++;
     let mult = 1;
-    if (tier === 'perfect') mult = 10;
-    else if (tier === 'great') mult = 5;
-    else if (tier === 'heart') mult = 3;
+    if (tier === 'brain') mult = 5;      // brain shot = 5x points
+    else if (tier === 'heart') mult = 3;  // heart shot = 3x points
     state.score += animal.type.points * mult;
     updateUI();
 }
@@ -1193,11 +1251,10 @@ function showShotAnalysis(data) {
     const { tier, animal, impactPoint } = data;
     if (animal) analysisAnimalName.textContent = animal.type.name;
     let label = 'BODY HIT', pts = animal.type.points;
-    if (tier === 'perfect') { label = 'PERFECT BULLSEYE'; pts *= 10; }
-    else if (tier === 'great') { label = 'VITAL HIT'; pts *= 5; }
-    else if (tier === 'heart') { label = 'GILL SHOT'; pts *= 3; }
+    if (tier === 'brain') { label = 'BRAIN SHOT!'; pts *= 5; }
+    else if (tier === 'heart') { label = 'HEART SHOT!'; pts *= 3; }
     analysisResult.textContent = label;
-    analysisResult.className = tier === 'body' ? 'text-2xl font-black text-yellow-500' : 'text-2xl font-black text-cyan-400';
+    analysisResult.className = tier === 'brain' ? 'text-2xl font-black text-pink-400' : tier === 'heart' ? 'text-2xl font-black text-red-400' : 'text-2xl font-black text-yellow-500';
     analysisScore.textContent = '+' + pts + ' Points';
 
     // Setup 3D feedback scene
@@ -1260,24 +1317,58 @@ function setupFeedback3D(animal, tier, impactPoint) {
     feedbackCamera.position.set(center.x, center.y, center.z + maxDim * 1.6);
     feedbackCamera.lookAt(center);
 
-    // --- VITAL ZONE: yellow-green sphere inside the body (like reference image) ---
-    const vitalRadius = maxDim * 0.2;
-    const vitalPos = center.clone();
-    vitalPos.x += size.x * 0.05; // slightly forward in body
-    const vitalZone = new THREE.Mesh(
-        new THREE.SphereGeometry(vitalRadius, 16, 16),
-        new THREE.MeshBasicMaterial({ color:0xaacc22, transparent:true, opacity:0.25, depthTest:false })
+    // --- BRAIN organ (pink) ---
+    const bMin = bbox.min;
+    const brainPos = new THREE.Vector3(
+        bMin.x + size.x * animal.type.brain.x,
+        bMin.y + size.y * animal.type.brain.y,
+        bMin.z + size.z * animal.type.brain.z
     );
-    vitalZone.position.copy(vitalPos);
-    feedbackMesh.add(vitalZone);
+    const brainR = maxDim * animal.type.brain.r;
+    const brainVis = new THREE.Mesh(
+        new THREE.SphereGeometry(brainR, 12, 12),
+        new THREE.MeshBasicMaterial({ color:0xff88cc, transparent:true, opacity:0.4, depthTest:false })
+    );
+    brainVis.position.copy(brainPos);
+    feedbackMesh.add(brainVis);
+    // Brain label ring
+    const brainRing = new THREE.Mesh(
+        new THREE.TorusGeometry(brainR*1.2, brainR*0.08, 8, 24),
+        new THREE.MeshBasicMaterial({ color:0xff88cc, transparent:true, opacity:0.5, depthTest:false })
+    );
+    brainRing.position.copy(brainPos);
+    feedbackMesh.add(brainRing);
 
-    // --- IMPACT POINT: offset from center based on tier ---
+    // --- HEART organ (red) ---
+    const heartPos = new THREE.Vector3(
+        bMin.x + size.x * animal.type.heart.x,
+        bMin.y + size.y * animal.type.heart.y,
+        bMin.z + size.z * animal.type.heart.z
+    );
+    const heartR = maxDim * animal.type.heart.r;
+    const heartVis = new THREE.Mesh(
+        new THREE.SphereGeometry(heartR, 12, 12),
+        new THREE.MeshBasicMaterial({ color:0xff2222, transparent:true, opacity:0.4, depthTest:false })
+    );
+    heartVis.position.copy(heartPos);
+    feedbackMesh.add(heartVis);
+    const heartRing = new THREE.Mesh(
+        new THREE.TorusGeometry(heartR*1.2, heartR*0.08, 8, 24),
+        new THREE.MeshBasicMaterial({ color:0xff2222, transparent:true, opacity:0.5, depthTest:false })
+    );
+    heartRing.position.copy(heartPos);
+    feedbackMesh.add(heartRing);
+
+    // --- HIT POINT: at the organ that was hit, or random body position ---
     const hitPoint = center.clone();
-    const tierOff = { perfect:0, great:vitalRadius*0.3, heart:vitalRadius*0.7, body:maxDim*0.3 };
-    const off = tierOff[tier] || maxDim*0.3;
-    const ang = Math.PI * 0.25; // consistent angle so it looks good
-    hitPoint.x += Math.cos(ang) * off;
-    hitPoint.y += Math.sin(ang) * off * 0.5;
+    if (tier === 'brain') hitPoint.copy(brainPos);
+    else if (tier === 'heart') hitPoint.copy(heartPos);
+    else {
+        // Body shot — random spot away from organs
+        const ang = Math.random()*Math.PI*2;
+        hitPoint.x += Math.cos(ang) * maxDim * 0.25;
+        hitPoint.y += Math.sin(ang) * maxDim * 0.15;
+    }
 
     // --- TRAJECTORY LINE: red line from left to right through hit point ---
     const trajDir = new THREE.Vector3(1, 0.05, -0.15).normalize(); // mostly horizontal, slight angle
@@ -1359,6 +1450,15 @@ function setupFeedback3D(animal, tier, impactPoint) {
         feedbackLast = now;
         feedbackTime += dt;
         if (feedbackMesh) feedbackMesh.rotation.y += dt * 0.5;
+        // Pulse organs
+        if (brainVis) {
+            brainVis.material.opacity = 0.3 + Math.sin(feedbackTime * 3) * 0.15;
+            brainRing.material.opacity = 0.4 + Math.sin(feedbackTime * 2.5) * 0.2;
+        }
+        if (heartVis) {
+            heartVis.material.opacity = 0.3 + Math.sin(feedbackTime * 4) * 0.15;
+            heartRing.material.opacity = 0.4 + Math.sin(feedbackTime * 3) * 0.2;
+        }
         // Pulse impact glow
         if (impactGlow) {
             impactGlow.material.opacity = 0.6 + Math.sin(feedbackTime * 5) * 0.4;
