@@ -800,12 +800,22 @@ function spawnAnimal() {
         state.animals.push({
             mesh, type, typeKey: key, dead: false,
             swimDir, speed: type.speed * 0.5,
+            baseSpeed: type.speed * 0.5,
             wobblePhase: Math.random()*Math.PI*2,
+            // Swimming style parameters (vary per fish for variety)
+            swimFreq: 1.5 + Math.random()*1.5,      // body undulation frequency
+            swimAmp: 0.08 + Math.random()*0.06,      // yaw amplitude (S-curve)
+            vertFreq: 0.4 + Math.random()*0.3,       // vertical wave frequency
+            vertAmp: 0.3 + Math.random()*0.4,         // vertical wave amplitude
+            speedPulseFreq: 0.8 + Math.random()*0.6, // speed variation frequency
+            speedPulseAmp: 0.2 + Math.random()*0.15, // speed varies ±this fraction
+            rollAmp: 0.06 + Math.random()*0.04,       // roll on turns
             bodyRadius: type.scale3d * 0.6,
             heartRadius3D: type.heartSize * type.scale3d * 0.02,
             heartOffset3D,
             fadeAlpha: 1,
             spawnTime: clock.getElapsedTime(),
+            baseYaw: Math.atan2(swimDir.x, swimDir.z), // initial heading
         });
     }
     statusEl.textContent = 'FISH SPOTTED';
@@ -817,15 +827,36 @@ function updateFish(dt) {
     for (let i = state.animals.length-1; i >= 0; i--) {
         const a = state.animals[i];
         if (!a.dead) {
-            // Swim forward (reuse scratch vector)
+            a.wobblePhase += dt * a.swimFreq * Math.PI * 2;
+            const t = a.wobblePhase;
+
+            // Speed pulsing: burst then glide
+            const speedMult = 1 + Math.sin(t * a.speedPulseFreq) * a.speedPulseAmp;
+            a.speed = a.baseSpeed * speedMult;
+
+            // S-curve path: yaw oscillates around base heading
+            const yawOsc = Math.sin(t * 0.5) * a.swimAmp;
+            const currentYaw = a.baseYaw + yawOsc;
+            // Update swim direction based on oscillating yaw
+            a.swimDir.x = Math.sin(currentYaw);
+            a.swimDir.z = Math.cos(currentYaw);
+            a.swimDir.normalize();
+
+            // Move forward
             _v1.copy(a.swimDir).multiplyScalar(a.speed * dt);
             a.mesh.position.add(_v1);
-            // Wobble
-            a.wobblePhase += dt * 3;
-            a.mesh.position.y += Math.sin(a.wobblePhase) * 0.02;
-            // Tail-like rotation
-            a.mesh.rotation.z = Math.sin(a.wobblePhase * 2) * 0.05;
-            a.mesh.rotation.x += Math.sin(a.wobblePhase * 0.5) * 0.003;
+
+            // Vertical wave: gentle up-down
+            a.mesh.position.y += Math.sin(t * a.vertFreq) * a.vertAmp * dt;
+
+            // Face swimming direction with body undulation
+            const lookYaw = currentYaw + Math.sin(t) * a.swimAmp * 0.5;
+            a.mesh.rotation.y = lookYaw + Math.PI; // face direction of travel
+            // Pitch: nose dips slightly with vertical motion
+            a.mesh.rotation.x = Math.sin(t * a.vertFreq) * 0.04;
+            // Roll: bank into turns
+            const yawRate = Math.cos(t * 0.5) * a.swimAmp;
+            a.mesh.rotation.z = -yawRate * a.rollAmp * 8;
 
             // Remove if swam off screen (far on X) or too far away or timed out
             const absX = Math.abs(a.mesh.position.x);
