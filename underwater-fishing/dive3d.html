@@ -205,7 +205,8 @@ let useGyro = false, gyroAvailable = false, gyroAlpha=0, gyroBeta=0, gyroGamma=0
 let lastTouchX = 0, lastTouchY = 0, isTouching = false;
 const SENSITIVITY = 0.003;
 const TOUCH_SENSITIVITY = 0.005;
-const PITCH_LIMIT = Math.PI / 2.2;
+const YAW_LIMIT = Math.PI / 4;    // ±45 degrees left/right
+const PITCH_LIMIT = Math.PI / 6;  // ±30 degrees up/down
 
 // Environments
 let seabed, godRays=[], bubbleSystem, causticsPlane;
@@ -581,6 +582,7 @@ function initControls() {
     document.addEventListener('mousemove', (e) => {
         if (state.gameOver || state.analysisActive) return;
         yaw   -= e.movementX * SENSITIVITY;
+        yaw   = Math.max(-YAW_LIMIT, Math.min(YAW_LIMIT, yaw));
         pitch -= e.movementY * SENSITIVITY;
         pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
     });
@@ -588,8 +590,6 @@ function initControls() {
     // Mouse aim
     renderer.domElement.addEventListener('mousedown', (e) => {
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
-        // Request pointer lock on first click
-        if (!document.pointerLockElement) renderer.domElement.requestPointerLock();
         state.isAiming = true;
         crosshairEl.classList.add('aiming');
     });
@@ -615,6 +615,7 @@ function initControls() {
         const dx = e.touches[0].clientX - lastTouchX;
         const dy = e.touches[0].clientY - lastTouchY;
         yaw   -= dx * TOUCH_SENSITIVITY;
+        yaw   = Math.max(-YAW_LIMIT, Math.min(YAW_LIMIT, yaw));
         pitch -= dy * TOUCH_SENSITIVITY;
         pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
         lastTouchX = e.touches[0].clientX;
@@ -667,7 +668,7 @@ function enableGyro() {
         if (initialAlpha === null) { initialAlpha = e.alpha; initialBeta = e.beta; }
         const da = (e.alpha - initialAlpha) * Math.PI / 180;
         const db = (e.beta - initialBeta) * Math.PI / 180;
-        yaw   = -da;
+        yaw   = Math.max(-YAW_LIMIT, Math.min(YAW_LIMIT, -da));
         pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, -db));
     });
 }
@@ -1096,7 +1097,7 @@ window.goModeSelect = function() {
     modeSelect.style.display = 'flex';
     cleanupScene();
     state.gameOver = true;
-    if (document.pointerLockElement) document.exitPointerLock();
+    yaw = 0; pitch = 0;
 };
 
 // ============================================================
