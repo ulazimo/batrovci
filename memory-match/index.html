@@ -170,6 +170,16 @@
 
 <div id="tutorial-hint"></div>
 
+<!-- Special Card Tutorial Popup -->
+<div id="special-tutorial" class="overlay-screen" onclick="dismissSpecialTutorial()">
+  <div class="overlay-box special-tutorial-box" onclick="event.stopPropagation()">
+    <div id="special-tut-icon" class="special-tut-icon"></div>
+    <h2 id="special-tut-name"></h2>
+    <p id="special-tut-desc" class="sub"></p>
+    <button class="overlay-btn primary" style="margin-top:8px;" onclick="dismissSpecialTutorial()">Got it!</button>
+  </div>
+</div>
+
 <div id="tutorial-overlay" class="overlay-screen">
   <div class="overlay-box">
     <h2>🎴 How to Play</h2>

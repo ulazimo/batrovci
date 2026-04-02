@@ -468,6 +468,12 @@ body {
 #tutorial-hint.hiding { opacity:0; transition:opacity .6s; }
 @keyframes tutHintIn { from{opacity:0;transform:translateX(-50%) translateY(-20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
+/* Special card tutorial popup */
+.special-tutorial-box { gap:10px;max-width:300px; }
+.special-tut-icon { font-size:48px;line-height:1; }
+#special-tutorial h2 { color:#4fc3f7;margin:0;font-size:22px; }
+#special-tutorial .sub { font-size:14px;color:#bbb;line-height:1.5; }
+
 /* Tutorial overlay */
 #tutorial-overlay .overlay-box { text-align:center; max-width:340px; }
 #tutorial-overlay h2 { color:#4fc3f7; margin-bottom:8px; }

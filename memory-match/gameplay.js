@@ -624,7 +624,7 @@ function animateScore(to) {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay','progression-picker']
+  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay','progression-picker','special-tutorial']
     .forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   document.getElementById('next-level-btn').style.display = '';
 }
@@ -672,6 +672,56 @@ function advanceTutorial(trigger) {
     tutorialActive = false;
     progress.tutorialComplete = true;
     saveProgress();
+  }
+}
+
+// ============================================================
+// SPECIAL CARD TUTORIALS — show popup first time each type appears
+// ============================================================
+let specialTutorialQueue = [];
+let specialTutorialShowing = false;
+
+function checkSpecialTutorials() {
+  if (!progress.seenSpecials) progress.seenSpecials = [];
+  const newSpecials = [];
+  board.forEach(card => {
+    if (card && card.special && !progress.seenSpecials.includes(card.special)) {
+      if (!newSpecials.includes(card.special)) newSpecials.push(card.special);
+    }
+  });
+  if (newSpecials.length > 0) {
+    specialTutorialQueue.push(...newSpecials);
+    showNextSpecialTutorial();
+  }
+}
+
+function showNextSpecialTutorial() {
+  if (specialTutorialQueue.length === 0) {
+    specialTutorialShowing = false;
+    return;
+  }
+  specialTutorialShowing = true;
+  inputLocked = true;
+  const specId = specialTutorialQueue.shift();
+  const spec = getSpecialType(specId);
+  if (!spec) { showNextSpecialTutorial(); return; }
+
+  document.getElementById('special-tut-icon').textContent = spec.icon;
+  document.getElementById('special-tut-name').textContent = spec.name;
+  document.getElementById('special-tut-desc').textContent = spec.desc;
+  document.getElementById('special-tutorial').classList.add('active');
+
+  progress.seenSpecials.push(specId);
+  saveProgress();
+}
+
+function dismissSpecialTutorial() {
+  document.getElementById('special-tutorial').classList.remove('active');
+  if (specialTutorialQueue.length > 0) {
+    setTimeout(showNextSpecialTutorial, 300);
+  } else {
+    specialTutorialShowing = false;
+    inputLocked = false;
   }
 }
 
@@ -1029,6 +1079,9 @@ function startGame(preplacedSpecials) {
   } else {
     revealEntireBoard();
   }
+
+  // Show special card tutorial popups for any new types on the board
+  setTimeout(() => checkSpecialTutorials(), 500);
 }
 
 function retryLevel() { showPreLevel(); }
@@ -2066,12 +2119,13 @@ function endTurn(manual, perfectSweep) {
           const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
           if (allRevealed.length > 0) lastRevealedCards = allRevealed;
           const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
+          const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!specialTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!specialTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };
           if (allRevealed.length > 0) {
             setTimeout(() => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
-              doFinish();
+              doFinishWithTutorial();
             }, 2200);
-          } else doFinish();
+          } else doFinishWithTutorial();
         }, dropDelay);
       }, bombRevealTime);
     }, 500);
