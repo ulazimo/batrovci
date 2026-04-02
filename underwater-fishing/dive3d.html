@@ -209,6 +209,51 @@ const PITCH_LIMIT = Math.PI / 2.2;
 
 // Environments
 let seabed, godRays=[], bubbleSystem, causticsPlane;
+let seaweedMeshes=[], waterMesh=null; // cached refs (avoid scene.traverse per frame)
+let gyroEnabled = false; // guard against duplicate listeners
+
+// Scratch vectors (reused every frame to avoid GC pressure)
+const _v1 = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
+
+// Shared particle geometry + material (pool instead of per-particle Mesh)
+let sharedBubbleGeo, sharedBubbleMat, sharedBurstGeo, sharedBurstMats={};
+function initSharedGeometry() {
+    sharedBubbleGeo = new THREE.SphereGeometry(0.035, 4, 4);
+    sharedBubbleMat = new THREE.MeshBasicMaterial({ color:0x88ccff, transparent:true, opacity:0.4, blending:THREE.AdditiveBlending });
+    sharedBurstGeo = new THREE.SphereGeometry(0.03, 4, 4);
+}
+
+// Material cache per fish species
+const tintedMaterialCache = {};
+
+// Dispose helper
+function disposeMesh(obj) {
+    if (!obj) return;
+    obj.traverse(c => {
+        if (c.isMesh) {
+            if (c.geometry) c.geometry.dispose();
+            if (c.material) {
+                if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                else c.material.dispose();
+            }
+        }
+    });
+}
+
+// Cleanup helper (shared between goModeSelect and startDiveMode)
+function cleanupScene() {
+    state.animals.forEach(a => { disposeMesh(a.mesh); scene.remove(a.mesh); });
+    state.animals = [];
+    state.spears.forEach(sp => {
+        disposeMesh(sp.mesh); scene.remove(sp.mesh);
+        if (sp.impactRing) { sp.impactRing.geometry.dispose(); sp.impactRing.material.dispose(); scene.remove(sp.impactRing); }
+        sp.trailParticles.forEach(p => { scene.remove(p); });
+    });
+    state.spears = [];
+    state.particles.forEach(p => { scene.remove(p); });
+    state.particles = [];
+}
 
 // ============================================================
 // THREE.JS SETUP
@@ -319,8 +364,8 @@ function createEnvironment() {
         const dist = 4+Math.random()*30;
         weed.position.set(Math.cos(angle)*dist, h/2 - 1, Math.sin(angle)*dist);
         weed.rotation.y = Math.random()*Math.PI;
-        weed.userData.isSeaweed = true;
         weed.userData.baseVerts = geo.attributes.position.array.slice();
+        seaweedMeshes.push(weed);
         scene.add(weed);
     }
 
@@ -332,8 +377,8 @@ function createEnvironment() {
     const water = new THREE.Mesh(waterGeo, waterMat);
     water.rotation.x = -Math.PI/2;
     water.position.y = 25;
-    water.userData.isWater = true;
     water.userData.baseVerts = waterGeo.attributes.position.array.slice();
+    waterMesh = water;
     scene.add(water);
 
     // God rays
@@ -399,43 +444,43 @@ function loadCorals() {
             coral.rotation.y = Math.random()*Math.PI*2;
             scene.add(coral);
         }
-    }, undefined, () => {}); // silent fail if model missing
+    }, undefined, (e) => console.warn('Coral reef model not found', e));
 }
 
 // ============================================================
 // ANIMATE ENVIRONMENT
 // ============================================================
 function animateEnvironment(time, dt) {
-    // Seaweed sway
-    scene.traverse(obj => {
-        if (obj.userData.isSeaweed) {
-            const base = obj.userData.baseVerts;
-            const pos = obj.geometry.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-                const by = base[i*3+1]; // original y
-                const sway = Math.sin(time*1.5 + obj.position.x*0.5 + by*0.8) * by * 0.06;
-                pos.setX(i, base[i*3] + sway);
-            }
-            pos.needsUpdate = true;
+    // Seaweed sway (cached refs, no scene.traverse)
+    for (const obj of seaweedMeshes) {
+        const base = obj.userData.baseVerts;
+        const pos = obj.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const by = base[i*3+1];
+            const sway = Math.sin(time*1.5 + obj.position.x*0.5 + by*0.8) * by * 0.06;
+            pos.setX(i, base[i*3] + sway);
         }
-        if (obj.userData.isWater) {
-            const base = obj.userData.baseVerts;
-            const pos = obj.geometry.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-                const bx = base[i*3], by = base[i*3+1];
-                pos.setZ(i, Math.sin(time*0.8 + bx*0.1)*0.5 + Math.cos(time*0.6 + by*0.12)*0.3);
-            }
-            pos.needsUpdate = true;
+        pos.needsUpdate = true;
+    }
+    // Water surface
+    if (waterMesh) {
+        const base = waterMesh.userData.baseVerts;
+        const pos = waterMesh.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const bx = base[i*3], by = base[i*3+1];
+            pos.setZ(i, Math.sin(time*0.8 + bx*0.1)*0.5 + Math.cos(time*0.6 + by*0.12)*0.3);
         }
-    });
+        pos.needsUpdate = true;
+    }
 
     // God rays pulse
     godRays.forEach(r => {
         r.material.opacity = r.userData.baseOpacity * (0.6 + 0.4*Math.sin(time*0.5 + r.userData.phase));
     });
 
-    // Caustics
-    if (causticsPlane) {
+    // Caustics (update every 3rd frame)
+    state._caustFrame = (state._caustFrame || 0) + 1;
+    if (causticsPlane && state._caustFrame % 3 === 0) {
         const cCtx = causticsPlane.userData.ctx;
         const w = 256;
         cCtx.clearRect(0, 0, w, w);
@@ -482,7 +527,8 @@ function loadModels() {
                 modelCache[key] = model;
                 loaded++;
                 if (loaded >= keys.length) resolve();
-            }, undefined, () => {
+            }, undefined, (err) => {
+                console.warn('GLB load failed for', key, err);
                 // Fallback: primitive fish
                 const group = new THREE.Group();
                 const body = new THREE.Mesh(
@@ -610,13 +656,15 @@ function initGyro() {
 }
 
 function enableGyro() {
+    if (gyroEnabled) return;
+    gyroEnabled = true;
     let initialAlpha = null, initialBeta = null;
     window.addEventListener('deviceorientation', (e) => {
         if (initialAlpha === null) { initialAlpha = e.alpha; initialBeta = e.beta; }
         const da = (e.alpha - initialAlpha) * Math.PI / 180;
         const db = (e.beta - initialBeta) * Math.PI / 180;
         yaw   = -da;
-        pitch = -Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, db));
+        pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, -db));
     });
 }
 
@@ -689,8 +737,9 @@ function updateFish(dt) {
     for (let i = state.animals.length-1; i >= 0; i--) {
         const a = state.animals[i];
         if (!a.dead) {
-            // Swim forward
-            a.mesh.position.add(a.swimDir.clone().multiplyScalar(a.speed * dt));
+            // Swim forward (reuse scratch vector)
+            _v1.copy(a.swimDir).multiplyScalar(a.speed * dt);
+            a.mesh.position.add(_v1);
             // Wobble
             a.wobblePhase += dt * 3;
             a.mesh.position.y += Math.sin(a.wobblePhase) * 0.02;
@@ -799,30 +848,30 @@ function updateSpears(dt) {
         const progress = Math.min(sp.elapsed / SPEAR_FLIGHT_TIME, 1);
         const ep = progress * progress * (3 - 2*progress); // smoothstep
 
-        // Position along ray
+        // Position along ray (scratch vectors)
         const dist = ep * FISH_SPAWN_RADIUS_MAX * 1.2;
-        sp.mesh.position.copy(sp.origin.clone().add(sp.dir.clone().multiplyScalar(dist)));
+        _v1.copy(sp.dir).multiplyScalar(dist);
+        sp.mesh.position.copy(sp.origin).add(_v1);
 
         // Scale up (perspective effect)
         const scale = 0.15 + ep * 0.85;
         sp.mesh.scale.set(scale, scale, scale);
 
-        // Trail bubbles
+        // Trail bubbles (shared geometry)
         if (Math.random() < 0.5) {
-            const bubble = new THREE.Mesh(
-                new THREE.SphereGeometry(0.03+Math.random()*0.03, 4, 4),
-                new THREE.MeshBasicMaterial({ color:0x88ccff, transparent:true, opacity:0.4, blending:THREE.AdditiveBlending })
-            );
-            bubble.position.copy(sp.mesh.position).add(new THREE.Vector3((Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1));
+            const bubble = new THREE.Mesh(sharedBubbleGeo, sharedBubbleMat.clone());
+            _v1.set((Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1);
+            bubble.position.copy(sp.mesh.position).add(_v1);
             scene.add(bubble);
             sp.trailParticles.push(bubble);
         }
-        // Fade old trail
-        sp.trailParticles.forEach((p, idx) => {
+        // Fade old trail (reverse loop to safely splice)
+        for (let j = sp.trailParticles.length-1; j >= 0; j--) {
+            const p = sp.trailParticles[j];
             p.material.opacity -= dt * 2;
             p.position.y += dt * 0.3;
-            if (p.material.opacity <= 0) { scene.remove(p); sp.trailParticles.splice(idx, 1); }
-        });
+            if (p.material.opacity <= 0) { scene.remove(p); sp.trailParticles.splice(j, 1); }
+        }
 
         if (progress >= 1) {
             const shotData = checkSpearHit(sp);
@@ -877,13 +926,13 @@ function resolveSpear(spear, shotData) {
     scene.add(ring);
     spear.impactRing = ring;
 
-    // Particle burst
+    // Particle burst (shared geometry, cached material per color)
     const burstColor = shotData.hit ? 0x00e5ff : 0xff6644;
+    if (!sharedBurstMats[burstColor]) {
+        sharedBurstMats[burstColor] = new THREE.MeshBasicMaterial({ color:burstColor, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending });
+    }
     for (let j = 0; j < 15; j++) {
-        const p = new THREE.Mesh(
-            new THREE.SphereGeometry(0.03, 4, 4),
-            new THREE.MeshBasicMaterial({ color:burstColor, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending })
-        );
+        const p = new THREE.Mesh(sharedBurstGeo, sharedBurstMats[burstColor].clone());
         p.position.copy(impactPos);
         p.userData.vel = new THREE.Vector3((Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4);
         p.userData.life = 1;
@@ -926,7 +975,8 @@ function checkOutOfAmmo() {
 function updateParticles(dt) {
     for (let i = state.particles.length-1; i >= 0; i--) {
         const p = state.particles[i];
-        p.position.add(p.userData.vel.clone().multiplyScalar(dt));
+        _v1.copy(p.userData.vel).multiplyScalar(dt);
+        p.position.add(_v1);
         p.userData.vel.y -= dt * 2; // gravity
         p.userData.life -= dt * 2;
         p.material.opacity = p.userData.life * 0.7;
@@ -1017,9 +1067,10 @@ window.closeAnalysis = function() {
 
 function showEndScreen(title, body, btnText) {
     state.gameOver = true;
+    state.lastDiveFailed = title.includes('FAILED');
     crosshairEl.style.display = 'none';
     document.getElementById('msg-title').textContent = title;
-    document.getElementById('msg-title').className = title.includes('FAILED') ? 'text-4xl font-black mb-1 text-red-500' : 'text-4xl font-black mb-1 text-teal-400';
+    document.getElementById('msg-title').className = state.lastDiveFailed ? 'text-4xl font-black mb-1 text-red-500' : 'text-4xl font-black mb-1 text-teal-400';
     document.getElementById('msg-body').textContent = body;
     actionBtnEl.textContent = btnText;
     msgBox.style.display = 'block';
@@ -1028,7 +1079,7 @@ function showEndScreen(title, body, btnText) {
 window.actionBtn = function() {
     msgBox.style.display = 'none';
     crosshairEl.style.display = '';
-    if (document.getElementById('msg-title').textContent === 'DIVE FAILED') {
+    if (state.lastDiveFailed) {
         state.score = 0;
         startDiveMode(1);
     } else {
@@ -1039,11 +1090,7 @@ window.actionBtn = function() {
 window.goModeSelect = function() {
     msgBox.style.display = 'none';
     modeSelect.style.display = 'flex';
-    // Clean up
-    state.animals.forEach(a => scene.remove(a.mesh));
-    state.animals = [];
-    state.spears.forEach(sp => { scene.remove(sp.mesh); if(sp.impactRing) scene.remove(sp.impactRing); sp.trailParticles.forEach(p=>scene.remove(p)); });
-    state.spears = [];
+    cleanupScene();
     state.gameOver = true;
     if (document.pointerLockElement) document.exitPointerLock();
 };
@@ -1061,13 +1108,7 @@ function startDiveMode(num) {
     state.isWaitingForAnalysis = false;
     state.isAiming = false;
 
-    // Clean up old fish
-    state.animals.forEach(a => scene.remove(a.mesh));
-    state.animals = [];
-    state.spears.forEach(sp => { scene.remove(sp.mesh); if(sp.impactRing) scene.remove(sp.impactRing); sp.trailParticles.forEach(p=>scene.remove(p)); });
-    state.spears = [];
-    state.particles.forEach(p => scene.remove(p));
-    state.particles = [];
+    cleanupScene();
 
     // Pick species for this dive
     const allKeys = Object.keys(FISH_TYPES);
@@ -1121,6 +1162,7 @@ window.startGame = async function() {
 
 async function init() {
     initScene();
+    initSharedGeometry();
     createEnvironment();
     await loadModels();
     initControls();
