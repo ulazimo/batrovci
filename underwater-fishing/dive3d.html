@@ -667,6 +667,8 @@ function initControls() {
     function startAim(screenX, screenY) {
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         state.isAiming = true;
+        crosshairEl.style.transition = 'none';
+        crosshairEl.style.opacity = '1';
         crosshairEl.style.display = 'block';
 
         // Snap aim toward the fish closest to where user clicked
@@ -691,8 +693,7 @@ function initControls() {
     });
     renderer.domElement.addEventListener('mouseup', () => {
         if (state.isAiming) fire();
-        // Don't clear isAiming yet if tracking spear — camera needs to stay zoomed
-        if (!state.trackingSpear) { state.isAiming = false; crosshairEl.style.display = 'none'; }
+        if (!state.trackingSpear) state.isAiming = false;
     });
 
     // Touch
@@ -719,7 +720,7 @@ function initControls() {
         e.preventDefault();
         if (state.isAiming) fire();
         isTouching = false;
-        if (!state.trackingSpear) { state.isAiming = false; crosshairEl.style.display = 'none'; }
+        if (!state.trackingSpear) state.isAiming = false;
     }, {passive:false});
 }
 
@@ -734,23 +735,13 @@ function updateCamera(dt) {
     camera.updateProjectionMatrix();
 
     if (state.trackingSpear) {
-        // Find the active spear to track
-        const activeSpear = state.spears.find(s => !s.done);
-        if (activeSpear) {
-            // Camera follows spear tip
-            _v2.copy(activeSpear.mesh.position).sub(camera.position);
-            const trackYaw = Math.atan2(-_v2.x, -_v2.z);
-            const trackPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
-            camYaw += (trackYaw - camYaw) * 0.2;
-            camPitch += (trackPitch - camPitch) * 0.2;
-        } else {
-            // Spear resolved — hold position for feedback duration
-            state.shotFeedbackTimer += dt;
-            if (state.shotFeedbackTimer > 1.0) {
-                state.trackingSpear = false;
-                state.isAiming = false;
-                crosshairEl.style.display = 'none';
-            }
+        // Camera stays frozen at aim position — no movement
+        // Just count down feedback timer
+        state.shotFeedbackTimer += dt;
+        if (state.shotFeedbackTimer > 1.2) {
+            state.trackingSpear = false;
+            state.isAiming = false;
+            crosshairEl.style.display = 'none';
         }
     } else if (state.isAiming) {
         camYaw += (aimYaw - camYaw) * 0.15;
@@ -938,9 +929,11 @@ function fire() {
     state.isWaitingForAnalysis = true;
     state.trackingSpear = true;
     state.shotFeedbackTimer = 0;
-    state.shake = 18;
-    triggerFlash(0.2);
-    crosshairEl.style.display = 'none'; // hide crosshair during flight
+    state.shake = 12;
+    triggerFlash(0.15);
+    // Fade out crosshair smoothly
+    crosshairEl.style.transition = 'opacity 0.3s';
+    crosshairEl.style.opacity = '0';
     updateUI();
 
     const spearMesh = createSpearMesh();
