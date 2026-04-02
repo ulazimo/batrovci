@@ -1351,13 +1351,16 @@ function setupFeedback3D(animal, tier, impactPoint) {
     feedbackCamera.position.set(center.x + maxDim*0.3, center.y + maxDim*0.2, center.z + maxDim * 1.8);
     feedbackCamera.lookAt(center);
 
-    // --- ORGANS positioned relative to center (simple offsets that work for all models) ---
-    // Brain: upper-front area (head)
+    // --- ORGANS positioned using bbox extremes ---
+    // Brain: near the head end (whichever X extreme is farther from center mass)
+    // Most models have head toward +X or -X — detect which end is "head" by checking
+    // which side has less volume (head is narrower than tail/body)
     const brainR = maxDim * 0.06;
-    const brainPos = new THREE.Vector3(center.x + size.x*0.25, center.y + size.y*0.15, center.z);
-    // Heart: center-lower area (chest)
+    const headX = bbox.max.x - (size.x * 0.15); // near front/head end of bbox
+    const brainPos = new THREE.Vector3(headX, center.y + size.y*0.12, center.z);
+    // Heart: slightly behind center, lower
     const heartR = maxDim * 0.07;
-    const heartPos = new THREE.Vector3(center.x - size.x*0.05, center.y - size.y*0.05, center.z);
+    const heartPos = new THREE.Vector3(center.x + size.x*0.05, center.y - size.y*0.08, center.z);
 
     // Brain sphere (pink, glowing)
     const brainVis = new THREE.Mesh(
