@@ -25,8 +25,23 @@
         #feedback-canvas { background:#071525; border-radius:1rem; margin:1rem auto; border:1px solid #1e4d6b; width:100%; height:auto; }
         @keyframes pulse-ammo { 0%{transform:scale(1);} 50%{transform:scale(1.1);color:#ef4444;} 100%{transform:scale(1);} }
         .low-ammo { animation:pulse-ammo 0.5s infinite; }
-        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:10; display:none; }
-        #crosshair img { width:160px; height:160px; opacity:0.85; filter:drop-shadow(0 0 8px rgba(0,0,0,0.5)); }
+        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:10; display:none; width:200px; height:200px; }
+        #crosshair .scope-ring { position:absolute; inset:0; border-radius:50%; border:2px solid rgba(0,0,0,0.7); box-shadow:0 0 0 2000px rgba(0,0,0,0.35), inset 0 0 30px rgba(0,0,0,0.3); }
+        #crosshair .h-line { position:absolute; top:50%; left:0; width:100%; height:2px; transform:translateY(-50%); }
+        #crosshair .h-line::before, #crosshair .h-line::after { content:''; position:absolute; top:0; height:2px; background:rgba(0,0,0,0.8); }
+        #crosshair .h-line::before { left:15px; width:70px; }
+        #crosshair .h-line::after { right:15px; width:70px; }
+        #crosshair .v-line { position:absolute; left:50%; top:0; width:2px; height:100%; transform:translateX(-50%); }
+        #crosshair .v-line::before, #crosshair .v-line::after { content:''; position:absolute; left:0; width:2px; background:rgba(0,0,0,0.8); }
+        #crosshair .v-line::before { top:15px; height:70px; }
+        #crosshair .v-line::after { bottom:15px; height:70px; }
+        #crosshair .ticks-h, #crosshair .ticks-v { position:absolute; }
+        #crosshair .ticks-h { top:50%; left:50%; transform:translate(-50%,-50%); width:80px; height:20px; }
+        #crosshair .ticks-v { top:50%; left:50%; transform:translate(-50%,-50%); width:20px; height:80px; }
+        #crosshair .tick { position:absolute; background:rgba(0,0,0,0.6); }
+        #crosshair .ticks-h .tick { width:1px; height:8px; top:50%; transform:translateY(-50%); }
+        #crosshair .ticks-v .tick { height:1px; width:8px; left:50%; transform:translateX(-50%); }
+        #crosshair .dot { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:6px; height:6px; background:#ee2222; border-radius:50%; box-shadow:0 0 6px rgba(238,34,34,0.8); }
         #mode-select { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,12,28,0.97); z-index:200; }
         .mode-btn { width:90%; max-width:380px; padding:1.3rem 1.4rem; border-radius:1.2rem; border:2px solid #1e3a52; background:#071525; color:white; cursor:pointer; text-align:left; transition:all 0.2s; margin-bottom:1rem; pointer-events:all; }
         .mode-btn:hover { background:#0a1e35; transform:scale(1.02); border-color:#2dd4bf; }
@@ -37,9 +52,24 @@
 <div id="game-container">
     <div id="flash-overlay"></div>
 
-    <!-- CROSSHAIR -->
+    <!-- CROSSHAIR (scope reticle) -->
     <div id="crosshair">
-        <img src="crosshair.png" alt="">
+        <div class="scope-ring"></div>
+        <div class="h-line"></div>
+        <div class="v-line"></div>
+        <div class="ticks-h">
+            <div class="tick" style="left:10px"></div><div class="tick" style="left:16px"></div>
+            <div class="tick" style="left:22px"></div><div class="tick" style="left:28px"></div>
+            <div class="tick" style="right:10px"></div><div class="tick" style="right:16px"></div>
+            <div class="tick" style="right:22px"></div><div class="tick" style="right:28px"></div>
+        </div>
+        <div class="ticks-v">
+            <div class="tick" style="top:10px"></div><div class="tick" style="top:16px"></div>
+            <div class="tick" style="top:22px"></div><div class="tick" style="top:28px"></div>
+            <div class="tick" style="bottom:10px"></div><div class="tick" style="bottom:16px"></div>
+            <div class="tick" style="bottom:22px"></div><div class="tick" style="bottom:28px"></div>
+        </div>
+        <div class="dot"></div>
     </div>
 
     <!-- MODE SELECT -->
