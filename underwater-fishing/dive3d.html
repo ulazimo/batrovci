@@ -207,6 +207,9 @@ let state = {
     gameOver:false, analysisActive:false, isWaitingForAnalysis:false,
     isAiming:false, shake:0, currentLevelSpecies:[],
     animals:[], spears:[], particles:[], bubblePositions:null,
+    // Shot tracking state
+    trackingSpear: false,  // camera follows spear after firing
+    shotFeedbackTimer: 0,  // delay before zoom-out after impact
 };
 let clock, scene, camera, renderer;
 let modelCache = {};
@@ -725,16 +728,33 @@ function initControls() {
 let camYaw = 0, camPitch = 0;
 
 function updateCamera(dt) {
-    const targetFov = state.isAiming ? 40 : 65;
+    // Stay zoomed while tracking spear or showing feedback
+    const shouldZoom = state.isAiming || state.trackingSpear;
+    const targetFov = shouldZoom ? 40 : 65;
     camera.fov += (targetFov - camera.fov) * 0.12;
     camera.updateProjectionMatrix();
 
-    if (state.isAiming) {
-        // While aiming: camera follows aimYaw/aimPitch (player-controlled)
+    if (state.trackingSpear) {
+        // Find the active spear to track
+        const activeSpear = state.spears.find(s => !s.done);
+        if (activeSpear) {
+            // Camera follows spear tip
+            _v2.copy(activeSpear.mesh.position).sub(camera.position);
+            const trackYaw = Math.atan2(-_v2.x, -_v2.z);
+            const trackPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
+            camYaw += (trackYaw - camYaw) * 0.2;
+            camPitch += (trackPitch - camPitch) * 0.2;
+        } else {
+            // Spear resolved — hold position for feedback duration
+            state.shotFeedbackTimer += dt;
+            if (state.shotFeedbackTimer > 1.0) {
+                state.trackingSpear = false;
+            }
+        }
+    } else if (state.isAiming) {
         camYaw += (aimYaw - camYaw) * 0.15;
         camPitch += (aimPitch - camPitch) * 0.15;
     } else {
-        // Not aiming: return to center
         camYaw += (0 - camYaw) * 0.06;
         camPitch += (0 - camPitch) * 0.06;
     }
@@ -911,8 +931,11 @@ function fire() {
     if (state.isWaitingForAnalysis || state.ammo <= 0) return;
     state.ammo--;
     state.isWaitingForAnalysis = true;
+    state.trackingSpear = true;
+    state.shotFeedbackTimer = 0;
     state.shake = 18;
     triggerFlash(0.2);
+    crosshairEl.style.display = 'none'; // hide crosshair during flight
     updateUI();
 
     const spearMesh = createSpearMesh();
@@ -929,6 +952,7 @@ function fire() {
         dir: _v1.clone(),
         elapsed: 0,
         done: false,
+        resolved: false,
         trailParticles: [],
     });
 }
@@ -1041,24 +1065,50 @@ function resolveSpear(spear, shotData) {
     scene.add(ring);
     spear.impactRing = ring;
 
-    // Particle burst (shared geometry, cached material per color)
+    // Particle burst — more particles and bigger for hits
     const burstColor = shotData.hit ? 0x00e5ff : 0xff6644;
     if (!sharedBurstMats[burstColor]) {
         sharedBurstMats[burstColor] = new THREE.MeshBasicMaterial({ color:burstColor, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending });
     }
-    for (let j = 0; j < 15; j++) {
+    const burstCount = shotData.hit ? 30 : 10;
+    const burstSpeed = shotData.hit ? 6 : 3;
+    for (let j = 0; j < burstCount; j++) {
         const p = new THREE.Mesh(sharedBurstGeo, sharedBurstMats[burstColor].clone());
         p.position.copy(impactPos);
-        p.userData.vel = new THREE.Vector3((Math.random()-0.5)*4, (Math.random()-0.5)*4, (Math.random()-0.5)*4);
-        p.userData.life = 1;
+        p.userData.vel = new THREE.Vector3((Math.random()-0.5)*burstSpeed, (Math.random()-0.5)*burstSpeed, (Math.random()-0.5)*burstSpeed);
+        p.userData.life = shotData.hit ? 1.5 : 0.8;
+        if (shotData.hit) p.scale.setScalar(1.5 + Math.random());
         state.particles.push(p);
         scene.add(p);
     }
+    // Add a bright flash sphere at impact point for hits
+    if (shotData.hit) {
+        const flashSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 8, 8),
+            new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending })
+        );
+        flashSphere.position.copy(impactPos);
+        flashSphere.userData.vel = new THREE.Vector3(0,0,0);
+        flashSphere.userData.life = 0.6;
+        state.particles.push(flashSphere);
+        scene.add(flashSphere);
+    }
 
     if (shotData.hit) {
+        state.shake = 25;
+        triggerFlash(0.35);
         processHit(shotData.animal, shotData.tier);
-        setTimeout(() => showShotAnalysis(shotData), 400);
+        // Show tier label immediately as floating 3D text feedback
+        const tierLabels = { perfect:'BULLSEYE!', great:'VITAL HIT!', heart:'GILL SHOT', body:'HIT' };
+        const tierColors = { perfect:'#ef4444', great:'#f87171', heart:'#fca5a5', body:'#fbbf24' };
+        statusEl.textContent = tierLabels[shotData.tier];
+        statusEl.className = 'text-xl font-bold';
+        statusEl.style.color = tierColors[shotData.tier];
+        // Delay analysis to let player see the hit
+        setTimeout(() => showShotAnalysis(shotData), 1200);
     } else {
+        state.shake = 8;
+        triggerFlash(0.1);
         state.isWaitingForAnalysis = false;
         statusEl.textContent = 'MISSED!';
         statusEl.className = 'text-xl font-bold text-red-500';
