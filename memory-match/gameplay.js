@@ -1,4 +1,113 @@
 // ============================================================
+// PROGRESSION LOADING
+// ============================================================
+// Capture original defaults before any progression swap
+const LEVELS_DEFAULT = LEVELS;
+const PROGRESSION_UNLOCK_DEFAULTS = { ...PROGRESSION_UNLOCK_LEVELS };
+const REWARDS_DEFAULT = DEFAULT_LEVEL_REWARDS;
+
+function applyProgression(style) {
+  const PRESETS = {
+    default: { levels: LEVELS_DEFAULT,  progression: PROGRESSION_UNLOCK_DEFAULTS, rewards: REWARDS_DEFAULT },
+    short:   { levels: LEVELS_SHORT, progression: PROGRESSION_SHORT,         rewards: PROGRESSION_SHORT.levelRewards },
+    long:    { levels: LEVELS_LONG,  progression: PROGRESSION_LONG,          rewards: PROGRESSION_LONG.levelRewards },
+  };
+  const preset = PRESETS[style];
+  if (!preset) return;
+
+  LEVELS = preset.levels;
+  PROGRESSION_UNLOCK_LEVELS = {
+    winStreakStartLevel: preset.progression.winStreakStartLevel || 1,
+    deploySpecialsStartLevel: preset.progression.deploySpecialsStartLevel || 1,
+    recallStartLevel: preset.progression.recallStartLevel || 1,
+    sweepRevealStartLevel: preset.progression.sweepRevealStartLevel || 1,
+  };
+  DEFAULT_LEVEL_REWARDS = preset.rewards || [];
+}
+
+// Save current journey's progress into progress.journeys[style]
+function saveJourneySnapshot() {
+  if (!progress.progressionStyle) return;
+  if (!progress.journeys) progress.journeys = {};
+  progress.journeys[progress.progressionStyle] = {
+    highestUnlocked: progress.highestUnlocked,
+    stars: Array.isArray(progress.stars) ? [...progress.stars] : [],
+    winStreak: progress.winStreak,
+    boosterCounts: { ...boosterCounts },
+    specialInventory: progress.specialInventory ? { ...progress.specialInventory } : {},
+  };
+}
+
+// Restore a journey's progress from snapshot, or start fresh
+function restoreJourneySnapshot(style) {
+  const snap = progress.journeys?.[style];
+  if (snap) {
+    progress.highestUnlocked = snap.highestUnlocked || 0;
+    progress.stars = Array.isArray(snap.stars) ? [...snap.stars] : new Array(LEVELS.length).fill(0);
+    progress.winStreak = snap.winStreak || 0;
+    Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
+    if (snap.boosterCounts) Object.assign(boosterCounts, snap.boosterCounts);
+    if (snap.specialInventory) progress.specialInventory = { ...snap.specialInventory };
+  } else {
+    // Fresh journey
+    progress.highestUnlocked = 0;
+    progress.stars = new Array(LEVELS.length).fill(0);
+    progress.winStreak = 0;
+    Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
+  }
+  // Ensure stars array matches LEVELS length
+  const oldStars = Array.isArray(progress.stars) ? progress.stars : [];
+  progress.stars = new Array(LEVELS.length).fill(0);
+  oldStars.forEach((s, i) => { if (i < progress.stars.length) progress.stars[i] = s; });
+  delete progress.levelRewards;
+  delete progress.comboMapping;
+}
+
+function loadProgression(style) {
+  document.getElementById('progression-picker').classList.remove('active');
+
+  // Save current journey before switching
+  saveJourneySnapshot();
+  saveProgress();
+
+  applyProgression(style);
+  progress.progressionStyle = style;
+  restoreJourneySnapshot(style);
+
+  saveBoosterCounts();
+  saveProgress();
+  currentLevelIndex = Math.max(0, Math.min(progress.highestUnlocked, LEVELS.length - 1));
+  showLevelSelect();
+}
+
+function resetJourneyProgress() {
+  if (!confirm('Reset all progress for this journey? This cannot be undone.')) return;
+  progress.highestUnlocked = 0;
+  progress.stars = new Array(LEVELS.length).fill(0);
+  progress.winStreak = 0;
+  delete progress.levelRewards;
+  delete progress.comboMapping;
+  Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
+  // Clear saved snapshot too
+  if (progress.journeys?.[progress.progressionStyle]) {
+    delete progress.journeys[progress.progressionStyle];
+  }
+  saveBoosterCounts();
+  saveProgress();
+  currentLevelIndex = 0;
+  showLevelSelect();
+}
+
+function playFromHome() {
+  document.getElementById('home-screen').classList.remove('active');
+  if (progress.progressionStyle) {
+    showLevelSelect();
+  } else {
+    document.getElementById('progression-picker').classList.add('active');
+  }
+}
+
+// ============================================================
 // GAME STATE
 // ============================================================
 let COLS, ROWS, TOTAL, ACTIVE_COLORS, MAX_TURNS, TARGET;
@@ -511,8 +620,8 @@ function animateScore(to) {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay']
-    .forEach(id => document.getElementById(id).classList.remove('active'));
+  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay','progression-picker']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   document.getElementById('next-level-btn').style.display = '';
 }
 
@@ -2120,6 +2229,7 @@ function levelWon() {
   if (currentLevelIndex+1 > progress.highestUnlocked && currentLevelIndex+1 < LEVELS.length)
     progress.highestUnlocked = currentLevelIndex+1;
   if (isWinStreakActive()) progress.winStreak++;
+  saveJourneySnapshot();
   saveProgress();
   updateBanner();
 
@@ -2170,6 +2280,7 @@ function levelFailed() {
   const hadStreak = progress.winStreak;
   _failSavedStreak = hadStreak;   // stash so keepStreak() can restore it
   progress.winStreak = 0;
+  saveJourneySnapshot();
   saveProgress();
   updateBanner();
 
@@ -2281,10 +2392,18 @@ function revealEntireBoard() {
 // BOOT — LEVELS already loaded via levels_default.js script tag
 // ============================================================
 (function boot() {
-  // Resize stars array to match loaded levels
-  const oldStars = progress.stars || [];
+  // Restore saved progression style and its journey snapshot
+  if (progress.progressionStyle) {
+    applyProgression(progress.progressionStyle);
+    restoreJourneySnapshot(progress.progressionStyle);
+  }
+  // Ensure stars is a proper array matching LEVELS length
+  const oldStars = Array.isArray(progress.stars) ? progress.stars : [];
   progress.stars = new Array(LEVELS.length).fill(0);
   oldStars.forEach((s, i) => { if (i < progress.stars.length) progress.stars[i] = s; });
-  if (currentLevelIndex >= LEVELS.length) currentLevelIndex = Math.max(0, LEVELS.length - 1);
+  // Clamp currentLevelIndex
+  if (typeof progress.highestUnlocked !== 'number') progress.highestUnlocked = 0;
+  currentLevelIndex = Math.min(progress.highestUnlocked, LEVELS.length - 1);
+  currentLevelIndex = Math.max(0, currentLevelIndex);
   document.getElementById('home-screen').classList.add('active');
 })();
