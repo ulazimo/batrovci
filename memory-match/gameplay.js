@@ -174,6 +174,10 @@ function dismissNudge() {
   if (btn) btn.classList.remove('nudge');
 }
 
+function hasAnyBoosters() {
+  return BOOSTERS.some(b => boosterCounts[b.id] > 0);
+}
+
 function clearNudgeTimer() {
   if (nudgeIdleTimer) { clearTimeout(nudgeIdleTimer); nudgeIdleTimer = null; }
 }
@@ -1695,13 +1699,18 @@ function executePeek(index) {
       resumeChainTimer();
       updateBoosterUI();
       updateChainIndicator();
-      // Check perfect sweep
+      // Check if all cards of chain color are found
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
       const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
       if (remaining.length === 0 && chainLen >= 3) {
         stopChainTimer();
         inputLocked = true;
-        setTimeout(() => endTurn(false, isSweepRevealActive()), 600);
+        if (isSweepRevealActive()) {
+          setTimeout(() => endTurn(false, true), 600);
+        } else {
+          showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
+          setTimeout(() => hideBoardBanner(() => endTurn(false, false)), 1200);
+        }
       }
     }, 400);
   } else {
@@ -1864,13 +1873,18 @@ function pickColor(color) {
       resumeChainTimer();
       updateBoosterUI();
       updateChainIndicator();
-      // Check perfect sweep
+      // Check if all cards of chain color are found
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
       const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
       if (remaining.length === 0 && chainLen >= 3) {
         stopChainTimer();
         inputLocked = true;
-        setTimeout(() => endTurn(false, isSweepRevealActive()), 600);
+        if (isSweepRevealActive()) {
+          setTimeout(() => endTurn(false, true), 600);
+        } else {
+          showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
+          setTimeout(() => hideBoardBanner(() => endTurn(false, false)), 1200);
+        }
       }
     }, picks.length * 80 + 200);
   } else {
@@ -2056,13 +2070,21 @@ function onCardClick(index) {
     if (chainLen === 3) { startChainTimer(); advanceTutorial('chainOf3'); }
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
-    // Check if all cards of ALL active chain colors have been found (perfect sweep)
+    // Check if all cards of ALL active chain colors have been found
     const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
     const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
     if (remaining.length === 0 && chainLen >= 3) {
       stopChainTimer();
       inputLocked = true;
-      setTimeout(() => endTurn(true, isSweepRevealActive()), 300);
+      if (isSweepRevealActive()) {
+        setTimeout(() => endTurn(true, true), 300);
+      } else {
+        // Show "all color found" banner, then resolve normally with special card spawn
+        showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
+        setTimeout(() => {
+          hideBoardBanner(() => endTurn(true, false));
+        }, 1200);
+      }
     }
     // Check all-colors-active bonus
     if (getRule('coloredBombs') && chainColors.size >= ACTIVE_COLORS.length) {
@@ -2141,7 +2163,7 @@ function endTurn(manual, perfectSweep) {
 
   // Track failed combos for nudge system
   if (combo >= 3) { consecutiveFailedCombos = 0; }
-  else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge) showNudge('booster'); }, 2000); }
+  else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge && hasAnyBoosters()) showNudge('booster'); }, 2000); }
 
   if (combo >= 3) {
     updateGoalProgress(matched, combo);
