@@ -248,6 +248,21 @@
             font-size: 13px; color: #e6c619; font-weight: 700;
         }
         .cue-card .btn { font-size: 11px; padding: 5px 16px; }
+        /* ── Level Failed ── */
+        #level-failed { z-index: 55; }
+        #level-failed .lf-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px; color: #e63946;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
+        }
+        #level-failed .lf-msg {
+            font-size: 18px; color: #7ab891;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        #level-failed .btn { margin-bottom: 10px; width: 200px; text-align: center; }
+
         .cue-card .btn.btn-equipped {
             background: #2a5a3a; border-color: #3a8a5a;
             cursor: default; opacity: 0.7;
@@ -335,6 +350,14 @@
         <div class="pause-title">PAUSED</div>
         <button class="btn btn-small" onclick="togglePause()">RESUME</button>
         <button class="btn btn-small btn-outline" onclick="restartLevel()">RESTART</button>
+        <button class="btn btn-small btn-outline" onclick="exitToLevelSelect()">LEVEL SELECT</button>
+    </div>
+
+    <!-- Level Failed -->
+    <div id="level-failed" class="overlay hidden">
+        <div class="lf-title">LEVEL FAILED</div>
+        <div class="lf-msg" id="lf-msg">Out of strokes!</div>
+        <button class="btn btn-small" onclick="restartLevel()">RETRY</button>
         <button class="btn btn-small btn-outline" onclick="exitToLevelSelect()">LEVEL SELECT</button>
     </div>
 
@@ -477,295 +500,123 @@ let spinDragging = false;
 // ═══════════════════════════════════════════════════════════
 const LEVELS = [
     // 1 — Easy intro
-    {
-        id: 1, name: "First Shot", par: 2,
-        width: 500, height: 300,
-        ball: { x: 100, y: 150 },
-        hole: { x: 400, y: 150 },
-        walls: [],
-        obstacles: []
-    },
+    { id: 1, name: "First Shot", par: 2, maxStrokes: 6,
+      width: 500, height: 300, ball: { x: 100, y: 150 }, hole: { x: 400, y: 150 },
+      walls: [], obstacles: [] },
     // 2 — Easy, introduces walls
-    {
-        id: 2, name: "The Bend", par: 3,
-        width: 500, height: 450,
-        ball: { x: 80, y: 80 },
-        hole: { x: 420, y: 370 },
-        walls: [
-            { x1: 250, y1: 0, x2: 250, y2: 280 },
-            { x1: 250, y1: 280, x2: 500, y2: 280 },
-        ],
-        obstacles: []
-    },
+    { id: 2, name: "The Bend", par: 3, maxStrokes: 7,
+      width: 500, height: 450, ball: { x: 80, y: 80 }, hole: { x: 420, y: 370 },
+      walls: [ { x1: 250, y1: 0, x2: 250, y2: 280 }, { x1: 250, y1: 280, x2: 500, y2: 280 } ],
+      obstacles: [] },
     // 3 — Easy, introduces sand
-    {
-        id: 3, name: "Sand Trap", par: 3,
-        width: 550, height: 320,
-        ball: { x: 80, y: 160 },
-        hole: { x: 470, y: 160 },
-        walls: [],
-        obstacles: [
-            { type: 'sand', x: 180, y: 80, w: 190, h: 160 }
-        ]
-    },
-    // 4 — HARD, water + tight gaps early
-    {
-        id: 4, name: "Island Green", par: 3, hard: true,
-        width: 550, height: 400,
-        ball: { x: 80, y: 200 },
-        hole: { x: 440, y: 200 },
-        walls: [
-            { x1: 350, y1: 120, x2: 350, y2: 160 },
-            { x1: 350, y1: 240, x2: 350, y2: 280 },
-        ],
-        obstacles: [
-            { type: 'water', x: 360, y: 100, w: 180, h: 80 },
-            { type: 'water', x: 360, y: 220, w: 180, h: 80 },
-            { type: 'water', x: 490, y: 100, w: 50, h: 200 },
-        ]
-    },
-    // 5 — Easy, introduces ricochet trick
-    {
-        id: 5, name: "Ricochet", par: 3,
-        width: 500, height: 400,
-        ball: { x: 80, y: 350 },
-        hole: { x: 80, y: 60 },
-        walls: [
-            { x1: 0, y1: 200, x2: 350, y2: 200 },
-        ],
-        obstacles: [
-            { type: 'water', x: 0, y: 0, w: 200, h: 200 },
-        ]
-    },
+    { id: 3, name: "Sand Trap", par: 3, maxStrokes: 7,
+      width: 550, height: 320, ball: { x: 80, y: 160 }, hole: { x: 470, y: 160 },
+      walls: [], obstacles: [ { type: 'sand', x: 180, y: 80, w: 190, h: 160 } ] },
+    // 4 — HARD, water + tight gaps
+    { id: 4, name: "Island Green", par: 3, maxStrokes: 5, hard: true,
+      width: 550, height: 400, ball: { x: 80, y: 200 }, hole: { x: 440, y: 200 },
+      walls: [ { x1: 350, y1: 120, x2: 350, y2: 160 }, { x1: 350, y1: 240, x2: 350, y2: 280 } ],
+      obstacles: [ { type: 'water', x: 360, y: 100, w: 180, h: 80 }, { type: 'water', x: 360, y: 220, w: 180, h: 80 }, { type: 'water', x: 490, y: 100, w: 50, h: 200 } ] },
+    // 5 — Easy, ricochet trick
+    { id: 5, name: "Ricochet", par: 3, maxStrokes: 7,
+      width: 500, height: 400, ball: { x: 80, y: 350 }, hole: { x: 80, y: 60 },
+      walls: [ { x1: 0, y1: 200, x2: 350, y2: 200 } ],
+      obstacles: [ { type: 'water', x: 0, y: 0, w: 200, h: 200 } ] },
     // 6 — HARD, bumper chaos
-    {
-        id: 6, name: "Bumper Frenzy", par: 4, hard: true,
-        width: 500, height: 500,
-        ball: { x: 80, y: 250 },
-        hole: { x: 420, y: 250 },
-        walls: [],
-        obstacles: [
-            { type: 'bumper', cx: 180, cy: 150, radius: 20 },
-            { type: 'bumper', cx: 180, cy: 350, radius: 20 },
-            { type: 'bumper', cx: 250, cy: 250, radius: 24 },
-            { type: 'bumper', cx: 320, cy: 150, radius: 20 },
-            { type: 'bumper', cx: 320, cy: 350, radius: 20 },
-            { type: 'bumper', cx: 250, cy: 100, radius: 14 },
-            { type: 'bumper', cx: 250, cy: 400, radius: 14 },
-        ]
-    },
-    // 7 — Medium, introduces bumpers gently
-    {
-        id: 7, name: "Pinball Alley", par: 4,
-        width: 500, height: 500,
-        ball: { x: 80, y: 80 },
-        hole: { x: 420, y: 420 },
-        walls: [
-            { x1: 160, y1: 0, x2: 160, y2: 350 },
-            { x1: 340, y1: 150, x2: 340, y2: 500 },
-        ],
-        obstacles: [
-            { type: 'bumper', cx: 250, cy: 120, radius: 18 },
-            { type: 'bumper', cx: 200, cy: 250, radius: 18 },
-            { type: 'bumper', cx: 300, cy: 300, radius: 18 },
-            { type: 'bumper', cx: 250, cy: 420, radius: 18 },
-            { type: 'bumper', cx: 420, cy: 250, radius: 15 },
-        ]
-    },
-    // 8 — Easy breather, narrow but straightforward
-    {
-        id: 8, name: "Narrow Pass", par: 4,
-        width: 700, height: 300,
-        ball: { x: 60, y: 150 },
-        hole: { x: 640, y: 150 },
-        walls: [
-            { x1: 200, y1: 0, x2: 200, y2: 110 },
-            { x1: 200, y1: 190, x2: 200, y2: 300 },
-            { x1: 400, y1: 0, x2: 400, y2: 110 },
-            { x1: 400, y1: 190, x2: 400, y2: 300 },
-        ],
-        obstacles: [
-            { type: 'sand', x: 200, y: 110, w: 200, h: 80 },
-            { type: 'water', x: 520, y: 0, w: 80, h: 120 },
-            { type: 'water', x: 520, y: 180, w: 80, h: 120 },
-        ]
-    },
-    // 9 — HARD, maze with sand
-    {
-        id: 9, name: "The Maze", par: 4, hard: true,
-        width: 600, height: 500,
-        ball: { x: 80, y: 80 },
-        hole: { x: 520, y: 420 },
-        walls: [
-            { x1: 200, y1: 0, x2: 200, y2: 180 },
-            { x1: 200, y1: 180, x2: 120, y2: 180 },
-            { x1: 0, y1: 300, x2: 200, y2: 300 },
-            { x1: 300, y1: 120, x2: 300, y2: 350 },
-            { x1: 300, y1: 350, x2: 400, y2: 350 },
-            { x1: 400, y1: 200, x2: 400, y2: 350 },
-            { x1: 400, y1: 200, x2: 600, y2: 200 },
-            { x1: 500, y1: 300, x2: 500, y2: 500 },
-        ],
-        obstacles: [
-            { type: 'sand', x: 0, y: 180, w: 120, h: 120 },
-        ]
-    },
+    { id: 6, name: "Bumper Frenzy", par: 4, maxStrokes: 6, hard: true,
+      width: 500, height: 500, ball: { x: 80, y: 250 }, hole: { x: 420, y: 250 },
+      walls: [],
+      obstacles: [ { type: 'bumper', cx: 180, cy: 150, radius: 20 }, { type: 'bumper', cx: 180, cy: 350, radius: 20 }, { type: 'bumper', cx: 250, cy: 250, radius: 24 }, { type: 'bumper', cx: 320, cy: 150, radius: 20 }, { type: 'bumper', cx: 320, cy: 350, radius: 20 }, { type: 'bumper', cx: 250, cy: 100, radius: 14 }, { type: 'bumper', cx: 250, cy: 400, radius: 14 } ] },
+    // 7 — Medium, bumpers gently
+    { id: 7, name: "Pinball Alley", par: 4, maxStrokes: 8,
+      width: 500, height: 500, ball: { x: 80, y: 80 }, hole: { x: 420, y: 420 },
+      walls: [ { x1: 160, y1: 0, x2: 160, y2: 350 }, { x1: 340, y1: 150, x2: 340, y2: 500 } ],
+      obstacles: [ { type: 'bumper', cx: 250, cy: 120, radius: 18 }, { type: 'bumper', cx: 200, cy: 250, radius: 18 }, { type: 'bumper', cx: 300, cy: 300, radius: 18 }, { type: 'bumper', cx: 250, cy: 420, radius: 18 }, { type: 'bumper', cx: 420, cy: 250, radius: 15 } ] },
+    // 8 — Easy breather
+    { id: 8, name: "Narrow Pass", par: 4, maxStrokes: 8,
+      width: 700, height: 300, ball: { x: 60, y: 150 }, hole: { x: 640, y: 150 },
+      walls: [ { x1: 200, y1: 0, x2: 200, y2: 110 }, { x1: 200, y1: 190, x2: 200, y2: 300 }, { x1: 400, y1: 0, x2: 400, y2: 110 }, { x1: 400, y1: 190, x2: 400, y2: 300 } ],
+      obstacles: [ { type: 'sand', x: 200, y: 110, w: 200, h: 80 }, { type: 'water', x: 520, y: 0, w: 80, h: 120 }, { type: 'water', x: 520, y: 180, w: 80, h: 120 } ] },
+    // 9 — HARD, maze
+    { id: 9, name: "The Maze", par: 4, maxStrokes: 6, hard: true,
+      width: 600, height: 500, ball: { x: 80, y: 80 }, hole: { x: 520, y: 420 },
+      walls: [ { x1: 200, y1: 0, x2: 200, y2: 180 }, { x1: 200, y1: 180, x2: 120, y2: 180 }, { x1: 0, y1: 300, x2: 200, y2: 300 }, { x1: 300, y1: 120, x2: 300, y2: 350 }, { x1: 300, y1: 350, x2: 400, y2: 350 }, { x1: 400, y1: 200, x2: 400, y2: 350 }, { x1: 400, y1: 200, x2: 600, y2: 200 }, { x1: 500, y1: 300, x2: 500, y2: 500 } ],
+      obstacles: [ { type: 'sand', x: 0, y: 180, w: 120, h: 120 } ] },
     // 10 — Medium, cross pattern
-    {
-        id: 10, name: "Double Cross", par: 4,
-        width: 550, height: 550,
-        ball: { x: 80, y: 80 },
-        hole: { x: 470, y: 470 },
-        walls: [
-            { x1: 225, y1: 0, x2: 225, y2: 225 },
-            { x1: 325, y1: 0, x2: 325, y2: 225 },
-            { x1: 0, y1: 225, x2: 225, y2: 225 },
-            { x1: 325, y1: 225, x2: 550, y2: 225 },
-            { x1: 225, y1: 325, x2: 225, y2: 550 },
-            { x1: 325, y1: 325, x2: 325, y2: 550 },
-            { x1: 0, y1: 325, x2: 225, y2: 325 },
-            { x1: 325, y1: 325, x2: 550, y2: 325 },
-        ],
-        obstacles: [
-            { type: 'water', x: 225, y: 225, w: 100, h: 100 },
-            { type: 'bumper', cx: 140, cy: 275, radius: 16 },
-            { type: 'bumper', cx: 410, cy: 275, radius: 16 },
-        ]
-    },
-    // 11 — HARD, introduces moving walls
-    {
-        id: 11, name: "Shifting Walls", par: 5, hard: true,
-        width: 600, height: 400,
-        ball: { x: 80, y: 200 },
-        hole: { x: 520, y: 200 },
-        walls: [
-            { x1: 200, y1: 60, x2: 200, y2: 140 },
-            { x1: 200, y1: 260, x2: 200, y2: 340 },
-            { x1: 400, y1: 60, x2: 400, y2: 140 },
-            { x1: 400, y1: 260, x2: 400, y2: 340 },
-        ],
-        obstacles: [
-            { type: 'movingWall', x1: 200, y1: 140, x2: 200, y2: 260, axis: 'y', range: 60, speed: 1.5, phase: 0 },
-            { type: 'movingWall', x1: 400, y1: 140, x2: 400, y2: 260, axis: 'y', range: 60, speed: 1.5, phase: Math.PI },
-            { type: 'water', x: 260, y: 0, w: 80, h: 160 },
-            { type: 'water', x: 260, y: 240, w: 80, h: 160 },
-        ]
-    },
-    // 12 — Medium, spiral path
-    {
-        id: 12, name: "Spiral", par: 5,
-        width: 600, height: 600,
-        ball: { x: 80, y: 80 },
-        hole: { x: 300, y: 300 },
-        walls: [
-            { x1: 0, y1: 180, x2: 450, y2: 180 },
-            { x1: 450, y1: 180, x2: 450, y2: 0 },
-            { x1: 150, y1: 340, x2: 600, y2: 340 },
-            { x1: 150, y1: 340, x2: 150, y2: 600 },
-            { x1: 200, y1: 500, x2: 450, y2: 500 },
-            { x1: 450, y1: 500, x2: 450, y2: 380 },
-        ],
-        obstacles: [
-            { type: 'sand', x: 460, y: 340, w: 140, h: 140 },
-            { type: 'bumper', cx: 300, cy: 260, radius: 18 },
-        ]
-    },
-    // 13 — HARD, moving walls + water + sand
-    {
-        id: 13, name: "Tidal Wave", par: 5, hard: true,
-        width: 650, height: 400,
-        ball: { x: 80, y: 200 },
-        hole: { x: 570, y: 200 },
-        walls: [
-            { x1: 250, y1: 0, x2: 250, y2: 120 },
-            { x1: 250, y1: 280, x2: 250, y2: 400 },
-            { x1: 450, y1: 0, x2: 450, y2: 120 },
-            { x1: 450, y1: 280, x2: 450, y2: 400 },
-        ],
-        obstacles: [
-            { type: 'water', x: 140, y: 0, w: 110, h: 160 },
-            { type: 'water', x: 140, y: 240, w: 110, h: 160 },
-            { type: 'water', x: 450, y: 120, w: 100, h: 60 },
-            { type: 'water', x: 450, y: 220, w: 100, h: 60 },
-            { type: 'movingWall', x1: 250, y1: 120, x2: 250, y2: 280, axis: 'y', range: 70, speed: 1.8, phase: 0 },
-            { type: 'movingWall', x1: 450, y1: 120, x2: 450, y2: 280, axis: 'y', range: 70, speed: 1.8, phase: Math.PI },
-            { type: 'sand', x: 300, y: 140, w: 100, h: 120 },
-        ]
-    },
-    // 14 — Medium, gauntlet mix
-    {
-        id: 14, name: "The Gauntlet", par: 5,
-        width: 700, height: 500,
-        ball: { x: 80, y: 250 },
-        hole: { x: 620, y: 250 },
-        walls: [
-            { x1: 180, y1: 0, x2: 180, y2: 180 },
-            { x1: 180, y1: 320, x2: 180, y2: 500 },
-            { x1: 350, y1: 100, x2: 350, y2: 250 },
-            { x1: 350, y1: 250, x2: 500, y2: 250 },
-            { x1: 500, y1: 250, x2: 500, y2: 400 },
-            { x1: 500, y1: 100, x2: 500, y2: 200 },
-        ],
-        obstacles: [
-            { type: 'sand', x: 0, y: 180, w: 180, h: 140 },
-            { type: 'water', x: 200, y: 300, w: 140, h: 100 },
-            { type: 'bumper', cx: 260, cy: 140, radius: 16 },
-            { type: 'bumper', cx: 260, cy: 220, radius: 16 },
-            { type: 'movingWall', x1: 500, y1: 200, x2: 500, y2: 250, axis: 'y', range: 50, speed: 1.2, phase: 0 },
-            { type: 'water', x: 560, y: 0, w: 140, h: 180 },
-            { type: 'water', x: 560, y: 320, w: 140, h: 180 },
-        ]
-    },
-    // 15 — HARD, fortress with moving gate
-    {
-        id: 15, name: "Fortress", par: 6, hard: true,
-        width: 700, height: 600,
-        ball: { x: 80, y: 300 },
-        hole: { x: 550, y: 300 },
-        walls: [
-            { x1: 200, y1: 100, x2: 200, y2: 500 },
-            { x1: 200, y1: 100, x2: 400, y2: 100 },
-            { x1: 200, y1: 500, x2: 400, y2: 500 },
-            { x1: 400, y1: 100, x2: 400, y2: 220 },
-            { x1: 400, y1: 380, x2: 400, y2: 500 },
-        ],
-        obstacles: [
-            { type: 'water', x: 0, y: 0, w: 200, h: 100 },
-            { type: 'water', x: 0, y: 500, w: 200, h: 100 },
-            { type: 'sand', x: 250, y: 200, w: 100, h: 200 },
-            { type: 'bumper', cx: 500, cy: 200, radius: 18 },
-            { type: 'bumper', cx: 500, cy: 400, radius: 18 },
-            { type: 'movingWall', x1: 400, y1: 220, x2: 400, y2: 380, axis: 'y', range: 60, speed: 1.0, phase: 0 },
-        ]
-    },
-    // 16 — HARD, everything combined, final boss
-    {
-        id: 16, name: "Final Shot", par: 6, hard: true,
-        width: 800, height: 600,
-        ball: { x: 80, y: 300 },
-        hole: { x: 720, y: 300 },
-        walls: [
-            { x1: 200, y1: 0, x2: 200, y2: 200 },
-            { x1: 200, y1: 400, x2: 200, y2: 600 },
-            { x1: 400, y1: 100, x2: 400, y2: 300 },
-            { x1: 400, y1: 300, x2: 550, y2: 300 },
-            { x1: 550, y1: 300, x2: 550, y2: 500 },
-            { x1: 550, y1: 100, x2: 550, y2: 200 },
-            { x1: 650, y1: 0, x2: 650, y2: 200 },
-            { x1: 650, y1: 400, x2: 650, y2: 600 },
-        ],
-        obstacles: [
-            { type: 'water', x: 0, y: 200, w: 200, h: 200 },
-            { type: 'water', x: 560, y: 200, w: 90, h: 200 },
-            { type: 'sand', x: 220, y: 300, w: 180, h: 100 },
-            { type: 'sand', x: 660, y: 200, w: 80, h: 200 },
-            { type: 'bumper', cx: 300, cy: 150, radius: 18 },
-            { type: 'bumper', cx: 300, cy: 450, radius: 18 },
-            { type: 'bumper', cx: 480, cy: 200, radius: 16 },
-            { type: 'movingWall', x1: 650, y1: 200, x2: 650, y2: 400, axis: 'y', range: 80, speed: 1.4, phase: 0 },
-            { type: 'movingWall', x1: 200, y1: 200, x2: 200, y2: 400, axis: 'y', range: 80, speed: 1.4, phase: Math.PI },
-        ]
-    }
+    { id: 10, name: "Double Cross", par: 4, maxStrokes: 8,
+      width: 550, height: 550, ball: { x: 80, y: 80 }, hole: { x: 470, y: 470 },
+      walls: [ { x1: 225, y1: 0, x2: 225, y2: 225 }, { x1: 325, y1: 0, x2: 325, y2: 225 }, { x1: 0, y1: 225, x2: 225, y2: 225 }, { x1: 325, y1: 225, x2: 550, y2: 225 }, { x1: 225, y1: 325, x2: 225, y2: 550 }, { x1: 325, y1: 325, x2: 325, y2: 550 }, { x1: 0, y1: 325, x2: 225, y2: 325 }, { x1: 325, y1: 325, x2: 550, y2: 325 } ],
+      obstacles: [ { type: 'water', x: 225, y: 225, w: 100, h: 100 }, { type: 'bumper', cx: 140, cy: 275, radius: 16 }, { type: 'bumper', cx: 410, cy: 275, radius: 16 } ] },
+    // 11 — HARD, moving walls
+    { id: 11, name: "Shifting Walls", par: 5, maxStrokes: 7, hard: true,
+      width: 600, height: 400, ball: { x: 80, y: 200 }, hole: { x: 520, y: 200 },
+      walls: [ { x1: 200, y1: 60, x2: 200, y2: 140 }, { x1: 200, y1: 260, x2: 200, y2: 340 }, { x1: 400, y1: 60, x2: 400, y2: 140 }, { x1: 400, y1: 260, x2: 400, y2: 340 } ],
+      obstacles: [ { type: 'movingWall', x1: 200, y1: 140, x2: 200, y2: 260, axis: 'y', range: 60, speed: 1.5, phase: 0 }, { type: 'movingWall', x1: 400, y1: 140, x2: 400, y2: 260, axis: 'y', range: 60, speed: 1.5, phase: Math.PI }, { type: 'water', x: 260, y: 0, w: 80, h: 160 }, { type: 'water', x: 260, y: 240, w: 80, h: 160 } ] },
+    // 12 — Medium, spiral
+    { id: 12, name: "Spiral", par: 5, maxStrokes: 9,
+      width: 600, height: 600, ball: { x: 80, y: 80 }, hole: { x: 300, y: 300 },
+      walls: [ { x1: 0, y1: 180, x2: 450, y2: 180 }, { x1: 450, y1: 180, x2: 450, y2: 0 }, { x1: 150, y1: 340, x2: 600, y2: 340 }, { x1: 150, y1: 340, x2: 150, y2: 600 }, { x1: 200, y1: 500, x2: 450, y2: 500 }, { x1: 450, y1: 500, x2: 450, y2: 380 } ],
+      obstacles: [ { type: 'sand', x: 460, y: 340, w: 140, h: 140 }, { type: 'bumper', cx: 300, cy: 260, radius: 18 } ] },
+    // 13 — HARD, tidal
+    { id: 13, name: "Tidal Wave", par: 5, maxStrokes: 7, hard: true,
+      width: 650, height: 400, ball: { x: 80, y: 200 }, hole: { x: 570, y: 200 },
+      walls: [ { x1: 250, y1: 0, x2: 250, y2: 120 }, { x1: 250, y1: 280, x2: 250, y2: 400 }, { x1: 450, y1: 0, x2: 450, y2: 120 }, { x1: 450, y1: 280, x2: 450, y2: 400 } ],
+      obstacles: [ { type: 'water', x: 140, y: 0, w: 110, h: 160 }, { type: 'water', x: 140, y: 240, w: 110, h: 160 }, { type: 'water', x: 450, y: 120, w: 100, h: 60 }, { type: 'water', x: 450, y: 220, w: 100, h: 60 }, { type: 'movingWall', x1: 250, y1: 120, x2: 250, y2: 280, axis: 'y', range: 70, speed: 1.8, phase: 0 }, { type: 'movingWall', x1: 450, y1: 120, x2: 450, y2: 280, axis: 'y', range: 70, speed: 1.8, phase: Math.PI }, { type: 'sand', x: 300, y: 140, w: 100, h: 120 } ] },
+    // 14 — Medium, gauntlet
+    { id: 14, name: "The Gauntlet", par: 5, maxStrokes: 9,
+      width: 700, height: 500, ball: { x: 80, y: 250 }, hole: { x: 620, y: 250 },
+      walls: [ { x1: 180, y1: 0, x2: 180, y2: 180 }, { x1: 180, y1: 320, x2: 180, y2: 500 }, { x1: 350, y1: 100, x2: 350, y2: 250 }, { x1: 350, y1: 250, x2: 500, y2: 250 }, { x1: 500, y1: 250, x2: 500, y2: 400 }, { x1: 500, y1: 100, x2: 500, y2: 200 } ],
+      obstacles: [ { type: 'sand', x: 0, y: 180, w: 180, h: 140 }, { type: 'water', x: 200, y: 300, w: 140, h: 100 }, { type: 'bumper', cx: 260, cy: 140, radius: 16 }, { type: 'bumper', cx: 260, cy: 220, radius: 16 }, { type: 'movingWall', x1: 500, y1: 200, x2: 500, y2: 250, axis: 'y', range: 50, speed: 1.2, phase: 0 }, { type: 'water', x: 560, y: 0, w: 140, h: 180 }, { type: 'water', x: 560, y: 320, w: 140, h: 180 } ] },
+    // 15 — HARD, fortress
+    { id: 15, name: "Fortress", par: 6, maxStrokes: 8, hard: true,
+      width: 700, height: 600, ball: { x: 80, y: 300 }, hole: { x: 550, y: 300 },
+      walls: [ { x1: 200, y1: 100, x2: 200, y2: 500 }, { x1: 200, y1: 100, x2: 400, y2: 100 }, { x1: 200, y1: 500, x2: 400, y2: 500 }, { x1: 400, y1: 100, x2: 400, y2: 220 }, { x1: 400, y1: 380, x2: 400, y2: 500 } ],
+      obstacles: [ { type: 'water', x: 0, y: 0, w: 200, h: 100 }, { type: 'water', x: 0, y: 500, w: 200, h: 100 }, { type: 'sand', x: 250, y: 200, w: 100, h: 200 }, { type: 'bumper', cx: 500, cy: 200, radius: 18 }, { type: 'bumper', cx: 500, cy: 400, radius: 18 }, { type: 'movingWall', x1: 400, y1: 220, x2: 400, y2: 380, axis: 'y', range: 60, speed: 1.0, phase: 0 } ] },
+    // 16 — HARD, final boss
+    { id: 16, name: "Final Shot", par: 6, maxStrokes: 8, hard: true,
+      width: 800, height: 600, ball: { x: 80, y: 300 }, hole: { x: 720, y: 300 },
+      walls: [ { x1: 200, y1: 0, x2: 200, y2: 200 }, { x1: 200, y1: 400, x2: 200, y2: 600 }, { x1: 400, y1: 100, x2: 400, y2: 300 }, { x1: 400, y1: 300, x2: 550, y2: 300 }, { x1: 550, y1: 300, x2: 550, y2: 500 }, { x1: 550, y1: 100, x2: 550, y2: 200 }, { x1: 650, y1: 0, x2: 650, y2: 200 }, { x1: 650, y1: 400, x2: 650, y2: 600 } ],
+      obstacles: [ { type: 'water', x: 0, y: 200, w: 200, h: 200 }, { type: 'water', x: 560, y: 200, w: 90, h: 200 }, { type: 'sand', x: 220, y: 300, w: 180, h: 100 }, { type: 'sand', x: 660, y: 200, w: 80, h: 200 }, { type: 'bumper', cx: 300, cy: 150, radius: 18 }, { type: 'bumper', cx: 300, cy: 450, radius: 18 }, { type: 'bumper', cx: 480, cy: 200, radius: 16 }, { type: 'movingWall', x1: 650, y1: 200, x2: 650, y2: 400, axis: 'y', range: 80, speed: 1.4, phase: 0 }, { type: 'movingWall', x1: 200, y1: 200, x2: 200, y2: 400, axis: 'y', range: 80, speed: 1.4, phase: Math.PI } ] },
+    // 17 — Easy, simple L-shape
+    { id: 17, name: "The Hook", par: 3, maxStrokes: 7,
+      width: 500, height: 500, ball: { x: 80, y: 80 }, hole: { x: 420, y: 420 },
+      walls: [ { x1: 0, y1: 250, x2: 300, y2: 250 }, { x1: 300, y1: 0, x2: 300, y2: 250 } ],
+      obstacles: [ { type: 'sand', x: 310, y: 300, w: 120, h: 120 } ] },
+    // 18 — HARD, tight corridor with bumpers
+    { id: 18, name: "Pinch Point", par: 4, maxStrokes: 6, hard: true,
+      width: 600, height: 250, ball: { x: 60, y: 125 }, hole: { x: 540, y: 125 },
+      walls: [ { x1: 200, y1: 0, x2: 200, y2: 80 }, { x1: 200, y1: 170, x2: 200, y2: 250 }, { x1: 400, y1: 0, x2: 400, y2: 80 }, { x1: 400, y1: 170, x2: 400, y2: 250 } ],
+      obstacles: [ { type: 'bumper', cx: 300, cy: 80, radius: 16 }, { type: 'bumper', cx: 300, cy: 170, radius: 16 }, { type: 'water', x: 200, y: 80, w: 200, h: 10 }, { type: 'water', x: 200, y: 160, w: 200, h: 10 } ] },
+    // 19 — Easy, open field with water edges
+    { id: 19, name: "Lakeside", par: 3, maxStrokes: 7,
+      width: 550, height: 400, ball: { x: 80, y: 200 }, hole: { x: 470, y: 200 },
+      walls: [],
+      obstacles: [ { type: 'water', x: 0, y: 0, w: 550, h: 60 }, { type: 'water', x: 0, y: 340, w: 550, h: 60 }, { type: 'sand', x: 220, y: 120, w: 110, h: 160 } ] },
+    // 20 — HARD, zigzag corridor
+    { id: 20, name: "Zigzag", par: 5, maxStrokes: 7, hard: true,
+      width: 600, height: 500, ball: { x: 80, y: 80 }, hole: { x: 520, y: 420 },
+      walls: [ { x1: 150, y1: 0, x2: 150, y2: 200 }, { x1: 300, y1: 100, x2: 300, y2: 300 }, { x1: 450, y1: 200, x2: 450, y2: 400 }, { x1: 150, y1: 300, x2: 150, y2: 500 } ],
+      obstacles: [ { type: 'water', x: 150, y: 200, w: 150, h: 100 }, { type: 'water', x: 300, y: 300, w: 150, h: 100 }, { type: 'bumper', cx: 225, cy: 150, radius: 14 }, { type: 'bumper', cx: 375, cy: 350, radius: 14 } ] },
+    // 21 — Easy, big open with one bumper
+    { id: 21, name: "Lone Guardian", par: 3, maxStrokes: 7,
+      width: 500, height: 350, ball: { x: 80, y: 175 }, hole: { x: 420, y: 175 },
+      walls: [],
+      obstacles: [ { type: 'bumper', cx: 250, cy: 175, radius: 30 }, { type: 'sand', x: 150, y: 100, w: 60, h: 150 }, { type: 'sand', x: 290, y: 100, w: 60, h: 150 } ] },
+    // 22 — HARD, moving wall gauntlet
+    { id: 22, name: "Clockwork", par: 5, maxStrokes: 7, hard: true,
+      width: 700, height: 400, ball: { x: 80, y: 200 }, hole: { x: 620, y: 200 },
+      walls: [ { x1: 200, y1: 0, x2: 200, y2: 130 }, { x1: 200, y1: 270, x2: 200, y2: 400 }, { x1: 350, y1: 0, x2: 350, y2: 130 }, { x1: 350, y1: 270, x2: 350, y2: 400 }, { x1: 500, y1: 0, x2: 500, y2: 130 }, { x1: 500, y1: 270, x2: 500, y2: 400 } ],
+      obstacles: [ { type: 'movingWall', x1: 200, y1: 130, x2: 200, y2: 270, axis: 'y', range: 60, speed: 1.2, phase: 0 }, { type: 'movingWall', x1: 350, y1: 130, x2: 350, y2: 270, axis: 'y', range: 60, speed: 1.2, phase: Math.PI * 0.66 }, { type: 'movingWall', x1: 500, y1: 130, x2: 500, y2: 270, axis: 'y', range: 60, speed: 1.2, phase: Math.PI * 1.33 } ] },
+    // 23 — Medium, diamond shape
+    { id: 23, name: "Diamond", par: 4, maxStrokes: 8,
+      width: 500, height: 500, ball: { x: 250, y: 450 }, hole: { x: 250, y: 50 },
+      walls: [ { x1: 250, y1: 0, x2: 500, y2: 250 }, { x1: 500, y1: 250, x2: 250, y2: 500 }, { x1: 250, y1: 500, x2: 0, y2: 250 }, { x1: 0, y1: 250, x2: 250, y2: 0 } ],
+      obstacles: [ { type: 'bumper', cx: 250, cy: 250, radius: 22 }, { type: 'sand', x: 200, y: 150, w: 100, h: 60 } ] },
+    // 24 — HARD, the ultimate
+    { id: 24, name: "Endgame", par: 6, maxStrokes: 8, hard: true,
+      width: 800, height: 600, ball: { x: 80, y: 80 }, hole: { x: 720, y: 520 },
+      walls: [ { x1: 200, y1: 0, x2: 200, y2: 250 }, { x1: 0, y1: 250, x2: 350, y2: 250 }, { x1: 400, y1: 150, x2: 400, y2: 450 }, { x1: 400, y1: 450, x2: 550, y2: 450 }, { x1: 600, y1: 200, x2: 600, y2: 400 }, { x1: 600, y1: 400, x2: 800, y2: 400 } ],
+      obstacles: [ { type: 'water', x: 0, y: 250, w: 200, h: 150 }, { type: 'water', x: 550, y: 450, w: 150, h: 150 }, { type: 'sand', x: 220, y: 300, w: 180, h: 100 }, { type: 'bumper', cx: 300, cy: 130, radius: 18 }, { type: 'bumper', cx: 500, cy: 300, radius: 18 }, { type: 'bumper', cx: 700, cy: 300, radius: 16 }, { type: 'movingWall', x1: 600, y1: 200, x2: 600, y2: 400, axis: 'y', range: 80, speed: 1.5, phase: 0 }, { type: 'movingWall', x1: 200, y1: 250, x2: 350, y2: 250, axis: 'x', range: 60, speed: 1.3, phase: Math.PI } ] },
 ];
 
 // ═══════════════════════════════════════════════════════════
@@ -925,7 +776,7 @@ function updateHUD() {
     if (!level) return;
     document.getElementById('hud-level-name').textContent = `Level ${level.id}: ${level.name}`;
     document.getElementById('hud-strokes').textContent = `Strokes: ${strokes}`;
-    document.getElementById('hud-par').textContent = `Par: ${level.par}`;
+    document.getElementById('hud-par').textContent = `Par: ${level.par}  |  Max: ${level.maxStrokes}`;
     document.getElementById('hud-coins').textContent = `🪙 ${progress.coins}`;
 }
 
@@ -943,14 +794,14 @@ function togglePause() {
 }
 
 function restartLevel() {
-    hide('pause-menu'); hide('level-complete');
+    hide('pause-menu'); hide('level-complete'); hide('level-failed');
     paused = false;
     loadLevel(currentLevelIdx);
 }
 
 function exitToLevelSelect() {
     paused = false;
-    hide('pause-menu'); hide('level-complete');
+    hide('pause-menu'); hide('level-complete'); hide('level-failed');
     showLevelSelect();
 }
 
@@ -1019,6 +870,13 @@ function equipCue(id) {
     progress.equippedCue = id;
     saveProgress();
     renderShop();
+}
+
+function failLevel() {
+    state = 'LEVEL_FAILED';
+    hide('spin-selector'); hide('power-bar');
+    document.getElementById('lf-msg').textContent = `Used ${strokes} of ${level.maxStrokes} strokes`;
+    show('level-failed');
 }
 
 function nextLevel() {
@@ -1309,8 +1167,12 @@ function updateBall(dt) {
 
     if (ballSpeed() < MIN_SPEED) {
         ball.vx = 0; ball.vy = 0;
-        state = 'PLAYING';
-        show('spin-selector');
+        if (level.maxStrokes && strokes >= level.maxStrokes) {
+            failLevel();
+        } else {
+            state = 'PLAYING';
+            show('spin-selector');
+        }
     }
 }
 
