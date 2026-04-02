@@ -24,6 +24,9 @@ const GAMEPLAY_RULES = [
   { id: 'coloredBombs', name: 'Colored Bombs', icon: '🎨',
     desc: 'Bombs inherit the color of the combo that created them. Using a bomb opens a parallel chain of that color — match either color to continue. If all board colors have active chains, auto-reveal all cards for a 500pt bonus!',
     default: false },
+  { id: 'longPressPeek', name: 'Long-Press Peek', icon: '👁',
+    desc: 'Long-press any face-down card to peek at it, consuming one Peek power-up',
+    default: true },
 ];
 
 function getRule(id) {

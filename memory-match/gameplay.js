@@ -515,7 +515,7 @@ function updateCoverageIndicators() {
 }
 
 const BOOSTERS = [
-  { id:'peek',      icon:'👁',  name:'Peek',        desc:'Reveal one card by tapping it',                               needsTap:true  },
+  { id:'peek',      icon:'👁',  name:'Peek',        desc:'Reveal one card by tapping it. Long-press any card for a quick peek!', needsTap:true  },
   { id:'random3',   icon:'🎲',  name:'Random 3',    desc:'Reveal 3 random face-down cards',                             needsTap:false },
   { id:'cross',     icon:'✚',  name:'Cross Reveal', desc:'Reveal cards in a cross around the card you tap',              needsTap:true  },
   { id:'row',       icon:'↔',  name:'Row Reveal',   desc:'Reveal the entire row of the card you tap',                    needsTap:true  },
@@ -1349,7 +1349,38 @@ function renderBoard() {
   });
 }
 
+// Long-press peek
+let longPressTimer = null;
+let longPressTriggered = false;
+
+boardEl.addEventListener('pointerdown', e => {
+  longPressTriggered = false;
+  if (!getRule('longPressPeek')) return;
+  const el = e.target.closest('.card');
+  if (!el) return;
+  const i = parseInt(el.dataset.index, 10);
+  if (isNaN(i)) return;
+  longPressTimer = setTimeout(() => {
+    longPressTriggered = true;
+    if (inputLocked || !board[i] || board[i].flipped || board[i].special || board[i].locked) return;
+    if (!boosterCounts['peek'] || boosterCounts['peek'] <= 0) return;
+    boosterCounts['peek']--;
+    saveBoosterCounts();
+    executePeek(i);
+    updateBoosterUI();
+  }, 500);
+});
+
+boardEl.addEventListener('pointerup', () => {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+});
+
+boardEl.addEventListener('pointerleave', () => {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+});
+
 boardEl.addEventListener('click', e => {
+  if (longPressTriggered) { longPressTriggered = false; return; }
   const el = e.target.closest('.card');
   if (!el) return;
   const i = parseInt(el.dataset.index, 10);
