@@ -1569,7 +1569,7 @@ function executePeek(index) {
       if (remaining.length === 0 && chainLen >= 3) {
         stopChainTimer();
         inputLocked = true;
-        setTimeout(() => endTurn(false, true), 600);
+        setTimeout(() => endTurn(false, isSweepRevealActive()), 600);
       }
     }, 400);
   } else {
@@ -1738,7 +1738,7 @@ function pickColor(color) {
       if (remaining.length === 0 && chainLen >= 3) {
         stopChainTimer();
         inputLocked = true;
-        setTimeout(() => endTurn(false, true), 600);
+        setTimeout(() => endTurn(false, isSweepRevealActive()), 600);
       }
     }, picks.length * 80 + 200);
   } else {
@@ -1930,7 +1930,7 @@ function onCardClick(index) {
     if (remaining.length === 0 && chainLen >= 3) {
       stopChainTimer();
       inputLocked = true;
-      setTimeout(() => endTurn(true, true), 300);
+      setTimeout(() => endTurn(true, isSweepRevealActive()), 300);
     }
     // Check all-colors-active bonus
     if (getRule('coloredBombs') && chainColors.size >= ACTIVE_COLORS.length) {
