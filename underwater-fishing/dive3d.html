@@ -1074,28 +1074,34 @@ function checkSpearHit(spear) {
         if (!_hitRay.intersectSphere(_hitSphere, _hitPoint)) continue;
 
         const impactWorld = _hitPoint.clone();
-
-        // Check brain (world position = local position transformed by mesh matrix)
-        _hitHeart.copy(animal.brainLocal).applyMatrix4(animal.mesh.matrixWorld);
-        const brainDist = impactWorld.distanceTo(_hitHeart);
-
-        // Check heart
-        const heartWorld = new THREE.Vector3().copy(animal.heartLocal).applyMatrix4(animal.mesh.matrixWorld);
-        const heartDist = impactWorld.distanceTo(heartWorld);
-
         let organ = 'none';
-        if (brainDist < animal.brainRadius) organ = 'brain';
-        else if (heartDist < animal.heartRadius) organ = 'heart';
 
-        // Tier based on organ
-        let tier = 'body'; // body = miss, fish survives
+        // Check if ray passes THROUGH brain sphere (not distance from surface hit)
+        _hitHeart.copy(animal.brainLocal).applyMatrix4(animal.mesh.matrixWorld);
+        _hitSphere.center.copy(_hitHeart);
+        _hitSphere.radius = animal.brainRadius;
+        if (_hitRay.intersectsSphere(_hitSphere)) {
+            organ = 'brain';
+        }
+
+        // Check if ray passes through heart sphere
+        if (organ === 'none') {
+            _hitHeart.copy(animal.heartLocal).applyMatrix4(animal.mesh.matrixWorld);
+            _hitSphere.center.copy(_hitHeart);
+            _hitSphere.radius = animal.heartRadius;
+            if (_hitRay.intersectsSphere(_hitSphere)) {
+                organ = 'heart';
+            }
+        }
+
+        let tier = 'body';
         if (organ === 'brain') tier = 'brain';
         else if (organ === 'heart') tier = 'heart';
 
         if (!shotData.hit || organ !== 'none') {
             shotData = { hit:true, organ, tier, animal, impactPoint:impactWorld };
         }
-        break; // first fish hit
+        break;
     }
     return shotData;
 }
