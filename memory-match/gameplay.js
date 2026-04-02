@@ -1158,9 +1158,9 @@ function grantLevelRewards(levelId) {
 // COMBO MAPPING
 // ============================================================
 const DEFAULT_COMBO_MAP = [
-  { combo: 4,   specialId: 'cross' },
-  { combo: 5,   specialId: 'ring' },
-  { combo: '6+', specialId: 'diamond' },
+  { combo: 4,   specialId: 'wild' },
+  { combo: 5,   specialId: 'cross' },
+  { combo: '6+', specialId: 'ring' },
 ];
 
 function getComboMapping() {
