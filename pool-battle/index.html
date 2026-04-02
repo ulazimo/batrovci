@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pool Battle</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #0a1a0f;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed; top: 12px; left: 12px; z-index: 100;
+            color: #aaa; text-decoration: none; font-size: 14px;
+            opacity: 0.7; transition: opacity 0.2s;
+        }
+        .back-link:hover { opacity: 1; }
+
+        /* ── Overlays ── */
+        .overlay {
+            position: fixed; inset: 0; z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(5, 20, 10, 0.92);
+            transition: opacity 0.3s;
+        }
+        .overlay.hidden { opacity: 0; pointer-events: none; }
+
+        /* ── Title Screen ── */
+        #title-screen .title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(36px, 8vw, 64px);
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(26, 122, 58, 0.8), 0 0 60px rgba(26, 122, 58, 0.4);
+            margin-bottom: 8px;
+            letter-spacing: 4px;
+        }
+        #title-screen .subtitle {
+            font-size: clamp(14px, 3vw, 20px);
+            color: #7ab891;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .btn {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 20px;
+            padding: 14px 48px;
+            border: 2px solid #1a7a3a;
+            background: linear-gradient(180deg, #1a7a3a, #145a2e);
+            color: #fff; border-radius: 8px;
+            cursor: pointer; letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 4px 20px rgba(26, 122, 58, 0.4);
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-small {
+            font-size: 16px; padding: 10px 28px;
+        }
+        .btn-outline {
+            background: transparent;
+            border-color: #3a8a5a;
+            color: #7ab891;
+            box-shadow: none;
+        }
+
+        /* ── Level Select ── */
+        #level-select .ls-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px; font-weight: 700;
+            color: #fff; margin-bottom: 24px;
+            letter-spacing: 2px;
+        }
+        .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-width: 400px;
+            padding: 0 20px;
+        }
+        @media (max-width: 400px) {
+            .levels-grid { gap: 8px; }
+        }
+        .level-btn {
+            width: 80px; height: 90px;
+            background: linear-gradient(180deg, #1a3a28, #0f2a1a);
+            border: 2px solid #2a5a3a;
+            border-radius: 10px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+            position: relative;
+        }
+        .level-btn:active { transform: scale(0.95); }
+        .level-btn.locked {
+            opacity: 0.4; cursor: default;
+            border-color: #1a3a28;
+        }
+        .level-btn.locked:active { transform: none; }
+        .level-btn .level-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px; font-weight: 700;
+            color: #fff;
+        }
+        .level-btn .level-name {
+            font-size: 9px; color: #7ab891;
+            margin-top: 2px; text-align: center;
+            line-height: 1.1;
+        }
+        .level-btn .stars {
+            font-size: 12px; margin-top: 4px;
+            letter-spacing: 2px;
+        }
+        .level-btn .lock-icon {
+            font-size: 20px; color: #3a5a48;
+        }
+        .ls-back {
+            margin-top: 28px;
+        }
+
+        /* ── HUD ── */
+        #hud {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 30; pointer-events: none;
+            padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        #hud.hidden { display: none; }
+        .hud-left, .hud-right { pointer-events: auto; }
+        .hud-level {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px; color: #7ab891;
+            font-weight: 500;
+        }
+        .hud-strokes {
+            font-size: 18px; color: #fff;
+            font-weight: 700; margin-top: 2px;
+        }
+        .hud-par {
+            font-size: 12px; color: #5a9a72;
+        }
+        .hud-pause {
+            width: 40px; height: 40px;
+            background: rgba(10, 30, 18, 0.7);
+            border: 1px solid #2a5a3a;
+            border-radius: 8px;
+            color: #7ab891; font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+
+        /* ── Pause Menu ── */
+        #pause-menu { z-index: 60; }
+        #pause-menu .pause-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px; color: #fff;
+            margin-bottom: 24px;
+        }
+        #pause-menu .btn { margin-bottom: 10px; width: 200px; text-align: center; }
+
+        /* ── Level Complete ── */
+        #level-complete { z-index: 55; }
+        #level-complete .lc-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px; color: #fff;
+            margin-bottom: 8px;
+        }
+        #level-complete .lc-stars {
+            font-size: 48px; margin-bottom: 12px;
+            letter-spacing: 8px;
+        }
+        #level-complete .lc-stats {
+            font-size: 18px; color: #7ab891;
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        #level-complete .btn { margin-bottom: 10px; width: 200px; text-align: center; }
+
+        /* ── Spin Selector ── */
+        #spin-selector {
+            position: fixed;
+            bottom: 20px; left: 20px;
+            z-index: 40;
+            width: 80px; height: 80px;
+        }
+        #spin-selector.hidden { display: none; }
+        #spin-selector canvas {
+            width: 80px; height: 80px;
+        }
+
+        /* ── Power Bar ── */
+        #power-bar {
+            position: fixed;
+            bottom: 20px; right: 20px;
+            z-index: 40;
+            width: 30px; height: 120px;
+            background: rgba(10, 30, 18, 0.7);
+            border: 1px solid #2a5a3a;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        #power-bar.hidden { display: none; }
+        #power-fill {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(0deg, #1a7a3a, #e6c619, #e63946);
+            transition: height 0.05s;
+            border-radius: 0 0 5px 5px;
+        }
+    </style>
+</head>
+<body>
+    <a href="../" class="back-link">← All Games</a>
+
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Title Screen -->
+    <div id="title-screen" class="overlay">
+        <div class="title">POOL BATTLE</div>
+        <div class="subtitle">Mini-golf meets billiards</div>
+        <button class="btn" onclick="startGame()">PLAY</button>
+    </div>
+
+    <!-- Level Select -->
+    <div id="level-select" class="overlay hidden">
+        <div class="ls-title">SELECT LEVEL</div>
+        <div class="levels-grid" id="levels-grid"></div>
+        <button class="btn btn-small btn-outline ls-back" onclick="showTitle()">BACK</button>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+        <div class="hud-left">
+            <div class="hud-level" id="hud-level-name"></div>
+            <div class="hud-strokes" id="hud-strokes">Strokes: 0</div>
+            <div class="hud-par" id="hud-par">Par: 3</div>
+        </div>
+        <div class="hud-right">
+            <div class="hud-pause" onclick="togglePause()">⏸</div>
+        </div>
+    </div>
+
+    <!-- Spin Selector -->
+    <div id="spin-selector" class="hidden">
+        <canvas id="spin-canvas" width="160" height="160"></canvas>
+    </div>
+
+    <!-- Power Bar -->
+    <div id="power-bar" class="hidden">
+        <div id="power-fill" style="height:0%"></div>
+    </div>
+
+    <!-- Pause Menu -->
+    <div id="pause-menu" class="overlay hidden">
+        <div class="pause-title">PAUSED</div>
+        <button class="btn btn-small" onclick="togglePause()">RESUME</button>
+        <button class="btn btn-small btn-outline" onclick="restartLevel()">RESTART</button>
+        <button class="btn btn-small btn-outline" onclick="exitToLevelSelect()">LEVEL SELECT</button>
+    </div>
+
+    <!-- Level Complete -->
+    <div id="level-complete" class="overlay hidden">
+        <div class="lc-title">LEVEL COMPLETE!</div>
+        <div class="lc-stars" id="lc-stars"></div>
+        <div class="lc-stats" id="lc-stats"></div>
+        <button class="btn btn-small" id="lc-next-btn" onclick="nextLevel()">NEXT LEVEL</button>
+        <button class="btn btn-small btn-outline" onclick="restartLevel()">RETRY</button>
+        <button class="btn btn-small btn-outline" onclick="exitToLevelSelect()">LEVEL SELECT</button>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  POOL BATTLE — Mini-golf meets billiards
+// ═══════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const spinCanvas = document.getElementById('spin-canvas');
+const spinCtx = spinCanvas.getContext('2d');
+
+// ── Constants ──
+const BALL_RADIUS = 8;
+const HOLE_RADIUS = 14;
+const FRICTION = 0.985;
+const SAND_FRICTION = 0.955;
+const WALL_RESTITUTION = 0.75;
+const BUMPER_RESTITUTION = 1.3;
+const MIN_SPEED = 0.12;
+const MAX_POWER = 16;
+const MAX_PULL_DIST = 180;
+const HOLE_CAPTURE_SPEED = 3.2;
+const CUE_LENGTH = 160;
+const CUE_TIP_WIDTH = 4;
+const CUE_BUTT_WIDTH = 9;
+const GUIDELINE_MAX = 500;
+
+// ── Colors ──
+const C = {
+    felt: '#1B6B3A', feltPattern: '#1A6538',
+    rail: '#5C3A1E', railLight: '#8B5E3C',
+    ball: '#F5F5F0', ballShade: '#D8D8D0',
+    hole: '#0A0A0A', holeRim: '#333',
+    water: '#2A7BC4', waterLight: '#4A9BE4',
+    sand: '#D4A843', sandDark: '#B8923A',
+    bumper: '#E63946', bumperGlow: '#FF6B7A',
+    guidelineWhite: 'rgba(255,255,255,0.5)',
+    guidelineBounce: 'rgba(255,255,255,0.25)',
+    cueTip: '#E8D8B8', cueWood: '#6B3A1E', cueButt: '#2A1A0A',
+};
+
+// ── Cached DOM refs ──
+const powerFillEl = document.getElementById('power-fill');
+
+// ── Game State ──
+let state = 'TITLE';
+let dpr = 1;
+let W = 0, H = 0;
+let currentLevelIdx = 0;
+let strokes = 0;
+let paused = false;
+let time = 0;
+
+const ball = { x: 0, y: 0, vx: 0, vy: 0, lastSafeX: 0, lastSafeY: 0 };
+const spin = { x: 0, y: 0 };
+const aim = { isDragging: false, curX: 0, curY: 0, angle: 0, power: 0 };
+const camera = { x: 0, y: 0, zoom: 1 };
+let level = null;
+let particles = [];
+let cachedWalls = [];
+let feltCanvas = null;
+let holeCompleteTimer = null;
+
+// ── Progress ──
+let progress = loadProgress();
+
+function loadProgress() {
+    try {
+        const d = JSON.parse(localStorage.getItem('poolBattle_progress'));
+        if (d && d.version === 1) return d;
+    } catch(e) {}
+    return { version: 1, levels: { 1: { unlocked: true, stars: 0, best: null } } };
+}
+function saveProgress() {
+    localStorage.setItem('poolBattle_progress', JSON.stringify(progress));
+}
+
+// ── Spin selector state ──
+let spinDragging = false;
+
+// ═══════════════════════════════════════════════════════════
+//  LEVELS
+// ═══════════════════════════════════════════════════════════
+const LEVELS = [
+    {
+        id: 1, name: "First Shot", par: 2,
+        width: 500, height: 300,
+        ball: { x: 100, y: 150 },
+        hole: { x: 400, y: 150 },
+        walls: [],
+        obstacles: []
+    },
+    {
+        id: 2, name: "The Bend", par: 3,
+        width: 500, height: 450,
+        ball: { x: 80, y: 80 },
+        hole: { x: 420, y: 370 },
+        walls: [
+            { x1: 250, y1: 0, x2: 250, y2: 280 },
+            { x1: 250, y1: 280, x2: 500, y2: 280 },
+        ],
+        obstacles: []
+    },
+    {
+        id: 3, name: "Sand Trap", par: 3,
+        width: 550, height: 320,
+        ball: { x: 80, y: 160 },
+        hole: { x: 470, y: 160 },
+        walls: [],
+        obstacles: [
+            { type: 'sand', x: 180, y: 80, w: 190, h: 160 }
+        ]
+    },
+    {
+        id: 4, name: "Island Green", par: 3,
+        width: 550, height: 400,
+        ball: { x: 80, y: 200 },
+        hole: { x: 440, y: 200 },
+        walls: [
+            { x1: 350, y1: 120, x2: 350, y2: 160 },
+            { x1: 350, y1: 240, x2: 350, y2: 280 },
+        ],
+        obstacles: [
+            { type: 'water', x: 360, y: 100, w: 180, h: 80 },
+            { type: 'water', x: 360, y: 220, w: 180, h: 80 },
+            { type: 'water', x: 490, y: 100, w: 50, h: 200 },
+        ]
+    },
+    {
+        id: 5, name: "Pinball Alley", par: 4,
+        width: 500, height: 500,
+        ball: { x: 80, y: 80 },
+        hole: { x: 420, y: 420 },
+        walls: [
+            { x1: 160, y1: 0, x2: 160, y2: 350 },
+            { x1: 340, y1: 150, x2: 340, y2: 500 },
+        ],
+        obstacles: [
+            { type: 'bumper', cx: 250, cy: 120, radius: 18 },
+            { type: 'bumper', cx: 200, cy: 250, radius: 18 },
+            { type: 'bumper', cx: 300, cy: 300, radius: 18 },
+            { type: 'bumper', cx: 250, cy: 420, radius: 18 },
+            { type: 'bumper', cx: 420, cy: 250, radius: 15 },
+        ]
+    },
+    {
+        id: 6, name: "The Maze", par: 4,
+        width: 600, height: 500,
+        ball: { x: 80, y: 80 },
+        hole: { x: 520, y: 420 },
+        walls: [
+            { x1: 200, y1: 0, x2: 200, y2: 180 },
+            { x1: 200, y1: 180, x2: 120, y2: 180 },
+            { x1: 0, y1: 300, x2: 200, y2: 300 },
+            { x1: 300, y1: 120, x2: 300, y2: 350 },
+            { x1: 300, y1: 350, x2: 400, y2: 350 },
+            { x1: 400, y1: 200, x2: 400, y2: 350 },
+            { x1: 400, y1: 200, x2: 600, y2: 200 },
+            { x1: 500, y1: 300, x2: 500, y2: 500 },
+        ],
+        obstacles: [
+            { type: 'sand', x: 0, y: 180, w: 120, h: 120 },
+        ]
+    },
+    {
+        id: 7, name: "Shifting Walls", par: 5,
+        width: 600, height: 400,
+        ball: { x: 80, y: 200 },
+        hole: { x: 520, y: 200 },
+        walls: [
+            { x1: 200, y1: 60, x2: 200, y2: 140 },
+            { x1: 200, y1: 260, x2: 200, y2: 340 },
+            { x1: 400, y1: 60, x2: 400, y2: 140 },
+            { x1: 400, y1: 260, x2: 400, y2: 340 },
+        ],
+        obstacles: [
+            { type: 'movingWall', x1: 200, y1: 140, x2: 200, y2: 260, axis: 'y', range: 60, speed: 1.5, phase: 0 },
+            { type: 'movingWall', x1: 400, y1: 140, x2: 400, y2: 260, axis: 'y', range: 60, speed: 1.5, phase: Math.PI },
+            { type: 'water', x: 260, y: 0, w: 80, h: 160 },
+            { type: 'water', x: 260, y: 240, w: 80, h: 160 },
+        ]
+    },
+    {
+        id: 8, name: "The Gauntlet", par: 5,
+        width: 700, height: 500,
+        ball: { x: 80, y: 250 },
+        hole: { x: 620, y: 250 },
+        walls: [
+            { x1: 180, y1: 0, x2: 180, y2: 180 },
+            { x1: 180, y1: 320, x2: 180, y2: 500 },
+            { x1: 350, y1: 100, x2: 350, y2: 250 },
+            { x1: 350, y1: 250, x2: 500, y2: 250 },
+            { x1: 500, y1: 250, x2: 500, y2: 400 },
+            { x1: 500, y1: 100, x2: 500, y2: 200 },
+        ],
+        obstacles: [
+            { type: 'sand', x: 0, y: 180, w: 180, h: 140 },
+            { type: 'water', x: 200, y: 300, w: 140, h: 100 },
+            { type: 'bumper', cx: 260, cy: 140, radius: 16 },
+            { type: 'bumper', cx: 260, cy: 220, radius: 16 },
+            { type: 'movingWall', x1: 500, y1: 200, x2: 500, y2: 250, axis: 'y', range: 50, speed: 1.2, phase: 0 },
+            { type: 'water', x: 560, y: 0, w: 140, h: 180 },
+            { type: 'water', x: 560, y: 320, w: 140, h: 180 },
+        ]
+    }
+];
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════════════
+function resize() {
+    dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    if (level) setupCamera();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function setupCamera() {
+    if (!level) return;
+    const pad = 60;
+    const zx = (W - pad * 2) / level.width;
+    const zy = (H - pad * 2) / level.height;
+    camera.zoom = Math.min(zx, zy, 1.4);
+    camera.x = (W / 2) - (level.width / 2) * camera.zoom;
+    camera.y = (H / 2) - (level.height / 2) * camera.zoom;
+}
+
+function toScreen(wx, wy) {
+    return {
+        x: wx * camera.zoom + camera.x,
+        y: wy * camera.zoom + camera.y
+    };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LEVEL MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function loadLevel(idx) {
+    const src = LEVELS[idx];
+    currentLevelIdx = idx;
+    strokes = 0;
+    time = 0;
+    particles = [];
+    if (holeCompleteTimer) { clearTimeout(holeCompleteTimer); holeCompleteTimer = null; }
+
+    level = JSON.parse(JSON.stringify(src));
+
+    // Generate boundary walls
+    const bw = [
+        { x1: 0, y1: 0, x2: level.width, y2: 0 },
+        { x1: level.width, y1: 0, x2: level.width, y2: level.height },
+        { x1: level.width, y1: level.height, x2: 0, y2: level.height },
+        { x1: 0, y1: level.height, x2: 0, y2: 0 },
+    ];
+    level.allWalls = [...bw, ...level.walls];
+
+    // Pre-generate sand dot positions
+    for (const obs of level.obstacles) {
+        if (obs.type === 'sand') {
+            obs._dots = [];
+            for (let i = 0; i < 20; i++) {
+                obs._dots.push({ x: obs.x + Math.random() * obs.w, y: obs.y + Math.random() * obs.h });
+            }
+        }
+    }
+
+    ball.x = level.ball.x;
+    ball.y = level.ball.y;
+    ball.vx = 0; ball.vy = 0;
+    ball.lastSafeX = ball.x;
+    ball.lastSafeY = ball.y;
+    spin.x = 0; spin.y = 0;
+    aim.isDragging = false;
+    aim.power = 0;
+
+    setupCamera();
+    cacheFelt();
+    updateHUD();
+    state = 'PLAYING';
+
+    show('hud'); show('spin-selector');
+    hide('title-screen'); hide('level-select');
+    hide('level-complete'); hide('pause-menu');
+    hide('power-bar');
+    drawSpinSelector();
+}
+
+function cacheFelt() {
+    feltCanvas = document.createElement('canvas');
+    feltCanvas.width = level.width;
+    feltCanvas.height = level.height;
+    const fc = feltCanvas.getContext('2d');
+
+    fc.fillStyle = C.felt;
+    fc.fillRect(0, 0, level.width, level.height);
+    fc.fillStyle = C.feltPattern;
+    for (let x = 0; x < level.width; x += 20) {
+        for (let y = 0; y < level.height; y += 20) {
+            if ((x + y) % 40 === 0) fc.fillRect(x, y, 20, 20);
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function showTitle() {
+    state = 'TITLE';
+    hide('hud'); hide('spin-selector'); hide('power-bar');
+    hide('level-select'); hide('level-complete'); hide('pause-menu');
+    show('title-screen');
+}
+
+function startGame() {
+    hide('title-screen');
+    showLevelSelect();
+}
+
+function showLevelSelect() {
+    state = 'LEVEL_SELECT';
+    hide('hud'); hide('spin-selector'); hide('power-bar');
+    hide('pause-menu'); hide('level-complete');
+    show('level-select');
+    renderLevelGrid();
+}
+
+function renderLevelGrid() {
+    const grid = document.getElementById('levels-grid');
+    grid.innerHTML = '';
+    LEVELS.forEach((lv, i) => {
+        const p = progress.levels[lv.id] || { unlocked: false, stars: 0 };
+        const div = document.createElement('div');
+        div.className = 'level-btn' + (p.unlocked ? '' : ' locked');
+        if (p.unlocked) {
+            const starStr = p.stars > 0
+                ? '★'.repeat(p.stars) + '☆'.repeat(3 - p.stars)
+                : '';
+            div.innerHTML = `
+                <div class="level-num">${lv.id}</div>
+                <div class="level-name">${lv.name}</div>
+                <div class="stars" style="color:#e6c619">${starStr}</div>
+            `;
+            div.onclick = () => loadLevel(i);
+        } else {
+            div.innerHTML = `<div class="lock-icon">🔒</div><div class="level-name">${lv.name}</div>`;
+        }
+        grid.appendChild(div);
+    });
+}
+
+function updateHUD() {
+    if (!level) return;
+    document.getElementById('hud-level-name').textContent = `Level ${level.id}: ${level.name}`;
+    document.getElementById('hud-strokes').textContent = `Strokes: ${strokes}`;
+    document.getElementById('hud-par').textContent = `Par: ${level.par}`;
+}
+
+function togglePause() {
+    if (state === 'BALL_MOVING') return;
+    if (paused) {
+        paused = false;
+        hide('pause-menu');
+        state = 'PLAYING';
+    } else {
+        paused = true;
+        show('pause-menu');
+        state = 'PAUSED';
+    }
+}
+
+function restartLevel() {
+    hide('pause-menu'); hide('level-complete');
+    paused = false;
+    loadLevel(currentLevelIdx);
+}
+
+function exitToLevelSelect() {
+    paused = false;
+    hide('pause-menu'); hide('level-complete');
+    showLevelSelect();
+}
+
+function nextLevel() {
+    if (currentLevelIdx + 1 < LEVELS.length) {
+        loadLevel(currentLevelIdx + 1);
+    } else {
+        showLevelSelect();
+    }
+}
+
+function completeLevel() {
+    state = 'LEVEL_COMPLETE';
+    hide('spin-selector'); hide('power-bar');
+
+    const diff = strokes - level.par;
+    let stars = 0;
+    if (diff <= 0) stars = 3;
+    else if (diff === 1) stars = 2;
+    else if (diff === 2) stars = 1;
+
+    // Update progress
+    const p = progress.levels[level.id] || { unlocked: true, stars: 0, best: null };
+    p.unlocked = true;
+    if (stars > p.stars) p.stars = stars;
+    if (p.best === null || strokes < p.best) p.best = strokes;
+    progress.levels[level.id] = p;
+
+    // Unlock next
+    const nextId = level.id + 1;
+    if (nextId <= LEVELS.length) {
+        if (!progress.levels[nextId]) progress.levels[nextId] = { unlocked: true, stars: 0, best: null };
+        else progress.levels[nextId].unlocked = true;
+    }
+    saveProgress();
+
+    // Show overlay
+    const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+    document.getElementById('lc-stars').textContent = starStr;
+    document.getElementById('lc-stars').style.color = '#e6c619';
+    document.getElementById('lc-stats').innerHTML =
+        `Strokes: ${strokes}<br>Par: ${level.par}` +
+        (diff <= 0 ? '<br><span style="color:#1a7a3a">Perfect!</span>' : '');
+    document.getElementById('lc-next-btn').style.display =
+        (currentLevelIdx + 1 < LEVELS.length) ? 'inline-block' : 'none';
+    show('level-complete');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PHYSICS
+// ═══════════════════════════════════════════════════════════
+
+function getMovingWalls() {
+    if (!level) return [];
+    const mwalls = [];
+    for (const obs of level.obstacles) {
+        if (obs.type !== 'movingWall') continue;
+        const offset = Math.sin(time * obs.speed + (obs.phase || 0)) * obs.range;
+        if (obs.axis === 'y') {
+            mwalls.push({
+                x1: obs.x1, y1: obs.y1 + offset,
+                x2: obs.x2, y2: obs.y2 + offset,
+                moving: true
+            });
+        } else {
+            mwalls.push({
+                x1: obs.x1 + offset, y1: obs.y1,
+                x2: obs.x2 + offset, y2: obs.y2,
+                moving: true
+            });
+        }
+    }
+    return mwalls;
+}
+
+function updateCachedWalls() {
+    cachedWalls = [...level.allWalls, ...getMovingWalls()];
+}
+
+// Closest point on segment to a point
+function closestPointOnSeg(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return { x: x1, y: y1 };
+    let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return { x: x1 + t * dx, y: y1 + t * dy };
+}
+
+// Wall collision & response
+function collideWalls() {
+    for (const w of cachedWalls) {
+        const cp = closestPointOnSeg(ball.x, ball.y, w.x1, w.y1, w.x2, w.y2);
+        const dx = ball.x - cp.x;
+        const dy = ball.y - cp.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < BALL_RADIUS && dist > 0) {
+            // Normal
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // Push out
+            ball.x = cp.x + nx * BALL_RADIUS;
+            ball.y = cp.y + ny * BALL_RADIUS;
+
+            // Reflect velocity
+            const dot = ball.vx * nx + ball.vy * ny;
+            ball.vx = (ball.vx - 2 * dot * nx) * WALL_RESTITUTION;
+            ball.vy = (ball.vy - 2 * dot * ny) * WALL_RESTITUTION;
+
+            // Side spin effect on bounce
+            const tx = -ny, ty = nx; // tangent
+            const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+            ball.vx += tx * spin.x * speed * 0.25;
+            ball.vy += ty * spin.x * speed * 0.25;
+
+            // Particle
+            spawnParticles(cp.x, cp.y, 3, '#fff', 1.5);
+        }
+    }
+}
+
+// Bumper collision
+function collideBumpers() {
+    for (const obs of level.obstacles) {
+        if (obs.type !== 'bumper') continue;
+        const dx = ball.x - obs.cx;
+        const dy = ball.y - obs.cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = BALL_RADIUS + obs.radius;
+        if (dist < minDist && dist > 0) {
+            const nx = dx / dist;
+            const ny = dy / dist;
+            ball.x = obs.cx + nx * minDist;
+            ball.y = obs.cy + ny * minDist;
+
+            const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+            ball.vx = nx * speed * BUMPER_RESTITUTION;
+            ball.vy = ny * speed * BUMPER_RESTITUTION;
+
+            spawnParticles(obs.cx + nx * obs.radius, obs.cy + ny * obs.radius, 6, C.bumperGlow, 2);
+        }
+    }
+}
+
+// Check if ball is in a zone
+function inZone(zone) {
+    return ball.x >= zone.x && ball.x <= zone.x + zone.w &&
+           ball.y >= zone.y && ball.y <= zone.y + zone.h;
+}
+
+// Check water hazards
+function checkWater() {
+    for (const obs of level.obstacles) {
+        if (obs.type !== 'water') continue;
+        if (inZone(obs)) {
+            // Splash
+            spawnParticles(ball.x, ball.y, 12, C.waterLight, 3);
+            // Reset
+            ball.x = ball.lastSafeX;
+            ball.y = ball.lastSafeY;
+            ball.vx = 0; ball.vy = 0;
+            strokes++;
+            updateHUD();
+            state = 'PLAYING';
+            show('spin-selector');
+            return true;
+        }
+    }
+    return false;
+}
+
+// Get friction at ball position
+function getSurfaceFriction() {
+    for (const obs of level.obstacles) {
+        if (obs.type === 'sand' && inZone(obs)) return SAND_FRICTION;
+    }
+    return FRICTION;
+}
+
+// Check hole
+function ballSpeed() {
+    return Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+}
+
+function checkHole() {
+    const dx = ball.x - level.hole.x;
+    const dy = ball.y - level.hole.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const speed = ballSpeed();
+    if (dist < HOLE_RADIUS - BALL_RADIUS * 0.3 && speed < HOLE_CAPTURE_SPEED) {
+        ball.vx = 0; ball.vy = 0;
+        ball.x = level.hole.x; ball.y = level.hole.y;
+        spawnParticles(level.hole.x, level.hole.y, 15, '#e6c619', 3);
+        holeCompleteTimer = setTimeout(completeLevel, 400);
+        return true;
+    }
+    if (dist < HOLE_RADIUS && speed < HOLE_CAPTURE_SPEED * 1.5) {
+        const pull = 0.15;
+        ball.vx -= (dx / dist) * pull;
+        ball.vy -= (dy / dist) * pull;
+    }
+    return false;
+}
+
+function isOverWater() {
+    for (const obs of level.obstacles) {
+        if (obs.type === 'water' && inZone(obs)) return true;
+    }
+    return false;
+}
+
+// dt-scaled friction: convert per-frame multiplier to dt-independent
+function applyFriction(fric, dt) {
+    const scale = dt * 60; // normalize to 60fps
+    const f = Math.pow(fric, scale);
+    ball.vx *= f;
+    ball.vy *= f;
+}
+
+function updateBall(dt) {
+    if (state !== 'BALL_MOVING') return;
+
+    const scale = dt * 60;
+
+    // Apply spin curve
+    const speed = ballSpeed();
+    if (speed > MIN_SPEED && spin.x !== 0) {
+        const curve = spin.x * 0.015 * scale;
+        ball.vx += -ball.vy / speed * curve;
+        ball.vy += ball.vx / speed * curve;
+    }
+
+    // Move (dt-scaled)
+    ball.x += ball.vx * scale;
+    ball.y += ball.vy * scale;
+
+    // Friction (with spin influence)
+    let fric = getSurfaceFriction();
+    fric -= spin.y * 0.005;
+    fric = Math.max(0.92, Math.min(0.995, fric));
+    applyFriction(fric, dt);
+
+    // Back spin reversal
+    if (spin.y < -0.3 && speed < 1.5 && speed > MIN_SPEED) {
+        const rev = spin.y * 0.08 * scale;
+        ball.vx += ball.vx / (speed || 1) * rev;
+        ball.vy += ball.vy / (speed || 1) * rev;
+    }
+
+    // Decay spin
+    const spinDecay = Math.pow(0.995, scale);
+    spin.x *= spinDecay;
+    spin.y *= spinDecay;
+
+    // Collisions
+    collideWalls();
+    collideBumpers();
+
+    // Hazards + safe position update (merged check)
+    if (checkWater()) return;
+    if (!isOverWater()) {
+        ball.lastSafeX = ball.x;
+        ball.lastSafeY = ball.y;
+    }
+
+    if (checkHole()) return;
+
+    if (ballSpeed() < MIN_SPEED) {
+        ball.vx = 0; ball.vy = 0;
+        state = 'PLAYING';
+        show('spin-selector');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RAY CASTING (for guideline)
+// ═══════════════════════════════════════════════════════════
+function raySegIntersect(ox, oy, dx, dy, x1, y1, x2, y2) {
+    const sx = x2 - x1, sy = y2 - y1;
+    const denom = dx * sy - dy * sx;
+    if (Math.abs(denom) < 1e-8) return null;
+    const t = ((x1 - ox) * sy - (y1 - oy) * sx) / denom;
+    const u = ((x1 - ox) * dy - (y1 - oy) * dx) / denom;
+    if (t > 0.01 && u >= 0 && u <= 1) {
+        return { t, x: ox + dx * t, y: oy + dy * t, nx: sy / Math.sqrt(sx*sx+sy*sy), ny: -sx / Math.sqrt(sx*sx+sy*sy) };
+    }
+    return null;
+}
+
+function castRay(ox, oy, dirX, dirY, maxDist) {
+    let closest = null;
+    let minT = maxDist;
+    for (const w of cachedWalls) {
+        const hit = raySegIntersect(ox, oy, dirX, dirY, w.x1, w.y1, w.x2, w.y2);
+        if (hit && hit.t < minT) {
+            minT = hit.t;
+            closest = hit;
+        }
+    }
+    // Also check bumpers (approximate as not reflecting, just endpoint)
+    return closest;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════════════════
+function spawnParticles(x, y, count, color, speed) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = (0.5 + Math.random()) * speed;
+        particles.push({
+            x, y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            life: 1,
+            decay: 0.02 + Math.random() * 0.03,
+            color,
+            radius: 2 + Math.random() * 3
+        });
+    }
+}
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+            particles[i] = particles[particles.length - 1];
+            particles.pop();
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SPIN SELECTOR
+// ═══════════════════════════════════════════════════════════
+function drawSpinSelector() {
+    const c = spinCtx;
+    const w = 160, h = 160;
+    c.clearRect(0, 0, w, h);
+
+    // Outer ring
+    c.beginPath();
+    c.arc(80, 80, 60, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(10, 30, 18, 0.8)';
+    c.fill();
+    c.strokeStyle = '#2a5a3a';
+    c.lineWidth = 2;
+    c.stroke();
+
+    // Ball circle
+    c.beginPath();
+    c.arc(80, 80, 30, 0, Math.PI * 2);
+    const grad = c.createRadialGradient(78, 78, 2, 80, 80, 30);
+    grad.addColorStop(0, '#fff');
+    grad.addColorStop(1, '#ccc');
+    c.fillStyle = grad;
+    c.fill();
+
+    // Labels
+    c.fillStyle = '#5a9a72';
+    c.font = '10px Rajdhani';
+    c.textAlign = 'center';
+    c.fillText('TOP', 80, 22);
+    c.fillText('BACK', 80, 150);
+    c.fillText('L', 18, 84);
+    c.fillText('R', 142, 84);
+
+    // Spin indicator dot
+    const dotX = 80 + spin.x * 25;
+    const dotY = 80 + spin.y * 25;
+    c.beginPath();
+    c.arc(dotX, dotY, 6, 0, Math.PI * 2);
+    c.fillStyle = '#e63946';
+    c.fill();
+    c.strokeStyle = '#fff';
+    c.lineWidth = 1.5;
+    c.stroke();
+}
+
+// Spin selector input
+const spinEl = document.getElementById('spin-selector');
+function handleSpinStart(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    spinDragging = true;
+    updateSpinFromEvent(e);
+}
+function handleSpinMove(e) {
+    if (!spinDragging) return;
+    e.preventDefault();
+    e.stopPropagation();
+    updateSpinFromEvent(e);
+}
+function handleSpinEnd(e) {
+    spinDragging = false;
+}
+function updateSpinFromEvent(e) {
+    const rect = spinEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const radius = rect.width / 2;
+    spin.x = Math.max(-1, Math.min(1, (clientX - cx) / radius));
+    spin.y = Math.max(-1, Math.min(1, (clientY - cy) / radius));
+    drawSpinSelector();
+}
+
+spinEl.addEventListener('mousedown', handleSpinStart);
+spinEl.addEventListener('touchstart', handleSpinStart, { passive: false });
+window.addEventListener('mousemove', handleSpinMove);
+window.addEventListener('touchmove', handleSpinMove, { passive: false });
+window.addEventListener('mouseup', handleSpinEnd);
+window.addEventListener('touchend', handleSpinEnd);
+
+// ═══════════════════════════════════════════════════════════
+//  AIMING INPUT
+// ═══════════════════════════════════════════════════════════
+function isInSpinSelector(clientX, clientY) {
+    const rect = spinEl.getBoundingClientRect();
+    return clientX >= rect.left - 10 && clientX <= rect.right + 10 &&
+           clientY >= rect.top - 10 && clientY <= rect.bottom + 10;
+}
+
+function handleStart(e) {
+    if (state !== 'PLAYING' || paused) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    if (isInSpinSelector(clientX, clientY)) return;
+    e.preventDefault();
+
+    aim.isDragging = true;
+    aim.curX = clientX;
+    aim.curY = clientY;
+    aim.power = 0;
+    state = 'AIMING';
+    show('power-bar');
+}
+
+function handleMove(e) {
+    if (!aim.isDragging || state !== 'AIMING') return;
+    if (spinDragging) return;
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    aim.curX = clientX;
+    aim.curY = clientY;
+
+    // Calculate angle from ball screen pos to current touch
+    const bs = toScreen(ball.x, ball.y);
+    const dx = aim.curX - bs.x;
+    const dy = aim.curY - bs.y;
+    aim.angle = Math.atan2(dy, dx);
+
+    // Power from distance
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    aim.power = Math.min(dist / MAX_PULL_DIST, 1);
+    powerFillEl.style.height = (aim.power * 100) + '%';
+}
+
+function handleEnd(e) {
+    if (!aim.isDragging) return;
+    aim.isDragging = false;
+
+    if (state !== 'AIMING') return;
+
+    if (aim.power < 0.05) {
+        // Too weak, cancel
+        state = 'PLAYING';
+        hide('power-bar');
+        return;
+    }
+
+    // Shoot!
+    const power = aim.power * MAX_POWER;
+    // Direction is opposite to where the user is pulling
+    ball.vx = -Math.cos(aim.angle) * power;
+    ball.vy = -Math.sin(aim.angle) * power;
+    ball.lastSafeX = ball.x;
+    ball.lastSafeY = ball.y;
+    strokes++;
+    updateHUD();
+    state = 'BALL_MOVING';
+    hide('power-bar'); hide('spin-selector');
+}
+
+canvas.addEventListener('mousedown', handleStart);
+canvas.addEventListener('touchstart', handleStart, { passive: false });
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('touchmove', handleMove, { passive: false });
+window.addEventListener('mouseup', handleEnd);
+window.addEventListener('touchend', handleEnd);
+
+// ═══════════════════════════════════════════════════════════
+//  DRAWING
+// ═══════════════════════════════════════════════════════════
+function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#0a1a0f';
+    ctx.fillRect(0, 0, W, H);
+
+    if (!level || state === 'TITLE' || state === 'LEVEL_SELECT') return;
+
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
+    ctx.scale(camera.zoom, camera.zoom);
+
+    drawFelt();
+    drawObstacles();
+    drawWalls();
+    drawHole();
+    drawParticles();
+    drawBall();
+
+    if (state === 'AIMING') {
+        drawGuideline();
+        drawCueStick();
+    }
+
+    ctx.restore();
+}
+
+function drawFelt() {
+    ctx.drawImage(feltCanvas, 0, 0);
+
+    // Border/rail
+    ctx.strokeStyle = C.rail;
+    ctx.lineWidth = 6;
+    ctx.strokeRect(-3, -3, level.width + 6, level.height + 6);
+    ctx.strokeStyle = C.railLight;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-5, -5, level.width + 10, level.height + 10);
+}
+
+function drawObstacles() {
+    for (const obs of level.obstacles) {
+        if (obs.type === 'sand') {
+            ctx.fillStyle = C.sand;
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            ctx.fillStyle = C.sandDark;
+            if (obs._dots) {
+                for (const d of obs._dots) ctx.fillRect(d.x, d.y, 1.5, 1.5);
+            }
+        } else if (obs.type === 'water') {
+            // Animated water
+            ctx.fillStyle = C.water;
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            ctx.fillStyle = C.waterLight;
+            const t = time * 0.5;
+            for (let i = 0; i < 5; i++) {
+                const wx = obs.x + ((i * 37 + t * 20) % obs.w);
+                const wy = obs.y + ((i * 23 + Math.sin(t + i) * 8) % obs.h);
+                ctx.beginPath();
+                ctx.arc(wx, wy, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (obs.type === 'bumper') {
+            const glow = 0.5 + Math.sin(time * 3) * 0.3;
+            ctx.beginPath();
+            ctx.arc(obs.cx, obs.cy, obs.radius, 0, Math.PI * 2);
+            const grad = ctx.createRadialGradient(obs.cx, obs.cy, 0, obs.cx, obs.cy, obs.radius);
+            grad.addColorStop(0, C.bumperGlow);
+            grad.addColorStop(1, C.bumper);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(255, 107, 122, ${glow})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    // Moving walls
+    const mwalls = getMovingWalls();
+    for (const mw of mwalls) {
+        ctx.beginPath();
+        ctx.moveTo(mw.x1, mw.y1);
+        ctx.lineTo(mw.x2, mw.y2);
+        ctx.strokeStyle = '#ff9944';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.strokeStyle = '#ffbb66';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+}
+
+function drawWalls() {
+    ctx.lineCap = 'round';
+    for (const w of level.walls) {
+        ctx.beginPath();
+        ctx.moveTo(w.x1, w.y1);
+        ctx.lineTo(w.x2, w.y2);
+        ctx.strokeStyle = C.rail;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.strokeStyle = C.railLight;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+}
+
+function drawHole() {
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(level.hole.x + 1, level.hole.y + 1, HOLE_RADIUS + 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+
+    // Hole
+    ctx.beginPath();
+    ctx.arc(level.hole.x, level.hole.y, HOLE_RADIUS, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(level.hole.x, level.hole.y, 0, level.hole.x, level.hole.y, HOLE_RADIUS);
+    grad.addColorStop(0, C.hole);
+    grad.addColorStop(0.7, '#111');
+    grad.addColorStop(1, '#222');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.strokeStyle = C.holeRim;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+}
+
+function drawBall() {
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(ball.x + 2, ball.y + 3, BALL_RADIUS, BALL_RADIUS * 0.6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fill();
+
+    // Ball
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, BALL_RADIUS);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(0.8, C.ball);
+    grad.addColorStop(1, C.ballShade);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Highlight
+    ctx.beginPath();
+    ctx.arc(ball.x - 2.5, ball.y - 2.5, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fill();
+}
+
+const GUIDELINE_CAP = 250;
+
+function drawGuideline() {
+    if (aim.power < 0.05) return;
+
+    const dirX = -Math.cos(aim.angle);
+    const dirY = -Math.sin(aim.angle);
+
+    // Guideline length scales with power, capped at GUIDELINE_CAP
+    const fullLen = aim.power * GUIDELINE_MAX;
+    const visibleLen = Math.min(fullLen, GUIDELINE_CAP);
+    const capped = fullLen > GUIDELINE_CAP;
+
+    const hit = castRay(ball.x, ball.y, dirX, dirY, visibleLen);
+    const rayDist = hit ? hit.t : visibleLen;
+    const endX = hit ? hit.x : ball.x + dirX * visibleLen;
+    const endY = hit ? hit.y : ball.y + dirY * visibleLen;
+
+    // Primary guideline (solid dashes)
+    ctx.beginPath();
+    ctx.moveTo(ball.x, ball.y);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = C.guidelineWhite;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Cap indicator: dotted line beyond the visible guideline
+    if (capped && !hit) {
+        const extraLen = 40;
+        const capStartX = endX;
+        const capStartY = endY;
+        const capEndX = capStartX + dirX * extraLen;
+        const capEndY = capStartY + dirY * extraLen;
+
+        ctx.beginPath();
+        ctx.moveTo(capStartX, capStartY);
+        ctx.lineTo(capEndX, capEndY);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([2, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Reflection guideline
+    if (hit) {
+        const dot = dirX * hit.nx + dirY * hit.ny;
+        const refX = dirX - 2 * dot * hit.nx;
+        const refY = dirY - 2 * dot * hit.ny;
+
+        // Reflection also limited by remaining visible budget
+        const refBudget = Math.min(visibleLen - rayDist, GUIDELINE_CAP * 0.4);
+        if (refBudget > 10) {
+            ctx.beginPath();
+            ctx.moveTo(hit.x, hit.y);
+            ctx.lineTo(hit.x + refX * refBudget, hit.y + refY * refBudget);
+            ctx.strokeStyle = C.guidelineBounce;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        ctx.beginPath();
+        ctx.arc(hit.x, hit.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+    }
+}
+
+function drawCueStick() {
+    const gap = 12 + aim.power * 70;
+
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+    ctx.rotate(aim.angle);
+
+    // Cue drawn along positive X from ball, with gap
+    const startX = gap;
+    const endX = gap + CUE_LENGTH;
+
+    // Cue body (tapered)
+    ctx.beginPath();
+    ctx.moveTo(startX, -CUE_TIP_WIDTH / 2);
+    ctx.lineTo(endX, -CUE_BUTT_WIDTH / 2);
+    ctx.lineTo(endX, CUE_BUTT_WIDTH / 2);
+    ctx.lineTo(startX, CUE_TIP_WIDTH / 2);
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(startX, 0, endX, 0);
+    grad.addColorStop(0, C.cueTip);
+    grad.addColorStop(0.15, C.cueWood);
+    grad.addColorStop(0.85, C.cueWood);
+    grad.addColorStop(1, C.cueButt);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Tip highlight
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(startX, -1.5, 3, 3);
+
+    ctx.restore();
+}
+
+function drawParticles() {
+    for (const p of particles) {
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════════════════
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+
+    if (!paused && state !== 'TITLE' && state !== 'LEVEL_SELECT') {
+        time += dt;
+        if (level) updateCachedWalls();
+        updateBall(dt);
+        updateParticles();
+    }
+
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+lastTime = performance.now();
+requestAnimationFrame(gameLoop);
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+showTitle();
+</script>
+
+<!-- Firebase Tracking -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('pool-battle');
+</script>
+</body>
+</html>
