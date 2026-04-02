@@ -176,6 +176,8 @@ const analysisScore  = document.getElementById('analysis-score');
 const fCanvas     = document.getElementById('feedback-canvas');
 const fCtx        = fCanvas.getContext('2d');
 const msgBox      = document.getElementById('message-box');
+const msgTitleEl  = document.getElementById('msg-title');
+const msgBodyEl   = document.getElementById('msg-body');
 const actionBtnEl = document.getElementById('action-btn');
 const modeSelect  = document.getElementById('mode-select');
 
@@ -207,10 +209,36 @@ const _v2 = new THREE.Vector3();
 
 // Shared particle geometry + material (pool instead of per-particle Mesh)
 let sharedBubbleGeo, sharedBubbleMat, sharedBurstGeo, sharedBurstMats={};
+let sharedSpearShaftGeo, sharedSpearShaftMat, sharedSpearTipGeo, sharedSpearTipMat, sharedSpearGlowGeo, sharedSpearGlowMat;
+let sharedImpactGeo, sharedImpactHitMat, sharedImpactMissMat;
+let flashOpacity = 0;
+
+function aliveCount() {
+    let n = 0;
+    for (const a of state.animals) if (!a.dead) n++;
+    return n;
+}
+function inFlightCount() {
+    let n = 0;
+    for (const s of state.spears) if (!s.done) n++;
+    return n;
+}
+
 function initSharedGeometry() {
     sharedBubbleGeo = new THREE.SphereGeometry(0.035, 4, 4);
-    sharedBubbleMat = new THREE.MeshBasicMaterial({ color:0x88ccff, transparent:true, opacity:0.4, blending:THREE.AdditiveBlending });
+    sharedBubbleMat = new THREE.MeshBasicMaterial({ color:0x88ccff, transparent:true, opacity:0.6, blending:THREE.AdditiveBlending });
     sharedBurstGeo = new THREE.SphereGeometry(0.03, 4, 4);
+    // Shared spear parts
+    sharedSpearShaftGeo = new THREE.CylinderGeometry(0.025, 0.035, 1.8, 8);
+    sharedSpearShaftMat = new THREE.MeshStandardMaterial({ color:0x8B7355, roughness:0.5 });
+    sharedSpearTipGeo = new THREE.ConeGeometry(0.06, 0.3, 6);
+    sharedSpearTipMat = new THREE.MeshStandardMaterial({ color:0xe0e0e0, metalness:0.9, roughness:0.1 });
+    sharedSpearGlowGeo = new THREE.CylinderGeometry(0.06, 0.06, 2.0, 8);
+    sharedSpearGlowMat = new THREE.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.12, blending:THREE.AdditiveBlending });
+    // Shared impact ring
+    sharedImpactGeo = new THREE.TorusGeometry(0.3, 0.05, 8, 16);
+    sharedImpactHitMat = new THREE.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending });
+    sharedImpactMissMat = new THREE.MeshBasicMaterial({ color:0xff4444, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending });
 }
 
 // Material cache per fish species
@@ -592,22 +620,22 @@ function initControls() {
         clickRaycaster.setFromCamera(clickMouse, camera);
 
         let closest = null, closestDist = Infinity;
-        const aliveArr = state.animals.filter(a => !a.dead);
-        for (const a of aliveArr) {
-            // Check distance from click ray to fish position
+        for (const a of state.animals) {
+            if (a.dead) continue;
             const fishPos = a.mesh.position;
             _v2.copy(fishPos).sub(clickRaycaster.ray.origin);
             const proj = _v2.dot(clickRaycaster.ray.direction);
-            if (proj < 0) continue; // behind camera
+            if (proj < 0) continue;
             _v1.copy(clickRaycaster.ray.direction).multiplyScalar(proj).add(clickRaycaster.ray.origin);
             const d = _v1.distanceTo(fishPos);
-            if (d < a.bodyRadius * 3 && d < closestDist) { // generous click radius
+            if (d < a.bodyRadius * 3 && d < closestDist) {
                 closestDist = d; closest = a;
             }
         }
-        // Fallback: nearest fish by distance
-        if (!closest && aliveArr.length > 0) {
-            for (const a of aliveArr) {
+        // Fallback: nearest alive fish by distance
+        if (!closest) {
+            for (const a of state.animals) {
+                if (a.dead) continue;
                 const d = a.mesh.position.distanceTo(camera.position);
                 if (d < closestDist) { closestDist = d; closest = a; }
             }
@@ -618,13 +646,13 @@ function initControls() {
     function startAim(screenX, screenY) {
         if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis) return;
         state.isAiming = true;
-        crosshairEl.style.display = '';
+        crosshairEl.style.display = 'block';
         crosshairEl.classList.add('aiming');
 
         // Snap aim toward the fish closest to where user clicked
-        const fish = findClickedFish(screenX, screenY);
-        if (fish) {
-            _v2.copy(fish.mesh.position).sub(camera.position);
+        const targetFish = findClickedFish(screenX, screenY);
+        if (targetFish) {
+            _v2.copy(targetFish.mesh.position).sub(camera.position);
             aimYaw = Math.atan2(-_v2.x, -_v2.z);
             aimPitch = Math.atan2(_v2.y, Math.sqrt(_v2.x*_v2.x + _v2.z*_v2.z));
         } else {
@@ -710,10 +738,10 @@ function updateCamera(dt) {
 // ============================================================
 function spawnAnimal() {
     if (state.gameOver || state.analysisActive || state.isWaitingForAnalysis || state.harvested >= state.goal) return;
-    const aliveCount = state.animals.filter(a => !a.dead).length;
-    if (aliveCount >= 2) return;
+    const alive = aliveCount();
+    if (alive >= 2) return;
 
-    const toSpawn = aliveCount === 0 ? 2 : 1;
+    const toSpawn = alive === 0 ? 2 : 1;
     for (let s = 0; s < toSpawn; s++) {
         const key = state.currentLevelSpecies[Math.floor(Math.random()*state.currentLevelSpecies.length)];
         const type = FISH_TYPES[key];
@@ -803,7 +831,7 @@ function updateFish(dt) {
             if (a.fadeAlpha <= 0) {
                 scene.remove(a.mesh);
                 state.animals.splice(i, 1);
-                if (!state.analysisActive && state.animals.filter(x=>!x.dead).length === 0 && !state.gameOver) {
+                if (!state.analysisActive && aliveCount() === 0 && !state.gameOver) {
                     spawnAnimal();
                 }
             }
@@ -816,29 +844,16 @@ function updateFish(dt) {
 // ============================================================
 function createSpearMesh() {
     const group = new THREE.Group();
-    // Shaft — thicker, longer
-    const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.035, 1.8, 8),
-        new THREE.MeshStandardMaterial({ color:0x8B7355, roughness:0.5 })
-    );
+    const shaft = new THREE.Mesh(sharedSpearShaftGeo, sharedSpearShaftMat);
     shaft.rotation.x = Math.PI/2;
     group.add(shaft);
-    // Metal tip — larger
-    const tip = new THREE.Mesh(
-        new THREE.ConeGeometry(0.06, 0.3, 6),
-        new THREE.MeshStandardMaterial({ color:0xe0e0e0, metalness:0.9, roughness:0.1 })
-    );
+    const tip = new THREE.Mesh(sharedSpearTipGeo, sharedSpearTipMat);
     tip.rotation.x = -Math.PI/2;
     tip.position.z = -1.05;
     group.add(tip);
-    // Outer glow cylinder
-    const glow = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 2.0, 8),
-        new THREE.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.12, blending:THREE.AdditiveBlending })
-    );
+    const glow = new THREE.Mesh(sharedSpearGlowGeo, sharedSpearGlowMat);
     glow.rotation.x = Math.PI/2;
     group.add(glow);
-    // Point light on the spear tip for underwater illumination
     const spearLight = new THREE.PointLight(0x00e5ff, 1.5, 8);
     spearLight.position.z = -1.0;
     group.add(spearLight);
@@ -856,16 +871,16 @@ function fire() {
 
     const spearMesh = createSpearMesh();
     spearMesh.position.copy(camera.position);
-    // Direction: straight ahead from camera
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-    spearMesh.lookAt(camera.position.clone().add(dir));
+    _v1.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+    _v2.copy(camera.position).add(_v1);
+    spearMesh.lookAt(_v2);
     spearMesh.scale.set(0.15, 0.15, 0.15);
     scene.add(spearMesh);
 
     state.spears.push({
         mesh: spearMesh,
         origin: camera.position.clone(),
-        dir: dir.clone(),
+        dir: _v1.clone(),
         elapsed: 0,
         done: false,
         trailParticles: [],
@@ -885,8 +900,8 @@ function updateSpears(dt) {
             }
             if (sp.impactLife <= 0) {
                 scene.remove(sp.mesh);
-                if (sp.impactRing) scene.remove(sp.impactRing);
-                sp.trailParticles.forEach(p => scene.remove(p));
+                if (sp.impactRing) { sp.impactRing.material.dispose(); scene.remove(sp.impactRing); }
+                sp.trailParticles.forEach(p => { p.material.dispose(); scene.remove(p); });
                 state.spears.splice(i, 1);
             }
             continue;
@@ -971,12 +986,10 @@ function resolveSpear(spear, shotData) {
     spear.done = true;
     spear.impactLife = 1;
 
-    // Impact ring
+    // Impact ring (shared geometry, cloned material for per-ring opacity)
     const impactPos = shotData.hit ? shotData.impactPoint : spear.mesh.position.clone();
-    const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.3, 0.05, 8, 16),
-        new THREE.MeshBasicMaterial({ color:shotData.hit?0x00e5ff:0xff4444, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending })
-    );
+    const baseMat = shotData.hit ? sharedImpactHitMat : sharedImpactMissMat;
+    const ring = new THREE.Mesh(sharedImpactGeo, baseMat.clone());
     ring.position.copy(impactPos);
     ring.lookAt(camera.position);
     scene.add(ring);
@@ -1003,7 +1016,7 @@ function resolveSpear(spear, shotData) {
         state.isWaitingForAnalysis = false;
         statusEl.textContent = 'MISSED!';
         statusEl.className = 'text-xl font-bold text-red-500';
-        if (state.animals.filter(a=>!a.dead).length === 0) setTimeout(spawnAnimal, 800);
+        if (aliveCount() === 0) setTimeout(spawnAnimal, 800);
         checkOutOfAmmo();
     }
 }
@@ -1020,8 +1033,7 @@ function processHit(animal, tier) {
 }
 
 function checkOutOfAmmo() {
-    if (state.ammo <= 0 && state.animals.filter(a=>!a.dead).length === 0
-        && state.spears.filter(s=>!s.done).length === 0 && !state.gameOver) {
+    if (state.ammo <= 0 && aliveCount() === 0 && inFlightCount() === 0 && !state.gameOver) {
         setTimeout(() => showEndScreen('DIVE FAILED', 'Out of Spears', 'Retry'), 500);
     }
 }
@@ -1048,11 +1060,13 @@ function updateParticles(dt) {
 // ============================================================
 // EFFECTS
 // ============================================================
-function triggerFlash(intensity) { flash.style.opacity = intensity; }
+function triggerFlash(intensity) { flashOpacity = intensity; flash.style.opacity = intensity; }
 
 function updateFlash(dt) {
-    const op = parseFloat(flash.style.opacity) || 0;
-    if (op > 0) flash.style.opacity = Math.max(0, op - dt * 4);
+    if (flashOpacity > 0) {
+        flashOpacity = Math.max(0, flashOpacity - dt * 4);
+        flash.style.opacity = flashOpacity;
+    }
 }
 
 // ============================================================
@@ -1116,10 +1130,9 @@ window.closeAnalysis = function() {
     updateUI();
     if (state.harvested >= state.goal) {
         setTimeout(() => showEndScreen('DIVE SUCCESS', 'Total Score: '+state.score, 'Next Dive'), 300);
-    } else if (state.ammo <= 0 && state.animals.filter(a=>!a.dead).length === 0) {
-        setTimeout(() => showEndScreen('DIVE FAILED', 'Out of Spears', 'Retry'), 300);
     } else {
-        spawnAnimal();
+        checkOutOfAmmo();
+        if (!state.gameOver) spawnAnimal();
     }
 };
 
@@ -1127,9 +1140,9 @@ function showEndScreen(title, body, btnText) {
     state.gameOver = true;
     state.lastDiveFailed = title.includes('FAILED');
     crosshairEl.style.display = 'none';
-    document.getElementById('msg-title').textContent = title;
-    document.getElementById('msg-title').className = state.lastDiveFailed ? 'text-4xl font-black mb-1 text-red-500' : 'text-4xl font-black mb-1 text-teal-400';
-    document.getElementById('msg-body').textContent = body;
+    msgTitleEl.textContent = title;
+    msgTitleEl.className = state.lastDiveFailed ? 'text-4xl font-black mb-1 text-red-500' : 'text-4xl font-black mb-1 text-teal-400';
+    msgBodyEl.textContent = body;
     actionBtnEl.textContent = btnText;
     msgBox.style.display = 'block';
 }
