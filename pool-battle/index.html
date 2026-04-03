@@ -1498,16 +1498,16 @@ function updateBall(dt) {
     ball.x += ball.vx * scale;
     ball.y += ball.vy * scale;
 
-    // Out of bounds check
-    if (ball.x < -BALL_RADIUS * 2 || ball.x > level.width + BALL_RADIUS * 2 ||
-        ball.y < -BALL_RADIUS * 2 || ball.y > level.height + BALL_RADIUS * 2) {
-        // If airborne (jumped out), reset to shot origin with penalty
+    // Out of bounds check — reset if ball escapes level area
+    const oob = ball.x < -BALL_RADIUS || ball.x > level.width + BALL_RADIUS ||
+                ball.y < -BALL_RADIUS || ball.y > level.height + BALL_RADIUS;
+    if (oob) {
         if (ball.airborne) {
             ball.x = ball.shotX; ball.y = ball.shotY;
             ball.airborne = false; ball.jumpZ = 0; ball.jumpVZ = 0;
             strokes++; updateHUD();
         } else {
-            ball.x = ball.lastSafeX; ball.y = ball.lastSafeY;
+            ball.x = ball.shotX; ball.y = ball.shotY;
         }
         ball.vx = 0; ball.vy = 0;
         state = 'PLAYING';
@@ -1591,6 +1591,10 @@ function updateBall(dt) {
 
     if (ballSpeed() < MIN_SPEED) {
         ball.vx = 0; ball.vy = 0;
+        // Safety: if ball stopped outside bounds, reset to shot origin
+        if (ball.x < 0 || ball.x > level.width || ball.y < 0 || ball.y > level.height) {
+            ball.x = ball.shotX; ball.y = ball.shotY;
+        }
         if (level.maxStrokes && strokes >= level.maxStrokes) {
             failLevel();
         } else {
