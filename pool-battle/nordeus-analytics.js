@@ -5,36 +5,35 @@
  * Sends protobuf-encoded events to events.nordeus.com using the EventServiceV2 format.
  */
 
-// ── Protobuf manual wire encoding (no external dependency) ──────────────
-// We encode EventServiceV2 protobuf messages by hand to avoid a 40KB+ library.
-// Wire format reference: https://protobuf.dev/programming-guides/encoding/
+// Manual protobuf wire encoding — avoids a 40KB+ protobufjs dependency.
+
+const textEncoder = new TextEncoder();
 
 const PB = {
-    // Wire types
     VARINT: 0,
     LENGTH_DELIMITED: 2,
 
-    // Encode a varint (unsigned)
     encodeVarint(value) {
         const bytes = [];
         value = Number(value);
         if (value < 0) {
-            // Encode as 10-byte two's complement for negative values
-            const lo = value >>> 0;
-            let hi = ((value - lo) / 4294967296) >>> 0;
-            let loVal = lo;
-            for (let i = 0; i < 5; i++) {
-                bytes.push((loVal & 0x7F) | 0x80);
-                loVal >>>= 7;
-                if (i === 3) loVal |= (hi & 0x0F) << 4;
-                if (i === 4) { loVal = hi >>> 3; }
-            }
-            for (let i = 0; i < 5; i++) {
-                if (i === 4) {
-                    bytes.push(loVal & 0x7F);
+            // Negative varint: 10-byte two's complement encoding
+            let lo = value >>> 0;
+            let hi = (((value - (value >>> 0)) / 4294967296) >>> 0) | 0;
+            // If original value is negative and hi is 0, set all hi bits
+            if (value < 0 && hi === 0) hi = 0xFFFFFFFF;
+            for (let i = 0; i < 10; i++) {
+                if (i < 4) {
+                    bytes.push((lo & 0x7F) | 0x80);
+                    lo >>>= 7;
+                } else if (i === 4) {
+                    bytes.push(((lo & 0x0F) | ((hi & 0x07) << 4)) | 0x80);
+                    hi >>>= 3;
+                } else if (i < 9) {
+                    bytes.push((hi & 0x7F) | 0x80);
+                    hi >>>= 7;
                 } else {
-                    bytes.push((loVal & 0x7F) | 0x80);
-                    loVal >>>= 7;
+                    bytes.push(hi & 0x7F);
                 }
             }
             return new Uint8Array(bytes);
@@ -48,23 +47,14 @@ const PB = {
         return new Uint8Array(bytes);
     },
 
-    // Encode a signed varint (zigzag for sint, but proto uses int32/int64 which is just varint)
-    encodeSVarint(value) {
-        return PB.encodeVarint(value);
-    },
-
-    // Encode field tag
     encodeTag(fieldNumber, wireType) {
         return PB.encodeVarint((fieldNumber << 3) | wireType);
     },
 
-    // Encode string as length-delimited bytes
     encodeString(str) {
-        const encoder = new TextEncoder();
-        return encoder.encode(str);
+        return textEncoder.encode(str);
     },
 
-    // Encode a length-delimited field (string, bytes, embedded message)
     encodeLengthDelimited(fieldNumber, data) {
         const tag = PB.encodeTag(fieldNumber, PB.LENGTH_DELIMITED);
         const len = PB.encodeVarint(data.length);
@@ -75,9 +65,8 @@ const PB = {
         return result;
     },
 
-    // Encode a varint field
     encodeVarintField(fieldNumber, value) {
-        if (value === 0 || value === null || value === undefined) return new Uint8Array(0);
+        if (value === null || value === undefined) return new Uint8Array(0);
         const tag = PB.encodeTag(fieldNumber, PB.VARINT);
         const val = PB.encodeVarint(value);
         const result = new Uint8Array(tag.length + val.length);
@@ -86,17 +75,15 @@ const PB = {
         return result;
     },
 
-    // Encode a string field
     encodeStringField(fieldNumber, value) {
         if (!value) return new Uint8Array(0);
         const strBytes = PB.encodeString(value);
         return PB.encodeLengthDelimited(fieldNumber, strBytes);
     },
 
-    // Encode a float field (wire type 5 = 32-bit)
     encodeFloatField(fieldNumber, value) {
-        if (value === 0 || value === null || value === undefined) return new Uint8Array(0);
-        const tag = PB.encodeTag(fieldNumber, 5); // wire type 5 = 32-bit
+        if (value === null || value === undefined) return new Uint8Array(0);
+        const tag = PB.encodeTag(fieldNumber, 5);
         const buf = new ArrayBuffer(4);
         new DataView(buf).setFloat32(0, value, true); // little-endian
         const floatBytes = new Uint8Array(buf);
@@ -106,7 +93,6 @@ const PB = {
         return result;
     },
 
-    // Encode a bool field (varint 0 or 1)
     encodeBoolField(fieldNumber, value) {
         const tag = PB.encodeTag(fieldNumber, PB.VARINT);
         const val = new Uint8Array([value ? 1 : 0]);
@@ -116,7 +102,6 @@ const PB = {
         return result;
     },
 
-    // Concatenate multiple Uint8Arrays
     concat(...arrays) {
         arrays = arrays.filter(a => a && a.length > 0);
         const totalLen = arrays.reduce((sum, a) => sum + a.length, 0);
@@ -132,9 +117,6 @@ const PB = {
 
 // ── Protobuf message encoders matching EventServiceV2.proto ─────────────
 
-/**
- * Encode EventV2.StringParameter { key=1, value=2 }
- */
 function encodeStringParam(key, value) {
     return PB.concat(
         PB.encodeStringField(1, key),
@@ -142,9 +124,6 @@ function encodeStringParam(key, value) {
     );
 }
 
-/**
- * Encode EventV2.FloatParameter { key=1, value=2 (float) }
- */
 function encodeFloatParam(key, value) {
     return PB.concat(
         PB.encodeStringField(1, key),
@@ -152,9 +131,6 @@ function encodeFloatParam(key, value) {
     );
 }
 
-/**
- * Encode EventV2.IntParameter { key=1, value=2 (int32) }
- */
 function encodeIntParam(key, value) {
     return PB.concat(
         PB.encodeStringField(1, key),
@@ -162,9 +138,6 @@ function encodeIntParam(key, value) {
     );
 }
 
-/**
- * Encode EventV2.LongParameter { key=1, value=2 (int64) }
- */
 function encodeLongParam(key, value) {
     return PB.concat(
         PB.encodeStringField(1, key),
@@ -172,9 +145,6 @@ function encodeLongParam(key, value) {
     );
 }
 
-/**
- * Encode EventV2.BoolParameter { key=1, value=2 (bool) }
- */
 function encodeBoolParam(key, value) {
     return PB.concat(
         PB.encodeStringField(1, key),
@@ -183,8 +153,7 @@ function encodeBoolParam(key, value) {
 }
 
 /**
- * Encode an EventV2 message.
- * Proto fields:
+ * EventV2 proto fields:
  *   1: eventId (int32)
  *   2: loginId (int64)
  *   3: timestampMs (int64)
@@ -243,8 +212,7 @@ function encodeEventV2(event) {
 }
 
 /**
- * Encode BatchEventRequestV2.
- * Proto fields:
+ * BatchEventRequestV2 proto fields:
  *   1: gamePublicTag (string)
  *   2: environment (string)
  *   3: sentTimestampMs (int64)
@@ -266,9 +234,7 @@ function encodeBatchRequest(batch) {
     }
 
     parts.push(PB.encodeVarintField(5, batch.sentTicksMs));
-    // platformType: WebGl = 0, but 0 is default so we encode it explicitly
-    // In proto, enum 0 is the default and won't be sent. WebGl IS 0, so we skip it.
-    // Android=1, iOS=2, Unknown=-1
+    // Proto3 omits enum default (0=WebGl), so only encode non-zero platform types
     if (batch.platformType !== 0) {
         parts.push(PB.encodeVarintField(6, batch.platformType));
     }
@@ -383,8 +349,12 @@ class NordeusAnalytics {
             return;
         }
 
+        // Cap buffer to prevent unbounded growth during prolonged outages
+        if (this.eventBuffer.length >= 500) {
+            this.eventBuffer.shift();
+        }
+
         this.order++;
-        localStorage.setItem(STORAGE_KEY_ORDER, String(this.order));
 
         const now = Date.now();
         const event = {
@@ -429,11 +399,11 @@ class NordeusAnalytics {
         }
     }
 
-    /**
-     * Flush all buffered events to the server.
-     */
     _flush() {
         if (this.eventBuffer.length === 0) return;
+
+        // Persist order counter once per batch instead of per-event
+        localStorage.setItem(STORAGE_KEY_ORDER, String(this.order));
 
         const events = this.eventBuffer.splice(0);
         const batch = {
@@ -450,9 +420,6 @@ class NordeusAnalytics {
         this._send(encoded, 0);
     }
 
-    /**
-     * Send encoded protobuf data with retry/backoff.
-     */
     _send(data, retryIndex) {
         const url = this.config.serverUrl + this.config.servletPath;
 
@@ -481,10 +448,6 @@ class NordeusAnalytics {
         });
     }
 
-    /**
-     * Convenience: track login event (event 10000) with device info.
-     * Mirrors LoginTracker.TrackLogin from C#.
-     */
     trackLogin() {
         this.track(10000, {
             platform_name: 'WebGL',
@@ -500,8 +463,6 @@ class NordeusAnalytics {
         });
     }
 }
-
-// ── Singleton export ────────────────────────────────────────────────────
 
 const nanalytics = new NordeusAnalytics();
 export default nanalytics;
