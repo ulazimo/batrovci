@@ -221,10 +221,12 @@
         .shop-grid {
             display: flex; flex-wrap: wrap;
             gap: 12px; justify-content: center;
-            max-width: 500px; padding: 0 16px;
+            max-width: 560px; padding: 0 16px;
+            max-height: 60vh; overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .cue-card {
-            width: 110px;
+            width: 130px;
             background: linear-gradient(180deg, #1a3a28, #0f2a1a);
             border: 2px solid #2a5a3a;
             border-radius: 10px;
@@ -270,6 +272,54 @@
             background: #2a5a3a; border-color: #3a8a5a;
             cursor: default; opacity: 0.7;
         }
+
+        /* ── Stat Bars ── */
+        .stat-row {
+            display: flex; align-items: center; gap: 4px;
+            width: 100%; font-size: 9px; color: #5a9a72;
+        }
+        .stat-label { width: 28px; text-align: right; flex-shrink: 0; }
+        .stat-bar-bg {
+            flex: 1; height: 6px; background: rgba(255,255,255,0.08);
+            border-radius: 3px; overflow: hidden;
+        }
+        .stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+        /* ── Inventory ── */
+        #inventory { z-index: 55; }
+        #inventory .inv-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px; font-weight: 700;
+            color: #fff; margin-bottom: 16px;
+            letter-spacing: 2px;
+        }
+        .inv-scroll {
+            max-height: 65vh; overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 16px; width: 100%;
+            max-width: 420px;
+        }
+        .inv-cue {
+            background: linear-gradient(180deg, #1a3a28, #0f2a1a);
+            border: 2px solid #2a5a3a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .inv-cue.equipped { border-color: #1a7a3a; box-shadow: 0 0 12px rgba(26,122,58,0.3); }
+        .inv-cue-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px;
+        }
+        .inv-cue-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px; color: #fff; font-weight: 700;
+        }
+        .inv-cue-preview {
+            width: 100%; height: 14px; border-radius: 4px; margin-bottom: 10px;
+        }
+        .inv-stats { display: flex; flex-direction: column; gap: 3px; }
 
         /* ── Spin Selector ── */
         #spin-selector {
@@ -321,6 +371,7 @@
         <div class="levels-grid" id="levels-grid"></div>
         <div style="display:flex;gap:10px;margin-top:28px">
             <button class="btn btn-small" onclick="openShop()">🪙 SHOP</button>
+            <button class="btn btn-small" onclick="openInventory()">🎱 CUES</button>
             <button class="btn btn-small btn-outline" onclick="showTitle()">BACK</button>
         </div>
     </div>
@@ -372,6 +423,13 @@
         <button class="btn btn-small btn-outline" style="margin-top:20px" onclick="closeShop()">BACK</button>
     </div>
 
+    <!-- Inventory -->
+    <div id="inventory" class="overlay hidden">
+        <div class="inv-title">INVENTORY</div>
+        <div class="inv-scroll" id="inv-list"></div>
+        <button class="btn btn-small btn-outline" style="margin-top:16px" onclick="closeInventory()">BACK</button>
+    </div>
+
     <!-- Level Complete -->
     <div id="level-complete" class="overlay hidden">
         <div class="lc-title">LEVEL COMPLETE!</div>
@@ -405,10 +463,12 @@ const HOLE_CAPTURE_SPEED = 3.2;
 const GUIDELINE_MAX = 500;
 
 // ── Cue Definitions ──
+// Spin stats: 0 = no bonus, 1 = base, 2 = strong, 3 = max
 const CUES = [
     {
         id: 'starter', name: 'Starter', price: 0,
         guidelineCap: 250, maxPower: 16,
+        topSpin: 1, backSpin: 1, leftSpin: 1, rightSpin: 1,
         tipWidth: 4, buttWidth: 9, length: 160,
         colors: { tip: '#E8D8B8', wood: '#6B3A1E', butt: '#2A1A0A', highlight: '#fff' },
         glow: false
@@ -416,28 +476,87 @@ const CUES = [
     {
         id: 'bronze', name: 'Bronze', price: 50,
         guidelineCap: 320, maxPower: 18,
+        topSpin: 1.2, backSpin: 1.2, leftSpin: 1.2, rightSpin: 1.2,
         tipWidth: 4.5, buttWidth: 10, length: 170,
         colors: { tip: '#F0D0A0', wood: '#8B4513', butt: '#3A1A0A', highlight: '#CD7F32' },
         glow: false
     },
     {
+        id: 'viper', name: 'Viper', price: 80,
+        guidelineCap: 280, maxPower: 17,
+        topSpin: 0.8, backSpin: 2.2, leftSpin: 1.5, rightSpin: 1.5,
+        tipWidth: 4, buttWidth: 9, length: 165,
+        colors: { tip: '#90EE90', wood: '#2E8B57', butt: '#1A3A2A', highlight: '#00FF7F' },
+        glow: false
+    },
+    {
+        id: 'hawk', name: 'Hawk', price: 120,
+        guidelineCap: 400, maxPower: 15,
+        topSpin: 1.8, backSpin: 0.8, leftSpin: 1, rightSpin: 1,
+        tipWidth: 4, buttWidth: 9, length: 170,
+        colors: { tip: '#FFE4B5', wood: '#8B6914', butt: '#4A3A0A', highlight: '#F4A460' },
+        glow: false
+    },
+    {
         id: 'silver', name: 'Silver', price: 150,
         guidelineCap: 400, maxPower: 20,
+        topSpin: 1.4, backSpin: 1.4, leftSpin: 1.4, rightSpin: 1.4,
         tipWidth: 4.5, buttWidth: 10, length: 175,
         colors: { tip: '#F5F5F5', wood: '#708090', butt: '#2F4F4F', highlight: '#C0C0C0' },
         glow: false
     },
     {
+        id: 'curve', name: 'Curveball', price: 200,
+        guidelineCap: 300, maxPower: 17,
+        topSpin: 1, backSpin: 1, leftSpin: 2.5, rightSpin: 2.5,
+        tipWidth: 4.5, buttWidth: 10, length: 168,
+        colors: { tip: '#E0B0FF', wood: '#6A0DAD', butt: '#2A0040', highlight: '#DA70D6' },
+        glow: false
+    },
+    {
+        id: 'cannon', name: 'Cannon', price: 250,
+        guidelineCap: 280, maxPower: 24,
+        topSpin: 2, backSpin: 0.6, leftSpin: 0.8, rightSpin: 0.8,
+        tipWidth: 5, buttWidth: 11, length: 180,
+        colors: { tip: '#D3D3D3', wood: '#333', butt: '#111', highlight: '#FF4444' },
+        glow: false
+    },
+    {
+        id: 'phantom', name: 'Phantom', price: 300,
+        guidelineCap: 500, maxPower: 18,
+        topSpin: 1.2, backSpin: 1.8, leftSpin: 1.8, rightSpin: 1.8,
+        tipWidth: 4, buttWidth: 9, length: 175,
+        colors: { tip: '#B0C4DE', wood: '#1C1C2E', butt: '#0A0A15', highlight: '#6A5ACD' },
+        glow: true
+    },
+    {
         id: 'gold', name: 'Gold', price: 400,
         guidelineCap: 500, maxPower: 22,
+        topSpin: 1.8, backSpin: 1.8, leftSpin: 1.8, rightSpin: 1.8,
         tipWidth: 5, buttWidth: 11, length: 180,
         colors: { tip: '#FFF8DC', wood: '#DAA520', butt: '#8B6914', highlight: '#FFD700' },
+        glow: true
+    },
+    {
+        id: 'master', name: 'Master', price: 600,
+        guidelineCap: 500, maxPower: 24,
+        topSpin: 2.2, backSpin: 2.2, leftSpin: 2.2, rightSpin: 2.2,
+        tipWidth: 5, buttWidth: 11, length: 185,
+        colors: { tip: '#FFD700', wood: '#B22222', butt: '#4A0000', highlight: '#FF6347' },
         glow: true
     }
 ];
 
 function getEquippedCue() {
     return CUES.find(c => c.id === progress.equippedCue) || CUES[0];
+}
+
+// Returns effective spin values scaled by cue stats
+function getEffectiveSpin(cue) {
+    return {
+        x: spin.x * (spin.x > 0 ? cue.rightSpin : spin.x < 0 ? cue.leftSpin : 1),
+        y: spin.y * (spin.y > 0 ? cue.backSpin : spin.y < 0 ? cue.topSpin : 1)
+    };
 }
 
 // ── Colors ──
@@ -921,6 +1040,23 @@ function closeShop() {
     renderLevelGrid();
 }
 
+function statBar(label, value, max, color) {
+    const pct = Math.min(100, (value / max) * 100);
+    return `<div class="stat-row">
+        <span class="stat-label">${label}</span>
+        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+}
+
+function cueStatBars(cue) {
+    return statBar('PWR', cue.maxPower, 26, '#e63946') +
+           statBar('AIM', cue.guidelineCap, 520, '#4A9BE4') +
+           statBar('TOP', cue.topSpin, 2.5, '#4ade80') +
+           statBar('BACK', cue.backSpin, 2.5, '#e6c619') +
+           statBar('LEFT', cue.leftSpin, 2.5, '#DA70D6') +
+           statBar('RIGHT', cue.rightSpin, 2.5, '#DA70D6');
+}
+
 function renderShop() {
     document.getElementById('shop-coins').textContent = `🪙 ${progress.coins}`;
     const grid = document.getElementById('shop-grid');
@@ -933,7 +1069,6 @@ function renderShop() {
         const card = document.createElement('div');
         card.className = 'cue-card' + (equipped ? ' equipped' : '');
 
-        // Preview bar with cue gradient
         const previewStyle = `background:linear-gradient(90deg, ${cue.colors.tip}, ${cue.colors.wood} 15%, ${cue.colors.wood} 85%, ${cue.colors.butt})`;
 
         let btnHtml;
@@ -950,12 +1085,60 @@ function renderShop() {
         card.innerHTML = `
             <div class="cue-name">${cue.name}</div>
             <div class="cue-preview" style="${previewStyle}"></div>
-            <div class="cue-stats">Power: ${cue.maxPower}<br>Guide: ${cue.guidelineCap}</div>
+            <div class="inv-stats">${cueStatBars(cue)}</div>
             ${owned ? '' : `<div class="cue-price">🪙 ${cue.price}</div>`}
             ${btnHtml}
         `;
         grid.appendChild(card);
     }
+}
+
+function openInventory() {
+    hide('level-select');
+    show('inventory');
+    renderInventory();
+}
+
+function closeInventory() {
+    hide('inventory');
+    show('level-select');
+    renderLevelGrid();
+}
+
+function renderInventory() {
+    const list = document.getElementById('inv-list');
+    list.innerHTML = '';
+    const ownedCues = CUES.filter(c => progress.ownedCues.includes(c.id));
+    for (const cue of ownedCues) {
+        const equipped = progress.equippedCue === cue.id;
+        const div = document.createElement('div');
+        div.className = 'inv-cue' + (equipped ? ' equipped' : '');
+
+        const previewStyle = `background:linear-gradient(90deg, ${cue.colors.tip}, ${cue.colors.wood} 15%, ${cue.colors.wood} 85%, ${cue.colors.butt})`;
+
+        div.innerHTML = `
+            <div class="inv-cue-header">
+                <span class="inv-cue-name">${cue.name}</span>
+                ${equipped
+                    ? '<span style="font-size:11px;color:#1a7a3a;font-weight:700">EQUIPPED</span>'
+                    : `<button class="btn btn-small" style="font-size:11px;padding:4px 14px" onclick="equipCueInv('${cue.id}')">EQUIP</button>`
+                }
+            </div>
+            <div class="inv-cue-preview" style="${previewStyle}"></div>
+            <div class="inv-stats">${cueStatBars(cue)}</div>
+        `;
+        list.appendChild(div);
+    }
+    if (ownedCues.length === 0) {
+        list.innerHTML = '<div style="color:#5a9a72;text-align:center;padding:20px">No cues yet. Buy one from the shop!</div>';
+    }
+}
+
+function equipCueInv(id) {
+    if (!progress.ownedCues.includes(id)) return;
+    progress.equippedCue = id;
+    saveProgress();
+    renderInventory();
 }
 
 function buyCue(id) {
@@ -1099,11 +1282,12 @@ function collideWalls() {
             ball.vx = (ball.vx - 2 * dot * nx) * WALL_RESTITUTION;
             ball.vy = (ball.vy - 2 * dot * ny) * WALL_RESTITUTION;
 
-            // Side spin effect on bounce
-            const tx = -ny, ty = nx; // tangent
+            // Side spin effect on bounce (scaled by cue)
+            const tx = -ny, ty = nx;
             const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-            ball.vx += tx * spin.x * speed * 0.45;
-            ball.vy += ty * spin.x * speed * 0.45;
+            const eSpin = getEffectiveSpin(getEquippedCue());
+            ball.vx += tx * eSpin.x * speed * 0.45;
+            ball.vy += ty * eSpin.x * speed * 0.45;
 
             // Particle
             spawnParticles(cp.x, cp.y, 3, '#fff', 1.5);
@@ -1214,10 +1398,13 @@ function updateBall(dt) {
 
     const scale = dt * 60;
 
+    const cue = getEquippedCue();
+    const eSpin = getEffectiveSpin(cue);
+
     // Apply side spin curve — scales with speed so it fades as ball slows
     const speed = ballSpeed();
-    if (speed > MIN_SPEED && spin.x !== 0) {
-        const curve = spin.x * 0.005 * speed * scale;
+    if (speed > MIN_SPEED && eSpin.x !== 0) {
+        const curve = eSpin.x * 0.005 * speed * scale;
         ball.vx += -ball.vy / speed * curve;
         ball.vy += ball.vx / speed * curve;
     }
@@ -1239,13 +1426,13 @@ function updateBall(dt) {
 
     // Friction — top spin reduces, back spin increases
     let fric = getSurfaceFriction();
-    fric -= spin.y * 0.015;
+    fric -= eSpin.y * 0.015;
     fric = Math.max(0.92, Math.min(0.998, fric));
     applyFriction(fric, dt);
 
     // Back spin reversal — kicks in at moderate speed
-    if (spin.y < -0.2 && speed < 4 && speed > MIN_SPEED) {
-        const rev = spin.y * 0.15 * scale;
+    if (eSpin.y < -0.2 && speed < 4 && speed > MIN_SPEED) {
+        const rev = eSpin.y * 0.15 * scale;
         ball.vx += ball.vx / (speed || 1) * rev;
         ball.vy += ball.vy / (speed || 1) * rev;
     }
@@ -1671,7 +1858,8 @@ function drawGuideline() {
     let sx = ball.x, sy = ball.y;
     let svx = -Math.cos(aim.angle) * power;
     let svy = -Math.sin(aim.angle) * power;
-    let sSpinX = spin.x, sSpinY = spin.y;
+    const eSpinG = getEffectiveSpin(cue);
+    let sSpinX = eSpinG.x, sSpinY = eSpinG.y;
 
     // Simulate path, sampling every 2 iterations for smooth line
     const preBounce = [{ x: sx, y: sy }];
