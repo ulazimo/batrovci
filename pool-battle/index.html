@@ -27,7 +27,7 @@
 
         /* ── Back Link ── */
         .back-link {
-            position: fixed; top: 12px; left: 12px; z-index: 100;
+            position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); z-index: 100;
             color: #aaa; text-decoration: none; font-size: 14px;
             opacity: 0.7; transition: opacity 0.2s;
         }
@@ -95,9 +95,12 @@
             gap: 12px;
             max-width: 400px;
             padding: 0 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
-        @media (max-width: 400px) {
-            .levels-grid { gap: 8px; }
+        @media (max-width: 380px) {
+            .levels-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
         }
         .level-btn {
             width: 80px; height: 90px;
@@ -148,7 +151,7 @@
         #hud {
             position: fixed; top: 0; left: 0; right: 0;
             z-index: 30; pointer-events: none;
-            padding: 12px 16px;
+            padding: calc(12px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 12px calc(16px + env(safe-area-inset-left, 0px));
             display: flex; justify-content: space-between; align-items: flex-start;
         }
         #hud.hidden { display: none; }
@@ -166,7 +169,7 @@
             font-size: 12px; color: #5a9a72;
         }
         .hud-pause {
-            width: 40px; height: 40px;
+            width: 44px; height: 44px;
             background: rgba(10, 30, 18, 0.7);
             border: 1px solid #2a5a3a;
             border-radius: 8px;
@@ -271,21 +274,21 @@
         /* ── Spin Selector ── */
         #spin-selector {
             position: fixed;
-            bottom: 20px; left: 20px;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: calc(16px + env(safe-area-inset-left, 0px));
             z-index: 40;
-            width: 80px; height: 80px;
+            width: 90px; height: 90px;
         }
         #spin-selector.hidden { display: none; }
         #spin-selector canvas {
-            width: 80px; height: 80px;
+            width: 90px; height: 90px;
         }
 
         /* ── Power Bar ── */
         #power-bar {
             position: fixed;
-            bottom: 20px; right: 20px;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px)); right: calc(16px + env(safe-area-inset-right, 0px));
             z-index: 40;
-            width: 30px; height: 120px;
+            width: 32px; height: 130px;
             background: rgba(10, 30, 18, 0.7);
             border: 1px solid #2a5a3a;
             border-radius: 6px;
@@ -466,7 +469,7 @@ let time = 0;
 const ball = { x: 0, y: 0, vx: 0, vy: 0, lastSafeX: 0, lastSafeY: 0 };
 const spin = { x: 0, y: 0 };
 const aim = { isDragging: false, curX: 0, curY: 0, angle: 0, power: 0 };
-const camera = { x: 0, y: 0, zoom: 1 };
+const camera = { x: 0, y: 0, targetX: 0, targetY: 0, zoom: 1 };
 let level = null;
 let particles = [];
 let cachedWalls = [];
@@ -650,14 +653,60 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+function isPortrait() { return H > W; }
+
 function setupCamera() {
     if (!level) return;
     const pad = 60;
     const zx = (W - pad * 2) / level.width;
     const zy = (H - pad * 2) / level.height;
-    camera.zoom = Math.min(zx, zy, 1.4);
-    camera.x = (W / 2) - (level.width / 2) * camera.zoom;
-    camera.y = (H / 2) - (level.height / 2) * camera.zoom;
+    const fitZoom = Math.min(zx, zy, 1.4);
+
+    if (isPortrait()) {
+        // In portrait, use a higher zoom so things are visible,
+        // then follow the ball. Min zoom = fit, max = 1.4
+        const portraitZoom = Math.max(fitZoom, Math.min(zx * 1.2, 1.4));
+        camera.zoom = portraitZoom;
+        // Center on ball initially
+        camera.targetX = W / 2 - ball.x * camera.zoom;
+        camera.targetY = H / 2 - ball.y * camera.zoom;
+        clampCamera();
+        camera.x = camera.targetX;
+        camera.y = camera.targetY;
+    } else {
+        camera.zoom = fitZoom;
+        camera.x = (W / 2) - (level.width / 2) * camera.zoom;
+        camera.y = (H / 2) - (level.height / 2) * camera.zoom;
+        camera.targetX = camera.x;
+        camera.targetY = camera.y;
+    }
+}
+
+function clampCamera() {
+    const lw = level.width * camera.zoom;
+    const lh = level.height * camera.zoom;
+    const pad = 20;
+    if (lw <= W) {
+        camera.targetX = (W - lw) / 2;
+    } else {
+        camera.targetX = Math.min(pad, Math.max(W - lw - pad, camera.targetX));
+    }
+    if (lh <= H) {
+        camera.targetY = (H - lh) / 2;
+    } else {
+        camera.targetY = Math.min(pad, Math.max(H - lh - pad, camera.targetY));
+    }
+}
+
+function updateCamera() {
+    if (!level || !isPortrait()) return;
+    // Follow ball
+    camera.targetX = W / 2 - ball.x * camera.zoom;
+    camera.targetY = H / 2 - ball.y * camera.zoom;
+    clampCamera();
+    // Smooth lerp
+    camera.x += (camera.targetX - camera.x) * 0.1;
+    camera.y += (camera.targetY - camera.y) * 0.1;
 }
 
 function toScreen(wx, wy) {
@@ -670,6 +719,40 @@ function toScreen(wx, wy) {
 // ═══════════════════════════════════════════════════════════
 //  LEVEL MANAGEMENT
 // ═══════════════════════════════════════════════════════════
+// Rotate a landscape level 90° clockwise to make it portrait
+function rotateLevelToPortrait(lv) {
+    const ow = lv.width;
+    lv.width = lv.height;
+    lv.height = ow;
+    // Rotate point: (x,y) → (y, ow - x)
+    function rp(x, y) { return { x: y, y: ow - x }; }
+
+    const rb = rp(lv.ball.x, lv.ball.y);
+    lv.ball.x = rb.x; lv.ball.y = rb.y;
+    const rh = rp(lv.hole.x, lv.hole.y);
+    lv.hole.x = rh.x; lv.hole.y = rh.y;
+
+    for (const w of lv.walls) {
+        const p1 = rp(w.x1, w.y1), p2 = rp(w.x2, w.y2);
+        w.x1 = p1.x; w.y1 = p1.y; w.x2 = p2.x; w.y2 = p2.y;
+    }
+    for (const obs of lv.obstacles) {
+        if (obs.type === 'sand' || obs.type === 'water') {
+            const corner = rp(obs.x + obs.w, obs.y);
+            const nw = obs.h, nh = obs.w;
+            obs.x = corner.x; obs.y = corner.y;
+            obs.w = nw; obs.h = nh;
+        } else if (obs.type === 'bumper') {
+            const p = rp(obs.cx, obs.cy);
+            obs.cx = p.x; obs.cy = p.y;
+        } else if (obs.type === 'movingWall') {
+            const p1 = rp(obs.x1, obs.y1), p2 = rp(obs.x2, obs.y2);
+            obs.x1 = p1.x; obs.y1 = p1.y; obs.x2 = p2.x; obs.y2 = p2.y;
+            obs.axis = obs.axis === 'x' ? 'y' : 'x';
+        }
+    }
+}
+
 function loadLevel(idx) {
     const src = LEVELS[idx];
     currentLevelIdx = idx;
@@ -679,6 +762,11 @@ function loadLevel(idx) {
     if (holeCompleteTimer) { clearTimeout(holeCompleteTimer); holeCompleteTimer = null; }
 
     level = JSON.parse(JSON.stringify(src));
+
+    // On portrait screens, rotate landscape levels
+    if (isPortrait() && level.width > level.height) {
+        rotateLevelToPortrait(level);
+    }
 
     // Generate boundary walls
     const bw = [
@@ -1720,6 +1808,7 @@ function gameLoop(timestamp) {
         if (level) updateCachedWalls();
         updateBall(dt);
         updateParticles();
+        updateCamera();
     }
 
     draw();
