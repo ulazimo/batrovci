@@ -1214,10 +1214,10 @@ function updateBall(dt) {
 
     const scale = dt * 60;
 
-    // Apply side spin curve — constant lateral force while rolling
+    // Apply side spin curve — scales with speed so it fades as ball slows
     const speed = ballSpeed();
     if (speed > MIN_SPEED && spin.x !== 0) {
-        const curve = spin.x * 0.06 * scale;
+        const curve = spin.x * 0.005 * speed * scale;
         ball.vx += -ball.vy / speed * curve;
         ball.vy += ball.vx / speed * curve;
     }
@@ -1685,7 +1685,7 @@ function drawGuideline() {
 
         // Side spin curve
         if (sSpinX !== 0) {
-            const curve = sSpinX * 0.06;
+            const curve = sSpinX * 0.005 * spd;
             svx += -svy / spd * curve;
             svy += svx / spd * curve;
         }
