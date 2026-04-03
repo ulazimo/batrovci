@@ -273,6 +273,56 @@
             cursor: default; opacity: 0.7;
         }
 
+        /* ── Rush HUD ── */
+        #rush-hud {
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 31; pointer-events: none;
+            padding: calc(12px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 0 calc(16px + env(safe-area-inset-left, 0px));
+            display: flex; justify-content: center; gap: 24px;
+        }
+        #rush-hud.hidden { display: none; }
+        .rush-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px; color: #fff; font-weight: 700;
+            background: rgba(10, 30, 18, 0.8);
+            padding: 6px 16px; border-radius: 8px;
+            border: 1px solid #2a5a3a;
+        }
+        .rush-progress {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px; color: #7ab891; font-weight: 700;
+            background: rgba(10, 30, 18, 0.8);
+            padding: 8px 14px; border-radius: 8px;
+            border: 1px solid #2a5a3a;
+        }
+
+        /* ── Rush Leaderboard ── */
+        #rush-leaderboard { z-index: 56; }
+        #rush-leaderboard .rl-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px; color: #fff;
+            margin-bottom: 16px;
+        }
+        .rl-table {
+            width: 90%; max-width: 380px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .rl-table th {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px; color: #5a9a72;
+            text-transform: uppercase; letter-spacing: 1px;
+            padding: 6px 8px; text-align: left;
+            border-bottom: 1px solid #2a5a3a;
+        }
+        .rl-table td {
+            font-size: 15px; color: #7ab891;
+            padding: 8px; border-bottom: 1px solid rgba(42,90,58,0.3);
+        }
+        .rl-table tr.rl-you td { color: #fff; font-weight: 700; }
+        .rl-table .rl-rank { font-family: 'Orbitron', sans-serif; font-size: 16px; width: 30px; }
+        .rl-table .rl-time { font-family: 'Orbitron', sans-serif; color: #e6c619; }
+
         /* ── Stat Bars ── */
         .stat-row {
             display: flex; align-items: center; gap: 4px;
@@ -362,7 +412,8 @@
     <div id="title-screen" class="overlay">
         <div class="title">POOL BATTLE</div>
         <div class="subtitle">Mini-golf meets billiards</div>
-        <button class="btn" onclick="startGame()">PLAY</button>
+        <button class="btn" onclick="startGame()" style="margin-bottom:10px">LEVELS</button>
+        <button class="btn" style="background:linear-gradient(180deg,#e63946,#b22222);border-color:#e63946;box-shadow:0 4px 20px rgba(230,57,70,0.4)" onclick="startRush()">⚡ RUSH MODE</button>
     </div>
 
     <!-- Level Select -->
@@ -421,6 +472,20 @@
         <div class="shop-coins" id="shop-coins">🪙 0</div>
         <div class="shop-grid" id="shop-grid"></div>
         <button class="btn btn-small btn-outline" style="margin-top:20px" onclick="closeShop()">BACK</button>
+    </div>
+
+    <!-- Rush HUD -->
+    <div id="rush-hud" class="hidden">
+        <div class="rush-timer" id="rush-timer">0:00.0</div>
+        <div class="rush-progress" id="rush-progress">1 / 3</div>
+    </div>
+
+    <!-- Rush Leaderboard -->
+    <div id="rush-leaderboard" class="overlay hidden">
+        <div class="rl-title">⚡ RUSH RESULTS</div>
+        <table class="rl-table" id="rl-table"></table>
+        <button class="btn btn-small" onclick="startRush()">PLAY AGAIN</button>
+        <button class="btn btn-small btn-outline" style="margin-top:8px" onclick="showTitle()">MENU</button>
     </div>
 
     <!-- Inventory -->
@@ -951,8 +1016,10 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
 function showTitle() {
     state = 'TITLE';
+    rushMode = false;
     hide('hud'); hide('spin-selector'); hide('power-bar');
     hide('level-select'); hide('level-complete'); hide('pause-menu');
+    hide('rush-hud'); hide('rush-leaderboard');
     show('title-screen');
 }
 
@@ -1159,6 +1226,7 @@ function equipCue(id) {
 }
 
 function failLevel() {
+    if (rushMode) return; // no fail in rush mode — time is the penalty
     state = 'LEVEL_FAILED';
     hide('spin-selector'); hide('power-bar');
     document.getElementById('lf-msg').textContent = `Used ${strokes} of ${level.maxStrokes} strokes`;
@@ -1174,6 +1242,10 @@ function nextLevel() {
 }
 
 function completeLevel() {
+    if (rushMode) {
+        rushPlayerSunk();
+        return;
+    }
     state = 'LEVEL_COMPLETE';
     hide('spin-selector'); hide('power-bar');
 
@@ -1711,6 +1783,7 @@ function draw() {
     drawObstacles();
     drawWalls();
     drawHole();
+    drawBots();
     drawParticles();
     drawBall();
 
@@ -2047,6 +2120,261 @@ function drawParticles() {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  RUSH MODE
+// ═══════════════════════════════════════════════════════════
+let rushMode = false;
+let rushTimer = 0;
+let rushLevelIdx = 0;
+let rushLevels = [];
+let rushTotalStrokes = 0;
+let rushBots = [];
+const BOT_COLORS = ['#e63946', '#4A9BE4', '#e6c619'];
+const BOT_NAMES = ['Red', 'Blue', 'Yellow'];
+const BOT_SKILLS = [0.7, 1.0, 1.4]; // lower = better (time multiplier)
+
+function startRush() {
+    rushMode = true;
+    rushTimer = 0;
+    rushLevelIdx = 0;
+    rushTotalStrokes = 0;
+
+    // Pick 3 random levels (avoid duplicates, skip very large ones for pacing)
+    const pool = LEVELS.filter(l => l.id <= 20);
+    const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+    rushLevels = shuffled.slice(0, 3).map(l => l.id);
+
+    // Init bots
+    rushBots = BOT_NAMES.map((name, i) => ({
+        name,
+        color: BOT_COLORS[i],
+        skill: BOT_SKILLS[i],
+        x: 0, y: 0, vx: 0, vy: 0,
+        currentLevel: 0,
+        strokes: 0,
+        totalTime: 0,
+        finished: false,
+        shotTimer: 0,
+        moving: false,
+        sunk: false
+    }));
+
+    hide('title-screen'); hide('level-select'); hide('rush-leaderboard');
+    loadRushLevel(0);
+    show('rush-hud');
+}
+
+function loadRushLevel(idx) {
+    rushLevelIdx = idx;
+    const levelId = rushLevels[idx];
+    const srcIdx = LEVELS.findIndex(l => l.id === levelId);
+    loadLevel(srcIdx);
+
+    // Hide regular HUD par/coins, show rush HUD
+    hide('hud');
+    show('rush-hud');
+    show('spin-selector');
+    updateRushHUD();
+
+    // Reset bots to level start
+    for (const bot of rushBots) {
+        if (bot.finished) continue;
+        bot.x = ball.x; bot.y = ball.y;
+        bot.vx = 0; bot.vy = 0;
+        bot.shotTimer = 1.0 + Math.random() * 1.5; // delay before first shot
+        bot.moving = false;
+        bot.sunk = false;
+        if (bot.currentLevel < idx) bot.currentLevel = idx;
+    }
+}
+
+function updateRushHUD() {
+    const mins = Math.floor(rushTimer / 60);
+    const secs = rushTimer % 60;
+    document.getElementById('rush-timer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs.toFixed(1)}`;
+    document.getElementById('rush-progress').textContent = `${rushLevelIdx + 1} / ${rushLevels.length}`;
+}
+
+function updateBots(dt) {
+    if (!rushMode || !level) return;
+
+    for (const bot of rushBots) {
+        if (bot.finished || bot.currentLevel !== rushLevelIdx) continue;
+        if (bot.sunk) continue;
+
+        if (bot.moving) {
+            // Simulate bot ball physics (simplified)
+            const spd = Math.sqrt(bot.vx * bot.vx + bot.vy * bot.vy);
+            if (spd < MIN_SPEED) {
+                bot.vx = 0; bot.vy = 0;
+                bot.moving = false;
+                bot.shotTimer = 0.5 + Math.random() * 1.0;
+                continue;
+            }
+
+            bot.x += bot.vx;
+            bot.y += bot.vy;
+            bot.vx *= 0.985;
+            bot.vy *= 0.985;
+
+            // Wall collision (simplified)
+            for (const w of cachedWalls) {
+                const cp = closestPointOnSeg(bot.x, bot.y, w.x1, w.y1, w.x2, w.y2);
+                const dx = bot.x - cp.x, dy = bot.y - cp.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < BALL_RADIUS && dist > 0) {
+                    const nx = dx / dist, ny = dy / dist;
+                    bot.x = cp.x + nx * BALL_RADIUS;
+                    bot.y = cp.y + ny * BALL_RADIUS;
+                    const dot = bot.vx * nx + bot.vy * ny;
+                    bot.vx = (bot.vx - 2 * dot * nx) * WALL_RESTITUTION;
+                    bot.vy = (bot.vy - 2 * dot * ny) * WALL_RESTITUTION;
+                }
+            }
+
+            // Water check
+            for (const obs of level.obstacles) {
+                if (obs.type === 'water' && bot.x >= obs.x && bot.x <= obs.x + obs.w && bot.y >= obs.y && bot.y <= obs.y + obs.h) {
+                    bot.x = level.ball.x; bot.y = level.ball.y;
+                    bot.vx = 0; bot.vy = 0;
+                    bot.moving = false;
+                    bot.strokes++;
+                    bot.shotTimer = 0.8 + Math.random() * 0.5;
+                    break;
+                }
+            }
+
+            // Hole check
+            const hdx = bot.x - level.hole.x, hdy = bot.y - level.hole.y;
+            const hdist = Math.sqrt(hdx * hdx + hdy * hdy);
+            if (hdist < HOLE_RADIUS - BALL_RADIUS * 0.3 && spd < HOLE_CAPTURE_SPEED) {
+                bot.sunk = true;
+                bot.moving = false;
+                bot.x = level.hole.x; bot.y = level.hole.y;
+            }
+        } else {
+            // Waiting to shoot
+            bot.shotTimer -= dt;
+            if (bot.shotTimer <= 0) {
+                botShoot(bot);
+            }
+        }
+    }
+}
+
+function botShoot(bot) {
+    // Aim toward hole with some inaccuracy based on skill
+    const dx = level.hole.x - bot.x;
+    const dy = level.hole.y - bot.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const baseAngle = Math.atan2(dy, dx);
+
+    // Inaccuracy: better skill = less spread
+    const spread = (0.15 + bot.skill * 0.12) * (Math.random() - 0.5);
+    const angle = baseAngle + spread;
+
+    // Power: try to reach hole, with some variance
+    const power = Math.min(dist * 0.04 * (0.8 + Math.random() * 0.4), 18);
+
+    bot.vx = Math.cos(angle) * power;
+    bot.vy = Math.sin(angle) * power;
+    bot.moving = true;
+    bot.strokes++;
+}
+
+function rushPlayerSunk() {
+    // Player completed current rush level
+    rushTotalStrokes += strokes;
+
+    if (rushLevelIdx + 1 < rushLevels.length) {
+        // Advance bots that sunk this level
+        for (const bot of rushBots) {
+            if (bot.sunk && bot.currentLevel === rushLevelIdx) {
+                bot.currentLevel = rushLevelIdx + 1;
+            }
+        }
+        loadRushLevel(rushLevelIdx + 1);
+    } else {
+        finishRush();
+    }
+}
+
+function finishRush() {
+    state = 'RUSH_DONE';
+    rushMode = false;
+    hide('spin-selector'); hide('power-bar'); hide('rush-hud'); hide('hud');
+
+    // Finalize bot times: bots that didn't finish get a penalty
+    const playerTime = rushTimer;
+    const results = [{
+        name: 'You', time: playerTime, strokes: rushTotalStrokes, isPlayer: true
+    }];
+
+    for (const bot of rushBots) {
+        // Simulate remaining time for bot based on skill
+        let botTime;
+        if (bot.currentLevel >= rushLevels.length - 1 && bot.sunk) {
+            // Bot finished all levels — estimate time based on skill
+            botTime = playerTime * (0.7 + bot.skill * 0.5) + (Math.random() - 0.5) * 5;
+        } else {
+            // Bot didn't finish — estimate remaining levels
+            const levelsLeft = rushLevels.length - bot.currentLevel;
+            botTime = playerTime + levelsLeft * 8 * bot.skill + Math.random() * 6;
+        }
+        botTime = Math.max(botTime, playerTime * 0.6); // don't let bots be unrealistically fast
+        results.push({
+            name: bot.name, time: botTime, strokes: bot.strokes + (rushLevels.length - bot.currentLevel - 1) * 3,
+            isPlayer: false, color: bot.color
+        });
+    }
+
+    results.sort((a, b) => a.time - b.time);
+
+    // Render leaderboard
+    const table = document.getElementById('rl-table');
+    let html = '<tr><th class="rl-rank">#</th><th>Player</th><th>Time</th><th>Strokes</th></tr>';
+    results.forEach((r, i) => {
+        const cls = r.isPlayer ? ' class="rl-you"' : '';
+        const nameStyle = r.isPlayer ? '' : ` style="color:${r.color}"`;
+        const m = Math.floor(r.time / 60);
+        const s = (r.time % 60).toFixed(1);
+        html += `<tr${cls}>
+            <td class="rl-rank">${i + 1}</td>
+            <td${nameStyle}>${r.name}</td>
+            <td class="rl-time">${m}:${s < 10 ? '0' : ''}${s}</td>
+            <td>${r.strokes}</td>
+        </tr>`;
+    });
+    table.innerHTML = html;
+
+    // Award coins based on placement
+    const rank = results.findIndex(r => r.isPlayer);
+    const coinReward = [15, 8, 4, 1][rank] || 0;
+    if (coinReward > 0) {
+        progress.coins += coinReward;
+        saveProgress();
+    }
+
+    show('rush-leaderboard');
+}
+
+function drawBots() {
+    if (!rushMode || !level) return;
+    for (const bot of rushBots) {
+        if (bot.finished || bot.currentLevel !== rushLevelIdx) continue;
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(bot.x, bot.y, BALL_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = bot.color;
+        ctx.fill();
+        ctx.globalAlpha = 0.2;
+        ctx.strokeStyle = bot.color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  GAME LOOP
 // ═══════════════════════════════════════════════════════════
 let lastTime = 0;
@@ -2057,6 +2385,11 @@ function gameLoop(timestamp) {
 
     if (!paused && state !== 'TITLE' && state !== 'LEVEL_SELECT') {
         time += dt;
+        if (rushMode) {
+            rushTimer += dt;
+            updateRushHUD();
+            updateBots(dt);
+        }
         if (level) updateCachedWalls();
         updateBall(dt);
         updateParticles();
