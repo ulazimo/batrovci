@@ -1102,8 +1102,8 @@ function collideWalls() {
             // Side spin effect on bounce
             const tx = -ny, ty = nx; // tangent
             const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-            ball.vx += tx * spin.x * speed * 0.25;
-            ball.vy += ty * spin.x * speed * 0.25;
+            ball.vx += tx * spin.x * speed * 0.45;
+            ball.vy += ty * spin.x * speed * 0.45;
 
             // Particle
             spawnParticles(cp.x, cp.y, 3, '#fff', 1.5);
@@ -1214,10 +1214,10 @@ function updateBall(dt) {
 
     const scale = dt * 60;
 
-    // Apply spin curve
+    // Apply side spin curve — constant lateral force while rolling
     const speed = ballSpeed();
     if (speed > MIN_SPEED && spin.x !== 0) {
-        const curve = spin.x * 0.015 * scale;
+        const curve = spin.x * 0.06 * scale;
         ball.vx += -ball.vy / speed * curve;
         ball.vy += ball.vx / speed * curve;
     }
@@ -1237,21 +1237,21 @@ function updateBall(dt) {
         return;
     }
 
-    // Friction (with spin influence)
+    // Friction — top spin reduces, back spin increases
     let fric = getSurfaceFriction();
-    fric -= spin.y * 0.005;
-    fric = Math.max(0.92, Math.min(0.995, fric));
+    fric -= spin.y * 0.015;
+    fric = Math.max(0.92, Math.min(0.998, fric));
     applyFriction(fric, dt);
 
-    // Back spin reversal
-    if (spin.y < -0.3 && speed < 1.5 && speed > MIN_SPEED) {
-        const rev = spin.y * 0.08 * scale;
+    // Back spin reversal — kicks in at moderate speed
+    if (spin.y < -0.2 && speed < 4 && speed > MIN_SPEED) {
+        const rev = spin.y * 0.15 * scale;
         ball.vx += ball.vx / (speed || 1) * rev;
         ball.vy += ball.vy / (speed || 1) * rev;
     }
 
-    // Decay spin
-    const spinDecay = Math.pow(0.995, scale);
+    // Decay spin (slower decay so effect lasts longer)
+    const spinDecay = Math.pow(0.998, scale);
     spin.x *= spinDecay;
     spin.y *= spinDecay;
 
