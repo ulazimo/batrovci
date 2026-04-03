@@ -1,12 +1,11 @@
 {
   "hooks": {
-    "PostToolUse": [
+    "Stop": [
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "A file was just changed. Run the elegance-reviewer agent to check for improvements."
+            "type": "command",
+            "command": "echo '{\"systemMessage\":\"Reminder: consider running the elegance-reviewer agent if significant code was changed.\"}'"
           }
         ]
       }
