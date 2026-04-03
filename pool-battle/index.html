@@ -1544,10 +1544,10 @@ function updateBall(dt) {
         return;
     }
 
-    // Friction — back spin (positive y) increases friction, top spin (negative y) reduces it
+    // Friction — back spin (positive y) lowers coefficient = more drag, top spin reduces drag
     if (!ball.airborne) {
         let fric = getSurfaceFriction();
-        fric += eSpin.y * 0.015;
+        fric -= eSpin.y * 0.015;
         fric = Math.max(0.92, Math.min(0.998, fric));
         applyFriction(fric, dt);
     } else {
