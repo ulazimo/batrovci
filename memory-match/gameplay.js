@@ -1211,7 +1211,7 @@ function startGame(preplacedSpecials) {
 
   targetEl.textContent = TARGET > 0 ? TARGET : '—';
   initLevelGoals();
-  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
   // Booster hint flag — will be shown after all popups are done
   const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);
@@ -2281,6 +2281,18 @@ function endTurn(manual, perfectSweep) {
   shieldCharges = 0; spotlightMode = false;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
+  // Low turns warning — go red at ≤3 (including 0), callout exactly at 3
+  if (turns <= 3) {
+    turnsEl.classList.add('danger');
+    if (turns === 3) {
+      showTutorialHint('⚠️ Only 3 turns remaining!');
+      turnsEl.classList.add('danger-pulse');
+      turnsEl.addEventListener('animationend', () => turnsEl.classList.remove('danger-pulse'), { once: true });
+    }
+  } else {
+    turnsEl.classList.remove('danger');
+  }
+
   // Capture the chain as recallable before cards flip back
   const chainNormal = chainCards.filter(i => board[i] && !board[i].special);
   if (chainNormal.length > 0) lastRevealedCards = [...chainNormal];
@@ -2667,15 +2679,39 @@ function levelFailed() {
   saveProgress();
   updateBanner();
 
-  // Show fail banner over the board, then open overlay
-  showBoardBanner('fail', '💔 LEVEL FAILED', `Score: ${score} / ${TARGET}`);
+  // Show fail banner over the board with goal status
+  let failBannerSub = `Score: ${score} / ${TARGET}`;
+  if (levelGoals && levelGoals.definitions.length > 0) {
+    const pills = levelGoals.definitions.map(g => {
+      const d = getGoalDisplay(g);
+      const countHtml = d.customLabel ? '' : ` ${d.livesOnly ? d.current : d.current + '/' + d.target}`;
+      return `<span class="fail-banner-pill ${d.done ? 'done' : ''}">${d.icon}${countHtml}</span>`;
+    }).join(' ');
+    failBannerSub = pills;
+  }
+  showBoardBanner('fail', '💔 LEVEL FAILED', failBannerSub);
   SFX.fail();
   shakeBoard();
   setTimeout(() => hideBoardBanner(() => showFailOverlay(hadStreak)), 1800);
 }
 
 function showFailOverlay(hadStreak) {
-  document.getElementById('fail-sub').textContent = `Score: ${score} / ${TARGET}`;
+  // Show goal status instead of score/target
+  const failSub = document.getElementById('fail-sub');
+  if (levelGoals && levelGoals.definitions.length > 0) {
+    const pills = levelGoals.definitions.map(g => {
+      const d = getGoalDisplay(g);
+      const countHtml = d.customLabel ? '' : `<span class="goal-count">${d.livesOnly ? d.current : d.current + '/' + d.target}</span>`;
+      return `<div class="goal-pill ${d.done ? 'goal-done' : 'goal-fail'}">
+        <span class="goal-icon">${d.icon}</span>
+        <span class="goal-text">${d.label}</span>
+        ${countHtml}
+      </div>`;
+    }).join('');
+    failSub.innerHTML = `<div class="fail-goals"><div class="goal-items">${pills}</div></div>`;
+  } else {
+    failSub.textContent = `Score: ${score} / ${TARGET}`;
+  }
 
   const streakInfo = document.getElementById('fail-streak-info');
   if (hadStreak > 0) {

@@ -42,7 +42,10 @@ body {
 .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 2px; }
 .stat-value { font-size: 20px; font-weight: 700; }
 #score-value  { color: #f0c040; }
-#turns-value  { color: #4fc3f7; }
+#turns-value  { color: #4fc3f7; transition: color .3s, text-shadow .3s; }
+#turns-value.danger { color: #ff4444; text-shadow: 0 0 8px rgba(255,68,68,.6); }
+@keyframes turns-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.25); } }
+#turns-value.danger-pulse { animation: turns-pulse .45s ease-in-out 2; }
 #target-value { color: #aaa; }
 
 /* ================================================================
@@ -65,6 +68,10 @@ body {
   font-size:14px;color:#ddd;white-space:nowrap;transition:all .3s;
 }
 .goal-pill.goal-done { background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:#2ecc71; }
+.goal-pill.goal-fail { background:rgba(231,76,60,.12);border-color:rgba(231,76,60,.35);color:#e74c3c; }
+.goal-pill.goal-fail .goal-count { color:#e74c3c; }
+.fail-goals { margin-top:4px; }
+.fail-goals .goal-items { display:flex;flex-wrap:wrap;gap:8px;justify-content:center; }
 .goal-icon { font-size:16px; }
 .goal-text { font-weight:500; }
 .color-swatch { display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;border:1px solid rgba(255,255,255,.3);box-shadow:0 0 4px rgba(0,0,0,.3); }
@@ -291,6 +298,9 @@ body {
 .board-banner .banner-sub { font-size:clamp(13px,3.5vw,18px);font-weight:600;color:#ccc;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-top:8px; }
 .board-banner.win .banner-title { color:#2ecc71; }
 .board-banner.fail .banner-title { color:#e74c3c; }
+.board-banner.fail .banner-sub { display:flex;gap:8px;justify-content:center;flex-wrap:wrap; }
+.fail-banner-pill { padding:4px 10px;border-radius:12px;font-size:13px;font-weight:700;background:rgba(231,76,60,.2);border:1px solid rgba(231,76,60,.4);color:#e74c3c; }
+.fail-banner-pill.done { background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:#2ecc71; }
 .board-banner.sweep .banner-title { color:#f0c040; }
 .board-banner.goal-intro .banner-title { color:#4fc3f7; }
 .board-banner .banner-goals { display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px; }
