@@ -1673,57 +1673,53 @@ function drawGuideline() {
     let svy = -Math.sin(aim.angle) * power;
     let sSpinX = spin.x, sSpinY = spin.y;
 
-    const points = [{ x: sx, y: sy }];
+    // Simulate path, sampling every 2 iterations for smooth line
+    const preBounce = [{ x: sx, y: sy }];
+    const postBounce = [];
     let totalDist = 0;
-    const maxDist = Math.min(aim.power * GUIDELINE_MAX, guidelineCap);
-    const step = 1; // simulation step
+    const maxDist = guidelineCap;
     let bounced = false;
+    let bouncePoint = null;
+    let stopped = false;
 
-    for (let i = 0; i < 600 && totalDist < maxDist; i++) {
+    for (let i = 0; i < 800 && totalDist < maxDist; i++) {
         const spd = Math.sqrt(svx * svx + svy * svy);
-        if (spd < MIN_SPEED) break;
+        if (spd < MIN_SPEED) { stopped = true; break; }
 
-        // Side spin curve
         if (sSpinX !== 0) {
             const curve = sSpinX * 0.005 * spd;
             svx += -svy / spd * curve;
             svy += svx / spd * curve;
         }
 
-        // Friction
         let fric = 0.985;
         fric -= sSpinY * 0.015;
         fric = Math.max(0.92, Math.min(0.998, fric));
-        svx *= fric;
-        svy *= fric;
+        svx *= fric; svy *= fric;
+        sSpinX *= 0.998; sSpinY *= 0.998;
 
-        // Spin decay
-        sSpinX *= 0.998;
-        sSpinY *= 0.998;
+        const nx = sx + svx;
+        const ny = sy + svy;
 
-        const nx = sx + svx * step;
-        const ny = sy + svy * step;
-
-        // Check wall collision
         let hitWall = false;
         for (const w of cachedWalls) {
             const cp = closestPointOnSeg(nx, ny, w.x1, w.y1, w.x2, w.y2);
             const dx = nx - cp.x, dy = ny - cp.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < BALL_RADIUS && dist > 0) {
-                if (bounced) { totalDist = maxDist; break; } // stop after 1 bounce
+                if (bounced) { totalDist = maxDist; break; }
                 const wnx = dx / dist, wny = dy / dist;
                 const dot = svx * wnx + svy * wny;
                 svx = (svx - 2 * dot * wnx) * WALL_RESTITUTION;
                 svy = (svy - 2 * dot * wny) * WALL_RESTITUTION;
-                // Side spin on bounce
                 const tx = -wny, ty = wnx;
                 const bspd = Math.sqrt(svx * svx + svy * svy);
                 svx += tx * sSpinX * bspd * 0.45;
                 svy += ty * sSpinX * bspd * 0.45;
                 sx = cp.x + wnx * BALL_RADIUS;
                 sy = cp.y + wny * BALL_RADIUS;
-                points.push({ x: sx, y: sy, bounce: true });
+                bouncePoint = { x: sx, y: sy };
+                preBounce.push({ x: sx, y: sy });
                 bounced = true;
                 hitWall = true;
                 break;
@@ -1735,50 +1731,53 @@ function drawGuideline() {
         totalDist += segDist;
         sx = nx; sy = ny;
 
-        // Sample points for drawing (every ~8 units)
-        if (i % 8 === 0) points.push({ x: sx, y: sy });
-    }
-    // Ensure last point
-    if (points.length > 1) {
-        const last = points[points.length - 1];
-        if (last.x !== sx || last.y !== sy) points.push({ x: sx, y: sy });
-    }
-
-    // Draw the curved path as dots
-    for (let i = 1; i < points.length; i++) {
-        const p = points[i];
-        const t = i / points.length;
-        const alpha = p.bounce ? 0.6 : (0.5 - t * 0.3);
-        const afterBounce = points.slice(0, i + 1).some(pp => pp.bounce);
-        const isBounceOrAfter = p.bounce || (afterBounce && !p.bounce && i > points.findIndex(pp => pp.bounce));
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, isBounceOrAfter ? 1.2 : 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fill();
-    }
-
-    // Draw bounce point marker
-    for (const p of points) {
-        if (p.bounce) {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.fill();
+        if (i % 2 === 0) {
+            (bounced ? postBounce : preBounce).push({ x: sx, y: sy });
         }
     }
 
-    // Cap indicator
-    const fullLen = aim.power * GUIDELINE_MAX;
-    if (fullLen > guidelineCap && points.length > 1) {
-        const last = points[points.length - 1];
+    // Draw pre-bounce as solid line
+    if (preBounce.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(preBounce[0].x, preBounce[0].y);
+        for (let i = 1; i < preBounce.length; i++) ctx.lineTo(preBounce[i].x, preBounce[i].y);
+        ctx.strokeStyle = C.guidelineWhite;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Draw bounce marker
+    if (bouncePoint) {
+        ctx.beginPath();
+        ctx.arc(bouncePoint.x, bouncePoint.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fill();
+    }
+
+    // Draw post-bounce as thinner dashed line
+    if (postBounce.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(postBounce[0].x, postBounce[0].y);
+        for (let i = 1; i < postBounce.length; i++) ctx.lineTo(postBounce[i].x, postBounce[i].y);
+        ctx.strokeStyle = C.guidelineBounce;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Cap indicator — trailing dots showing "ball goes further"
+    if (!stopped && totalDist >= maxDist) {
         const spd = Math.sqrt(svx * svx + svy * svy);
         if (spd > MIN_SPEED) {
             const ndx = svx / spd, ndy = svy / spd;
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 5; i++) {
+                const alpha = 0.25 - i * 0.04;
                 ctx.beginPath();
-                ctx.arc(last.x + ndx * i * 10, last.y + ndy * i * 10, 1, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.arc(sx + ndx * i * 10, sy + ndy * i * 10, 1.5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${alpha})`;
                 ctx.fill();
             }
         }
