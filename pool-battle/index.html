@@ -1999,18 +1999,36 @@ function drawHole() {
 }
 
 function drawBall() {
-    const jumpOffset = ball.jumpZ * 8; // visual pixels per jump unit
-    const shadowScale = ball.airborne ? Math.max(0.3, 1 - ball.jumpZ * 0.3) : 1;
+    const jumpOffset = ball.jumpZ * 20; // visual pixels per jump unit
+    const heightFactor = ball.airborne ? Math.min(ball.jumpZ, 3) : 0;
 
-    // Shadow (stays on ground)
+    // Shadow (stays on ground, shrinks and fades as ball rises)
+    const shadowScale = ball.airborne ? Math.max(0.2, 1 - heightFactor * 0.25) : 1;
+    const shadowAlpha = ball.airborne ? Math.max(0.08, 0.25 - heightFactor * 0.06) : 0.25;
+    const shadowSpread = ball.airborne ? 1 + heightFactor * 0.4 : 1;
     ctx.beginPath();
-    ctx.ellipse(ball.x + 2, ball.y + 3, BALL_RADIUS * shadowScale, BALL_RADIUS * 0.6 * shadowScale, 0, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,0,0,${0.25 * shadowScale})`;
+    ctx.ellipse(ball.x + 2, ball.y + 3,
+        BALL_RADIUS * shadowScale * shadowSpread,
+        BALL_RADIUS * 0.5 * shadowScale,
+        0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
     ctx.fill();
+
+    // Dashed connector line from shadow to ball when airborne
+    if (ball.airborne && jumpOffset > 4) {
+        ctx.beginPath();
+        ctx.setLineDash([2, 3]);
+        ctx.moveTo(ball.x, ball.y);
+        ctx.lineTo(ball.x, ball.y - jumpOffset);
+        ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.3, heightFactor * 0.12)})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
 
     // Ball (rises when airborne)
     const drawY = ball.y - jumpOffset;
-    const drawR = BALL_RADIUS + (ball.airborne ? ball.jumpZ * 0.5 : 0); // slightly larger when high
+    const drawR = BALL_RADIUS + heightFactor * 0.4;
     ctx.beginPath();
     ctx.arc(ball.x, drawY, drawR, 0, Math.PI * 2);
     const grad = ctx.createRadialGradient(ball.x - 2, drawY - 2, 1, ball.x, drawY, drawR);
@@ -2019,6 +2037,15 @@ function drawBall() {
     grad.addColorStop(1, C.ballShade);
     ctx.fillStyle = grad;
     ctx.fill();
+
+    // Airborne glow ring
+    if (ball.airborne && heightFactor > 0.3) {
+        ctx.beginPath();
+        ctx.arc(ball.x, drawY, drawR + 2, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.25, heightFactor * 0.08)})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
 
     // Highlight
     ctx.beginPath();
