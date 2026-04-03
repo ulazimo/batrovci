@@ -650,7 +650,7 @@ let strokes = 0;
 let paused = false;
 let time = 0;
 
-const ball = { x: 0, y: 0, vx: 0, vy: 0, lastSafeX: 0, lastSafeY: 0 };
+const ball = { x: 0, y: 0, vx: 0, vy: 0, lastSafeX: 0, lastSafeY: 0, airborne: false, jumpZ: 0, jumpVZ: 0, shotX: 0, shotY: 0 };
 const spin = { x: 0, y: 0 };
 const aim = { isDragging: false, curX: 0, curY: 0, angle: 0, power: 0 };
 const camera = { x: 0, y: 0, targetX: 0, targetY: 0, zoom: 1 };
@@ -976,6 +976,8 @@ function loadLevel(idx) {
     ball.vx = 0; ball.vy = 0;
     ball.lastSafeX = ball.x;
     ball.lastSafeY = ball.y;
+    ball.shotX = ball.x; ball.shotY = ball.y;
+    ball.airborne = false; ball.jumpZ = 0; ball.jumpVZ = 0;
     spin.x = 0; spin.y = 0;
     aim.isDragging = false;
     aim.power = 0;
@@ -1468,11 +1470,17 @@ function updateBall(dt) {
     ball.x += ball.vx * scale;
     ball.y += ball.vy * scale;
 
-    // Out of bounds check - reset ball if it escapes
+    // Out of bounds check
     if (ball.x < -BALL_RADIUS * 2 || ball.x > level.width + BALL_RADIUS * 2 ||
         ball.y < -BALL_RADIUS * 2 || ball.y > level.height + BALL_RADIUS * 2) {
-        ball.x = ball.lastSafeX;
-        ball.y = ball.lastSafeY;
+        // If airborne (jumped out), reset to shot origin with penalty
+        if (ball.airborne) {
+            ball.x = ball.shotX; ball.y = ball.shotY;
+            ball.airborne = false; ball.jumpZ = 0; ball.jumpVZ = 0;
+            strokes++; updateHUD();
+        } else {
+            ball.x = ball.lastSafeX; ball.y = ball.lastSafeY;
+        }
         ball.vx = 0; ball.vy = 0;
         state = 'PLAYING';
         show('spin-selector');
@@ -1480,35 +1488,78 @@ function updateBall(dt) {
     }
 
     // Friction — top spin reduces, back spin increases
-    let fric = getSurfaceFriction();
-    fric -= eSpin.y * 0.015;
-    fric = Math.max(0.92, Math.min(0.998, fric));
-    applyFriction(fric, dt);
-
-    // Back spin reversal — kicks in at moderate speed
-    if (eSpin.y < -0.2 && speed < 4 && speed > MIN_SPEED) {
-        const rev = eSpin.y * 0.15 * scale;
-        ball.vx += ball.vx / (speed || 1) * rev;
-        ball.vy += ball.vy / (speed || 1) * rev;
+    if (!ball.airborne) {
+        let fric = getSurfaceFriction();
+        fric -= eSpin.y * 0.015;
+        fric = Math.max(0.92, Math.min(0.998, fric));
+        applyFriction(fric, dt);
+    } else {
+        // Airborne: very little air friction
+        const airFric = Math.pow(0.999, scale);
+        ball.vx *= airFric;
+        ball.vy *= airFric;
     }
 
-    // Decay spin (slower decay so effect lasts longer)
+    // Back spin jump — triggers when ball slows enough with back spin
+    if (!ball.airborne && eSpin.y < -0.3 && speed < 5 && speed > 0.5) {
+        // Launch ball into the air! Jump strength based on back spin and remaining speed
+        const jumpPower = Math.abs(eSpin.y) * 0.4 * Math.min(speed, 3);
+        ball.airborne = true;
+        ball.jumpZ = 0;
+        ball.jumpVZ = jumpPower;
+    }
+
+    // Airborne physics — vertical arc
+    if (ball.airborne) {
+        ball.jumpZ += ball.jumpVZ * scale;
+        ball.jumpVZ -= 0.04 * scale; // gravity
+        if (ball.jumpZ <= 0 && ball.jumpVZ < 0) {
+            // Landed
+            ball.airborne = false;
+            ball.jumpZ = 0;
+            ball.jumpVZ = 0;
+            // Landing friction bump
+            ball.vx *= 0.7;
+            ball.vy *= 0.7;
+            // Check if landed out of bounds
+            if (ball.x < 0 || ball.x > level.width || ball.y < 0 || ball.y > level.height) {
+                ball.x = ball.shotX;
+                ball.y = ball.shotY;
+                ball.vx = 0; ball.vy = 0;
+                strokes++;
+                updateHUD();
+                state = 'PLAYING';
+                show('spin-selector');
+                return;
+            }
+            spawnParticles(ball.x, ball.y, 4, '#fff', 1);
+        }
+    }
+
+    // Decay spin
     const spinDecay = Math.pow(0.998, scale);
     spin.x *= spinDecay;
     spin.y *= spinDecay;
 
-    // Collisions
-    collideWalls();
-    collideBumpers();
-
-    // Hazards + safe position update (merged check)
-    if (checkWater()) return;
-    if (!isOverWater()) {
-        ball.lastSafeX = ball.x;
-        ball.lastSafeY = ball.y;
+    // Collisions — skip when airborne (ball flies over walls/bumpers)
+    if (!ball.airborne) {
+        collideWalls();
+        collideBumpers();
     }
 
-    if (checkHole()) return;
+    // Hazards — skip water when airborne (ball flies over water)
+    if (!ball.airborne) {
+        if (checkWater()) return;
+        if (!isOverWater()) {
+            ball.lastSafeX = ball.x;
+            ball.lastSafeY = ball.y;
+        }
+    }
+
+    // Hole — can only sink when on the ground
+    if (!ball.airborne) {
+        if (checkHole()) return;
+    }
 
     if (ballSpeed() < MIN_SPEED) {
         ball.vx = 0; ball.vy = 0;
@@ -1727,11 +1778,15 @@ function handleEnd(e) {
 
     // Shoot!
     const power = aim.power * getEquippedCue().maxPower;
-    // Direction is opposite to where the user is pulling
     ball.vx = -Math.cos(aim.angle) * power;
     ball.vy = -Math.sin(aim.angle) * power;
     ball.lastSafeX = ball.x;
     ball.lastSafeY = ball.y;
+    ball.shotX = ball.x;
+    ball.shotY = ball.y;
+    ball.airborne = false;
+    ball.jumpZ = 0;
+    ball.jumpVZ = 0;
     strokes++;
     updateHUD();
     state = 'BALL_MOVING';
@@ -1881,16 +1936,21 @@ function drawHole() {
 }
 
 function drawBall() {
-    // Shadow
+    const jumpOffset = ball.jumpZ * 8; // visual pixels per jump unit
+    const shadowScale = ball.airborne ? Math.max(0.3, 1 - ball.jumpZ * 0.3) : 1;
+
+    // Shadow (stays on ground)
     ctx.beginPath();
-    ctx.ellipse(ball.x + 2, ball.y + 3, BALL_RADIUS, BALL_RADIUS * 0.6, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.ellipse(ball.x + 2, ball.y + 3, BALL_RADIUS * shadowScale, BALL_RADIUS * 0.6 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,0,0,${0.25 * shadowScale})`;
     ctx.fill();
 
-    // Ball
+    // Ball (rises when airborne)
+    const drawY = ball.y - jumpOffset;
+    const drawR = BALL_RADIUS + (ball.airborne ? ball.jumpZ * 0.5 : 0); // slightly larger when high
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, BALL_RADIUS);
+    ctx.arc(ball.x, drawY, drawR, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(ball.x - 2, drawY - 2, 1, ball.x, drawY, drawR);
     grad.addColorStop(0, '#FFFFFF');
     grad.addColorStop(0.8, C.ball);
     grad.addColorStop(1, C.ballShade);
@@ -1899,7 +1959,7 @@ function drawBall() {
 
     // Highlight
     ctx.beginPath();
-    ctx.arc(ball.x - 2.5, ball.y - 2.5, 2.5, 0, Math.PI * 2);
+    ctx.arc(ball.x - 2.5, drawY - 2.5, 2.5, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fill();
 }
