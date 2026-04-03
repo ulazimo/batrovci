@@ -1227,13 +1227,7 @@ function startGame(preplacedSpecials) {
   }
 
   // Show goal intro banner, then proceed with tutorials and board reveal
-  showGoalIntroBanner(() => {
-    if (isTutorialLevel()) {
-      showTutorialOverlay();
-    } else {
-      revealEntireBoard();
-    }
-    // Show tutorials for new features, boosters, and specials with a delay
+  const showTutorialsAfterReveal = () => {
     setTimeout(() => {
       checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials();
       // Show booster bar hint after all popups close
@@ -1249,6 +1243,14 @@ function startGame(preplacedSpecials) {
         waitAndShow();
       }
     }, 500);
+  };
+  showGoalIntroBanner(() => {
+    if (isTutorialLevel()) {
+      showTutorialOverlay();
+      showTutorialsAfterReveal();
+    } else {
+      revealEntireBoard(showTutorialsAfterReveal);
+    }
   });
 }
 
@@ -2743,7 +2745,7 @@ function showScorePopup(pts, indices, extraMsg) {
 // ============================================================
 // INITIAL BOARD REVEAL — streak determines how much is shown
 // ============================================================
-function revealEntireBoard() {
+function revealEntireBoard(onComplete) {
   inputLocked = true;
   const pct = isWinStreakActive() ? getStreakRevealPct() : 0;
   const revealMs  = Math.min(1500 + progress.winStreak * 250, 3500);
@@ -2779,6 +2781,7 @@ function revealEntireBoard() {
   setTimeout(() => {
     inputLocked = false; updateBoosterUI(); updateRecallButton();
     advanceTutorial('boardRevealed');
+    if (onComplete) onComplete();
   }, unlockDelay);
 }
 
