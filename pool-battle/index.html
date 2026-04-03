@@ -2505,16 +2505,17 @@ function finishRush() {
     renderTable(0);
     show('rush-leaderboard');
 
-    // Reveal bots one by one based on time difference from player
+    // Reveal bots proportional to their time difference from player
+    // Scale: real time diffs compressed into 1.5–8s range, preserving ratios
     const botResults = allResults.filter(r => !r.isPlayer);
     botResults.sort((a, b) => a.time - b.time);
-    const minDelay = 1500; // first bot after 1.5s
-    const maxDelay = 6000; // last bot by 6s
+    const maxTimeDiff = Math.max(...botResults.map(b => b.time - playerTime), 1);
+    const MIN_REVEAL = 1500;
+    const MAX_REVEAL = 8000;
 
     botResults.forEach((bot, i) => {
-        const timeDiff = bot.time - playerTime;
-        // Map timeDiff to real delay: scale so differences feel proportional
-        const delay = minDelay + (maxDelay - minDelay) * (i / Math.max(1, botResults.length - 1));
+        const timeDiff = Math.max(0, bot.time - playerTime);
+        const delay = MIN_REVEAL + (timeDiff / maxTimeDiff) * (MAX_REVEAL - MIN_REVEAL);
 
         const t = setTimeout(() => {
             renderTable(i + 1);
