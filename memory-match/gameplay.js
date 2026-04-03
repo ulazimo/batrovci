@@ -1426,6 +1426,23 @@ function renderBoard() {
 // Long-press peek
 let longPressTimer = null;
 let longPressTriggered = false;
+let peekProgressEl = null;
+
+function showPeekProgress(cardEl) {
+  removePeekProgress();
+  const overlay = document.createElement('div');
+  overlay.className = 'peek-progress-overlay';
+  overlay.innerHTML = `<svg class="peek-ring" viewBox="0 0 60 60"><circle cx="30" cy="30" r="26" /></svg><span class="peek-progress-icon">👁</span>`;
+  cardEl.appendChild(overlay);
+  // Force reflow then start animation
+  overlay.offsetWidth;
+  overlay.classList.add('active');
+  peekProgressEl = overlay;
+}
+
+function removePeekProgress() {
+  if (peekProgressEl) { peekProgressEl.remove(); peekProgressEl = null; }
+}
 
 boardEl.addEventListener('pointerdown', e => {
   longPressTriggered = false;
@@ -1434,8 +1451,14 @@ boardEl.addEventListener('pointerdown', e => {
   if (!el) return;
   const i = parseInt(el.dataset.index, 10);
   if (isNaN(i)) return;
+  // Only show progress if the peek would be valid
+  if (!inputLocked && board[i] && !board[i].flipped && !board[i].special && !board[i].locked
+      && boosterCounts['peek'] && boosterCounts['peek'] > 0) {
+    showPeekProgress(el);
+  }
   longPressTimer = setTimeout(() => {
     longPressTriggered = true;
+    removePeekProgress();
     if (inputLocked || !board[i] || board[i].flipped || board[i].special || board[i].locked) return;
     if (!boosterCounts['peek'] || boosterCounts['peek'] <= 0) return;
     boosterCounts['peek']--;
@@ -1447,10 +1470,12 @@ boardEl.addEventListener('pointerdown', e => {
 
 boardEl.addEventListener('pointerup', () => {
   if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  removePeekProgress();
 });
 
 boardEl.addEventListener('pointerleave', () => {
   if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  removePeekProgress();
 });
 
 boardEl.addEventListener('click', e => {
