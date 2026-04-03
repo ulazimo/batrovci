@@ -1168,6 +1168,7 @@ function startGame(preplacedSpecials) {
   turnActive = false; inputLocked = false;
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   lastRevealedCards = [];
+  bankProgress = 0; bankBombPlacement = false; boardEl.classList.remove('bomb-placement');
   consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
@@ -1211,7 +1212,7 @@ function startGame(preplacedSpecials) {
 
   targetEl.textContent = TARGET > 0 ? TARGET : '—';
   initLevelGoals();
-  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
   // Booster hint flag — will be shown after all popups are done
   const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);
@@ -1699,6 +1700,11 @@ function initBankButton() {
   fresh.addEventListener('pointerdown', (e) => {
     if (fresh.classList.contains('disabled')) return;
     e.preventDefault();
+    // Bomb ready — instant click, no hold needed
+    if (bankProgress >= 3) {
+      bankChain();
+      return;
+    }
     fresh.classList.add('holding');
     _bankHoldTimer = setTimeout(() => {
       fresh.classList.remove('holding');
@@ -1722,9 +1728,12 @@ function updateBankButton() {
   if (!btn || !getRule('bankButton')) return;
   const comboLen = chainCards.length + specialsUsed.length;
   const canBank = turnActive && !inputLocked && comboLen >= 3;
+  // Button stays enabled when bomb is ready (3 charges), even without an active chain
+  const bombReady = bankProgress >= 3 && !bankBombPlacement;
+  const enabled = canBank || bombReady;
   const wasDisabled = btn.classList.contains('disabled');
-  btn.classList.toggle('disabled', !canBank);
-  if (!canBank) {
+  btn.classList.toggle('disabled', !enabled);
+  if (!enabled) {
     btn.classList.remove('holding');
     if (_bankHoldTimer) { clearTimeout(_bankHoldTimer); _bankHoldTimer = null; }
   }
@@ -1742,12 +1751,43 @@ function updateBankButton() {
   }
 }
 
+// Bank → Baby Bomb progression
+let bankProgress = 0;
+let bankBombPlacement = false;
+
+function updateBankProgress() {
+  const pips = document.querySelectorAll('#bank-progress .bank-pip');
+  const container = document.getElementById('bank-progress');
+  const btn = document.getElementById('bank-btn');
+  pips.forEach((p, i) => p.classList.toggle('filled', i < bankProgress));
+  if (container) container.classList.toggle('ready', bankProgress >= 3);
+  // Switch button to bomb mode at 3 charges
+  if (btn) {
+    btn.classList.toggle('bomb-ready', bankProgress >= 3);
+    btn.textContent = bankProgress >= 3 ? '💣 Place Bomb' : '💰 Bank it';
+  }
+}
+
+function activateBombPlacement() {
+  if (bankProgress < 3 || bankBombPlacement) return;
+  bankBombPlacement = true;
+  showTutorialHint('💣 Tap a face-down card to place a Baby Bomb!');
+  // Highlight placeable cells
+  boardEl.classList.add('bomb-placement');
+}
+
 function bankChain() {
+  // If bomb is ready, clicking the button enters placement mode instead
+  if (bankProgress >= 3) { activateBombPlacement(); return; }
   if (!turnActive || inputLocked) return;
   const comboLen = chainCards.length + specialsUsed.length;
   if (comboLen < 3) return;
   inputLocked = true;
   endTurn(true);
+
+  // Increment bank progress after successful bank
+  bankProgress++;
+  updateBankProgress();
 }
 
 // ============================================================
@@ -2038,6 +2078,25 @@ function onCardClick(index) {
   if (inputLocked) return;
   const card = board[index];
   if (!card || turns <= 0) return;
+
+  // Bank → Baby Bomb placement mode
+  if (bankBombPlacement) {
+    if (card.special || card.locked || card.flipped) return; // only allow valid cells
+    board[index] = createSpecialCard(index, 'cross');
+    replaceCell(index);
+    const placedEl = getCardEl(index);
+    if (placedEl) {
+      placedEl.classList.add('bomb-placed');
+      placedEl.addEventListener('animationend', () => placedEl.classList.remove('bomb-placed'), { once: true });
+    }
+    SFX.special();
+    bankBombPlacement = false;
+    bankProgress = 0;
+    boardEl.classList.remove('bomb-placement');
+    updateBankProgress();
+    updateBankButton();
+    return;
+  }
 
   // Nudge: dismiss on any action, restart idle timer
   dismissNudge();

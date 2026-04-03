@@ -354,7 +354,7 @@ body {
    BANK IT BUTTON
 ================================================================ */
 #bank-bar {
-  width:100%;max-width:500px;padding:6px 16px;display:flex;justify-content:center;
+  width:100%;max-width:500px;padding:6px 16px;display:flex;flex-direction:column;align-items:center;gap:6px;
 }
 .bank-btn {
   padding:8px 28px;border-radius:20px;
@@ -378,6 +378,54 @@ body {
 .bank-btn.disabled::before { display:none; }
 @keyframes bankPunch { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
 .bank-btn.banked { background:rgba(240,192,64,.25);animation:bankPunch .3s ease-out; }
+.bank-btn.bomb-ready {
+  border-color:#9b59b6;color:#c39bd3;
+  background:rgba(155,89,182,.15);
+  box-shadow:0 0 10px rgba(155,89,182,.4);
+}
+.bank-btn.bomb-ready:not(.disabled) { pointer-events:auto;opacity:1; }
+
+/* Bank progress pips */
+.bank-progress { display:flex;gap:6px;justify-content:center; }
+.bank-pip {
+  width:22px;height:6px;border-radius:3px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);
+  transition:background .3s,border-color .3s,box-shadow .3s;
+}
+.bank-pip.filled {
+  background:#f0c040;border-color:#f0c040;
+  box-shadow:0 0 6px rgba(240,192,64,.5);
+}
+.bank-progress.ready .bank-pip.filled {
+  background:#9b59b6;border-color:#9b59b6;
+  box-shadow:0 0 6px rgba(155,89,182,.6);
+  animation:bankReady .8s ease-in-out infinite;
+}
+@keyframes bankReady { 0%,100%{box-shadow:0 0 6px rgba(155,89,182,.5)} 50%{box-shadow:0 0 14px rgba(155,89,182,.9)} }
+
+/* Bomb placement animation */
+@keyframes bombPlace {
+  0%   { transform:scale(0.3) rotate(-15deg); opacity:0; }
+  40%  { transform:scale(1.2) rotate(3deg);   opacity:1; }
+  60%  { transform:scale(0.95) rotate(-1deg); }
+  100% { transform:scale(1) rotate(0deg);     opacity:1; }
+}
+@keyframes bombGlow {
+  0%   { box-shadow:0 0 0 0 rgba(155,89,182,0); }
+  30%  { box-shadow:0 0 20px 8px rgba(155,89,182,.7); }
+  100% { box-shadow:0 0 0 0 rgba(155,89,182,0); }
+}
+.card.bomb-placed { animation: bombPlace .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+.card.bomb-placed::after {
+  content:''; position:absolute; inset:-4px; border-radius:inherit;
+  pointer-events:none; z-index:3;
+  animation: bombGlow .7s ease-out forwards;
+}
+
+/* Bomb placement mode — subtle highlight on placeable cards */
+#board.bomb-placement .card:not(.special):not(.locked):not(.flipped) .card-back {
+  box-shadow:0 0 8px rgba(155,89,182,.5);border:1px solid rgba(155,89,182,.4);
+}
 
 /* ================================================================
    RECALL BUTTON
