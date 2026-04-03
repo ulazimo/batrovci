@@ -1768,6 +1768,19 @@ function drawGuideline() {
         ctx.setLineDash([]);
     }
 
+    // Stop marker — shows where ball will come to rest
+    if (stopped) {
+        ctx.beginPath();
+        ctx.arc(sx, sy, BALL_RADIUS, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+    }
+
     // Cap indicator — trailing dots showing "ball goes further"
     if (!stopped && totalDist >= maxDist) {
         const spd = Math.sqrt(svx * svx + svy * svy);
