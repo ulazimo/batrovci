@@ -1335,35 +1335,17 @@ function closestPointOnSeg(px, py, x1, y1, x2, y2) {
 
 // Wall collision & response
 function collideWalls() {
-    for (const w of cachedWalls) {
-        const cp = closestPointOnSeg(ball.x, ball.y, w.x1, w.y1, w.x2, w.y2);
-        const dx = ball.x - cp.x;
-        const dy = ball.y - cp.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < BALL_RADIUS && dist > 0) {
-            // Normal
-            const nx = dx / dist;
-            const ny = dy / dist;
+    const hit = bounceOffWalls(ball);
+    if (hit) {
+        // Side spin effect on bounce (scaled by cue)
+        const tx = -hit.ny, ty = hit.nx;
+        const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+        const eSpin = getEffectiveSpin(getEquippedCue());
+        ball.vx += tx * eSpin.x * speed * 0.45;
+        ball.vy += ty * eSpin.x * speed * 0.45;
 
-            // Push out
-            ball.x = cp.x + nx * BALL_RADIUS;
-            ball.y = cp.y + ny * BALL_RADIUS;
-
-            // Reflect velocity
-            const dot = ball.vx * nx + ball.vy * ny;
-            ball.vx = (ball.vx - 2 * dot * nx) * WALL_RESTITUTION;
-            ball.vy = (ball.vy - 2 * dot * ny) * WALL_RESTITUTION;
-
-            // Side spin effect on bounce (scaled by cue)
-            const tx = -ny, ty = nx;
-            const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-            const eSpin = getEffectiveSpin(getEquippedCue());
-            ball.vx += tx * eSpin.x * speed * 0.45;
-            ball.vy += ty * eSpin.x * speed * 0.45;
-
-            // Particle
-            spawnParticles(cp.x, cp.y, 3, '#fff', 1.5);
-        }
+        // Particle at ball position (pushed out to wall surface)
+        spawnParticles(ball.x - hit.nx * BALL_RADIUS, ball.y - hit.ny * BALL_RADIUS, 3, '#fff', 1.5);
     }
 }
 
@@ -1392,8 +1374,7 @@ function collideBumpers() {
 
 // Check if ball is in a zone
 function inZone(zone) {
-    return ball.x >= zone.x && ball.x <= zone.x + zone.w &&
-           ball.y >= zone.y && ball.y <= zone.y + zone.h;
+    return pointInZone(zone, ball.x, ball.y);
 }
 
 // Check water hazards
@@ -1439,7 +1420,9 @@ function checkHole() {
         ball.vx = 0; ball.vy = 0;
         ball.x = level.hole.x; ball.y = level.hole.y;
         spawnParticles(level.hole.x, level.hole.y, 15, '#e6c619', 3);
-        holeCompleteTimer = setTimeout(completeLevel, 400);
+        // Rush mode: short delay to see sink, then advance. Normal: 400ms celebration.
+        holeCompleteTimer = setTimeout(completeLevel, rushMode ? 50 : 400);
+        state = 'BALL_SINKING'; // prevent further input/physics until completeLevel fires
         return true;
     }
     if (dist < HOLE_RADIUS && speed < HOLE_CAPTURE_SPEED * 1.5) {
@@ -2131,6 +2114,33 @@ let rushBots = [];
 const BOT_COLORS = ['#e63946', '#4A9BE4', '#e6c619'];
 const BOT_NAMES = ['Red', 'Blue', 'Yellow'];
 const BOT_SKILLS = [0.7, 1.0, 1.4]; // lower = better (time multiplier)
+const rushTimerEl = document.getElementById('rush-timer');
+const rushProgressEl = document.getElementById('rush-progress');
+
+// Reusable point-in-zone check (works for bot or any {x,y})
+function pointInZone(zone, px, py) {
+    return px >= zone.x && px <= zone.x + zone.w &&
+           py >= zone.y && py <= zone.y + zone.h;
+}
+
+// Bounce any {x,y,vx,vy} entity off walls
+function bounceOffWalls(e) {
+    for (const w of cachedWalls) {
+        const cp = closestPointOnSeg(e.x, e.y, w.x1, w.y1, w.x2, w.y2);
+        const dx = e.x - cp.x, dy = e.y - cp.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < BALL_RADIUS && dist > 0) {
+            const nx = dx / dist, ny = dy / dist;
+            e.x = cp.x + nx * BALL_RADIUS;
+            e.y = cp.y + ny * BALL_RADIUS;
+            const dot = e.vx * nx + e.vy * ny;
+            e.vx = (e.vx - 2 * dot * nx) * WALL_RESTITUTION;
+            e.vy = (e.vy - 2 * dot * ny) * WALL_RESTITUTION;
+            return { nx, ny };
+        }
+    }
+    return null;
+}
 
 function startRush() {
     rushMode = true;
@@ -2138,12 +2148,14 @@ function startRush() {
     rushLevelIdx = 0;
     rushTotalStrokes = 0;
 
-    // Pick 3 random levels (avoid duplicates, skip very large ones for pacing)
-    const pool = LEVELS.filter(l => l.id <= 20);
-    const shuffled = pool.slice().sort(() => Math.random() - 0.5);
-    rushLevels = shuffled.slice(0, 3).map(l => l.id);
+    // Fisher-Yates shuffle for unbiased level selection
+    const pool = LEVELS.filter(l => l.id <= 20).map(l => l.id);
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    rushLevels = pool.slice(0, 3);
 
-    // Init bots
     rushBots = BOT_NAMES.map((name, i) => ({
         name,
         color: BOT_COLORS[i],
@@ -2151,8 +2163,6 @@ function startRush() {
         x: 0, y: 0, vx: 0, vy: 0,
         currentLevel: 0,
         strokes: 0,
-        totalTime: 0,
-        finished: false,
         shotTimer: 0,
         moving: false,
         sunk: false
@@ -2169,40 +2179,39 @@ function loadRushLevel(idx) {
     const srcIdx = LEVELS.findIndex(l => l.id === levelId);
     loadLevel(srcIdx);
 
-    // Hide regular HUD par/coins, show rush HUD
     hide('hud');
     show('rush-hud');
     show('spin-selector');
     updateRushHUD();
 
-    // Reset bots to level start
+    // Reset bots to level start — only bots that already completed previous levels
     for (const bot of rushBots) {
-        if (bot.finished) continue;
+        if (bot.currentLevel !== idx) continue;
         bot.x = ball.x; bot.y = ball.y;
         bot.vx = 0; bot.vy = 0;
-        bot.shotTimer = 1.0 + Math.random() * 1.5; // delay before first shot
+        bot.shotTimer = 1.0 + Math.random() * 1.5;
         bot.moving = false;
         bot.sunk = false;
-        if (bot.currentLevel < idx) bot.currentLevel = idx;
     }
 }
 
 function updateRushHUD() {
     const mins = Math.floor(rushTimer / 60);
     const secs = rushTimer % 60;
-    document.getElementById('rush-timer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs.toFixed(1)}`;
-    document.getElementById('rush-progress').textContent = `${rushLevelIdx + 1} / ${rushLevels.length}`;
+    const timeText = `${mins}:${secs < 10 ? '0' : ''}${secs.toFixed(1)}`;
+    if (rushTimerEl.textContent !== timeText) rushTimerEl.textContent = timeText;
+    const progText = `${rushLevelIdx + 1} / ${rushLevels.length}`;
+    if (rushProgressEl.textContent !== progText) rushProgressEl.textContent = progText;
 }
 
 function updateBots(dt) {
     if (!rushMode || !level) return;
+    const scale = dt * 60;
 
     for (const bot of rushBots) {
-        if (bot.finished || bot.currentLevel !== rushLevelIdx) continue;
-        if (bot.sunk) continue;
+        if (bot.currentLevel !== rushLevelIdx || bot.sunk) continue;
 
         if (bot.moving) {
-            // Simulate bot ball physics (simplified)
             const spd = Math.sqrt(bot.vx * bot.vx + bot.vy * bot.vy);
             if (spd < MIN_SPEED) {
                 bot.vx = 0; bot.vy = 0;
@@ -2211,29 +2220,18 @@ function updateBots(dt) {
                 continue;
             }
 
-            bot.x += bot.vx;
-            bot.y += bot.vy;
-            bot.vx *= 0.985;
-            bot.vy *= 0.985;
+            // dt-scaled movement and friction
+            bot.x += bot.vx * scale;
+            bot.y += bot.vy * scale;
+            const fric = Math.pow(FRICTION, scale);
+            bot.vx *= fric;
+            bot.vy *= fric;
 
-            // Wall collision (simplified)
-            for (const w of cachedWalls) {
-                const cp = closestPointOnSeg(bot.x, bot.y, w.x1, w.y1, w.x2, w.y2);
-                const dx = bot.x - cp.x, dy = bot.y - cp.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < BALL_RADIUS && dist > 0) {
-                    const nx = dx / dist, ny = dy / dist;
-                    bot.x = cp.x + nx * BALL_RADIUS;
-                    bot.y = cp.y + ny * BALL_RADIUS;
-                    const dot = bot.vx * nx + bot.vy * ny;
-                    bot.vx = (bot.vx - 2 * dot * nx) * WALL_RESTITUTION;
-                    bot.vy = (bot.vy - 2 * dot * ny) * WALL_RESTITUTION;
-                }
-            }
+            bounceOffWalls(bot);
 
             // Water check
             for (const obs of level.obstacles) {
-                if (obs.type === 'water' && bot.x >= obs.x && bot.x <= obs.x + obs.w && bot.y >= obs.y && bot.y <= obs.y + obs.h) {
+                if (obs.type === 'water' && pointInZone(obs, bot.x, bot.y)) {
                     bot.x = level.ball.x; bot.y = level.ball.y;
                     bot.vx = 0; bot.vy = 0;
                     bot.moving = false;
@@ -2252,7 +2250,6 @@ function updateBots(dt) {
                 bot.x = level.hole.x; bot.y = level.hole.y;
             }
         } else {
-            // Waiting to shoot
             bot.shotTimer -= dt;
             if (bot.shotTimer <= 0) {
                 botShoot(bot);
@@ -2262,17 +2259,13 @@ function updateBots(dt) {
 }
 
 function botShoot(bot) {
-    // Aim toward hole with some inaccuracy based on skill
     const dx = level.hole.x - bot.x;
     const dy = level.hole.y - bot.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const baseAngle = Math.atan2(dy, dx);
 
-    // Inaccuracy: better skill = less spread
     const spread = (0.15 + bot.skill * 0.12) * (Math.random() - 0.5);
     const angle = baseAngle + spread;
-
-    // Power: try to reach hole, with some variance
     const power = Math.min(dist * 0.04 * (0.8 + Math.random() * 0.4), 18);
 
     bot.vx = Math.cos(angle) * power;
@@ -2282,7 +2275,6 @@ function botShoot(bot) {
 }
 
 function rushPlayerSunk() {
-    // Player completed current rush level
     rushTotalStrokes += strokes;
 
     if (rushLevelIdx + 1 < rushLevels.length) {
@@ -2291,6 +2283,7 @@ function rushPlayerSunk() {
             if (bot.sunk && bot.currentLevel === rushLevelIdx) {
                 bot.currentLevel = rushLevelIdx + 1;
             }
+            // Bots that didn't sink stay on their currentLevel — they won't appear on next level
         }
         loadRushLevel(rushLevelIdx + 1);
     } else {
@@ -2298,55 +2291,55 @@ function rushPlayerSunk() {
     }
 }
 
+function formatTime(t) {
+    const m = Math.floor(t / 60);
+    const rawSecs = t % 60;
+    const pad = rawSecs < 10 ? '0' : '';
+    return `${m}:${pad}${rawSecs.toFixed(1)}`;
+}
+
 function finishRush() {
     state = 'RUSH_DONE';
     rushMode = false;
     hide('spin-selector'); hide('power-bar'); hide('rush-hud'); hide('hud');
 
-    // Finalize bot times: bots that didn't finish get a penalty
     const playerTime = rushTimer;
     const results = [{
         name: 'You', time: playerTime, strokes: rushTotalStrokes, isPlayer: true
     }];
 
     for (const bot of rushBots) {
-        // Simulate remaining time for bot based on skill
         let botTime;
         if (bot.currentLevel >= rushLevels.length - 1 && bot.sunk) {
-            // Bot finished all levels — estimate time based on skill
             botTime = playerTime * (0.7 + bot.skill * 0.5) + (Math.random() - 0.5) * 5;
         } else {
-            // Bot didn't finish — estimate remaining levels
             const levelsLeft = rushLevels.length - bot.currentLevel;
             botTime = playerTime + levelsLeft * 8 * bot.skill + Math.random() * 6;
         }
-        botTime = Math.max(botTime, playerTime * 0.6); // don't let bots be unrealistically fast
+        botTime = Math.max(botTime, playerTime * 0.6);
         results.push({
-            name: bot.name, time: botTime, strokes: bot.strokes + (rushLevels.length - bot.currentLevel - 1) * 3,
+            name: bot.name, time: botTime,
+            strokes: bot.strokes + Math.max(0, rushLevels.length - bot.currentLevel - 1) * 3,
             isPlayer: false, color: bot.color
         });
     }
 
     results.sort((a, b) => a.time - b.time);
 
-    // Render leaderboard
     const table = document.getElementById('rl-table');
     let html = '<tr><th class="rl-rank">#</th><th>Player</th><th>Time</th><th>Strokes</th></tr>';
     results.forEach((r, i) => {
         const cls = r.isPlayer ? ' class="rl-you"' : '';
         const nameStyle = r.isPlayer ? '' : ` style="color:${r.color}"`;
-        const m = Math.floor(r.time / 60);
-        const s = (r.time % 60).toFixed(1);
         html += `<tr${cls}>
             <td class="rl-rank">${i + 1}</td>
             <td${nameStyle}>${r.name}</td>
-            <td class="rl-time">${m}:${s < 10 ? '0' : ''}${s}</td>
+            <td class="rl-time">${formatTime(r.time)}</td>
             <td>${r.strokes}</td>
         </tr>`;
     });
     table.innerHTML = html;
 
-    // Award coins based on placement
     const rank = results.findIndex(r => r.isPlayer);
     const coinReward = [15, 8, 4, 1][rank] || 0;
     if (coinReward > 0) {
@@ -2359,19 +2352,15 @@ function finishRush() {
 
 function drawBots() {
     if (!rushMode || !level) return;
+    ctx.globalAlpha = 0.35;
     for (const bot of rushBots) {
-        if (bot.finished || bot.currentLevel !== rushLevelIdx) continue;
-        ctx.globalAlpha = 0.35;
+        if (bot.currentLevel !== rushLevelIdx) continue;
         ctx.beginPath();
         ctx.arc(bot.x, bot.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = bot.color;
         ctx.fill();
-        ctx.globalAlpha = 0.2;
-        ctx.strokeStyle = bot.color;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = 1;
 }
 
 // ═══════════════════════════════════════════════════════════
