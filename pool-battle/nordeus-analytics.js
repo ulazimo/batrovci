@@ -328,10 +328,10 @@ class NordeusAnalytics {
         // Flush on page unload
         window.addEventListener('beforeunload', () => this._flush());
 
-        // Session ping every 60s
-        this.sessionPingTimer = setInterval(() => {
-            this.track(10007, { time_since_start_ms: Math.round(performance.now() - this.startTime) });
-        }, 60000);
+        // // Session ping every 60s
+        // this.sessionPingTimer = setInterval(() => {
+        //     this.track(10007, { time_since_start_ms: Math.round(performance.now() - this.startTime) });
+        // }, 60000);
 
         this._initialized = true;
         console.log(`[NordeusAnalytics] Initialized: device=${this.deviceGuid}, session=${this.trackingSessionId}, env=${this.config.environment}`);
