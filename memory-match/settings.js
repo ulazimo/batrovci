@@ -587,6 +587,22 @@ function showSettings(returnTo) {
   `;
   list.appendChild(tutResetRow);
 
+  // Unlock all levels button
+  const unlockRow = document.createElement('div');
+  unlockRow.className = 'setting-row';
+  unlockRow.style.cursor = 'pointer';
+  unlockRow.innerHTML = `
+    <span class="setting-icon">🔓</span>
+    <div class="setting-info">
+      <div class="setting-name">Unlock All Levels</div>
+      <div class="setting-desc">Unlock every level in the current journey</div>
+    </div>
+    <div class="setting-controls">
+      <button class="qty-btn" style="padding:4px 12px;font-size:12px;" onclick="unlockAllLevels()">Unlock</button>
+    </div>
+  `;
+  list.appendChild(unlockRow);
+
   closeAllOverlays();
   document.getElementById('settings-panel').classList.add('active');
 }
@@ -624,6 +640,12 @@ function adjustInventory(specId, delta) {
   progress.specialInventory[specId] = Math.max(0, Math.min(99, current + delta));
   document.getElementById('inv-qty-' + specId).textContent = progress.specialInventory[specId];
   saveProgress();
+}
+
+function unlockAllLevels() {
+  progress.highestUnlocked = LEVELS.length - 1;
+  saveProgress();
+  alert('All ' + LEVELS.length + ' levels unlocked!');
 }
 
 function closeSettings() {

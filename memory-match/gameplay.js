@@ -251,7 +251,7 @@ function initLevelGoals() {
         if (g.positions) {
           g.positions.forEach(([r, c], idx) => {
             const bi = r * COLS + c;
-            if (bi >= 0 && bi < TOTAL && board[bi] && !board[bi].special && !board[bi].locked) {
+            if (bi >= 0 && bi < TOTAL && board[bi] && !board[bi].special) {
               board[bi].ordered = idx + 1;
             }
           });
