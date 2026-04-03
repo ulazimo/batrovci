@@ -214,6 +214,14 @@ function renderLevelList() {
       deleteLevel(i);
     });
     levelListEl.appendChild(card);
+
+    // Insert button after each level
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'list-insert-btn';
+    insertBtn.textContent = '+ Insert';
+    insertBtn.title = `Insert level after Level ${lvl.id}`;
+    insertBtn.addEventListener('click', () => insertLevel(i + 1));
+    levelListEl.appendChild(insertBtn);
   });
 
   // Add new level button
@@ -296,6 +304,18 @@ function addLevel() {
   };
   levels.push(newLevel);
   selectLevel(levels.length - 1);
+}
+
+function insertLevel(atIndex) {
+  const newLevel = {
+    id: atIndex + 1,
+    cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
+    locked: [], disabled: [],
+    goals: [{ type: 'score', target: 500 }],
+  };
+  levels.splice(atIndex, 0, newLevel);
+  levels.forEach((lvl, i) => lvl.id = i + 1);
+  selectLevel(atIndex);
 }
 
 function deleteLevel(index) {
@@ -883,6 +903,14 @@ function renderRewards() {
       <label>Qty <input type="number" class="rw-qty" data-ri="${i}" value="${r.qty || 1}" min="1" max="99" style="width:50px"></label>
     `;
     list.appendChild(card);
+
+    // Insert button after each reward
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'list-insert-btn';
+    insertBtn.textContent = '+ Insert';
+    insertBtn.title = `Insert reward after this one`;
+    insertBtn.addEventListener('click', () => insertReward(i + 1));
+    list.appendChild(insertBtn);
   });
 
   // Bind events
@@ -927,6 +955,11 @@ function renderRewards() {
 
 function addReward() {
   progression.levelRewards.push({ afterLevel: 1, boosterId: 'peek', qty: 1 });
+  renderRewards();
+}
+
+function insertReward(atIndex) {
+  progression.levelRewards.splice(atIndex, 0, { afterLevel: 1, boosterId: 'peek', qty: 1 });
   renderRewards();
 }
 

@@ -136,6 +136,25 @@ body {
 .level-card:hover .delete-btn { opacity: 1; }
 .level-card .delete-btn:hover { background: #c0392b; transform: scale(1.1); }
 
+/* Insert button between items */
+.list-insert-btn {
+  display:block;width:100%;padding:3px 0;margin:2px 0;border:none;
+  background:transparent;color:#4a4a8a;font-size:11px;font-weight:600;
+  cursor:pointer;text-align:center;border-radius:4px;transition:all .15s;
+  opacity:0;
+}
+.list-insert-btn:hover {
+  background:rgba(79,195,247,.1);color:#4fc3f7;opacity:1;
+}
+#level-list:hover .list-insert-btn,
+#rewards-list:hover .list-insert-btn {
+  opacity:.5;
+}
+#level-list .list-insert-btn:hover,
+#rewards-list .list-insert-btn:hover {
+  opacity:1;
+}
+
 /* Add level card */
 .level-card.add-card {
   border-style: dashed; border-color: #3a3a6a;
