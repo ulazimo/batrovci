@@ -68,7 +68,13 @@
       "Bash(mv \"lowpoly_3d_game_asset_cartoon_octopus_purple_body_with_tentacles-2026-04-02-072830.glb\" fish_tentacle.glb)",
       "Bash(wc:*)",
       "Bash(du -sh /Users/MladenD_1/Downloads/batrovci/*)",
-      "Bash(ls -la /Users/MladenD_1/Downloads/batrovci/*/index.html)"
+      "Bash(ls -la /Users/MladenD_1/Downloads/batrovci/*/index.html)",
+      "Bash(/usr/local/bin/node --version)",
+      "Bash(/opt/homebrew/bin/node --version)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(/usr/local/bin/node \"/Users/djordjevu/HTML Prototypes/memory-match/_transform_levels.js\")",
+      "Bash(grep -c '\"\"minLength\"\":3' levels_short.json levels_long.json)",
+      "Bash(/usr/local/bin/node -e \":*)"
     ]
   }
 }
