@@ -292,7 +292,7 @@ body {
 /* Board banner overlays (sweep, win, fail) */
 @keyframes boardBannerIn { 0%{opacity:0;transform:scale(.6)} 50%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
 @keyframes boardBannerOut { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.2)} }
-.board-banner { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;pointer-events:all;background:radial-gradient(ellipse at center,rgba(0,0,0,.65) 0%,transparent 75%);animation:boardBannerIn .5s ease-out forwards; }
+.board-banner { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;pointer-events:all;background:radial-gradient(ellipse at center,rgba(0,0,0,.85) 0%,rgba(0,0,0,.5) 60%,transparent 90%);animation:boardBannerIn .5s ease-out forwards; }
 .board-banner.hiding { animation:boardBannerOut .4s ease-in forwards; }
 .board-banner .banner-title { font-size:clamp(24px,7vw,40px);font-weight:900;text-shadow:0 0 20px currentColor,0 2px 8px rgba(0,0,0,.8); }
 .board-banner .banner-sub { font-size:clamp(13px,3.5vw,18px);font-weight:600;color:#ccc;text-shadow:0 1px 6px rgba(0,0,0,.8);margin-top:8px; }
@@ -303,7 +303,7 @@ body {
 .fail-banner-pill.done { background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:#2ecc71; }
 .board-banner.sweep .banner-title { color:#f0c040; }
 .board-banner.goal-intro .banner-title { color:#4fc3f7; }
-.board-banner .banner-goals { display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px; }
+.board-banner .banner-goals { display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px; }
 .board-banner .banner-goal-pill {
   display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:16px;
   background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
