@@ -2333,6 +2333,8 @@ function endTurn(manual, perfectSweep) {
   });
 
   if (!specialActivated) specialsUsed.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.remove('used'); });
+  // Wild cards live in chainCards (not specialsUsed) — clear their 'used' state on failed chains
+  if (!specialActivated) chainCards.filter(i => isWildCard(i)).forEach(idx => { const el=getCardEl(idx); if(el) el.classList.remove('used'); });
 
   let revealTargets = [];
   if (specialActivated && !getRule('instantSpecialReveal')) {
