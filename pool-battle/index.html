@@ -161,6 +161,16 @@
             font-size: 14px; color: #7ab891;
             font-weight: 500;
         }
+        .hud-hard-badge {
+            display: inline-block;
+            background: #e63946; color: #fff;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 7px; border-radius: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+        .hud-hard-badge.hidden { display: none; }
         .hud-strokes {
             font-size: 18px; color: #fff;
             font-weight: 700; margin-top: 2px;
@@ -459,6 +469,7 @@
     <div id="hud" class="hidden">
         <div class="hud-left">
             <div class="hud-level" id="hud-level-name"></div>
+            <div class="hud-hard-badge hidden" id="hud-hard-badge">HARD</div>
             <div class="hud-strokes" id="hud-strokes">Strokes: 0</div>
             <div class="hud-par" id="hud-par">Par: 3</div>
             <div style="font-size:13px;color:#e6c619;margin-top:4px" id="hud-coins">🪙 0</div>
@@ -1109,6 +1120,9 @@ function renderLevelGrid() {
 function updateHUD() {
     if (!level) return;
     document.getElementById('hud-level-name').textContent = `Level ${level.id}: ${level.name}`;
+    const hardBadge = document.getElementById('hud-hard-badge');
+    if (level.hard) hardBadge.classList.remove('hidden');
+    else hardBadge.classList.add('hidden');
     document.getElementById('hud-strokes').textContent = `Strokes: ${strokes}`;
     document.getElementById('hud-par').textContent = `Par: ${level.par}  |  Max: ${level.maxStrokes}`;
     document.getElementById('hud-coins').textContent = `🪙 ${progress.coins}`;
