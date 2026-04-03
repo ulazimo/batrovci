@@ -1591,8 +1591,9 @@ function updateBall(dt) {
 
     if (ballSpeed() < MIN_SPEED) {
         ball.vx = 0; ball.vy = 0;
-        // Safety: if ball stopped outside bounds, reset to shot origin
-        if (ball.x < 0 || ball.x > level.width || ball.y < 0 || ball.y > level.height) {
+        // Safety: if ball stopped outside playable area, reset to shot origin
+        if (ball.x < BALL_RADIUS || ball.x > level.width - BALL_RADIUS ||
+            ball.y < BALL_RADIUS || ball.y > level.height - BALL_RADIUS) {
             ball.x = ball.shotX; ball.y = ball.shotY;
         }
         if (level.maxStrokes && strokes >= level.maxStrokes) {
@@ -2203,6 +2204,9 @@ let rushLevelIdx = 0;
 let rushLevels = [];
 let rushTotalStrokes = 0;
 let rushBots = [];
+let rushTransitioning = false;
+let rushTransitionTimer = null;
+let rushTransitionTimer2 = null;
 const BOT_COLORS = ['#e63946', '#4A9BE4', '#e6c619'];
 const BOT_NAMES = ['Red', 'Blue', 'Yellow'];
 const BOT_SKILLS = [0.7, 1.0, 1.4]; // lower = better (time multiplier)
@@ -2239,6 +2243,10 @@ function startRush() {
     rushTimer = 0;
     rushLevelIdx = 0;
     rushTotalStrokes = 0;
+    rushTransitioning = false;
+    if (rushTransitionTimer) { clearTimeout(rushTransitionTimer); rushTransitionTimer = null; }
+    if (rushTransitionTimer2) { clearTimeout(rushTransitionTimer2); rushTransitionTimer2 = null; }
+    document.getElementById('rush-transition').classList.remove('visible');
 
     // Fisher-Yates shuffle for unbiased level selection
     const pool = LEVELS.filter(l => l.id <= 20).map(l => l.id);
@@ -2377,19 +2385,25 @@ function rushPlayerSunk() {
             }
         }
 
-        // Show transition overlay
+        // Show transition overlay — pause timer during transition
+        rushTransitioning = true;
+        if (rushTransitionTimer) clearTimeout(rushTransitionTimer);
+        if (rushTransitionTimer2) clearTimeout(rushTransitionTimer2);
+
         const nextIdx = rushLevelIdx + 1;
         const nextLevelId = rushLevels[nextIdx];
         const nextLevelData = LEVELS.find(l => l.id === nextLevelId);
+        const trans = document.getElementById('rush-transition');
         document.getElementById('rt-text').textContent = `LEVEL ${rushLevelIdx + 1} COMPLETE`;
         document.getElementById('rt-next').textContent = `Next: ${nextLevelData ? nextLevelData.name : 'Level ' + (nextIdx + 1)}`;
-        const trans = document.getElementById('rush-transition');
         trans.classList.add('visible');
 
-        setTimeout(() => {
+        rushTransitionTimer = setTimeout(() => {
             loadRushLevel(nextIdx);
-            // Fade out after level loads
-            setTimeout(() => trans.classList.remove('visible'), 300);
+            rushTransitionTimer2 = setTimeout(() => {
+                trans.classList.remove('visible');
+                rushTransitioning = false;
+            }, 300);
         }, 800);
     } else {
         finishRush();
@@ -2480,7 +2494,7 @@ function gameLoop(timestamp) {
     if (!paused && state !== 'TITLE' && state !== 'LEVEL_SELECT') {
         time += dt;
         if (rushMode) {
-            rushTimer += dt;
+            if (!rushTransitioning) rushTimer += dt;
             updateRushHUD();
             updateBots(dt);
         }
