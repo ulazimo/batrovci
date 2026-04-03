@@ -323,6 +323,28 @@
         .rl-table .rl-rank { font-family: 'Orbitron', sans-serif; font-size: 16px; width: 30px; }
         .rl-table .rl-time { font-family: 'Orbitron', sans-serif; color: #e6c619; }
 
+        /* ── Rush Transition ── */
+        #rush-transition {
+            position: fixed; inset: 0; z-index: 52;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: rgba(5, 20, 10, 0.95);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+        #rush-transition.visible { opacity: 1; pointer-events: auto; }
+        #rush-transition .rt-check {
+            font-size: 48px; margin-bottom: 8px;
+        }
+        #rush-transition .rt-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px; color: #fff; font-weight: 700;
+            letter-spacing: 2px;
+        }
+        #rush-transition .rt-next {
+            font-size: 14px; color: #7ab891; margin-top: 8px;
+        }
+
         /* ── Stat Bars ── */
         .stat-row {
             display: flex; align-items: center; gap: 4px;
@@ -472,6 +494,13 @@
         <div class="shop-coins" id="shop-coins">🪙 0</div>
         <div class="shop-grid" id="shop-grid"></div>
         <button class="btn btn-small btn-outline" style="margin-top:20px" onclick="closeShop()">BACK</button>
+    </div>
+
+    <!-- Rush Transition -->
+    <div id="rush-transition">
+        <div class="rt-check">✓</div>
+        <div class="rt-text" id="rt-text">LEVEL COMPLETE</div>
+        <div class="rt-next" id="rt-next">Next: Level 2</div>
     </div>
 
     <!-- Rush HUD -->
@@ -1422,8 +1451,7 @@ function checkHole() {
         ball.vx = 0; ball.vy = 0;
         ball.x = level.hole.x; ball.y = level.hole.y;
         spawnParticles(level.hole.x, level.hole.y, 15, '#e6c619', 3);
-        // Rush mode: short delay to see sink, then advance. Normal: 400ms celebration.
-        holeCompleteTimer = setTimeout(completeLevel, rushMode ? 50 : 400);
+        holeCompleteTimer = setTimeout(completeLevel, rushMode ? 600 : 400);
         state = 'BALL_SINKING'; // prevent further input/physics until completeLevel fires
         return true;
     }
@@ -2343,9 +2371,22 @@ function rushPlayerSunk() {
             if (bot.sunk && bot.currentLevel === rushLevelIdx) {
                 bot.currentLevel = rushLevelIdx + 1;
             }
-            // Bots that didn't sink stay on their currentLevel — they won't appear on next level
         }
-        loadRushLevel(rushLevelIdx + 1);
+
+        // Show transition overlay
+        const nextIdx = rushLevelIdx + 1;
+        const nextLevelId = rushLevels[nextIdx];
+        const nextLevelData = LEVELS.find(l => l.id === nextLevelId);
+        document.getElementById('rt-text').textContent = `LEVEL ${rushLevelIdx + 1} COMPLETE`;
+        document.getElementById('rt-next').textContent = `Next: ${nextLevelData ? nextLevelData.name : 'Level ' + (nextIdx + 1)}`;
+        const trans = document.getElementById('rush-transition');
+        trans.classList.add('visible');
+
+        setTimeout(() => {
+            loadRushLevel(nextIdx);
+            // Fade out after level loads
+            setTimeout(() => trans.classList.remove('visible'), 300);
+        }, 800);
     } else {
         finishRush();
     }
