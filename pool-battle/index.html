@@ -322,6 +322,12 @@
         .rl-table tr.rl-you td { color: #fff; font-weight: 700; }
         .rl-table .rl-rank { font-family: 'Orbitron', sans-serif; font-size: 16px; width: 30px; }
         .rl-table .rl-time { font-family: 'Orbitron', sans-serif; color: #e6c619; }
+        .rl-table tr.rl-pending td { color: transparent; }
+        @keyframes rl-reveal {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .rl-table tr.rl-reveal { animation: rl-reveal 0.4s ease forwards; }
 
         /* ── Rush Transition ── */
         #rush-transition {
@@ -513,8 +519,11 @@
     <div id="rush-leaderboard" class="overlay hidden">
         <div class="rl-title">⚡ RUSH RESULTS</div>
         <table class="rl-table" id="rl-table"></table>
-        <button class="btn btn-small" onclick="startRush()">PLAY AGAIN</button>
-        <button class="btn btn-small btn-outline" style="margin-top:8px" onclick="showTitle()">MENU</button>
+        <div id="rl-waiting" style="font-size:14px;color:#5a9a72;margin:12px 0;min-height:20px"></div>
+        <div id="rl-buttons" style="display:none">
+            <button class="btn btn-small" onclick="startRush()">PLAY AGAIN</button>
+            <button class="btn btn-small btn-outline" style="margin-top:8px" onclick="showTitle()">MENU</button>
+        </div>
     </div>
 
     <!-- Inventory -->
@@ -1048,6 +1057,8 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 function showTitle() {
     state = 'TITLE';
     rushMode = false;
+    rushResultTimers.forEach(t => clearTimeout(t));
+    rushResultTimers = [];
     hide('hud'); hide('spin-selector'); hide('power-bar');
     hide('level-select'); hide('level-complete'); hide('pause-menu');
     hide('rush-hud'); hide('rush-leaderboard');
@@ -2417,13 +2428,19 @@ function formatTime(t) {
     return `${m}:${pad}${rawSecs.toFixed(1)}`;
 }
 
+let rushResultTimers = [];
+
 function finishRush() {
     state = 'RUSH_DONE';
     rushMode = false;
     hide('spin-selector'); hide('power-bar'); hide('rush-hud'); hide('hud');
 
+    // Clear any old reveal timers
+    rushResultTimers.forEach(t => clearTimeout(t));
+    rushResultTimers = [];
+
     const playerTime = rushTimer;
-    const results = [{
+    const allResults = [{
         name: 'You', time: playerTime, strokes: rushTotalStrokes, isPlayer: true
     }];
 
@@ -2436,37 +2453,91 @@ function finishRush() {
             botTime = playerTime + levelsLeft * 8 * bot.skill + Math.random() * 6;
         }
         botTime = Math.max(botTime, playerTime * 0.6);
-        results.push({
+        allResults.push({
             name: bot.name, time: botTime,
             strokes: bot.strokes + Math.max(0, rushLevels.length - bot.currentLevel - 1) * 3,
             isPlayer: false, color: bot.color
         });
     }
 
-    results.sort((a, b) => a.time - b.time);
+    allResults.sort((a, b) => a.time - b.time);
 
+    // Show table with header + player row immediately, bots as "pending"
     const table = document.getElementById('rl-table');
-    let html = '<tr><th class="rl-rank">#</th><th>Player</th><th>Time</th><th>Strokes</th></tr>';
-    results.forEach((r, i) => {
-        const cls = r.isPlayer ? ' class="rl-you"' : '';
-        const nameStyle = r.isPlayer ? '' : ` style="color:${r.color}"`;
-        html += `<tr${cls}>
-            <td class="rl-rank">${i + 1}</td>
-            <td${nameStyle}>${r.name}</td>
-            <td class="rl-time">${formatTime(r.time)}</td>
-            <td>${r.strokes}</td>
-        </tr>`;
-    });
-    table.innerHTML = html;
+    const waitingEl = document.getElementById('rl-waiting');
+    const buttonsEl = document.getElementById('rl-buttons');
+    buttonsEl.style.display = 'none';
+    waitingEl.textContent = 'Waiting for others to finish...';
 
-    const rank = results.findIndex(r => r.isPlayer);
-    const coinReward = [15, 8, 4, 1][rank] || 0;
-    if (coinReward > 0) {
-        progress.coins += coinReward;
-        saveProgress();
+    function renderTable(revealedCount) {
+        let html = '<tr><th class="rl-rank">#</th><th>Player</th><th>Time</th><th>Strokes</th></tr>';
+        // Re-sort only revealed results to assign ranks
+        const revealed = allResults.filter((r, i) => r.isPlayer || i < revealedCount + (allResults.indexOf(allResults.find(x => x.isPlayer)) <= revealedCount ? 0 : 0));
+
+        // Simpler: track which are revealed
+        let revealedBots = 0;
+        allResults.forEach((r, i) => {
+            const isBotRevealed = !r.isPlayer && revealedBots < revealedCount;
+            const isRevealed = r.isPlayer || isBotRevealed;
+            if (!r.isPlayer) revealedBots++;
+
+            if (isRevealed) {
+                const cls = r.isPlayer ? ' class="rl-you rl-reveal"' : ' class="rl-reveal"';
+                const nameStyle = r.isPlayer ? '' : ` style="color:${r.color}"`;
+                html += `<tr${cls}>
+                    <td class="rl-rank">${i + 1}</td>
+                    <td${nameStyle}>${r.name}</td>
+                    <td class="rl-time">${formatTime(r.time)}</td>
+                    <td>${r.strokes}</td>
+                </tr>`;
+            } else {
+                html += `<tr class="rl-pending">
+                    <td class="rl-rank">${i + 1}</td>
+                    <td>...</td>
+                    <td class="rl-time">--:--.-</td>
+                    <td>-</td>
+                </tr>`;
+            }
+        });
+        table.innerHTML = html;
     }
 
+    renderTable(0);
     show('rush-leaderboard');
+
+    // Reveal bots one by one based on time difference from player
+    const botResults = allResults.filter(r => !r.isPlayer);
+    botResults.sort((a, b) => a.time - b.time);
+    const minDelay = 1500; // first bot after 1.5s
+    const maxDelay = 6000; // last bot by 6s
+
+    botResults.forEach((bot, i) => {
+        const timeDiff = bot.time - playerTime;
+        // Map timeDiff to real delay: scale so differences feel proportional
+        const delay = minDelay + (maxDelay - minDelay) * (i / Math.max(1, botResults.length - 1));
+
+        const t = setTimeout(() => {
+            renderTable(i + 1);
+            const remaining = botResults.length - (i + 1);
+            if (remaining > 0) {
+                waitingEl.textContent = `Waiting for ${remaining} more...`;
+            } else {
+                waitingEl.textContent = '';
+                buttonsEl.style.display = '';
+                // Award coins now that all results are in
+                const rank = allResults.findIndex(r => r.isPlayer);
+                const coinReward = [15, 8, 4, 1][rank] || 0;
+                if (coinReward > 0) {
+                    progress.coins += coinReward;
+                    saveProgress();
+                    waitingEl.textContent = `+${coinReward} 🪙`;
+                    waitingEl.style.color = '#e6c619';
+                    setTimeout(() => { waitingEl.style.color = '#5a9a72'; }, 2000);
+                }
+            }
+        }, delay);
+        rushResultTimers.push(t);
+    });
 }
 
 function drawBots() {
