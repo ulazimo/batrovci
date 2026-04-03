@@ -341,6 +341,35 @@ body {
 .status-pill.shield { border:1px solid #4fc3f7;color:#4fc3f7; }
 
 /* ================================================================
+   BANK IT BUTTON
+================================================================ */
+#bank-bar {
+  width:100%;max-width:500px;padding:6px 16px;display:flex;justify-content:center;
+}
+.bank-btn {
+  padding:8px 28px;border-radius:20px;
+  border:2px solid #f0c040;background:transparent;color:#f0c040;
+  font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .15s, opacity .15s, background .15s;
+  -webkit-user-select:none;user-select:none;
+}
+.bank-btn::before {
+  content:'';position:absolute;left:0;top:0;bottom:0;width:0%;
+  background:rgba(240,192,64,.2);transition:none;pointer-events:none;
+  border-radius:18px;
+}
+.bank-btn.holding::before {
+  width:100%;transition:width .8s linear;
+}
+.bank-btn.disabled {
+  border-color:#3a3a5a;color:#555;opacity:.35;pointer-events:none;
+}
+.bank-btn.disabled::before { display:none; }
+@keyframes bankPunch { 0%{transform:scale(1)} 40%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.bank-btn.banked { background:rgba(240,192,64,.25);animation:bankPunch .3s ease-out; }
+
+/* ================================================================
    RECALL BUTTON
 ================================================================ */
 #recall-bar {

@@ -710,6 +710,7 @@ const FEATURE_TUTORIALS = [
   { id: 'winStreak',     icon: '🔥', name: 'Win Streak',
     desc: 'Win consecutive levels to build a streak! Higher streaks reveal more of the board at the start of each level.',
     check: () => isWinStreakActive() },
+  // bankButton tutorial is triggered manually from updateBankButton(), not here
 ];
 
 function checkFeatureTutorials(callback) {
@@ -1210,7 +1211,7 @@ function startGame(preplacedSpecials) {
 
   targetEl.textContent = TARGET > 0 ? TARGET : '—';
   initLevelGoals();
-  renderBoard(); renderCoverageIndicators(); initBoosters(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); scoreEl.textContent = 0; turnsEl.textContent = turns; updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
   // Booster hint flag — will be shown after all popups are done
   const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);
@@ -1628,6 +1629,7 @@ function updateChainIndicator() {
   updateComboSpawnIndicator();
   updateChainFaces();
   updateSweepCountdown();
+  updateBankButton();
   if (!turnActive) {
     chainEl.innerHTML = spotlightMode
       ? '🔦 Tap a face-down card to reveal it'
@@ -1671,6 +1673,79 @@ function updateChainIndicator() {
       `<span class="chain-dot" style="background:#fff;border:2px solid #999"></span>`).join('');
     chainEl.innerHTML = `Chain: ${nDots}${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span>`;
   }
+}
+
+// ============================================================
+// BANK IT BUTTON
+// ============================================================
+let _bankHoldTimer = null;
+const BANK_HOLD_MS = 800;
+
+function initBankButton() {
+  const bar = document.getElementById('bank-bar');
+  const btn = document.getElementById('bank-btn');
+  if (!bar || !btn) return;
+  if (!getRule('bankButton')) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  btn.classList.add('disabled');
+  btn.classList.remove('holding', 'banked');
+
+  // Remove old listeners by replacing node
+  const fresh = btn.cloneNode(true);
+  btn.replaceWith(fresh);
+
+  fresh.addEventListener('pointerdown', (e) => {
+    if (fresh.classList.contains('disabled')) return;
+    e.preventDefault();
+    fresh.classList.add('holding');
+    _bankHoldTimer = setTimeout(() => {
+      fresh.classList.remove('holding');
+      fresh.classList.add('banked');
+      fresh.addEventListener('animationend', () => fresh.classList.remove('banked'), { once: true });
+      bankChain();
+    }, BANK_HOLD_MS);
+  });
+
+  const cancelHold = () => {
+    if (_bankHoldTimer) { clearTimeout(_bankHoldTimer); _bankHoldTimer = null; }
+    fresh.classList.remove('holding');
+  };
+  fresh.addEventListener('pointerup', cancelHold);
+  fresh.addEventListener('pointerleave', cancelHold);
+  fresh.addEventListener('pointercancel', cancelHold);
+}
+
+function updateBankButton() {
+  const btn = document.getElementById('bank-btn');
+  if (!btn || !getRule('bankButton')) return;
+  const comboLen = chainCards.length + specialsUsed.length;
+  const canBank = turnActive && !inputLocked && comboLen >= 3;
+  const wasDisabled = btn.classList.contains('disabled');
+  btn.classList.toggle('disabled', !canBank);
+  if (!canBank) {
+    btn.classList.remove('holding');
+    if (_bankHoldTimer) { clearTimeout(_bankHoldTimer); _bankHoldTimer = null; }
+  }
+  // Show tutorial the first time the button becomes enabled
+  if (canBank && wasDisabled) {
+    if (!progress.seenFeatures) progress.seenFeatures = [];
+    if (!progress.seenFeatures.includes('bankButton')) {
+      itemTutorialQueue.push({
+        id: 'feature_bankButton', icon: '💰', name: 'Bank It',
+        desc: 'Hold the Bank It button to lock in your combo! Or test your memory and keep building bigger chains to earn Special cards that help on future turns.',
+        markAs: 'bankButton'
+      });
+      if (!itemTutorialShowing) showNextItemTutorial();
+    }
+  }
+}
+
+function bankChain() {
+  if (!turnActive || inputLocked) return;
+  const comboLen = chainCards.length + specialsUsed.length;
+  if (comboLen < 3) return;
+  inputLocked = true;
+  endTurn(true);
 }
 
 // ============================================================

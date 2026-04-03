@@ -27,6 +27,9 @@ const GAMEPLAY_RULES = [
   { id: 'longPressPeek', name: 'Long-Press Peek', icon: '👁',
     desc: 'Long-press any face-down card to peek at it, consuming one Peek power-up',
     default: true },
+  { id: 'bankButton', name: 'Bank It Button', icon: '💰',
+    desc: 'Show a button below the board to manually resolve a 3+ chain, keeping all matched cards',
+    default: false },
 ];
 
 function getRule(id) {
