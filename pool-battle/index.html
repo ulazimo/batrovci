@@ -983,6 +983,9 @@ function loadLevel(idx) {
     particles = [];
     if (holeCompleteTimer) { clearTimeout(holeCompleteTimer); holeCompleteTimer = null; }
 
+    // Nordeus Analytics: level_started
+    if (window.nanalytics) window.nanalytics.track(10001, { level_id: src.id, level_name: src.name });
+
     level = JSON.parse(JSON.stringify(src));
 
     // On portrait screens, rotate landscape levels
@@ -1258,6 +1261,11 @@ function buyCue(id) {
     progress.equippedCue = cue.id;
     saveProgress();
     renderShop();
+
+    // Nordeus Analytics: cue_purchased
+    if (window.nanalytics) window.nanalytics.track(10006, {
+        cue_id: cue.id, cue_name: cue.name, price: cue.price, coins_after: progress.coins,
+    });
 }
 
 function equipCue(id) {
@@ -1273,6 +1281,11 @@ function failLevel() {
     hide('spin-selector'); hide('power-bar');
     document.getElementById('lf-msg').textContent = `Used ${strokes} of ${level.maxStrokes} strokes`;
     show('level-failed');
+
+    // Nordeus Analytics: level_failed
+    if (window.nanalytics) window.nanalytics.track(10003, {
+        level_id: level.id, strokes, max_strokes: level.maxStrokes,
+    });
 }
 
 function nextLevel() {
@@ -1320,6 +1333,11 @@ function completeLevel() {
         else progress.levels[nextId].unlocked = true;
     }
     saveProgress();
+
+    // Nordeus Analytics: level_completed
+    if (window.nanalytics) window.nanalytics.track(10002, {
+        level_id: level.id, strokes, par: level.par, stars, time_ms: Math.round(time * 1000),
+    });
 
     // Show overlay
     const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
@@ -2282,6 +2300,9 @@ function startRush() {
     hide('title-screen'); hide('level-select'); hide('rush-leaderboard');
     loadRushLevel(0);
     show('rush-hud');
+
+    // Nordeus Analytics: rush_started
+    if (window.nanalytics) window.nanalytics.track(10004, {});
 }
 
 function loadRushLevel(idx) {
@@ -2440,6 +2461,12 @@ function finishRush() {
     rushResultTimers = [];
 
     const playerTime = rushTimer;
+
+    // Nordeus Analytics: rush_completed (tracked before results animation)
+    if (window.nanalytics) window.nanalytics.track(10005, {
+        total_time_ms: Math.round(playerTime * 1000), total_strokes: rushTotalStrokes,
+    });
+
     const allResults = [{
         name: 'You', time: playerTime, strokes: rushTotalStrokes, isPlayer: true
     }];
@@ -2593,6 +2620,19 @@ showTitle();
 <script type="module">
     import { initTracking } from '../firebase-tracker.js';
     initTracking('pool-battle');
+</script>
+
+<!-- Nordeus Analytics -->
+<script type="module">
+    import nanalytics from './nordeus-analytics.js';
+    nanalytics.init({
+        gameTag: 'UnblockedNoAds',
+        environment: 'dev',
+        platformType: 0,   // WebGL
+        buildNumber: 1,
+    });
+    nanalytics.trackLogin();
+    window.nanalytics = nanalytics;
 </script>
 </body>
 </html>
