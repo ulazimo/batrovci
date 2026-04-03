@@ -625,7 +625,7 @@ body {
   100% { background:rgba(0,0,0,.85); }
 }
 #special-tutorial { animation:tutBgFade .3s ease-out forwards; }
-.special-tutorial-box { gap:10px;max-width:300px;animation:tutPopIn .45s ease-out; }
+.special-tutorial-box { gap:10px;max-width:340px;animation:tutPopIn .45s ease-out;border:2px solid transparent;transition:border-color .3s; }
 .special-tut-icon { font-size:48px;line-height:1;animation:tutIconBounce .5s ease-out .2s both; }
 #special-tutorial h2 { color:#4fc3f7;margin:0;font-size:22px; }
 #special-tutorial .sub { font-size:14px;color:#bbb;line-height:1.5; }
