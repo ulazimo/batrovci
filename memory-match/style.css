@@ -114,7 +114,7 @@ body {
   background:#6a4a2a;border:1px solid #f0c040;
 }
 .pre-level-mini-cell.disabled {
-  background:#888;border:1px solid #666;opacity:.5;
+  background:transparent;border:none;opacity:0;
 }
 
 /* Pre-level rewards */

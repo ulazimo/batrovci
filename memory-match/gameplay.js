@@ -1414,7 +1414,6 @@ function renderBoard() {
     const cell = document.createElement('div');
     if (card === null) {
       cell.className = 'cell disabled-cell';
-      cell.innerHTML = '<img src="blocks/disabled.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px;opacity:.5">';
     } else {
       cell.className = 'cell';
       cell.innerHTML = buildCardHTML(card);
