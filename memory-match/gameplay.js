@@ -101,6 +101,7 @@ function resetJourneyProgress() {
   progress.stars = new Array(LEVELS.length).fill(0);
   progress.winStreak = 0;
   progress.coins = 0;
+  progress.lives = 5;
   delete progress.levelRewards;
   delete progress.comboMapping;
   Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
@@ -110,6 +111,8 @@ function resetJourneyProgress() {
   }
   saveBoosterCounts();
   saveProgress();
+  updateCoinDisplay();
+  updateLivesDisplay();
   currentLevelIndex = 0;
   showLevelSelect();
 }
