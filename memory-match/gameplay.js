@@ -306,10 +306,18 @@ function updateGoalProgress(matched, combo) {
       case 'orderedCards': {
         const orderedInChain = matched.filter(idx => board[idx]?.ordered).sort((a, b) => board[a].ordered - board[b].ordered);
         let next = levelGoals.progress.orderedCards.nextRequired;
+        let failed = false;
         orderedInChain.forEach(idx => {
           if (board[idx].ordered === next) { next++; board[idx].ordered = null; }
+          else if (board[idx].ordered > next) { failed = true; }
         });
         levelGoals.progress.orderedCards.nextRequired = next;
+        // Out-of-order card consumed — goal is now impossible
+        if (failed) {
+          stopChainTimer();
+          inputLocked = true;
+          setTimeout(() => levelFailed(), 600);
+        }
         break;
       }
       case 'rowCoverage': {
