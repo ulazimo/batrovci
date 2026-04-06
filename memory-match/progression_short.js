@@ -2,7 +2,7 @@
 PROGRESSION_SHORT = {
   "winStreakStartLevel": 17,
   "deploySpecialsStartLevel": 5,
-  "recallStartLevel": 2,
+  "recallStartLevel": 3,
   "sweepRevealStartLevel": 16,
   "levelRewards": [
     {
@@ -13,55 +13,70 @@ PROGRESSION_SHORT = {
     {
       "afterLevel": 2,
       "boosterId": "random3",
-      "qty": 2
+      "qty": 3
+    },
+    {
+      "afterLevel": 2,
+      "boosterId": "peek",
+      "qty": 3
+    },
+    {
+      "afterLevel": 3,
+      "boosterId": "random3",
+      "qty": 1
     },
     {
       "afterLevel": 4,
-      "boosterId": "peek",
-      "qty": 2
-    },
-    {
-      "afterLevel": 5,
-      "type": "special",
-      "specialId": "wild",
-      "qty": 1
-    },
-    {
-      "afterLevel": 5,
-      "boosterId": "peek",
-      "qty": 2
-    },
-    {
-      "afterLevel": 6,
-      "boosterId": "random3",
-      "qty": 2
-    },
-    {
-      "afterLevel": 8,
-      "type": "special",
-      "specialId": "wild",
-      "qty": 1
-    },
-    {
-      "afterLevel": 9,
-      "boosterId": "peek",
-      "qty": 2
-    },
-    {
-      "afterLevel": 10,
-      "boosterId": "random3",
-      "qty": 2
-    },
-    {
-      "afterLevel": 10,
       "type": "special",
       "specialId": "cross",
       "qty": 1
     },
     {
+      "afterLevel": 5,
+      "boosterId": "peek",
+      "qty": 3
+    },
+    {
+      "afterLevel": 6,
+      "qty": 1,
+      "type": "special",
+      "specialId": "wild"
+    },
+    {
+      "afterLevel": 7,
+      "boosterId": "random3",
+      "qty": 2
+    },
+    {
+      "afterLevel": 8,
+      "qty": 1,
+      "boosterId": "joker"
+    },
+    {
+      "afterLevel": 9,
+      "boosterId": "row",
+      "qty": 1
+    },
+    {
+      "afterLevel": 9,
+      "boosterId": "col",
+      "qty": 1
+    },
+    {
+      "afterLevel": 10,
+      "boosterId": "random3",
+      "qty": 2
+    },
+    {
+      "afterLevel": 10,
+      "type": "special",
+      "specialId": "ring",
+      "qty": 1
+    },
+    {
       "afterLevel": 11,
       "boosterId": "peek",
-      "qty": 2
+      "qty": 3
     },
     {
       "afterLevel": 11,
@@ -71,8 +86,8 @@ PROGRESSION_SHORT = {
     },
     {
       "afterLevel": 12,
-      "boosterId": "random3",
-      "qty": 2
+      "boosterId": "colorpick",
+      "qty": 1
     },
     {
       "afterLevel": 13,
@@ -80,13 +95,41 @@ PROGRESSION_SHORT = {
       "qty": 2
     },
     {
+      "afterLevel": 13,
+      "boosterId": "colorpick",
+      "qty": 1
+    },
+    {
       "afterLevel": 14,
-      "boosterId": "random3",
-      "qty": 2
+      "boosterId": "peek",
+      "qty": 3
+    },
+    {
+      "afterLevel": 14,
+      "qty": 1,
+      "type": "special",
+      "specialId": "wild"
+    },
+    {
+      "afterLevel": 14,
+      "qty": 1,
+      "type": "special",
+      "specialId": "cross"
+    },
+    {
+      "afterLevel": 14,
+      "qty": 1,
+      "type": "special",
+      "specialId": "ring"
     },
     {
       "afterLevel": 15,
-      "boosterId": "colorpick",
+      "boosterId": "row",
+      "qty": 1
+    },
+    {
+      "afterLevel": 15,
+      "boosterId": "col",
       "qty": 1
     },
     {
@@ -275,8 +318,14 @@ PROGRESSION_SHORT = {
     {
       "afterLevel": 38,
       "type": "special",
-      "specialId": "diamond",
+      "specialId": "ring",
       "qty": 1
+    },
+    {
+      "afterLevel": 38,
+      "qty": 1,
+      "type": "special",
+      "specialId": "cross"
     }
   ]
 };

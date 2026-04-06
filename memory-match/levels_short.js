@@ -5,11 +5,11 @@ LEVELS_SHORT = [
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 12,
+    "turns": 15,
     "goals": [
       {
         "type": "score",
-        "target": 150
+        "target": 200
       }
     ]
   },
@@ -18,7 +18,7 @@ LEVELS_SHORT = [
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 10,
+    "turns": 12,
     "goals": [
       {
         "type": "score",
@@ -31,7 +31,7 @@ LEVELS_SHORT = [
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 11,
+    "turns": 12,
     "goals": [
       {
         "type": "score",
@@ -41,10 +41,10 @@ LEVELS_SHORT = [
   },
   {
     "id": 4,
-    "cols": 5,
-    "rows": 5,
+    "cols": 4,
+    "rows": 4,
     "colorCount": 4,
-    "turns": 12,
+    "turns": 15,
     "goals": [
       {
         "type": "score",
@@ -54,6 +54,19 @@ LEVELS_SHORT = [
   },
   {
     "id": 5,
+    "cols": 5,
+    "rows": 5,
+    "colorCount": 3,
+    "turns": 12,
+    "goals": [
+      {
+        "type": "score",
+        "target": 500
+      }
+    ]
+  },
+  {
+    "id": 6,
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
@@ -68,7 +81,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 6,
+    "id": 7,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -84,7 +97,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 7,
+    "id": 8,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -102,11 +115,11 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 8,
+    "id": 9,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 12,
+    "turns": 15,
     "goals": [
       {
         "type": "colorCollect",
@@ -120,7 +133,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 9,
+    "id": 10,
     "cols": 5,
     "rows": 4,
     "colorCount": 3,
@@ -134,7 +147,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 10,
+    "id": 11,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -148,7 +161,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 11,
+    "id": 12,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -169,7 +182,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 12,
+    "id": 13,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -190,7 +203,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 13,
+    "id": 14,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -208,7 +221,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 14,
+    "id": 15,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -226,7 +239,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 15,
+    "id": 16,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -247,7 +260,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 16,
+    "id": 17,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -268,7 +281,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 17,
+    "id": 18,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -287,7 +300,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 18,
+    "id": 19,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
@@ -297,16 +310,11 @@ LEVELS_SHORT = [
         "type": "specificCombos",
         "minLength": 5,
         "count": 3
-      },
-      {
-        "type": "colorAvoid",
-        "color": "green",
-        "maxFlips": 2
       }
     ]
   },
   {
-    "id": 19,
+    "id": 20,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -330,6 +338,10 @@ LEVELS_SHORT = [
           [
             2,
             4
+          ],
+          [
+            4,
+            2
           ]
         ]
       }
@@ -346,15 +358,19 @@ LEVELS_SHORT = [
       [
         2,
         4
+      ],
+      [
+        4,
+        2
       ]
     ]
   },
   {
-    "id": 20,
+    "id": 21,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 12,
+    "turns": 15,
     "goals": [
       {
         "type": "breakLocks",
@@ -382,6 +398,14 @@ LEVELS_SHORT = [
           [
             5,
             3
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            3,
+            5
           ]
         ]
       }
@@ -410,11 +434,19 @@ LEVELS_SHORT = [
       [
         5,
         3
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        5
       ]
     ]
   },
   {
-    "id": 21,
+    "id": 22,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -428,7 +460,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 22,
+    "id": 23,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -437,12 +469,12 @@ LEVELS_SHORT = [
       {
         "type": "markedCards",
         "totalToCollect": 10,
-        "onBoardCount": 3
+        "onBoardCount": 5
       }
     ]
   },
   {
-    "id": 23,
+    "id": 24,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -450,8 +482,8 @@ LEVELS_SHORT = [
     "goals": [
       {
         "type": "markedCards",
-        "totalToCollect": 6,
-        "onBoardCount": 3
+        "totalToCollect": 8,
+        "onBoardCount": 4
       },
       {
         "type": "breakLocks",
@@ -495,7 +527,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 24,
+    "id": 25,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -514,7 +546,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 25,
+    "id": 26,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -534,7 +566,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 26,
+    "id": 27,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -609,7 +641,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 27,
+    "id": 28,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -628,7 +660,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 28,
+    "id": 29,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -648,7 +680,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 29,
+    "id": 30,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -771,7 +803,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 30,
+    "id": 31,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -802,7 +834,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 31,
+    "id": 32,
     "cols": 8,
     "rows": 5,
     "colorCount": 4,
@@ -834,7 +866,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 32,
+    "id": 33,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -848,7 +880,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 33,
+    "id": 34,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
@@ -862,7 +894,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 34,
+    "id": 35,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
@@ -893,7 +925,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 35,
+    "id": 36,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -932,7 +964,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 36,
+    "id": 37,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
@@ -1014,7 +1046,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 37,
+    "id": 38,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
@@ -1054,7 +1086,7 @@ LEVELS_SHORT = [
     ]
   },
   {
-    "id": 38,
+    "id": 39,
     "cols": 8,
     "rows": 6,
     "colorCount": 4,
@@ -1133,6 +1165,81 @@ LEVELS_SHORT = [
       [
         5,
         7
+      ]
+    ]
+  },
+  {
+    "id": 40,
+    "cols": 7,
+    "rows": 6,
+    "colorCount": 4,
+    "turns": 20,
+    "goals": [
+      {
+        "type": "score",
+        "target": 1000
+      }
+    ],
+    "disabled": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        5,
+        2
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        5,
+        4
+      ],
+      [
+        5,
+        5
       ]
     ]
   }
