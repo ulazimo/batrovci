@@ -14,7 +14,7 @@ const GAMEPLAY_RULES = [
     default: true },
   { id: 'chainTimer', name: 'Chain Timer', icon: '⏱',
     desc: 'A countdown timer starts at chain length 3 — if it expires, the chain breaks',
-    default: true },
+    default: false },
   { id: 'revealOnUnlock', name: 'Reveal on Unlock', icon: '🔓',
     desc: 'When a locked card is unlocked, briefly reveal its color',
     default: false },
@@ -335,8 +335,12 @@ const MAX_BOOSTER_QTY = 9;
 
 if (!progress.boosterSettings) progress.boosterSettings = {};
 
+const DISABLED_BY_DEFAULT_BOOSTERS = ['cross', 'shield', 'neighbor'];
 function getBoosterSetting(id) {
-  if (!progress.boosterSettings[id]) progress.boosterSettings[id] = { enabled: true, qty: DEFAULT_BOOSTER_QTY };
+  if (!progress.boosterSettings[id]) {
+    const enabled = !DISABLED_BY_DEFAULT_BOOSTERS.includes(id);
+    progress.boosterSettings[id] = { enabled, qty: DEFAULT_BOOSTER_QTY };
+  }
   return progress.boosterSettings[id];
 }
 
