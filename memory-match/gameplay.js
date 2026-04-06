@@ -1427,6 +1427,7 @@ function renderBoard() {
 let longPressTimer = null;
 let longPressTriggered = false;
 let peekProgressEl = null;
+let peekShowTimer = null;
 
 function showPeekProgress(cardEl) {
   removePeekProgress();
@@ -1434,13 +1435,17 @@ function showPeekProgress(cardEl) {
   overlay.className = 'peek-progress-overlay';
   overlay.innerHTML = `<svg class="peek-ring" viewBox="0 0 60 60"><circle cx="30" cy="30" r="26" /></svg><span class="peek-progress-icon">👁</span>`;
   cardEl.appendChild(overlay);
-  // Force reflow then start animation
-  overlay.offsetWidth;
-  overlay.classList.add('active');
   peekProgressEl = overlay;
+  // Delay showing the ring so normal taps don't flash it
+  peekShowTimer = setTimeout(() => {
+    if (!peekProgressEl) return;
+    peekProgressEl.offsetWidth;
+    peekProgressEl.classList.add('active');
+  }, 200);
 }
 
 function removePeekProgress() {
+  if (peekShowTimer) { clearTimeout(peekShowTimer); peekShowTimer = null; }
   if (peekProgressEl) { peekProgressEl.remove(); peekProgressEl = null; }
 }
 
@@ -1465,7 +1470,7 @@ boardEl.addEventListener('pointerdown', e => {
     saveBoosterCounts();
     executePeek(i);
     updateBoosterUI();
-  }, 500);
+  }, 700);
 });
 
 boardEl.addEventListener('pointerup', () => {
