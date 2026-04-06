@@ -283,6 +283,7 @@ body {
   width: 280px; flex-shrink: 0;
   background: #12122a; border-left: 2px solid #0f3460;
   padding: 16px 12px; display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto;
 }
 .panel-title {
   font-size: 12px; text-transform: uppercase; letter-spacing: 2px;
