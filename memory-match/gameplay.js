@@ -2479,7 +2479,7 @@ function endTurn(manual, perfectSweep) {
   if (specialActivated && !getRule('instantSpecialReveal')) {
     specialsUsed.forEach(sIdx => { const sc=board[sIdx]; if(sc&&sc.special) revealTargets.push(...getRevealPattern(sc.special,sIdx)); });
     const flippingBack = new Set(toFlip.filter(i => !echoProtected.has(i)));
-    revealTargets = [...new Set(revealTargets)].filter(i=>!toRemove.includes(i)&&i!==newSP&&!board[i].special&&!board[i].locked&&(!board[i].flipped||flippingBack.has(i)));
+    revealTargets = [...new Set(revealTargets)].filter(i=>board[i]&&!toRemove.includes(i)&&i!==newSP&&!board[i].special&&!board[i].locked&&(!board[i].flipped||flippingBack.has(i)));
   }
 
   if (toRemove.length>0 || newSP>=0 || revealTargets.length>0) {
