@@ -425,7 +425,7 @@ function getGoalDisplay(g) {
       const label = entries.map(([c, n]) => {
         const have = p.colorCollect[c] || 0;
         const met = have >= n;
-        return `<span class="goal-color-item${met ? ' done' : ''}">${have}/${n} ${colorSwatch(c)}</span>`;
+        return `<span class="goal-color-item${met ? ' done' : ''}">${colorSwatch(c)} ${have}/${n}</span>`;
       }).join(' ');
       return { icon:'🎨', label, current: 0, target: 0, done: allDone, customLabel: true };
     }
