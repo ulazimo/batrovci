@@ -581,22 +581,101 @@ const SFX = (() => {
       o.start(t); o.stop(t + dur + 0.02);
     } catch(e) {}
   }
-  // Preload audio files into Web Audio buffers
+  // Shepard bell buffer cache
+  const shepardCache = new Map();
+  function createShepardBellBuffer(baseFreq, duration = 1) {
+    const key = baseFreq.toFixed(4) + '_' + duration;
+    if (shepardCache.has(key)) return shepardCache.get(key);
+    try {
+      const c = ac();
+      const sampleRate = c.sampleRate;
+      const numSamples = Math.floor(sampleRate * duration);
+      const buffer = c.createBuffer(1, numSamples, sampleRate);
+      const data = buffer.getChannelData(0);
+      let maxVal = 0;
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        const timeEnvelope = Math.exp(-3.5 * t);
+        let signal = 0;
+        for (let octave = -5; octave <= 5; octave++) {
+          const freq = baseFreq * Math.pow(2, octave);
+          if (freq > 20 && freq < 20000) {
+            const amplitude = Math.exp(-Math.pow((Math.log2(freq) - Math.log2(1000)), 2) / 4);
+            signal += amplitude * Math.sin(2 * Math.PI * freq * t);
+          }
+        }
+        data[i] = signal * timeEnvelope;
+        if (Math.abs(data[i]) > maxVal) maxVal = Math.abs(data[i]);
+      }
+      const norm = maxVal > 0 ? maxVal : 1;
+      for (let i = 0; i < numSamples; i++) data[i] /= norm;
+      shepardCache.set(key, buffer);
+      return buffer;
+    } catch (e) { return null; }
+  }
+  // Shared output chain: per-bell gain → master gain → compressor → destination
+  // Prevents overlapping bells from stacking into loudness.
+  let shepardMaster = null;
+  function getShepardMaster() {
+    if (shepardMaster) return shepardMaster;
+    const c = ac();
+    const master = c.createGain();
+    master.gain.value = 0.15; // overall shepard level
+    const comp = c.createDynamicsCompressor();
+    comp.threshold.value = -20;
+    comp.knee.value       = 20;
+    comp.ratio.value      = 12;
+    comp.attack.value     = 0.003;
+    comp.release.value    = 0.25;
+    master.connect(comp);
+    comp.connect(c.destination);
+    shepardMaster = master;
+    return master;
+  }
+  function playShepardStep(step, vol = 0.3) {
+    try {
+      const c = ac();
+      const startFreq = 261.63; // C4
+      const freq = startFreq * Math.pow(2, (step * 2 / 12));
+      const buffer = createShepardBellBuffer(freq);
+      if (!buffer) return;
+      const source = c.createBufferSource();
+      const g = c.createGain();
+      source.buffer = buffer;
+      source.connect(g); g.connect(getShepardMaster());
+      g.gain.value = vol;
+      source.start(0);
+    } catch (e) {}
+  }
+
+  // Web Audio buffer cache (preloaded via fetch + decode, played via AudioBufferSourceNode)
   const audioBuffers = {};
   function preload(name, url) {
-    fetch(url).then(r => r.arrayBuffer()).then(buf => {
-      const c = ac();
-      c.decodeAudioData(buf, decoded => { audioBuffers[name] = decoded; });
-    }).catch(() => {});
+    fetch(url)
+      .then(r => r.arrayBuffer())
+      .then(buf => {
+        // Lazy context creation — decode when AudioContext is available
+        const decode = () => {
+          try {
+            const c = ac();
+            c.decodeAudioData(buf.slice(0),
+              decoded => { audioBuffers[name] = decoded; },
+              err => console.warn('Decode failed for ' + name, err)
+            );
+          } catch (e) { console.warn('AudioContext create failed', e); }
+        };
+        decode();
+      })
+      .catch(err => console.warn('Fetch failed for ' + url, err));
   }
   function playBuffer(name, vol = 0.5) {
     try {
+      const buffer = audioBuffers[name];
+      if (!buffer) return;
       const c = ac();
-      const buf = audioBuffers[name];
-      if (!buf) return;
       const src = c.createBufferSource();
       const g = c.createGain();
-      src.buffer = buf;
+      src.buffer = buffer;
       src.connect(g); g.connect(c.destination);
       g.gain.value = vol;
       src.start(0);
@@ -604,6 +683,8 @@ const SFX = (() => {
   }
   // Kick off preloads
   preload('boom', 'audio/boom.mp3');
+  preload('pop', 'audio/pop.mp3');
+  preload('cardFlip', 'audio/card_flip.mp3');
 
   return {
     flip()     { tone(880, 'sine',     0.07, 0.07); },
@@ -616,6 +697,9 @@ const SFX = (() => {
     special()  { tone(440,'triangle',0.10,0.20); },
     ding(i)    { const f = 1200 + (i % 5) * 100; tone(f,'sine',0.12,0.12); tone(f*1.5,'sine',0.06,0.08,0.04); },
     boom()     { playBuffer('boom', 0.5); },
+    pop()      { playBuffer('pop', 0.4); },
+    cardFlip() { playBuffer('cardFlip', 0.5); },
+    shepard(step) { playShepardStep(step); },
   };
 })();
 
@@ -745,6 +829,7 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
 
       setTimeout(() => {
         SFX.ding(i);
+        SFX.shepard(i);
         clone.classList.add('burst');
         setTimeout(() => clone.remove(), 300);
 
@@ -1550,7 +1635,7 @@ function getSpecialForCombo(comboLen) {
 function randomColor() { return ACTIVE_COLORS[Math.floor(Math.random() * ACTIVE_COLORS.length)]; }
 function createCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: false }; }
 function createLockedCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: true }; }
-function createSpecialCard(i, type, bombColor) { return { color: null, flipped: false, special: type, index: i, bombColor: bombColor || null }; }
+function createSpecialCard(i, type, bombColor) { SFX.pop(); return { color: null, flipped: false, special: type, index: i, bombColor: bombColor || null }; }
 function isBombType(type) { return ['cross','ring','diamond'].includes(type); }
 function toRC(i) { return { r: Math.floor(i / COLS), c: i % COLS }; }
 function toIndex(r, c) { return (r < 0 || r >= ROWS || c < 0 || c >= COLS) ? -1 : r * COLS + c; }
@@ -1780,6 +1865,7 @@ function checkAllColorsBonus() {
     if (c && !c.special && !c.flipped && !c.locked) {
       c.flipped = true;
       chainCards.push(i);
+      SFX.shepard(chainCards.length + specialsUsed.length - 1);
       const el = getCardEl(i);
       if (el) el.classList.add('flipped');
     }
@@ -2109,6 +2195,7 @@ function executePeek(index) {
   card.flipped = true;
   const el = getCardEl(index);
   if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+  SFX.cardFlip();
 
   // Check if it matches active chain color
   const matchesChain = turnActive && (card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color)));
@@ -2116,7 +2203,7 @@ function executePeek(index) {
   if (matchesChain) {
     // Auto-add to chain with celebration
     setTimeout(() => {
-      if (!chainCards.includes(index)) { chainCards.push(index); lastSelectedIdx = index; }
+      if (!chainCards.includes(index)) { chainCards.push(index); lastSelectedIdx = index; SFX.shepard(chainCards.length + specialsUsed.length - 1); }
       SFX.match();
       spawnParticles([index], card.color);
       const chainLen = chainCards.length + specialsUsed.length;
@@ -2230,6 +2317,7 @@ function boosterReveal(indices) {
       board[idx].flipped = true;
       const el = getCardEl(idx);
       if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+      SFX.cardFlip();
     }, i * 80);
   });
   setTimeout(() => {
@@ -2289,7 +2377,8 @@ function pickColor(color) {
         board[idx].flipped = true;
         const el = getCardEl(idx);
         if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
-        if (!chainCards.includes(idx)) { chainCards.push(idx); lastSelectedIdx = idx; }
+        SFX.cardFlip();
+        if (!chainCards.includes(idx)) { chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1); }
       }, i * 80);
     });
     setTimeout(() => {
@@ -2379,6 +2468,7 @@ function onCardClick(index) {
         chainCards.push(index);
       }
       lastSelectedIdx = index;
+      SFX.shepard(chainCards.length + specialsUsed.length - 1);
       const chainLen = chainCards.length + specialsUsed.length;
       if (chainLen === 3) startChainTimer();
       else if (chainLen > 3) resetChainTimer();
@@ -2390,8 +2480,8 @@ function onCardClick(index) {
     function markUsed() {
       SFX.special();
       getCardEl(index).classList.add('used');
-      if (!turnActive) { turnActive = true; chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [index]; lastSelectedIdx = index; }
-      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); lastSelectedIdx = index; }
+      if (!turnActive) { turnActive = true; chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [index]; lastSelectedIdx = index; SFX.shepard(0); }
+      else if (!specialsUsed.includes(index)) { specialsUsed.push(index); lastSelectedIdx = index; SFX.shepard(chainCards.length + specialsUsed.length - 1); }
       // Colored bombs: add bomb's color as a parallel chain color
       if (getRule('coloredBombs') && card.bombColor && isBombType(card.special)) {
         chainColors.add(card.bombColor);
@@ -2474,7 +2564,7 @@ function onCardClick(index) {
         });
         // Auto-add bomb-color cards to chain
         if (bombAutoChain.length > 0) {
-          bombAutoChain.forEach(idx => { if (!chainCards.includes(idx)) chainCards.push(idx); });
+          bombAutoChain.forEach(idx => { if (!chainCards.includes(idx)) { chainCards.push(idx); SFX.shepard(chainCards.length + specialsUsed.length - 1); } });
           const chainLen = chainCards.length + specialsUsed.length;
           if (chainLen === 3) startChainTimer();
           else if (chainLen > 3) resetChainTimer();
@@ -2503,12 +2593,12 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; updateChainIndicator(); advanceTutorial('firstFlip'); startNudgeIdleTimer(); return; }
-  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; updateChainIndicator(); startNudgeIdleTimer(); return; }
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); advanceTutorial('firstFlip'); startNudgeIdleTimer(); return; }
+  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); startNudgeIdleTimer(); return; }
   // Match: primary chain color OR any parallel chain color (colored bombs)
   const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
   if (colorMatch) {
-    SFX.match(); chainCards.push(index); lastSelectedIdx=index;
+    SFX.match(); chainCards.push(index); lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1);
     // If this is a parallel color and no primary was set yet, adopt it
     if (chainColor === null) { chainColor = card.color; chainColors.add(card.color); }
     const chainLen = chainCards.length + specialsUsed.length;
