@@ -296,7 +296,7 @@
         .game-hud-name { font-size: 14px; }
         .game-hud-timer { font-size: 20px; color: var(--accent-cyan); }
         .game-hud-quit {
-            width: 40px; height: 40px;
+            width: 44px; height: 44px;
             border-radius: 50%;
             background: rgba(255,255,255,0.12);
             border: none;
@@ -414,7 +414,7 @@
             font-family: inherit;
             font-size: 13px;
             cursor: pointer;
-            min-height: 36px;
+            min-height: 44px;
         }
         .ad-skip-btn.visible { display: flex; }
 
@@ -562,7 +562,7 @@
     <div class="tutorial-game-name" id="tutName"></div>
     <div class="tutorial-goal" id="tutGoal"></div>
     <div class="tutorial-steps" id="tutSteps"></div>
-    <div class="tutorial-reward">&#127915; Win the round → +1 Ticket</div>
+    <div class="tutorial-reward">&#127915; Win → +1 Ticket &nbsp;|&nbsp; &#128250; Watch Ad → +100 Tickets</div>
     <div style="display:flex;gap:12px;margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="showScreen('game-select-screen')" style="font-size:14px;padding:10px 20px;">&#8592; Back</button>
         <button class="btn btn-gold" id="tutPlayBtn" style="font-size:16px;padding:12px 28px;">&#9654; Play!</button>
@@ -645,14 +645,35 @@
         return { tickets: 0, totalTicketsEarned: 0, ticketsInDraw: 0, gamesPlayed: 0, lastDrawTime: null, drawHistory: [], prizePool: 0 };
     }
     function loadState() {
-        try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem('miniGamesLottery'))); }
-        catch { return defaultState(); }
+        try {
+            const saved = JSON.parse(localStorage.getItem('miniGamesLottery'));
+            if (!saved || typeof saved !== 'object') return defaultState();
+            const s = Object.assign(defaultState(), saved);
+            // Sanitize numeric fields to prevent corrupted/negative values
+            const clamp = (v, def) => (Number.isFinite(v) && v >= 0) ? v : def;
+            s.tickets          = clamp(s.tickets, 0);
+            s.totalTicketsEarned = clamp(s.totalTicketsEarned, 0);
+            s.ticketsInDraw    = clamp(s.ticketsInDraw, 0);
+            s.gamesPlayed      = clamp(s.gamesPlayed, 0);
+            s.prizePool        = clamp(s.prizePool, 0);
+            if (!Array.isArray(s.drawHistory)) s.drawHistory = [];
+            // Trim to last 10 draws in case of runaway growth
+            s.drawHistory = s.drawHistory.slice(-10);
+            return s;
+        } catch { return defaultState(); }
     }
     function saveState() { localStorage.setItem('miniGamesLottery', JSON.stringify(state)); }
     let state = loadState();
 
+    // Confetti RAF/element tracked so showScreen() can cancel it on navigation
+    let confettiRaf = null, confettiEl = null;
+
     // ===== SCREEN NAV =====
     function showScreen(id) {
+        // Cancel any running confetti animation when navigating away
+        if (confettiRaf) { cancelAnimationFrame(confettiRaf); confettiRaf = null; }
+        if (confettiEl && confettiEl.parentNode) { confettiEl.parentNode.removeChild(confettiEl); confettiEl = null; }
+
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         if (id === 'home-screen')        updateHome();
@@ -701,13 +722,25 @@
         updateTicketBadge();
         document.getElementById('homePool').textContent = '$' + state.prizePool.toFixed(2);
         const hist = document.getElementById('homeHistory');
-        if (!state.drawHistory.length) { hist.innerHTML = ''; return; }
-        let html = '<div class="draw-history-title">Recent Draws</div>';
+        hist.innerHTML = '';
+        if (!state.drawHistory.length) return;
+        const title = document.createElement('div');
+        title.className = 'draw-history-title';
+        title.textContent = 'Recent Draws';
+        hist.appendChild(title);
+        // Use textContent for all user-data fields to prevent XSS
         state.drawHistory.slice(-3).reverse().forEach(d => {
-            const date = new Date(d.date).toLocaleDateString();
-            html += `<div class="draw-entry"><span>${date}</span><span class="${d.won ? 'won' : 'lost'}">${d.won ? 'Won $' + d.prize.toFixed(2) : 'No win'}</span></div>`;
+            const entry = document.createElement('div');
+            entry.className = 'draw-entry';
+            const dateSpan = document.createElement('span');
+            dateSpan.textContent = new Date(d.date).toLocaleDateString();
+            const resultSpan = document.createElement('span');
+            resultSpan.className = d.won ? 'won' : 'lost';
+            resultSpan.textContent = d.won ? 'Won $' + Number(d.prize).toFixed(2) : 'No win';
+            entry.appendChild(dateSpan);
+            entry.appendChild(resultSpan);
+            hist.appendChild(entry);
         });
-        hist.innerHTML = html;
     }
 
     // ===== GAME DEFINITIONS =====
@@ -729,6 +762,9 @@
                      steps:['Screen is RED — do NOT tap yet!','After a random delay it turns GREEN.','Tap as fast as you can!','Tapping during red = false start penalty.','Complete all 3 rounds to earn a ticket.'] }}
     ];
 
+    // Fast O(1) game lookup by id
+    const GAMES_BY_ID = Object.fromEntries(MINI_GAMES.map(g => [g.id, g]));
+
     function buildGameGrid() {
         document.getElementById('gameGrid').innerHTML = MINI_GAMES.map(g =>
             `<div class="card" onclick="openTutorial('${g.id}')">
@@ -740,7 +776,7 @@
     }
 
     function openTutorial(id) {
-        const meta = MINI_GAMES.find(g => g.id === id); if (!meta) return;
+        const meta = GAMES_BY_ID[id]; if (!meta) return;
         document.getElementById('tutIcon').innerHTML = meta.emoji;
         document.getElementById('tutName').textContent = meta.name;
         document.getElementById('tutGoal').textContent = meta.tutorial.goal;
@@ -782,7 +818,7 @@
     window.addEventListener('resize', () => { if (gameActive) resizeCanvas(); });
 
     function launchGame(id) {
-        const meta = MINI_GAMES.find(g => g.id === id); if (!meta) return;
+        const meta = GAMES_BY_ID[id]; if (!meta) return;
         currentGameMeta = meta;
         showScreen('game-play-screen');
         document.getElementById('hudName').textContent = meta.name;
@@ -806,9 +842,12 @@
     }
 
     function gameLoop(ts) {
-        const dt = Math.min((ts - lastFrameTime) / 1000, 0.1);
-        lastFrameTime = ts;
         if (!gameActive) return;
+        // Cap to ~60fps (skip frame if <14ms elapsed) to avoid burning CPU on 120Hz devices
+        const elapsed = ts - lastFrameTime;
+        if (elapsed < 14) { animFrameId = requestAnimationFrame(gameLoop); return; }
+        const dt = Math.min(elapsed / 1000, 0.1);
+        lastFrameTime = ts;
 
         gameTimeLeft -= dt;
         if (gameTimeLeft <= 0) {
@@ -832,6 +871,8 @@
         if (!gameActive) return;
         gameActive = false;
         gameWon = !!won && gameScore > 0;
+        // Hide canvas so stale game frame doesn't show through the result screen
+        canvas.style.display = 'none';
         if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
         if (currentGame && currentGame.cleanup) currentGame.cleanup();
         currentGame = null;
@@ -919,7 +960,7 @@
         const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
         document.getElementById('resultIcon').innerHTML = '&#127915;';
         document.getElementById('resultTitle').textContent = '+100 Tickets!';
-        document.getElementById('resultScore').textContent = '$0.50 added to the prize pool';
+        document.getElementById('resultScore').textContent = `Total tickets: ${state.tickets}  ·  $0.50 added to pool`;
         const ticketEl = document.getElementById('resultTicket');
         ticketEl.innerHTML = '&#127915; +100 Tickets from Ad!';
         ticketEl.style.display = 'flex';
@@ -956,7 +997,10 @@
     }
 
     function renderAd(ts) {
-        const dt = Math.min((ts - adPrevT) / 1000, 0.05);
+        // Cap ad animation to ~60fps
+        const adElapsed = ts - adPrevT;
+        if (adElapsed < 14) { adRaf = requestAnimationFrame(renderAd); return; }
+        const dt = Math.min(adElapsed / 1000, 0.05);
         adPrevT = ts;
         adAnimT += dt;
 
@@ -1144,7 +1188,12 @@
     });
     function enterDraw() {
         const count = parseInt(document.getElementById('ticketSlider').value) || 0;
-        if (count <= 0 || count > state.tickets) return;
+        if (count <= 0 || count > state.tickets) {
+            const r = document.getElementById('lotteryResult');
+            r.style.display = 'block';
+            r.innerHTML = '<span style="color:var(--danger)">No tickets available! Play a game first.</span>';
+            return;
+        }
         state.tickets -= count; state.ticketsInDraw += count;
         saveState(); updateLottery();
     }
@@ -1248,7 +1297,12 @@
     }
 
     function spawnConfetti() {
+        // Cancel any previous confetti still running
+        if (confettiRaf) { cancelAnimationFrame(confettiRaf); confettiRaf = null; }
+        if (confettiEl && confettiEl.parentNode) { confettiEl.parentNode.removeChild(confettiEl); confettiEl = null; }
+
         const ov = document.createElement('canvas');
+        confettiEl = ov;
         ov.style.cssText = 'position:fixed;inset:0;z-index:500;pointer-events:none;';
         const dpr = window.devicePixelRatio || 1;
         ov.width = window.innerWidth * dpr; ov.height = window.innerHeight * dpr;
@@ -1267,7 +1321,11 @@
         const start = performance.now();
         function anim(ts) {
             const t = (ts - start) / 1000;
-            if (t > 3.5) { document.body.removeChild(ov); return; }
+            if (t > 3.5 || !confettiEl) {
+                if (ov.parentNode) ov.parentNode.removeChild(ov);
+                confettiEl = null; confettiRaf = null;
+                return;
+            }
             cc.globalAlpha = 1; cc.clearRect(0, 0, W, H);
             P.forEach(p => {
                 p.x += p.vx; p.vy += 0.3; p.y += p.vy; p.rot += p.rv;
@@ -1276,9 +1334,9 @@
                 cc.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
                 cc.restore();
             });
-            requestAnimationFrame(anim);
+            confettiRaf = requestAnimationFrame(anim);
         }
-        requestAnimationFrame(anim);
+        confettiRaf = requestAnimationFrame(anim);
     }
 
     // ===== MINI-GAME: SPEED TAP =====
@@ -1405,7 +1463,7 @@
         if(this._done)return;
         const W=window.innerWidth, H=window.innerHeight, sab=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab'))||0;
         this.spawnT+=dt;
-        if(this.spawnT>=0.45){this.spawnT=0; this.objs.push({x:30+Math.random()*(W-60),y:-20,speed:140+Math.random()*210,isBomb:Math.random()<0.2});}
+        if(this.spawnT>=0.45){this.spawnT=0; this.objs.push({x:30+Math.random()*(W-60),y:-20,speed:140+Math.random()*210,isBomb:Math.random()<0.12});}
         const basketY = H - sab - 72;
         for(let i=this.objs.length-1;i>=0;i--){
             const o=this.objs[i]; o.y+=o.speed*dt;
@@ -1461,7 +1519,10 @@
         else{a=5+~~(Math.random()*20);b=1+~~(Math.random()*a);ans=a-b;}
         this.qEl.textContent=`${a} ${op} ${b} = ?`;
         const opts=new Set([ans]);
-        while(opts.size<4){const w=ans+~~(Math.random()*11)-5;if(w!==ans&&w>=0)opts.add(w);}
+        let attempts=0;
+        while(opts.size<4&&attempts++<40){const w=ans+~~(Math.random()*21)-10;if(w!==ans&&w>=0)opts.add(w);}
+        // Guaranteed fallback: pad with ans+offset if random generation stalled
+        for(let pad=1;opts.size<4;pad++){opts.add(ans+pad+(ans+pad===ans?1:0));}
         const self=this; this.aGrid.innerHTML='';
         [...opts].sort(()=>Math.random()-.5).forEach(val=>{
             const btn=document.createElement('button');
@@ -1502,7 +1563,7 @@
         this.waitT+=dt;
         if(this.phase==='ready'&&this.waitT>=this.waitTarget){this.phase='go';this.goStart=performance.now();}
         else if(this.phase==='result'&&this.waitT>=this.waitTarget){
-            if(this.round>=3){this._done=true;const v=this.times.filter(t=>t<999);gameScore=v.length?Math.min(...v):999;_endGame(true);}
+            if(this.round>=3){this._done=true;const v=this.times.filter(t=>t<900);gameScore=v.length?Math.min(...v):999;_endGame(true);}
             else this._nextRound();
         }
     };
@@ -1532,21 +1593,19 @@
 
     // ===== BOOT =====
     updateHome();
-    // Stop any lingering ad animation when leaving ad screen
-    document.querySelectorAll('.screen').forEach(s => {
-        const obs = new MutationObserver(() => {
-            if (s.id === 'ad-overlay' && !s.classList.contains('active')) stopAdCanvas();
-        });
-        obs.observe(s, { attributes: true, attributeFilter: ['class'] });
-    });
+    // Stop ad animation when the ad overlay is hidden (only observe the one screen we care about)
+    new MutationObserver(() => {
+        if (!document.getElementById('ad-overlay').classList.contains('active')) stopAdCanvas();
+    }).observe(document.getElementById('ad-overlay'), { attributes: true, attributeFilter: ['class'] });
 
 })();
 </script>
 
 <!-- Firebase Tracking -->
 <script type="module">
-    import { initTracking } from '../firebase-tracker.js';
-    initTracking('mini-games-lottery');
+    import('../firebase-tracker.js')
+        .then(m => m.initTracking('mini-games-lottery'))
+        .catch(e => console.warn('Firebase tracking unavailable', e));
 </script>
 </body>
 </html>
