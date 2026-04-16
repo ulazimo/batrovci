@@ -2972,6 +2972,7 @@ function sweepRevealBoard(cb) {
       board[idx].flipped = true;
       const el = getCardEl(idx);
       if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+      SFX.cardFlip();
     }, i * stagger);
   });
   const holdMs = Math.min(1500 + targets.length * 80, 3000);
