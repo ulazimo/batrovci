@@ -610,8 +610,9 @@
         &#128176; Win pool
     </div>
 
-    <div class="pool-label">PRIZE POOL</div>
+    <div class="pool-label">PRIZE POOL &nbsp;<span id="poolLiveBadge" style="display:none;font-size:10px;background:rgba(105,240,174,0.18);color:#69f0ae;border:1px solid rgba(105,240,174,0.4);border-radius:8px;padding:2px 6px;letter-spacing:0.05em;vertical-align:middle;">🌐 LIVE</span></div>
     <div class="pool-display" id="homePool">$0.00</div>
+    <div id="lastWinnerInfo" style="font-size:11px;color:var(--text-muted);font-family:system-ui;margin-bottom:2px;min-height:16px;text-align:center;"></div>
 
     <div class="countdown-box">
         <div class="label">NEXT DRAW IN</div>
@@ -842,7 +843,14 @@
     // ===== HOME =====
     function updateHome() {
         updateTicketBadge();
-        document.getElementById('homePool').textContent = '$' + state.prizePool.toFixed(2);
+        const pool = (typeof window._sharedPool === 'number') ? window._sharedPool : state.prizePool;
+        document.getElementById('homePool').textContent = '$' + pool.toFixed(2);
+        // Last winner info (populated by Firebase pool module)
+        const lwEl = document.getElementById('lastWinnerInfo');
+        if (lwEl && window._lastWinner) {
+            const d = new Date(window._lastWinner.date).toLocaleDateString();
+            lwEl.textContent = `Last win: $${Number(window._lastWinner.prize).toFixed(2)} on ${d}`;
+        }
         const hist = document.getElementById('homeHistory');
         hist.innerHTML = '';
         if (!state.drawHistory.length) return;
@@ -1093,8 +1101,10 @@
         if (!wasSkipped) window.trackEvent('ad_completed', { duration: adElapsedSec });
         state.tickets += 100;
         state.totalTicketsEarned += 100;
-        state.prizePool += 0.50;
+        state.prizePool += 0.50; // local fallback
         saveState();
+        // Write $0.50 to shared Firestore pool
+        if (window._poolAdd) window._poolAdd(0.50);
         updateTicketBadge();
         showScreen('result-screen');
 
@@ -1312,7 +1322,8 @@
     // ===== LOTTERY =====
     function updateLottery() {
         updateTicketBadge();
-        document.getElementById('lotteryPool').textContent = '$' + state.prizePool.toFixed(2);
+        const pool = (typeof window._sharedPool === 'number') ? window._sharedPool : state.prizePool;
+        document.getElementById('lotteryPool').textContent = '$' + pool.toFixed(2);
         document.getElementById('lotteryInfo').textContent = `Your tickets: ${state.tickets} | In draw: ${state.ticketsInDraw}`;
         const wrap = document.getElementById('ticketInputWrap');
         const slider = document.getElementById('ticketSlider');
@@ -1429,11 +1440,14 @@
     function finishDraw(playerWon) {
         const r = document.getElementById('lotteryResult');
         r.style.display = 'block';
-        const prize = state.prizePool;
+        // Use shared Firestore pool as prize amount (fall back to local if offline)
+        const prize = (typeof window._sharedPool === 'number') ? window._sharedPool : state.prizePool;
         window.trackEvent('lottery_result', { won: playerWon, ticketsUsed: state.ticketsInDraw, pool: prize });
         if (playerWon) {
             r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#127881;</div><div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div><div style="font-size:18px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
             state.prizePool = 0;
+            // Reset shared pool in Firestore and record winner
+            if (window._poolClaim) window._poolClaim(prize);
             spawnConfetti();
         } else {
             r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#128532;</div><div style="color:var(--text-muted);font-size:15px;font-family:system-ui;">Better luck next time!<br><span style="font-size:12px;">Pool rolls over to next draw.</span></div>`;
@@ -1892,6 +1906,13 @@
     ReflexTest.prototype.cleanup=function(){ canvas.removeEventListener('pointerdown',this._h); };
 
     // ===== BOOT =====
+    // Exposed for the Firebase pool module to refresh UI on pool change
+    window._refreshPoolUI = function() {
+        const active = document.querySelector('.screen.active');
+        if (!active) return;
+        if (active.id === 'home-screen')    updateHome();
+        if (active.id === 'lottery-screen') updateLottery();
+    };
     updateHome();
     // Stop ad animation when the ad overlay is hidden (only observe the one screen we care about)
     new MutationObserver(() => {
@@ -1906,6 +1927,76 @@
     import('../firebase-tracker.js')
         .then(m => m.initTracking('mini-games-lottery'))
         .catch(e => console.warn('Firebase tracking unavailable', e));
+</script>
+
+<!-- Firebase: shared prize pool (lottery_state/global) -->
+<script type="module">
+(async () => {
+    const firebaseConfig = {
+        apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+        authDomain: "prototypes-7691b.firebaseapp.com",
+        projectId: "prototypes-7691b",
+        storageBucket: "prototypes-7691b.firebasestorage.app",
+        messagingSenderId: "263652926534",
+        appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+    };
+
+    try {
+        const [
+            { initializeApp, getApps },
+            { getFirestore, doc, onSnapshot, updateDoc, setDoc, increment, serverTimestamp },
+            { getAuth, signInAnonymously, setPersistence, inMemoryPersistence }
+        ] = await Promise.all([
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'),
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'),
+        ]);
+
+        const appName = 'mini-games-lottery-pool';
+        const app = getApps().find(a => a.name === appName) || initializeApp(firebaseConfig, appName);
+        const db   = getFirestore(app);
+        const auth = getAuth(app);
+
+        await setPersistence(auth, inMemoryPersistence);
+        await signInAnonymously(auth);
+
+        const poolDoc = doc(db, 'lottery_state', 'global');
+
+        // Ensure document exists (no-op if already there)
+        await setDoc(poolDoc, { pool: 0 }, { merge: true });
+
+        // Real-time listener — updates pool display on all connected clients instantly
+        onSnapshot(poolDoc, snap => {
+            const data = snap.data();
+            if (!data) return;
+
+            window._sharedPool = typeof data.pool === 'number' ? data.pool : 0;
+            window._lastWinner = data.lastWinner || null;
+
+            // Show LIVE badge
+            const badge = document.getElementById('poolLiveBadge');
+            if (badge) badge.style.display = 'inline';
+
+            // Refresh whichever screen is currently visible
+            if (window._refreshPoolUI) window._refreshPoolUI();
+        });
+
+        // Called by finishAd() — adds $0.50 to the global pool
+        window._poolAdd = amount =>
+            updateDoc(poolDoc, { pool: increment(amount) })
+                .catch(e => console.warn('Pool add failed:', e));
+
+        // Called by finishDraw() on win — resets pool to $0 and records winner
+        window._poolClaim = prize =>
+            updateDoc(poolDoc, {
+                pool: 0,
+                lastWinner: { prize, date: new Date().toISOString(), ts: serverTimestamp() }
+            }).catch(e => console.warn('Pool claim failed:', e));
+
+    } catch (e) {
+        console.warn('Shared pool unavailable (offline fallback active):', e);
+    }
+})();
 </script>
 
 <!-- Firebase: granular event analytics (game_events collection) -->
