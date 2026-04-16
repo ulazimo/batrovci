@@ -48,8 +48,9 @@
             justify-content: center;
             padding: 20px;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.25s ease;
             z-index: 10;
+            overflow-y: auto;
         }
         .screen.active {
             display: flex;
@@ -83,7 +84,6 @@
             border-radius: 50px;
             font-family: inherit;
             font-size: 18px;
-            font-weight: bold;
             cursor: pointer;
             transition: transform 0.15s, box-shadow 0.15s;
             min-width: 44px;
@@ -106,10 +106,6 @@
             color: var(--text-primary);
             border: 1px solid rgba(255,255,255,0.15);
         }
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), #d50000);
-            color: #fff;
-        }
         .btn-success {
             background: linear-gradient(135deg, var(--success), #00c853);
             color: #000;
@@ -126,63 +122,152 @@
         }
         .card:active { transform: scale(0.96); border-color: var(--accent-gold); }
 
-        /* Home Screen */
+        /* ---- HOME SCREEN ---- */
         .home-title {
-            font-size: clamp(28px, 7vw, 48px);
+            font-size: clamp(26px, 6.5vw, 44px);
             background: linear-gradient(135deg, var(--accent-gold), #ffab00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .home-subtitle {
             color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            text-align: center;
         }
+
+        /* How it works strip */
+        .how-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(255,215,0,0.07);
+            border: 1px solid rgba(255,215,0,0.18);
+            border-radius: 30px;
+            padding: 7px 16px;
+            font-size: 12px;
+            color: var(--accent-gold);
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            max-width: 340px;
+            text-align: center;
+        }
+        .how-strip .arrow { color: var(--text-muted); }
+
         .pool-display {
-            font-size: clamp(32px, 8vw, 56px);
+            font-size: clamp(30px, 8vw, 52px);
             color: var(--accent-gold);
             text-shadow: 0 0 30px rgba(255,215,0,0.4);
-            margin: 16px 0 8px;
+            margin: 10px 0 4px;
             animation: shimmer 2s ease-in-out infinite alternate;
         }
-        .pool-label {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
+        .pool-label { color: var(--text-muted); font-size: 13px; }
         .countdown-box {
             background: rgba(0,0,0,0.3);
             border: 1px solid rgba(255,215,0,0.2);
             border-radius: 12px;
-            padding: 12px 20px;
-            margin-bottom: 24px;
+            padding: 10px 18px;
+            margin: 12px 0;
             text-align: center;
         }
-        .countdown-box .label { color: var(--text-muted); font-size: 12px; }
-        .countdown-box .time { font-size: 28px; color: var(--accent-cyan); margin-top: 4px; }
+        .countdown-box .label { color: var(--text-muted); font-size: 11px; }
+        .countdown-box .time { font-size: 26px; color: var(--accent-cyan); margin-top: 2px; }
         .home-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
-        /* Game Select */
+        /* ---- HOW IT WORKS SCREEN ---- */
+        .how-title { font-size: 26px; margin-bottom: 16px; }
+        .how-block {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 340px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .how-block .icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+        .how-block .text h3 { font-size: 15px; color: var(--accent-gold); margin-bottom: 3px; }
+        .how-block .text p { font-size: 12px; color: var(--text-muted); font-family: system-ui; line-height: 1.45; }
+
+        /* ---- GAME SELECT ---- */
         .game-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 12px;
             width: 100%;
             max-width: 500px;
-            margin-top: 16px;
+            margin-top: 12px;
         }
-        .game-card-emoji { font-size: 36px; margin-bottom: 8px; }
+        .game-card-emoji { font-size: 34px; margin-bottom: 6px; }
         .game-card-name { font-size: 14px; }
-        .game-card-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: system-ui, sans-serif; }
-        .select-title { font-size: 24px; margin-bottom: 4px; }
+        .game-card-desc { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-family: system-ui; }
+        .select-title { font-size: 22px; margin-bottom: 2px; }
 
-        /* Game Play */
-        #game-play-screen {
-            padding: 0;
-            background: var(--bg-primary);
+        /* ---- TUTORIAL SCREEN ---- */
+        .tutorial-icon { font-size: 56px; margin-bottom: 8px; }
+        .tutorial-game-name { font-size: 26px; margin-bottom: 4px; color: var(--accent-gold); }
+        .tutorial-goal {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: system-ui;
+            margin-bottom: 14px;
+            text-align: center;
+            max-width: 300px;
         }
+        .tutorial-steps {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 14px;
+            padding: 14px 18px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 16px;
+        }
+        .tutorial-steps h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .tutorial-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-family: system-ui;
+        }
+        .tutorial-step:last-child { margin-bottom: 0; }
+        .tutorial-step .num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            color: #000;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+            font-family: inherit;
+        }
+        .tutorial-reward {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: var(--accent-gold);
+            margin-bottom: 16px;
+        }
+
+        /* ---- GAME PLAY ---- */
+        #game-play-screen { padding: 0; background: var(--bg-primary); }
         .game-hud {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -194,7 +279,7 @@
             backdrop-filter: blur(6px);
             z-index: 50;
         }
-        .game-hud-name { font-size: 16px; }
+        .game-hud-name { font-size: 15px; }
         .game-hud-timer { font-size: 20px; color: var(--accent-cyan); }
         .game-hud-quit {
             width: 36px; height: 36px;
@@ -205,12 +290,9 @@
             font-size: 18px;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
+            font-family: inherit;
         }
-        #game-canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+        #game-canvas { display: block; width: 100%; height: 100%; }
         #game-dom {
             display: none;
             width: 100%;
@@ -227,114 +309,76 @@
             transition: width 0.1s linear;
         }
 
-        /* Result Screen */
-        .result-icon { font-size: 64px; margin-bottom: 12px; }
-        .result-title { font-size: 28px; margin-bottom: 8px; }
-        .result-score { font-size: 18px; color: var(--text-muted); margin-bottom: 16px; font-family: system-ui; }
+        /* ---- RESULT ---- */
+        .result-icon { font-size: 60px; margin-bottom: 10px; }
+        .result-title { font-size: 26px; margin-bottom: 6px; }
+        .result-score { font-size: 16px; color: var(--text-muted); margin-bottom: 12px; font-family: system-ui; }
         .result-ticket {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 22px;
+            font-size: 20px;
             color: var(--accent-gold);
-            margin-bottom: 20px;
-            animation: float 1s ease-in-out;
+            margin-bottom: 18px;
+            animation: float 0.6s ease-out;
         }
         .result-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
         .result-buttons .btn { width: 100%; }
 
-        /* Lottery Screen */
+        /* ---- LOTTERY ---- */
         .lottery-pool {
-            font-size: clamp(36px, 10vw, 64px);
+            font-size: clamp(34px, 10vw, 60px);
             color: var(--accent-gold);
             text-shadow: 0 0 40px rgba(255,215,0,0.5);
-            margin: 12px 0;
+            margin: 10px 0;
         }
-        .lottery-info { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; font-family: system-ui; text-align: center; }
+        .lottery-info { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; font-family: system-ui; text-align: center; }
         .ticket-input-wrap {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .ticket-input-wrap input[type="range"] {
             flex: 1;
             accent-color: var(--accent-gold);
             min-width: 120px;
         }
-        .ticket-input-wrap .count {
-            font-size: 20px;
-            color: var(--accent-gold);
-            min-width: 50px;
-            text-align: center;
-        }
-        #lottery-canvas {
-            width: 280px;
-            height: 200px;
-            border-radius: 12px;
-            margin: 12px 0;
-        }
-        .lottery-result {
-            text-align: center;
-            margin: 12px 0;
-            font-size: 18px;
-        }
+        .ticket-input-wrap .count { font-size: 20px; color: var(--accent-gold); min-width: 50px; text-align: center; }
+        #lottery-canvas { width: 280px; height: 200px; border-radius: 12px; margin: 10px 0; }
+        .lottery-result { text-align: center; margin: 10px 0; font-size: 18px; }
         .lottery-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
-        /* Ad Overlay */
-        #ad-overlay {
-            z-index: 200;
-            background: rgba(0,0,0,0.9);
-        }
+        /* ---- AD OVERLAY ---- */
+        #ad-overlay { z-index: 200; background: rgba(0,0,0,0.9); }
         .ad-box {
             width: 300px;
             max-width: 90%;
             background: linear-gradient(135deg, #333, #222);
             border: 2px solid #555;
             border-radius: 16px;
-            padding: 30px 20px;
+            padding: 28px 20px;
             text-align: center;
         }
-        .ad-box h3 { margin-bottom: 16px; font-size: 20px; }
-        .ad-progress {
-            width: 100%;
-            height: 8px;
-            background: #444;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 16px 0;
-        }
-        .ad-progress-bar {
-            height: 100%;
-            background: var(--accent-gold);
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-        .ad-timer { font-size: 24px; color: var(--accent-cyan); margin-bottom: 12px; }
+        .ad-box h3 { margin-bottom: 14px; font-size: 18px; }
+        .ad-progress { width: 100%; height: 8px; background: #444; border-radius: 4px; overflow: hidden; margin: 14px 0; }
+        .ad-progress-bar { height: 100%; background: var(--accent-gold); width: 0%; transition: width 0.1s linear; }
+        .ad-timer { font-size: 22px; color: var(--accent-cyan); margin-bottom: 10px; }
         .ad-skip { visibility: hidden; }
         .ad-skip.visible { visibility: visible; }
 
-        /* Draw history */
-        .draw-history {
-            margin-top: 12px;
-            width: 100%;
-            max-width: 320px;
-        }
-        .draw-history-title {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            text-align: center;
-        }
+        /* ---- DRAW HISTORY ---- */
+        .draw-history { margin-top: 10px; width: 100%; max-width: 320px; }
+        .draw-history-title { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; text-align: center; }
         .draw-entry {
             display: flex;
             justify-content: space-between;
-            padding: 6px 10px;
+            padding: 5px 10px;
             font-size: 12px;
             font-family: system-ui;
             background: rgba(0,0,0,0.2);
             border-radius: 6px;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         .draw-entry .won { color: var(--accent-gold); }
         .draw-entry .lost { color: var(--text-muted); }
@@ -344,7 +388,7 @@
             100% { text-shadow: 0 0 40px rgba(255,215,0,0.6), 0 0 60px rgba(255,215,0,0.2); }
         }
         @keyframes float {
-            0% { transform: translateY(20px); opacity: 0; }
+            0% { transform: translateY(16px); opacity: 0; }
             100% { transform: translateY(0); opacity: 1; }
         }
         @keyframes pulse-glow {
@@ -363,10 +407,21 @@
 <!-- Ticket Badge -->
 <div class="ticket-badge" id="ticketBadge">&#127915; <span id="ticketCount">0</span></div>
 
-<!-- Home Screen -->
+<!-- ===== HOME SCREEN ===== -->
 <div class="screen active" id="home-screen">
     <div class="home-title">Mini Games Lottery</div>
     <div class="home-subtitle">Play games. Earn tickets. Win big!</div>
+
+    <div class="how-strip">
+        &#127918; Play game
+        <span class="arrow">&#8594;</span>
+        &#127915; Earn ticket
+        <span class="arrow">&#8594;</span>
+        &#127920; Enter draw
+        <span class="arrow">&#8594;</span>
+        &#128176; Win pool
+    </div>
+
     <div class="pool-label">PRIZE POOL</div>
     <div class="pool-display" id="homePool">$0.00</div>
     <div class="countdown-box">
@@ -377,18 +432,75 @@
         <button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play</button>
         <button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Lottery</button>
     </div>
+    <div style="margin-top:10px;">
+        <button class="btn btn-secondary" onclick="showScreen('how-screen')" style="font-size:13px;padding:8px 18px;">&#9432; How it works</button>
+    </div>
     <div class="draw-history" id="homeHistory"></div>
 </div>
 
-<!-- Game Select Screen -->
-<div class="screen" id="game-select-screen">
-    <div class="select-title">Choose a Game</div>
-    <button class="btn btn-primary" onclick="startRandomGame()" style="margin-top:8px;font-size:15px;padding:10px 22px;">&#127922; Random Game</button>
-    <div class="game-grid" id="gameGrid"></div>
-    <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="margin-top:16px;font-size:14px;padding:10px 20px;">&#8592; Back</button>
+<!-- ===== HOW IT WORKS SCREEN ===== -->
+<div class="screen" id="how-screen">
+    <div class="how-title">&#9432; How It Works</div>
+
+    <div class="how-block">
+        <div class="icon">&#127918;</div>
+        <div class="text">
+            <h3>1. Play Mini-Games</h3>
+            <p>Choose any of the 5 mini-games. Each game lasts 15–30 seconds. Complete the goal to win the round.</p>
+        </div>
+    </div>
+
+    <div class="how-block">
+        <div class="icon">&#127915;</div>
+        <div class="text">
+            <h3>2. Earn Tickets</h3>
+            <p>Win a round → <strong style="color:var(--accent-gold)">+1 ticket</strong>.<br>
+            Watch a short ad after winning → <strong style="color:var(--accent-gold)">+100 tickets</strong>.<br>
+            Every ad also adds <strong style="color:var(--accent-gold)">$0.50</strong> to the prize pool (simulated revenue share).</p>
+        </div>
+    </div>
+
+    <div class="how-block">
+        <div class="icon">&#127920;</div>
+        <div class="text">
+            <h3>3. Enter the Draw</h3>
+            <p>Go to Lottery and commit your tickets. More tickets = better odds. Each ticket is one entry. Draws happen once per day.</p>
+        </div>
+    </div>
+
+    <div class="how-block">
+        <div class="icon">&#128176;</div>
+        <div class="text">
+            <h3>4. Win the Pool</h3>
+            <p>One winner takes the entire prize pool. The pool grows with every ad watched. If nobody wins, it rolls over.</p>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="showScreen('home-screen')" style="margin-top:4px;">&#8592; Back</button>
 </div>
 
-<!-- Game Play Screen -->
+<!-- ===== GAME SELECT SCREEN ===== -->
+<div class="screen" id="game-select-screen">
+    <div class="select-title">Choose a Game</div>
+    <button class="btn btn-primary" onclick="selectRandom()" style="margin-top:8px;font-size:14px;padding:10px 20px;">&#127922; Random Game</button>
+    <div class="game-grid" id="gameGrid"></div>
+    <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="margin-top:14px;font-size:13px;padding:10px 20px;">&#8592; Back</button>
+</div>
+
+<!-- ===== TUTORIAL SCREEN ===== -->
+<div class="screen" id="tutorial-screen">
+    <div class="tutorial-icon" id="tutIcon"></div>
+    <div class="tutorial-game-name" id="tutName"></div>
+    <div class="tutorial-goal" id="tutGoal"></div>
+    <div class="tutorial-steps" id="tutSteps"></div>
+    <div class="tutorial-reward">&#127915; Win the round → +1 Ticket</div>
+    <div style="display:flex;gap:12px;">
+        <button class="btn btn-secondary" onclick="showScreen('game-select-screen')" style="font-size:14px;padding:10px 20px;">&#8592; Back</button>
+        <button class="btn btn-gold" id="tutPlayBtn" style="font-size:16px;padding:12px 28px;">&#9654; Play!</button>
+    </div>
+</div>
+
+<!-- ===== GAME PLAY SCREEN ===== -->
 <div class="screen" id="game-play-screen">
     <div class="game-hud">
         <span class="game-hud-name" id="hudName">Game</span>
@@ -400,7 +512,7 @@
     <div id="game-dom"></div>
 </div>
 
-<!-- Result Screen -->
+<!-- ===== RESULT SCREEN ===== -->
 <div class="screen" id="result-screen">
     <div class="result-icon" id="resultIcon">&#127942;</div>
     <div class="result-title" id="resultTitle">Game Complete!</div>
@@ -409,18 +521,18 @@
     <div class="result-buttons" id="resultButtons"></div>
 </div>
 
-<!-- Lottery Screen -->
+<!-- ===== LOTTERY SCREEN ===== -->
 <div class="screen" id="lottery-screen">
-    <div style="font-size:24px;margin-bottom:4px;">&#127920; Lottery</div>
+    <div style="font-size:22px;margin-bottom:4px;">&#127920; Lottery</div>
     <div class="pool-label">PRIZE POOL</div>
     <div class="lottery-pool" id="lotteryPool">$0.00</div>
     <div class="lottery-info" id="lotteryInfo">Your tickets: 0</div>
-    <div class="countdown-box" style="margin-bottom:12px">
+    <div class="countdown-box" style="margin-bottom:10px;">
         <div class="label">NEXT DRAW IN</div>
         <div class="time" id="lotteryCountdown">--:--:--</div>
     </div>
     <div class="ticket-input-wrap" id="ticketInputWrap" style="display:none">
-        <span style="font-size:14px;">Enter:</span>
+        <span style="font-size:13px;">Tickets:</span>
         <input type="range" id="ticketSlider" min="1" max="1" value="1">
         <span class="count" id="ticketSliderVal">1</span>
     </div>
@@ -429,19 +541,20 @@
     </div>
     <canvas id="lottery-canvas" width="280" height="200" style="display:none"></canvas>
     <div class="lottery-result" id="lotteryResult" style="display:none"></div>
-    <div class="lottery-buttons" style="margin-top:12px">
-        <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="font-size:14px;padding:10px 20px;">&#8592; Home</button>
-        <button class="btn btn-primary" id="demoDrawBtn" onclick="demoDraw()" style="font-size:14px;padding:10px 20px;">Demo Draw</button>
+    <div class="lottery-buttons" style="margin-top:10px;">
+        <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="font-size:13px;padding:10px 18px;">&#8592; Home</button>
+        <button class="btn btn-primary" onclick="demoDraw()" style="font-size:13px;padding:10px 18px;">Demo Draw</button>
     </div>
 </div>
 
-<!-- Ad Overlay -->
+<!-- ===== AD OVERLAY ===== -->
 <div class="screen" id="ad-overlay">
     <div class="ad-box">
-        <h3>&#128250; Watching Ad...</h3>
+        <h3>&#128250; Ad Playing...</h3>
+        <p style="font-size:12px;color:#aaa;font-family:system-ui;margin-bottom:6px;">Revenue goes 50% to you, 50% to the lottery pool!</p>
         <div class="ad-timer" id="adTimer">5</div>
         <div class="ad-progress"><div class="ad-progress-bar" id="adProgressBar"></div></div>
-        <button class="btn btn-secondary ad-skip" id="adSkip" onclick="skipAd()" style="font-size:14px;padding:8px 20px;">Skip &#9654;</button>
+        <button class="btn btn-secondary ad-skip" id="adSkip" onclick="skipAd()" style="font-size:13px;padding:8px 18px;">Skip &#9654;</button>
     </div>
 </div>
 
@@ -449,37 +562,24 @@
 (function() {
     'use strict';
 
-    // ========== STATE ==========
+    // ===== STATE =====
     function defaultState() {
-        return {
-            tickets: 0,
-            totalTicketsEarned: 0,
-            ticketsInDraw: 0,
-            gamesPlayed: 0,
-            lastDrawTime: null,
-            drawHistory: [],
-            prizePool: 0,
-            highScores: {}
-        };
+        return { tickets: 0, totalTicketsEarned: 0, ticketsInDraw: 0, gamesPlayed: 0, lastDrawTime: null, drawHistory: [], prizePool: 0 };
     }
-
     function loadState() {
         try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem('miniGamesLottery'))); }
         catch { return defaultState(); }
     }
     function saveState() { localStorage.setItem('miniGamesLottery', JSON.stringify(state)); }
-
     let state = loadState();
 
-    // ========== SCREEN NAV ==========
+    // ===== SCREEN NAV =====
     function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); });
-        const el = document.getElementById(id);
-        el.classList.add('active');
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
         if (id === 'home-screen') updateHome();
         if (id === 'lottery-screen') updateLottery();
         if (id === 'game-select-screen') buildGameGrid();
-
         const badge = document.getElementById('ticketBadge');
         badge.style.display = (id === 'game-play-screen' || id === 'ad-overlay') ? 'none' : 'flex';
     }
@@ -489,19 +589,18 @@
         document.getElementById('ticketCount').textContent = state.tickets;
     }
 
-    // ========== COUNTDOWN ==========
+    // ===== COUNTDOWN =====
     function getNextDrawTime() {
         if (state.lastDrawTime) {
             const next = new Date(state.lastDrawTime);
             next.setHours(next.getHours() + 24);
             if (next > new Date()) return next;
         }
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-        return tomorrow;
+        const t = new Date();
+        t.setDate(t.getDate() + 1);
+        t.setHours(0, 0, 0, 0);
+        return t;
     }
-
     function formatCountdown(ms) {
         if (ms <= 0) return '00:00:00';
         const h = Math.floor(ms / 3600000);
@@ -509,25 +608,20 @@
         const s = Math.floor((ms % 60000) / 1000);
         return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
-
     setInterval(() => {
-        const ms = getNextDrawTime() - new Date();
-        const str = formatCountdown(ms);
-        const hc = document.getElementById('homeCountdown');
-        const lc = document.getElementById('lotteryCountdown');
-        if (hc) hc.textContent = str;
-        if (lc) lc.textContent = str;
+        const str = formatCountdown(getNextDrawTime() - new Date());
+        ['homeCountdown','lotteryCountdown'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = str;
+        });
     }, 1000);
 
-    // ========== HOME ==========
+    // ===== HOME =====
     function updateHome() {
         updateTicketBadge();
         document.getElementById('homePool').textContent = '$' + state.prizePool.toFixed(2);
         const hist = document.getElementById('homeHistory');
-        if (state.drawHistory.length === 0) {
-            hist.innerHTML = '';
-            return;
-        }
+        if (!state.drawHistory.length) { hist.innerHTML = ''; return; }
         let html = '<div class="draw-history-title">Recent Draws</div>';
         state.drawHistory.slice(-3).reverse().forEach(d => {
             const date = new Date(d.date).toLocaleDateString();
@@ -538,19 +632,103 @@
         hist.innerHTML = html;
     }
 
-    // ========== GAME SELECT ==========
+    // ===== MINI-GAME DEFINITIONS =====
+    // winOnTimer: true  → surviving the full timer with score > 0 earns a ticket
+    // winOnTimer: false → only an explicit endGame(true) call earns a ticket
     const MINI_GAMES = [
-        { id: 'speed-tap', name: 'Speed Tap', emoji: '&#128308;', desc: 'Tap circles before they vanish!', duration: 15 },
-        { id: 'color-memory', name: 'Color Memory', emoji: '&#127912;', desc: 'Repeat the color sequence', duration: 30 },
-        { id: 'catch-stars', name: 'Catch Stars', emoji: '&#11088;', desc: 'Catch stars, dodge bombs!', duration: 20 },
-        { id: 'quick-math', name: 'Quick Math', emoji: '&#129518;', desc: 'Solve math fast!', duration: 20 },
-        { id: 'reflex-test', name: 'Reflex Test', emoji: '&#9889;', desc: 'Test your reaction time', duration: 15 }
+        {
+            id: 'speed-tap',
+            name: 'Speed Tap',
+            emoji: '&#128308;',
+            desc: 'Tap shrinking circles!',
+            duration: 15,
+            winOnTimer: true,
+            tutorial: {
+                goal: 'Tap as many colored circles as you can before they shrink away. Miss 3 circles and the game ends.',
+                steps: [
+                    'Circles appear at random positions on screen.',
+                    'Tap/click a circle before it shrinks to nothing.',
+                    'If you miss 3 circles, game over!',
+                    'Survive the full 15 seconds to earn a ticket.'
+                ]
+            }
+        },
+        {
+            id: 'color-memory',
+            name: 'Color Memory',
+            emoji: '&#127912;',
+            desc: 'Repeat the color sequence',
+            duration: 30,
+            winOnTimer: false,
+            tutorial: {
+                goal: 'Watch the color panels flash in a sequence, then repeat it in the same order. Complete 3 rounds to win.',
+                steps: [
+                    'Four colored panels appear: Red, Blue, Yellow, Green.',
+                    'The panels will flash a sequence — watch carefully!',
+                    'Tap the panels in the exact same order.',
+                    'Each round adds one more step to the sequence.',
+                    'Complete all 3 rounds to earn a ticket.'
+                ]
+            }
+        },
+        {
+            id: 'catch-stars',
+            name: 'Catch Stars',
+            emoji: '&#11088;',
+            desc: 'Catch stars, dodge bombs!',
+            duration: 20,
+            winOnTimer: false,
+            tutorial: {
+                goal: 'Drag the basket left and right to catch 10 falling stars. Watch out — catching a bomb ends the game!',
+                steps: [
+                    'Stars (⭐) and bombs (💣) fall from the top.',
+                    'Drag your finger / mouse to move the basket.',
+                    'Catch 10 stars to earn a ticket.',
+                    'If you catch a bomb, game over immediately!'
+                ]
+            }
+        },
+        {
+            id: 'quick-math',
+            name: 'Quick Math',
+            emoji: '&#129518;',
+            desc: 'Solve 5 problems fast!',
+            duration: 25,
+            winOnTimer: false,
+            tutorial: {
+                goal: 'Solve simple arithmetic problems as fast as you can. Get 5 correct answers to win.',
+                steps: [
+                    'A math problem appears (+ − ×).',
+                    'Four possible answers are shown as buttons.',
+                    'Tap the correct answer.',
+                    'Get 5 correct before time runs out to earn a ticket.'
+                ]
+            }
+        },
+        {
+            id: 'reflex-test',
+            name: 'Reflex Test',
+            emoji: '&#9889;',
+            desc: 'Tap when it turns green!',
+            duration: 20,
+            winOnTimer: false,
+            tutorial: {
+                goal: 'Wait for the screen to turn GREEN, then tap as fast as possible. Complete 3 rounds to win.',
+                steps: [
+                    'Screen is RED — do not tap yet!',
+                    'After a random delay it turns GREEN.',
+                    'Tap immediately when you see green!',
+                    'Tapping during red counts as a false start.',
+                    'Complete all 3 rounds to earn a ticket.'
+                ]
+            }
+        }
     ];
 
     function buildGameGrid() {
         const grid = document.getElementById('gameGrid');
         grid.innerHTML = MINI_GAMES.map(g =>
-            `<div class="card" onclick="startGame('${g.id}')">
+            `<div class="card" onclick="openTutorial('${g.id}')">
                 <div class="game-card-emoji">${g.emoji}</div>
                 <div class="game-card-name">${g.name}</div>
                 <div class="game-card-desc">${g.desc}</div>
@@ -558,14 +736,39 @@
         ).join('');
     }
 
-    function startRandomGame() {
-        const g = MINI_GAMES[Math.floor(Math.random() * MINI_GAMES.length)];
-        startGame(g.id);
-    }
-    window.startRandomGame = startRandomGame;
+    function openTutorial(id) {
+        const meta = MINI_GAMES.find(g => g.id === id);
+        if (!meta) return;
+        pendingGameId = id;
 
-    // ========== GAME ENGINE ==========
+        document.getElementById('tutIcon').innerHTML = meta.emoji;
+        document.getElementById('tutName').textContent = meta.name;
+        document.getElementById('tutGoal').textContent = meta.tutorial.goal;
+
+        const stepsHtml = meta.tutorial.steps.map((s, i) =>
+            `<div class="tutorial-step">
+                <div class="num">${i + 1}</div>
+                <div>${s}</div>
+            </div>`
+        ).join('');
+        document.getElementById('tutSteps').innerHTML =
+            '<h4>HOW TO PLAY</h4>' + stepsHtml;
+
+        document.getElementById('tutPlayBtn').onclick = () => launchGame(id);
+        showScreen('tutorial-screen');
+    }
+    window.openTutorial = openTutorial;
+
+    function selectRandom() {
+        const g = MINI_GAMES[Math.floor(Math.random() * MINI_GAMES.length)];
+        openTutorial(g.id);
+    }
+    window.selectRandom = selectRandom;
+
+    // ===== GAME ENGINE =====
     let currentGame = null;
+    let currentGameMeta = null;
+    let pendingGameId = null;
     let gameActive = false;
     let gameTimerTotal = 0;
     let gameTimeLeft = 0;
@@ -588,9 +791,10 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    function startGame(id) {
+    function launchGame(id) {
         const meta = MINI_GAMES.find(g => g.id === id);
         if (!meta) return;
+        currentGameMeta = meta;
 
         showScreen('game-play-screen');
         document.getElementById('hudName').textContent = meta.name;
@@ -603,47 +807,64 @@
         canvas.style.display = 'none';
         gameDom.style.display = 'none';
         gameDom.innerHTML = '';
+        gameDom.style.flexDirection = '';
+        gameDom.style.flexWrap = '';
+        gameDom.style.alignItems = '';
+        gameDom.style.justifyContent = '';
+        gameDom.style.gap = '';
+        gameDom.style.padding = 'padding-top:56px';
 
         resizeCanvas();
 
-        const games = { 'speed-tap': SpeedTap, 'color-memory': ColorMemory, 'catch-stars': CatchStars, 'quick-math': QuickMath, 'reflex-test': ReflexTest };
-        currentGame = new games[id]();
+        const CONSTRUCTORS = {
+            'speed-tap': SpeedTap,
+            'color-memory': ColorMemory,
+            'catch-stars': CatchStars,
+            'quick-math': QuickMath,
+            'reflex-test': ReflexTest
+        };
+        currentGame = new CONSTRUCTORS[id]();
         currentGame.init();
 
         lastFrameTime = performance.now();
-        gameLoop(lastFrameTime);
+        requestAnimationFrame(gameLoop);
     }
-    window.startGame = startGame;
 
     function gameLoop(timestamp) {
         const dt = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
         lastFrameTime = timestamp;
 
-        if (gameActive) {
-            gameTimeLeft -= dt;
-            if (gameTimeLeft <= 0) {
-                gameTimeLeft = 0;
-                endGame(false);
-                return;
-            }
-            document.getElementById('hudTimer').textContent = Math.ceil(gameTimeLeft);
-            document.getElementById('timerBar').style.width = ((gameTimeLeft / gameTimerTotal) * 100) + '%';
+        if (!gameActive) return;
 
-            currentGame.update(dt);
+        gameTimeLeft -= dt;
+        if (gameTimeLeft <= 0) {
+            gameTimeLeft = 0;
+            // If the game says "winning = surviving", we pass true/false based on score
+            const timerWon = currentGameMeta && currentGameMeta.winOnTimer && gameScore > 0;
+            endGame(timerWon);
+            return;
+        }
 
-            if (canvas.style.display !== 'none') {
-                ctx.globalAlpha = 1.0;
-                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-                currentGame.render(ctx);
-            }
+        document.getElementById('hudTimer').textContent = Math.ceil(gameTimeLeft);
+        document.getElementById('timerBar').style.width = ((gameTimeLeft / gameTimerTotal) * 100) + '%';
+
+        if (currentGame) currentGame.update(dt);
+
+        if (canvas.style.display !== 'none' && currentGame) {
+            ctx.globalAlpha = 1.0;
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            currentGame.render(ctx);
         }
 
         animFrameId = requestAnimationFrame(gameLoop);
     }
 
+    // called from within mini-games or from timer expiry
     function endGame(won) {
+        if (!gameActive) return;   // guard against double-call
         gameActive = false;
-        gameWon = won !== false && gameScore > 0;
+        gameWon = !!won && gameScore > 0;
+
         if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
         if (currentGame && currentGame.cleanup) currentGame.cleanup();
         currentGame = null;
@@ -656,11 +877,11 @@
         saveState();
         showResult();
     }
+    // expose so mini-game constructors can call it
+    window._endGame = endGame;
 
     function quitGame() {
         gameActive = false;
-        gameScore = 0;
-        gameWon = false;
         if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
         if (currentGame && currentGame.cleanup) currentGame.cleanup();
         currentGame = null;
@@ -668,14 +889,25 @@
     }
     window.quitGame = quitGame;
 
-    // ========== RESULT ==========
+    // ===== RESULT =====
     function showResult() {
         showScreen('result-screen');
         document.getElementById('resultIcon').innerHTML = gameWon ? '&#127942;' : '&#128546;';
-        document.getElementById('resultTitle').textContent = gameWon ? 'Game Complete!' : "Time's Up!";
-        document.getElementById('resultScore').textContent = 'Score: ' + gameScore;
+        document.getElementById('resultTitle').textContent = gameWon ? 'You Won!' : 'Better luck next time!';
+
+        // Friendly score message per game
+        let scoreMsg = 'Score: ' + gameScore;
+        if (currentGameMeta) {
+            if (currentGameMeta.id === 'reflex-test' && gameWon) scoreMsg = 'Best time: ' + gameScore + ' ms';
+            else if (currentGameMeta.id === 'speed-tap') scoreMsg = 'Circles tapped: ' + gameScore;
+            else if (currentGameMeta.id === 'catch-stars') scoreMsg = 'Stars caught: ' + gameScore;
+            else if (currentGameMeta.id === 'color-memory') scoreMsg = 'Rounds completed: ' + gameScore;
+            else if (currentGameMeta.id === 'quick-math') scoreMsg = 'Correct answers: ' + gameScore;
+        }
+        document.getElementById('resultScore').textContent = scoreMsg;
 
         const ticketEl = document.getElementById('resultTicket');
+        ticketEl.innerHTML = '&#127915; +1 Ticket Earned!';
         ticketEl.style.display = gameWon ? 'flex' : 'none';
 
         const btns = document.getElementById('resultButtons');
@@ -683,13 +915,13 @@
         if (gameWon) {
             html += '<button class="btn btn-gold" onclick="watchAd()">&#128250; Watch Ad for +100 Tickets</button>';
         }
-        html += '<button class="btn btn-primary" onclick="showScreen(\'game-select-screen\')">&#127918; Play Again</button>';
+        html += `<button class="btn btn-primary" onclick="openTutorial('${currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id}')">&#127918; Play Again</button>`;
         html += '<button class="btn btn-secondary" onclick="showScreen(\'home-screen\')">&#8592; Home</button>';
         btns.innerHTML = html;
         updateTicketBadge();
     }
 
-    // ========== AD SIMULATION ==========
+    // ===== AD SIMULATION =====
     let adInterval = null;
     let adTimeLeft = 5;
 
@@ -715,28 +947,31 @@
     window.skipAd = skipAd;
 
     function finishAd() {
-        if (adInterval) { clearInterval(adInterval); adInterval = null; }
+        if (!adInterval) return;
+        clearInterval(adInterval); adInterval = null;
         state.tickets += 100;
         state.totalTicketsEarned += 100;
         state.prizePool += 0.50;
         saveState();
         updateTicketBadge();
+
         showScreen('result-screen');
-
         const ticketEl = document.getElementById('resultTicket');
-        ticketEl.innerHTML = '&#127915; +100 Tickets from Ad!';
+        ticketEl.innerHTML = '&#127915; +100 Tickets! $0.50 added to pool!';
         ticketEl.style.display = 'flex';
-
         const btns = document.getElementById('resultButtons');
-        btns.innerHTML = '<button class="btn btn-primary" onclick="showScreen(\'game-select-screen\')">&#127918; Play Again</button>' +
-            '<button class="btn btn-secondary" onclick="showScreen(\'home-screen\')">&#8592; Home</button>';
+        btns.innerHTML =
+            `<button class="btn btn-primary" onclick="openTutorial('${currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id}')">&#127918; Play Again</button>` +
+            `<button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Go to Lottery</button>` +
+            `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
     }
 
-    // ========== LOTTERY ==========
+    // ===== LOTTERY =====
     function updateLottery() {
         updateTicketBadge();
         document.getElementById('lotteryPool').textContent = '$' + state.prizePool.toFixed(2);
-        document.getElementById('lotteryInfo').textContent = `Your tickets: ${state.tickets} | In draw: ${state.ticketsInDraw}`;
+        document.getElementById('lotteryInfo').textContent =
+            `Your tickets: ${state.tickets} | Already in draw: ${state.ticketsInDraw}`;
 
         const wrap = document.getElementById('ticketInputWrap');
         const slider = document.getElementById('ticketSlider');
@@ -745,7 +980,7 @@
         if (state.tickets > 0) {
             wrap.style.display = 'flex';
             slider.max = state.tickets;
-            slider.value = Math.min(slider.value, state.tickets);
+            slider.value = Math.min(parseInt(slider.value) || 1, state.tickets);
             document.getElementById('ticketSliderVal').textContent = slider.value;
             enterBtn.disabled = false;
             enterBtn.style.opacity = '1';
@@ -754,7 +989,6 @@
             enterBtn.disabled = true;
             enterBtn.style.opacity = '0.5';
         }
-
         document.getElementById('lottery-canvas').style.display = 'none';
         document.getElementById('lotteryResult').style.display = 'none';
     }
@@ -775,8 +1009,9 @@
 
     function demoDraw() {
         if (state.ticketsInDraw === 0) {
-            document.getElementById('lotteryResult').style.display = 'block';
-            document.getElementById('lotteryResult').innerHTML = '<span style="color:var(--text-muted)">Enter tickets first!</span>';
+            const r = document.getElementById('lotteryResult');
+            r.style.display = 'block';
+            r.innerHTML = '<span style="color:var(--text-muted)">Enter tickets first, then try the draw!</span>';
             return;
         }
         runLotteryAnimation();
@@ -798,261 +1033,228 @@
         const winningNum = Math.floor(Math.random() * totalEntries);
         const playerWon = winningNum < playerEntries;
 
-        let elapsed = 0;
-        const duration = 3;
-        let scrollY = 0;
-        let speed = 2000;
         const numbers = [];
         for (let i = 0; i < 50; i++) numbers.push(Math.floor(Math.random() * totalEntries));
         numbers.push(winningNum);
 
-        function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
+        let elapsed = 0;
+        const duration = 3;
+        let scrollY = 0;
         let prevT = performance.now();
+        const GOLD = '#ffd700';
+
+        function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
         function animateDrum(ts) {
-            const dt = (ts - prevT) / 1000;
+            const dt = Math.min((ts - prevT) / 1000, 0.1);
             prevT = ts;
             elapsed += dt;
             const progress = Math.min(elapsed / duration, 1);
-            const easedSpeed = speed * (1 - easeOutCubic(progress));
-            scrollY += easedSpeed * dt;
+            scrollY += 2000 * (1 - easeOut(progress)) * dt;
 
-            lCtx.globalAlpha = 1.0;
+            lCtx.globalAlpha = 1;
             lCtx.clearRect(0, 0, 280, 200);
-
-            // Drum background
             lCtx.fillStyle = '#1a0533';
             lCtx.fillRect(40, 0, 200, 200);
             lCtx.strokeStyle = 'rgba(255,215,0,0.4)';
             lCtx.lineWidth = 2;
             lCtx.strokeRect(40, 0, 200, 200);
 
-            // Numbers scrolling
-            lCtx.fillStyle = '#f0e6ff';
-            lCtx.font = 'bold 32px Fredoka One';
+            const numH = 50;
+            lCtx.font = 'bold 28px Fredoka One';
             lCtx.textAlign = 'center';
-            const numHeight = 50;
-            const offset = scrollY % (numbers.length * numHeight);
             for (let i = 0; i < 8; i++) {
-                const idx = Math.floor((offset / numHeight + i) % numbers.length);
-                const y = 100 + (i * numHeight) - (offset % numHeight) - numHeight * 3;
-                lCtx.globalAlpha = 1 - Math.abs(y - 100) / 150;
-                if (lCtx.globalAlpha < 0) lCtx.globalAlpha = 0;
+                const idx = Math.floor((scrollY / numH + i) % numbers.length);
+                const y = 100 + (i * numH) - (scrollY % numH) - numH * 3;
+                const alpha = Math.max(0, 1 - Math.abs(y - 100) / 120);
+                lCtx.globalAlpha = alpha;
+                lCtx.fillStyle = '#f0e6ff';
                 lCtx.fillText('#' + numbers[idx], 140, y + 12);
             }
-
-            // Center highlight
-            lCtx.globalAlpha = 1.0;
-            lCtx.strokeStyle = var_gold;
+            lCtx.globalAlpha = 1;
+            lCtx.strokeStyle = GOLD;
             lCtx.lineWidth = 3;
-            lCtx.strokeRect(50, 82, 180, 40);
+            lCtx.strokeRect(50, 80, 180, 42);
 
-            if (progress < 1) {
-                requestAnimationFrame(animateDrum);
-            } else {
-                // Final number
-                lCtx.globalAlpha = 1.0;
-                lCtx.clearRect(0, 0, 280, 200);
-                lCtx.fillStyle = '#1a0533';
-                lCtx.fillRect(40, 0, 200, 200);
-                lCtx.strokeStyle = var_gold;
-                lCtx.lineWidth = 3;
-                lCtx.strokeRect(40, 0, 200, 200);
-                lCtx.strokeRect(50, 82, 180, 40);
-                lCtx.fillStyle = var_gold;
-                lCtx.font = 'bold 32px Fredoka One';
-                lCtx.textAlign = 'center';
-                lCtx.fillText('#' + winningNum, 140, 112);
+            if (progress < 1) { requestAnimationFrame(animateDrum); return; }
 
-                finishDraw(playerWon);
-            }
+            // Final state
+            lCtx.clearRect(0, 0, 280, 200);
+            lCtx.fillStyle = '#1a0533';
+            lCtx.fillRect(40, 0, 200, 200);
+            lCtx.strokeStyle = GOLD; lCtx.lineWidth = 2;
+            lCtx.strokeRect(40, 0, 200, 200);
+            lCtx.strokeRect(50, 80, 180, 42);
+            lCtx.fillStyle = GOLD;
+            lCtx.font = 'bold 28px Fredoka One';
+            lCtx.textAlign = 'center';
+            lCtx.fillText('#' + winningNum, 140, 108);
+            finishDraw(playerWon);
         }
-
-        const var_gold = '#ffd700';
         requestAnimationFrame(animateDrum);
     }
 
     function finishDraw(playerWon) {
         const resultEl = document.getElementById('lotteryResult');
         resultEl.style.display = 'block';
-
         const prize = state.prizePool;
         if (playerWon) {
-            resultEl.innerHTML = `<div style="font-size:36px;margin-bottom:8px;">&#127881;</div>
-                <div style="color:var(--accent-gold);font-size:24px;">YOU WON!</div>
-                <div style="font-size:20px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
+            resultEl.innerHTML =
+                `<div style="font-size:32px;margin-bottom:6px;">&#127881;</div>
+                 <div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div>
+                 <div style="font-size:18px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
             state.prizePool = 0;
             spawnConfetti();
         } else {
-            resultEl.innerHTML = `<div style="font-size:36px;margin-bottom:8px;">&#128532;</div>
-                <div style="color:var(--text-muted);">Better luck next time!</div>`;
+            resultEl.innerHTML =
+                `<div style="font-size:32px;margin-bottom:6px;">&#128532;</div>
+                 <div style="color:var(--text-muted);font-size:16px;">Better luck next time!<br>
+                 <span style="font-size:12px;font-family:system-ui;">Pool rolls over to the next draw.</span></div>`;
         }
-
         state.ticketsInDraw = 0;
         state.lastDrawTime = new Date().toISOString();
-        state.drawHistory.push({
-            date: new Date().toISOString(),
-            pool: prize,
-            won: playerWon,
-            prize: playerWon ? prize : 0
-        });
+        state.drawHistory.push({ date: state.lastDrawTime, pool: prize, won: playerWon, prize: playerWon ? prize : 0 });
         if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
         saveState();
         updateTicketBadge();
     }
 
-    // Confetti
     function spawnConfetti() {
-        const overlay = document.createElement('canvas');
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:300;pointer-events:none;';
-        overlay.width = window.innerWidth * (window.devicePixelRatio || 1);
-        overlay.height = window.innerHeight * (window.devicePixelRatio || 1);
-        overlay.style.width = window.innerWidth + 'px';
-        overlay.style.height = window.innerHeight + 'px';
-        document.body.appendChild(overlay);
-        const cCtx = overlay.getContext('2d');
+        const ov = document.createElement('canvas');
+        ov.style.cssText = 'position:fixed;inset:0;z-index:300;pointer-events:none;';
         const dpr = window.devicePixelRatio || 1;
+        ov.width = window.innerWidth * dpr;
+        ov.height = window.innerHeight * dpr;
+        ov.style.width = window.innerWidth + 'px';
+        ov.style.height = window.innerHeight + 'px';
+        document.body.appendChild(ov);
+        const cCtx = ov.getContext('2d');
         cCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
         const W = window.innerWidth, H = window.innerHeight;
         const colors = ['#ffd700','#ff4081','#00e5ff','#69f0ae','#ff5252','#9575cd'];
-        const particles = [];
-        for (let i = 0; i < 100; i++) {
-            particles.push({
-                x: W / 2 + (Math.random() - 0.5) * 100,
-                y: H / 2,
-                vx: (Math.random() - 0.5) * 12,
-                vy: -Math.random() * 10 - 5,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                size: 4 + Math.random() * 6,
-                rot: Math.random() * Math.PI * 2,
-                rotV: (Math.random() - 0.5) * 0.3
-            });
-        }
-
-        let start = performance.now();
-        function animConfetti(ts) {
+        const particles = Array.from({length: 100}, () => ({
+            x: W/2 + (Math.random()-0.5)*100, y: H/2,
+            vx: (Math.random()-0.5)*12, vy: -Math.random()*10-5,
+            color: colors[Math.floor(Math.random()*colors.length)],
+            size: 4+Math.random()*6, rot: Math.random()*Math.PI*2, rotV: (Math.random()-0.5)*0.3
+        }));
+        const start = performance.now();
+        function anim(ts) {
             const t = (ts - start) / 1000;
-            if (t > 3) { document.body.removeChild(overlay); return; }
-            cCtx.globalAlpha = 1.0;
+            if (t > 3) { document.body.removeChild(ov); return; }
+            cCtx.globalAlpha = 1;
             cCtx.clearRect(0, 0, W, H);
             particles.forEach(p => {
-                p.x += p.vx;
-                p.vy += 0.25;
-                p.y += p.vy;
-                p.rot += p.rotV;
+                p.x += p.vx; p.vy += 0.25; p.y += p.vy; p.rot += p.rotV;
                 cCtx.save();
                 cCtx.translate(p.x, p.y);
                 cCtx.rotate(p.rot);
                 cCtx.fillStyle = p.color;
-                cCtx.globalAlpha = Math.max(0, 1 - t / 3);
+                cCtx.globalAlpha = Math.max(0, 1 - t/3);
                 cCtx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
                 cCtx.restore();
             });
-            requestAnimationFrame(animConfetti);
+            requestAnimationFrame(anim);
         }
-        requestAnimationFrame(animConfetti);
+        requestAnimationFrame(anim);
     }
 
-    // ========== MINI-GAME: SPEED TAP ==========
+    // ===== MINI-GAME: SPEED TAP =====
+    // Win condition: survive 15 seconds (winOnTimer: true) with score > 0
     function SpeedTap() {
         this.circles = [];
         this.spawnTimer = 0;
-        this.spawnInterval = 0.8;
+        this.spawnInterval = 0.85;
         this.misses = 0;
-        this.handler = null;
+        this._handler = null;
     }
     SpeedTap.prototype.init = function() {
         canvas.style.display = 'block';
-        const W = window.innerWidth, H = window.innerHeight;
         const self = this;
-
-        this.handler = function(e) {
+        this._handler = function(e) {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            let hit = false;
             for (let i = self.circles.length - 1; i >= 0; i--) {
                 const c = self.circles[i];
-                const dist = Math.hypot(x - c.x, y - c.y);
-                if (dist < c.r) {
+                if (Math.hypot(x - c.x, y - c.y) < c.r) {
                     self.circles.splice(i, 1);
                     gameScore++;
-                    hit = true;
-                    break;
+                    return;
                 }
             }
         };
-        canvas.addEventListener('pointerdown', this.handler, { passive: false });
-        this.spawnCircle();
+        canvas.addEventListener('pointerdown', this._handler, { passive: false });
+        this._spawn();
     };
-    SpeedTap.prototype.spawnCircle = function() {
+    SpeedTap.prototype._spawn = function() {
         const pad = 60;
+        const COLORS = ['#ff4081','#00e5ff','#ffd700','#69f0ae','#ff5252'];
         this.circles.push({
-            x: pad + Math.random() * (window.innerWidth - pad * 2),
-            y: 80 + Math.random() * (window.innerHeight - 140),
-            r: 35,
-            maxR: 35,
-            life: 1.5,
-            maxLife: 1.5,
-            color: ['#ff4081','#00e5ff','#ffd700','#69f0ae','#ff5252'][Math.floor(Math.random()*5)]
+            x: pad + Math.random() * (window.innerWidth - pad*2),
+            y: 70 + Math.random() * (window.innerHeight - 130),
+            r: 36, maxR: 36, life: 1.6, maxLife: 1.6,
+            color: COLORS[Math.floor(Math.random()*5)]
         });
     };
     SpeedTap.prototype.update = function(dt) {
         this.spawnTimer += dt;
         if (this.spawnTimer >= this.spawnInterval) {
             this.spawnTimer = 0;
-            this.spawnCircle();
-            if (this.spawnInterval > 0.4) this.spawnInterval -= 0.02;
+            this._spawn();
+            if (this.spawnInterval > 0.4) this.spawnInterval -= 0.015;
         }
         for (let i = this.circles.length - 1; i >= 0; i--) {
             const c = this.circles[i];
             c.life -= dt;
-            c.r = c.maxR * (c.life / c.maxLife);
+            c.r = c.maxR * Math.max(0, c.life / c.maxLife);
             if (c.life <= 0) {
                 this.circles.splice(i, 1);
                 this.misses++;
-                if (this.misses >= 3) { endGame(false); return; }
+                if (this.misses >= 3) { gameScore = Math.max(gameScore, 0); _endGame(false); return; }
             }
         }
     };
     SpeedTap.prototype.render = function(ctx) {
+        const W = window.innerWidth, H = window.innerHeight;
         this.circles.forEach(c => {
+            if (c.r <= 0) return;
             ctx.beginPath();
-            ctx.arc(c.x, c.y, Math.max(c.r, 0), 0, Math.PI * 2);
+            ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
             ctx.fillStyle = c.color;
-            ctx.globalAlpha = 0.8;
+            ctx.globalAlpha = 0.85;
             ctx.fill();
             ctx.globalAlpha = 1;
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
             ctx.stroke();
         });
-        // Score
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px Fredoka One';
+        ctx.font = 'bold 18px Fredoka One';
         ctx.textAlign = 'left';
-        ctx.fillText('Score: ' + gameScore, 16, window.innerHeight - 20);
-        // Misses
+        ctx.fillText('Tapped: ' + gameScore, 16, H - 20);
         ctx.fillStyle = '#ff5252';
         ctx.textAlign = 'right';
-        ctx.fillText('Miss: ' + this.misses + '/3', window.innerWidth - 16, window.innerHeight - 20);
+        ctx.fillText('Miss: ' + this.misses + '/3', W - 16, H - 20);
     };
     SpeedTap.prototype.cleanup = function() {
-        canvas.removeEventListener('pointerdown', this.handler);
+        canvas.removeEventListener('pointerdown', this._handler);
     };
 
-    // ========== MINI-GAME: COLOR MEMORY ==========
+    // ===== MINI-GAME: COLOR MEMORY =====
+    // Win condition: complete 3 rounds via explicit endGame(true)
     function ColorMemory() {
-        this.colors = ['#ff4081','#00e5ff','#ffd700','#69f0ae'];
+        this.panels = [];
         this.sequence = [];
         this.playerInput = [];
         this.round = 0;
+        this.correct = 0;
         this.showing = false;
         this.showIndex = 0;
         this.flashTimer = 0;
-        this.correct = 0;
+        this.statusEl = null;
+        this._done = false;
     }
     ColorMemory.prototype.init = function() {
         gameDom.style.display = 'flex';
@@ -1062,180 +1264,193 @@
         gameDom.style.gap = '12px';
         gameDom.style.padding = '70px 20px 20px';
 
+        const COLORS = ['#ff4081','#00e5ff','#ffd700','#69f0ae'];
+        const NAMES  = ['Red','Blue','Yellow','Green'];
         const self = this;
-        this.panels = [];
-        this.colors.forEach((color, i) => {
+
+        COLORS.forEach((color, i) => {
             const div = document.createElement('div');
-            div.style.cssText = `width:calc(50% - 8px);aspect-ratio:1;border-radius:16px;background:${color};opacity:0.4;transition:opacity 0.15s,transform 0.15s;cursor:pointer;max-width:160px;max-height:160px;`;
+            div.style.cssText = `width:calc(50% - 8px);max-width:150px;max-height:150px;aspect-ratio:1;border-radius:16px;background:${color};opacity:0.35;transition:opacity 0.12s,transform 0.12s;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(0,0,0,0.6);`;
+            div.textContent = NAMES[i];
             div.addEventListener('pointerdown', function(e) {
                 e.preventDefault();
-                if (self.showing) return;
-                self.flashPanel(i);
+                if (self.showing || self._done) return;
+                self._flashPanel(i, 1);
                 self.playerInput.push(i);
-                self.checkInput();
+                self._checkInput();
             }, { passive: false });
             gameDom.appendChild(div);
             this.panels.push(div);
         });
 
-        // Status
         this.statusEl = document.createElement('div');
-        this.statusEl.style.cssText = 'width:100%;text-align:center;font-size:18px;color:#f0e6ff;margin-top:8px;';
+        this.statusEl.style.cssText = 'width:100%;text-align:center;font-size:17px;color:#f0e6ff;margin-top:8px;';
         gameDom.appendChild(this.statusEl);
 
-        this.startRound();
+        this._startRound();
     };
-    ColorMemory.prototype.startRound = function() {
+    ColorMemory.prototype._flashPanel = function(idx, bright) {
+        const p = this.panels[idx];
+        p.style.opacity = bright ? '1' : '0.35';
+        p.style.transform = bright ? 'scale(1.08)' : 'scale(1)';
+        if (bright) setTimeout(() => this._flashPanel(idx, 0), 350);
+    };
+    ColorMemory.prototype._startRound = function() {
         this.round++;
         this.sequence.push(Math.floor(Math.random() * 4));
         this.playerInput = [];
         this.showing = true;
         this.showIndex = 0;
         this.flashTimer = 0;
-        this.statusEl.textContent = 'Watch carefully...';
+        this.statusEl.textContent = 'Round ' + this.round + ' — Watch!';
     };
-    ColorMemory.prototype.flashPanel = function(idx) {
-        const p = this.panels[idx];
-        p.style.opacity = '1';
-        p.style.transform = 'scale(1.08)';
-        setTimeout(() => { p.style.opacity = '0.4'; p.style.transform = 'scale(1)'; }, 300);
-    };
-    ColorMemory.prototype.checkInput = function() {
+    ColorMemory.prototype._checkInput = function() {
         const idx = this.playerInput.length - 1;
         if (this.playerInput[idx] !== this.sequence[idx]) {
-            this.statusEl.textContent = 'Wrong! Game Over';
+            this._done = true;
+            this.statusEl.textContent = '✗ Wrong order! Game over.';
             gameScore = this.correct;
-            setTimeout(() => endGame(false), 800);
+            setTimeout(() => _endGame(false), 700);
             return;
         }
         if (this.playerInput.length === this.sequence.length) {
             this.correct++;
             gameScore = this.correct;
             if (this.round >= 3) {
-                this.statusEl.textContent = 'Perfect!';
-                setTimeout(() => endGame(true), 600);
+                this._done = true;
+                this.statusEl.textContent = '★ Perfect! You win!';
+                setTimeout(() => _endGame(true), 600);
                 return;
             }
-            this.statusEl.textContent = 'Round ' + (this.round + 1) + '!';
-            setTimeout(() => this.startRound(), 800);
+            this.statusEl.textContent = '✓ Correct! Next round…';
+            setTimeout(() => this._startRound(), 900);
         }
     };
     ColorMemory.prototype.update = function(dt) {
         if (!this.showing) return;
         this.flashTimer += dt;
-        if (this.flashTimer >= 0.6) {
+        if (this.flashTimer >= 0.65) {
             this.flashTimer = 0;
             if (this.showIndex < this.sequence.length) {
-                this.flashPanel(this.sequence[this.showIndex]);
+                this._flashPanel(this.sequence[this.showIndex], 1);
                 this.showIndex++;
             } else {
                 this.showing = false;
-                this.statusEl.textContent = 'Your turn!';
+                this.statusEl.textContent = 'Your turn! Repeat the sequence.';
             }
         }
     };
     ColorMemory.prototype.render = function() {};
     ColorMemory.prototype.cleanup = function() {};
 
-    // ========== MINI-GAME: CATCH STARS ==========
+    // ===== MINI-GAME: CATCH STARS =====
+    // Win condition: catch 10 stars → explicit endGame(true)
     function CatchStars() {
         this.basketX = window.innerWidth / 2;
-        this.basketW = 70;
+        this.basketW = 72;
         this.objects = [];
         this.spawnTimer = 0;
         this.caught = 0;
-        this.handler = null;
+        this._move = null;
+        this._done = false;
     }
     CatchStars.prototype.init = function() {
         canvas.style.display = 'block';
         const self = this;
-        this.handler = function(e) {
+        this._move = function(e) {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             self.basketX = e.clientX - rect.left;
         };
-        canvas.addEventListener('pointermove', this.handler, { passive: false });
-        canvas.addEventListener('pointerdown', this.handler, { passive: false });
+        canvas.addEventListener('pointermove', this._move, { passive: false });
+        canvas.addEventListener('pointerdown', this._move, { passive: false });
     };
     CatchStars.prototype.update = function(dt) {
+        if (this._done) return;
         const W = window.innerWidth, H = window.innerHeight;
         this.spawnTimer += dt;
-        if (this.spawnTimer >= 0.5) {
+        if (this.spawnTimer >= 0.45) {
             this.spawnTimer = 0;
-            const isBomb = Math.random() < 0.2;
             this.objects.push({
                 x: 30 + Math.random() * (W - 60),
                 y: -20,
-                speed: 150 + Math.random() * 200,
-                isBomb: isBomb
+                speed: 140 + Math.random() * 210,
+                isBomb: Math.random() < 0.2
             });
         }
-        const basketY = H - 60;
+        const basketY = H - 70;
         for (let i = this.objects.length - 1; i >= 0; i--) {
             const o = this.objects[i];
             o.y += o.speed * dt;
-            if (o.y > basketY - 15 && o.y < basketY + 25 && Math.abs(o.x - this.basketX) < this.basketW / 2 + 15) {
+            const hit = o.y > basketY - 15 && o.y < basketY + 30 && Math.abs(o.x - this.basketX) < this.basketW/2 + 15;
+            if (hit) {
                 this.objects.splice(i, 1);
                 if (o.isBomb) {
+                    this._done = true;
                     gameScore = this.caught;
-                    endGame(false);
+                    _endGame(false);
                     return;
                 }
                 this.caught++;
                 gameScore = this.caught;
+                if (this.caught >= 10) {
+                    this._done = true;
+                    _endGame(true);
+                    return;
+                }
             } else if (o.y > H + 30) {
                 this.objects.splice(i, 1);
             }
         }
-        if (gameTimeLeft <= 0 && this.caught >= 10) gameWon = true;
     };
     CatchStars.prototype.render = function(ctx) {
         const W = window.innerWidth, H = window.innerHeight;
-        // Objects
-        ctx.font = '28px serif';
+        ctx.font = '26px serif';
         ctx.textAlign = 'center';
-        this.objects.forEach(o => {
-            ctx.fillText(o.isBomb ? '\u{1F4A3}' : '\u{2B50}', o.x, o.y);
-        });
-        // Basket
-        const basketY = H - 60;
+        this.objects.forEach(o => ctx.fillText(o.isBomb ? '\uD83D\uDCA3' : '\u2B50', o.x, o.y));
+        const basketY = H - 70;
+        const bx = this.basketX, bw = this.basketW;
         ctx.fillStyle = '#8d6e63';
         ctx.beginPath();
-        ctx.moveTo(this.basketX - this.basketW/2, basketY);
-        ctx.lineTo(this.basketX - this.basketW/2 + 10, basketY + 30);
-        ctx.lineTo(this.basketX + this.basketW/2 - 10, basketY + 30);
-        ctx.lineTo(this.basketX + this.basketW/2, basketY);
+        ctx.moveTo(bx - bw/2, basketY);
+        ctx.lineTo(bx - bw/2 + 10, basketY + 32);
+        ctx.lineTo(bx + bw/2 - 10, basketY + 32);
+        ctx.lineTo(bx + bw/2, basketY);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#5d4037';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        // Score
+        ctx.strokeStyle = '#5d4037'; ctx.lineWidth = 2; ctx.stroke();
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px Fredoka One';
+        ctx.font = 'bold 17px Fredoka One';
         ctx.textAlign = 'left';
         ctx.fillText('Stars: ' + this.caught + '/10', 16, H - 20);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ff5252';
+        ctx.fillText('Bomb = instant fail!', W - 16, H - 20);
     };
     CatchStars.prototype.cleanup = function() {
-        canvas.removeEventListener('pointermove', this.handler);
-        canvas.removeEventListener('pointerdown', this.handler);
+        canvas.removeEventListener('pointermove', this._move);
+        canvas.removeEventListener('pointerdown', this._move);
     };
 
-    // ========== MINI-GAME: QUICK MATH ==========
+    // ===== MINI-GAME: QUICK MATH =====
+    // Win condition: 5 correct → explicit endGame(true)
     function QuickMath() {
         this.correct = 0;
-        this.problem = null;
+        this._done = false;
+        this.questionEl = null;
+        this.ansGrid = null;
+        this.feedbackEl = null;
     }
     QuickMath.prototype.init = function() {
         gameDom.style.display = 'flex';
         gameDom.style.flexDirection = 'column';
         gameDom.style.alignItems = 'center';
         gameDom.style.justifyContent = 'center';
-        gameDom.style.gap = '16px';
+        gameDom.style.gap = '14px';
         gameDom.style.padding = '70px 20px 20px';
 
         this.questionEl = document.createElement('div');
-        this.questionEl.style.cssText = 'font-size:clamp(36px,10vw,56px);color:#f0e6ff;text-align:center;';
+        this.questionEl.style.cssText = 'font-size:clamp(34px,9vw,52px);color:#f0e6ff;text-align:center;';
         gameDom.appendChild(this.questionEl);
 
         this.ansGrid = document.createElement('div');
@@ -1243,175 +1458,163 @@
         gameDom.appendChild(this.ansGrid);
 
         this.feedbackEl = document.createElement('div');
-        this.feedbackEl.style.cssText = 'font-size:18px;min-height:28px;text-align:center;';
+        this.feedbackEl.style.cssText = 'font-size:16px;min-height:26px;text-align:center;font-family:system-ui;';
         gameDom.appendChild(this.feedbackEl);
 
-        this.generateProblem();
+        this._generate();
     };
-    QuickMath.prototype.generateProblem = function() {
+    QuickMath.prototype._generate = function() {
+        if (this._done) return;
         const ops = ['+', '-', '\u00d7'];
         const op = ops[Math.floor(Math.random() * ops.length)];
         let a, b, answer;
-        if (op === '\u00d7') {
-            a = 2 + Math.floor(Math.random() * 11);
-            b = 2 + Math.floor(Math.random() * 11);
-            answer = a * b;
-        } else if (op === '+') {
-            a = 1 + Math.floor(Math.random() * 20);
-            b = 1 + Math.floor(Math.random() * 20);
-            answer = a + b;
-        } else {
-            a = 5 + Math.floor(Math.random() * 20);
-            b = 1 + Math.floor(Math.random() * a);
-            answer = a - b;
-        }
-        this.problem = { a, b, op, answer };
+        if (op === '\u00d7') { a = 2+Math.floor(Math.random()*10); b = 2+Math.floor(Math.random()*10); answer = a*b; }
+        else if (op === '+') { a = 1+Math.floor(Math.random()*20); b = 1+Math.floor(Math.random()*20); answer = a+b; }
+        else { a = 5+Math.floor(Math.random()*20); b = 1+Math.floor(Math.random()*a); answer = a-b; }
         this.questionEl.textContent = `${a} ${op} ${b} = ?`;
 
-        // Generate answer options
         const options = new Set([answer]);
         while (options.size < 4) {
-            const wrong = answer + Math.floor(Math.random() * 11) - 5;
-            if (wrong !== answer && wrong >= 0) options.add(wrong);
+            const w = answer + Math.floor(Math.random()*11) - 5;
+            if (w !== answer && w >= 0) options.add(w);
         }
-        const shuffled = [...options].sort(() => Math.random() - 0.5);
-
         const self = this;
         this.ansGrid.innerHTML = '';
-        shuffled.forEach(val => {
+        [...options].sort(() => Math.random()-0.5).forEach(val => {
             const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.style.cssText = 'background:var(--bg-secondary);color:var(--text-primary);border:2px solid rgba(255,255,255,0.15);font-size:24px;padding:16px;border-radius:12px;min-height:60px;';
+            btn.style.cssText = 'background:var(--bg-secondary);color:var(--text-primary);border:2px solid rgba(255,255,255,0.15);font-size:22px;padding:14px;border-radius:12px;min-height:56px;font-family:Fredoka One,sans-serif;cursor:pointer;';
             btn.textContent = val;
             btn.addEventListener('pointerdown', function(e) {
                 e.preventDefault();
-                if (val === self.problem.answer) {
+                if (self._done) return;
+                if (val === answer) {
                     self.correct++;
                     gameScore = self.correct;
-                    self.feedbackEl.textContent = 'Correct!';
+                    self.feedbackEl.textContent = '✓ Correct!';
                     self.feedbackEl.style.color = '#69f0ae';
                     btn.style.background = '#69f0ae';
                     btn.style.color = '#000';
-                    if (self.correct >= 5) {
-                        setTimeout(() => endGame(true), 400);
-                        return;
-                    }
+                    if (self.correct >= 5) { self._done = true; setTimeout(() => _endGame(true), 400); return; }
                 } else {
-                    self.feedbackEl.textContent = 'Wrong!';
+                    self.feedbackEl.textContent = '✗ Wrong! Answer was ' + answer;
                     self.feedbackEl.style.color = '#ff5252';
                     btn.style.background = '#ff5252';
                 }
-                setTimeout(() => self.generateProblem(), 500);
+                setTimeout(() => { self.feedbackEl.textContent = self.correct + '/5 correct'; self.feedbackEl.style.color = '#9575cd'; self._generate(); }, 600);
             }, { passive: false });
             self.ansGrid.appendChild(btn);
         });
-        this.feedbackEl.textContent = `${this.correct}/5 correct`;
+        this.feedbackEl.textContent = this.correct + '/5 correct';
         this.feedbackEl.style.color = '#9575cd';
     };
     QuickMath.prototype.update = function() {};
     QuickMath.prototype.render = function() {};
     QuickMath.prototype.cleanup = function() {};
 
-    // ========== MINI-GAME: REFLEX TEST ==========
+    // ===== MINI-GAME: REFLEX TEST =====
+    // Win condition: complete 3 rounds → explicit endGame(true)
     function ReflexTest() {
         this.round = 0;
-        this.phase = 'wait'; // wait, ready, go, result
-        this.waitTime = 0;
+        this.phase = 'wait';
+        this.waitTimer = 0;
         this.waitTarget = 0;
-        this.goTime = 0;
+        this.goStart = 0;
         this.times = [];
         this.falseStart = false;
-        this.handler = null;
+        this._handler = null;
+        this._done = false;
+        this._pauseTimer = 0;
     }
     ReflexTest.prototype.init = function() {
         canvas.style.display = 'block';
         const self = this;
-        this.handler = function(e) {
+        this._handler = function(e) {
             e.preventDefault();
+            if (self._done || self.phase === 'result') return;
             if (self.phase === 'ready') {
                 self.falseStart = true;
-                self.phase = 'result';
                 self.times.push(999);
                 gameScore = self.times.length;
-            } else if (self.phase === 'go') {
-                const reaction = performance.now() - self.goTime;
-                self.times.push(Math.round(reaction));
-                gameScore = self.times.length;
                 self.phase = 'result';
+                self.waitTimer = 0;
+                self.waitTarget = 1.2;
+            } else if (self.phase === 'go') {
+                const ms = Math.round(performance.now() - self.goStart);
+                self.times.push(ms);
+                gameScore = ms;
+                self.phase = 'result';
+                self.waitTimer = 0;
+                self.waitTarget = 1.2;
             }
         };
-        canvas.addEventListener('pointerdown', this.handler, { passive: false });
-        this.startRound();
+        canvas.addEventListener('pointerdown', this._handler, { passive: false });
+        this._nextRound();
     };
-    ReflexTest.prototype.startRound = function() {
+    ReflexTest.prototype._nextRound = function() {
         this.round++;
         this.phase = 'ready';
-        this.waitTime = 0;
+        this.waitTimer = 0;
         this.waitTarget = 1.5 + Math.random() * 3;
         this.falseStart = false;
     };
     ReflexTest.prototype.update = function(dt) {
-        if (this.phase === 'ready') {
-            this.waitTime += dt;
-            if (this.waitTime >= this.waitTarget) {
-                this.phase = 'go';
-                this.goTime = performance.now();
-            }
-        } else if (this.phase === 'result') {
-            this.waitTime += dt;
-            if (this.waitTime > this.waitTarget + 1.5) {
-                if (this.round >= 3) {
-                    const best = Math.min(...this.times.filter(t => t < 999));
-                    gameScore = best || 0;
-                    endGame(true);
-                    return;
-                }
-                this.startRound();
+        if (this._done) return;
+        this.waitTimer += dt;
+        if (this.phase === 'ready' && this.waitTimer >= this.waitTarget) {
+            this.phase = 'go';
+            this.goStart = performance.now();
+        } else if (this.phase === 'result' && this.waitTimer >= this.waitTarget) {
+            if (this.round >= 3) {
+                this._done = true;
+                const valid = this.times.filter(t => t < 999);
+                gameScore = valid.length ? Math.min(...valid) : 999;
+                _endGame(true);
+            } else {
+                this._nextRound();
             }
         }
     };
     ReflexTest.prototype.render = function(ctx) {
         const W = window.innerWidth, H = window.innerHeight;
-        if (this.phase === 'ready') {
-            ctx.fillStyle = '#c62828';
+        const phase = this.phase;
+        if (phase === 'ready') {
+            ctx.fillStyle = '#b71c1c';
             ctx.fillRect(0, 0, W, H);
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold clamp(28px,7vw,42px) Fredoka One';
+            ctx.font = `bold ${Math.min(W*0.1, 44)}px Fredoka One`;
             ctx.textAlign = 'center';
             ctx.fillText('Wait...', W/2, H/2);
             ctx.font = '16px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.fillText('Round ' + this.round + '/3', W/2, H/2 + 40);
-        } else if (this.phase === 'go') {
-            ctx.fillStyle = '#2e7d32';
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.fillText('Round ' + this.round + ' / 3', W/2, H/2 + 40);
+        } else if (phase === 'go') {
+            ctx.fillStyle = '#1b5e20';
             ctx.fillRect(0, 0, W, H);
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold clamp(28px,7vw,42px) Fredoka One';
+            ctx.font = `bold ${Math.min(W*0.1, 44)}px Fredoka One`;
             ctx.textAlign = 'center';
             ctx.fillText('TAP NOW!', W/2, H/2);
-        } else if (this.phase === 'result') {
+        } else {
             const last = this.times[this.times.length - 1];
-            ctx.fillStyle = this.falseStart ? '#e65100' : '#1a0533';
+            ctx.fillStyle = this.falseStart ? '#e65100' : '#263238';
             ctx.fillRect(0, 0, W, H);
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 24px Fredoka One';
+            ctx.font = `bold ${Math.min(W*0.08, 36)}px Fredoka One`;
             ctx.textAlign = 'center';
-            if (this.falseStart) {
-                ctx.fillText('Too early!', W/2, H/2 - 10);
-            } else {
-                ctx.fillText(last + ' ms', W/2, H/2 - 10);
-            }
+            ctx.fillText(this.falseStart ? 'Too early! +500ms penalty' : last + ' ms', W/2, H/2 - 10);
             ctx.font = '14px system-ui';
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.fillText(this.round >= 3 ? 'Finishing...' : 'Next round...', W/2, H/2 + 25);
+            const next = this.round >= 3 ? 'Finishing…' : 'Next round in a moment…';
+            ctx.fillText(next, W/2, H/2 + 30);
         }
     };
     ReflexTest.prototype.cleanup = function() {
-        canvas.removeEventListener('pointerdown', this.handler);
+        canvas.removeEventListener('pointerdown', this._handler);
     };
 
-    // ========== INIT ==========
+    // ===== BOOT =====
     updateHome();
+
 })();
 </script>
 
