@@ -9,7 +9,7 @@
         gtag('js', new Date());
         gtag('config', 'G-1X91H99N2G');
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Mini Games Lottery</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
@@ -23,234 +23,248 @@
             --text-muted: #9575cd;
             --success: #69f0ae;
             --danger: #ff5252;
+
+            /* Safe area insets (iOS notch / Dynamic Island / home indicator) */
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html { height: -webkit-fill-available; }
 
         body {
             font-family: 'Fredoka One', system-ui, sans-serif;
             background: linear-gradient(135deg, var(--bg-primary), #0d0221);
             color: var(--text-primary);
-            min-height: 100vh;
+            height: 100dvh;
+            height: -webkit-fill-available;
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
             overflow: hidden;
+            overscroll-behavior: none;
+            position: fixed;
+            width: 100%;
         }
 
+        /* ---- SCREENS ---- */
         .screen {
             position: fixed;
-            inset: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            justify-content: flex-start;
+            padding: calc(var(--sat) + 60px) calc(var(--sar) + 16px) calc(var(--sab) + 16px) calc(var(--sal) + 16px);
             opacity: 0;
             transition: opacity 0.25s ease;
             z-index: 10;
             overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
         }
         .screen.active {
             display: flex;
             opacity: 1;
         }
-
-        .ticket-badge {
-            position: fixed;
-            top: 12px;
-            right: 12px;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid var(--accent-gold);
-            border-radius: 20px;
-            font-size: 16px;
-            color: var(--accent-gold);
-            backdrop-filter: blur(6px);
+        /* Center-layout screens (no scroll needed) */
+        .screen.centered {
+            justify-content: center;
+            overflow: hidden;
         }
 
+        /* ---- TICKET BADGE ---- */
+        .ticket-badge {
+            position: fixed;
+            top: calc(var(--sat) + 8px);
+            right: calc(var(--sar) + 10px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 12px;
+            background: rgba(0,0,0,0.55);
+            border: 2px solid var(--accent-gold);
+            border-radius: 20px;
+            font-size: 15px;
+            color: var(--accent-gold);
+            backdrop-filter: blur(8px);
+        }
+
+        /* ---- BACK LINK (overridden inline but base here) ---- */
+        #back-link {
+            position: fixed;
+            top: calc(var(--sat) + 8px);
+            left: calc(var(--sal) + 10px);
+            z-index: 9999;
+        }
+
+        /* ---- BUTTONS ---- */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 14px 28px;
+            padding: 14px 26px;
             border: none;
             border-radius: 50px;
             font-family: inherit;
-            font-size: 18px;
+            font-size: 17px;
             cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-            min-width: 44px;
-            min-height: 44px;
+            transition: transform 0.12s, opacity 0.12s;
+            min-height: 52px;
+            min-width: 52px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .btn:active { transform: scale(0.95); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-cyan), #0091ea);
-            color: #000;
-            box-shadow: 0 4px 20px rgba(0,229,255,0.3);
-        }
-        .btn-gold {
-            background: linear-gradient(135deg, var(--accent-gold), #ffab00);
-            color: #000;
-            box-shadow: 0 4px 20px rgba(255,215,0,0.3);
-        }
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #00c853);
-            color: #000;
-        }
+        .btn:active { transform: scale(0.94); opacity: 0.9; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-cyan), #0091ea); color: #000; box-shadow: 0 4px 20px rgba(0,229,255,0.3); }
+        .btn-gold    { background: linear-gradient(135deg, var(--accent-gold), #ffab00); color: #000; box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
+        .btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.15); }
 
         .card {
             background: var(--bg-secondary);
             border: 1px solid rgba(255,215,0,0.15);
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px;
             text-align: center;
             cursor: pointer;
-            transition: transform 0.15s, border-color 0.15s;
+            transition: transform 0.12s, border-color 0.12s;
+            -webkit-tap-highlight-color: transparent;
         }
-        .card:active { transform: scale(0.96); border-color: var(--accent-gold); }
+        .card:active { transform: scale(0.95); border-color: var(--accent-gold); }
 
         /* ---- HOME SCREEN ---- */
+        #home-screen { padding-top: calc(var(--sat) + 16px); justify-content: center; overflow: hidden; }
+
         .home-title {
-            font-size: clamp(26px, 6.5vw, 44px);
+            font-size: clamp(24px, 7vw, 42px);
             background: linear-gradient(135deg, var(--accent-gold), #ffab00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
-        .home-subtitle {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
+        .home-subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 10px; text-align: center; }
 
-        /* How it works strip */
         .how-strip {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 5px;
             background: rgba(255,215,0,0.07);
             border: 1px solid rgba(255,215,0,0.18);
             border-radius: 30px;
-            padding: 7px 16px;
-            font-size: 12px;
+            padding: 6px 14px;
+            font-size: 11px;
             color: var(--accent-gold);
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
             max-width: 340px;
             text-align: center;
+            line-height: 1.6;
         }
         .how-strip .arrow { color: var(--text-muted); }
 
+        .pool-label { color: var(--text-muted); font-size: 12px; letter-spacing: 0.05em; }
         .pool-display {
-            font-size: clamp(30px, 8vw, 52px);
+            font-size: clamp(32px, 10vw, 54px);
             color: var(--accent-gold);
             text-shadow: 0 0 30px rgba(255,215,0,0.4);
-            margin: 10px 0 4px;
+            margin: 6px 0 4px;
             animation: shimmer 2s ease-in-out infinite alternate;
         }
-        .pool-label { color: var(--text-muted); font-size: 13px; }
         .countdown-box {
             background: rgba(0,0,0,0.3);
             border: 1px solid rgba(255,215,0,0.2);
             border-radius: 12px;
-            padding: 10px 18px;
-            margin: 12px 0;
+            padding: 8px 18px;
+            margin: 10px 0;
             text-align: center;
         }
-        .countdown-box .label { color: var(--text-muted); font-size: 11px; }
+        .countdown-box .label { color: var(--text-muted); font-size: 10px; letter-spacing: 0.08em; }
         .countdown-box .time { font-size: 26px; color: var(--accent-cyan); margin-top: 2px; }
         .home-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
-        /* ---- HOW IT WORKS SCREEN ---- */
-        .how-title { font-size: 26px; margin-bottom: 16px; }
+        /* ---- HOW IT WORKS ---- */
+        #how-screen { padding-top: calc(var(--sat) + 60px); }
+        .how-title { font-size: 24px; margin-bottom: 14px; text-align: center; }
         .how-block {
             background: var(--bg-secondary);
-            border: 1px solid rgba(255,215,0,0.15);
+            border: 1px solid rgba(255,215,0,0.13);
             border-radius: 14px;
-            padding: 14px 18px;
-            margin-bottom: 10px;
+            padding: 13px 16px;
+            margin-bottom: 9px;
             width: 100%;
-            max-width: 340px;
+            max-width: 380px;
             display: flex;
             align-items: flex-start;
             gap: 12px;
         }
-        .how-block .icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
-        .how-block .text h3 { font-size: 15px; color: var(--accent-gold); margin-bottom: 3px; }
+        .how-block .icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+        .how-block .text h3 { font-size: 14px; color: var(--accent-gold); margin-bottom: 3px; }
         .how-block .text p { font-size: 12px; color: var(--text-muted); font-family: system-ui; line-height: 1.45; }
 
         /* ---- GAME SELECT ---- */
+        #game-select-screen { padding-top: calc(var(--sat) + 60px); }
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
             width: 100%;
-            max-width: 500px;
-            margin-top: 12px;
+            max-width: 420px;
+            margin-top: 10px;
         }
-        .game-card-emoji { font-size: 34px; margin-bottom: 6px; }
-        .game-card-name { font-size: 14px; }
-        .game-card-desc { font-size: 11px; color: var(--text-muted); margin-top: 3px; font-family: system-ui; }
+        @media (min-width: 400px) { .game-grid { grid-template-columns: repeat(3, 1fr); } }
+        .game-card-emoji { font-size: 30px; margin-bottom: 5px; }
+        .game-card-name { font-size: 13px; }
+        .game-card-desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: system-ui; line-height: 1.3; }
         .select-title { font-size: 22px; margin-bottom: 2px; }
 
-        /* ---- TUTORIAL SCREEN ---- */
-        .tutorial-icon { font-size: 56px; margin-bottom: 8px; }
-        .tutorial-game-name { font-size: 26px; margin-bottom: 4px; color: var(--accent-gold); }
+        /* ---- TUTORIAL ---- */
+        #tutorial-screen { padding-top: calc(var(--sat) + 60px); }
+        .tutorial-icon { font-size: 52px; margin-bottom: 6px; }
+        .tutorial-game-name { font-size: 24px; margin-bottom: 4px; color: var(--accent-gold); }
         .tutorial-goal {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
             font-family: system-ui;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             text-align: center;
             max-width: 300px;
+            line-height: 1.45;
         }
         .tutorial-steps {
             background: var(--bg-secondary);
-            border: 1px solid rgba(255,215,0,0.15);
+            border: 1px solid rgba(255,215,0,0.13);
             border-radius: 14px;
-            padding: 14px 18px;
+            padding: 13px 16px;
             width: 100%;
-            max-width: 320px;
-            margin-bottom: 16px;
+            max-width: 340px;
+            margin-bottom: 14px;
         }
-        .tutorial-steps h4 { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .tutorial-steps h4 { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.08em; }
         .tutorial-step {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
+            margin-bottom: 7px;
+            font-size: 12px;
             font-family: system-ui;
+            line-height: 1.4;
         }
         .tutorial-step:last-child { margin-bottom: 0; }
         .tutorial-step .num {
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             border-radius: 50%;
             background: var(--accent-gold);
             color: #000;
             font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 1px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; margin-top: 1px;
             font-family: inherit;
         }
         .tutorial-reward {
@@ -263,28 +277,28 @@
             padding: 6px 14px;
             font-size: 13px;
             color: var(--accent-gold);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         /* ---- GAME PLAY ---- */
-        #game-play-screen { padding: 0; background: var(--bg-primary); }
+        #game-play-screen { padding: 0; background: var(--bg-primary); overflow: hidden; justify-content: flex-start; }
         .game-hud {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0; right: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 16px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(6px);
+            padding: calc(var(--sat) + 10px) calc(var(--sar) + 14px) 10px calc(var(--sal) + 14px);
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(8px);
             z-index: 50;
         }
-        .game-hud-name { font-size: 15px; }
+        .game-hud-name { font-size: 14px; }
         .game-hud-timer { font-size: 20px; color: var(--accent-cyan); }
         .game-hud-quit {
-            width: 36px; height: 36px;
+            width: 40px; height: 40px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.12);
             border: none;
             color: #fff;
             font-size: 18px;
@@ -292,84 +306,59 @@
             display: flex; align-items: center; justify-content: center;
             font-family: inherit;
         }
-        #game-canvas { display: block; width: 100%; height: 100%; }
+        #game-canvas { display: block; position: absolute; top: 0; left: 0; }
         #game-dom {
             display: none;
-            width: 100%;
-            height: 100%;
-            padding-top: 56px;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .timer-bar {
-            position: fixed;
-            top: 46px;
-            left: 0;
-            height: 4px;
+            position: absolute;
+            top: 0; left: 0;
+            height: 3px;
             background: var(--accent-cyan);
             z-index: 51;
             transition: width 0.1s linear;
         }
 
         /* ---- RESULT ---- */
-        .result-icon { font-size: 60px; margin-bottom: 10px; }
-        .result-title { font-size: 26px; margin-bottom: 6px; }
-        .result-score { font-size: 16px; color: var(--text-muted); margin-bottom: 12px; font-family: system-ui; }
+        #result-screen { justify-content: center; overflow: hidden; }
+        .result-icon { font-size: 58px; margin-bottom: 8px; }
+        .result-title { font-size: 24px; margin-bottom: 5px; }
+        .result-score { font-size: 15px; color: var(--text-muted); margin-bottom: 12px; font-family: system-ui; }
         .result-ticket {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-size: 20px;
+            gap: 7px;
+            font-size: 19px;
             color: var(--accent-gold);
-            margin-bottom: 18px;
-            animation: float 0.6s ease-out;
+            margin-bottom: 16px;
+            animation: float 0.5s ease-out;
         }
-        .result-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+        .result-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 300px; }
         .result-buttons .btn { width: 100%; }
 
         /* ---- LOTTERY ---- */
+        #lottery-screen { padding-top: calc(var(--sat) + 60px); }
         .lottery-pool {
-            font-size: clamp(34px, 10vw, 60px);
+            font-size: clamp(32px, 10vw, 58px);
             color: var(--accent-gold);
             text-shadow: 0 0 40px rgba(255,215,0,0.5);
-            margin: 10px 0;
+            margin: 8px 0;
         }
-        .lottery-info { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; font-family: system-ui; text-align: center; }
-        .ticket-input-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-        .ticket-input-wrap input[type="range"] {
-            flex: 1;
-            accent-color: var(--accent-gold);
-            min-width: 120px;
-        }
-        .ticket-input-wrap .count { font-size: 20px; color: var(--accent-gold); min-width: 50px; text-align: center; }
-        #lottery-canvas { width: 280px; height: 200px; border-radius: 12px; margin: 10px 0; }
-        .lottery-result { text-align: center; margin: 10px 0; font-size: 18px; }
+        .lottery-info { color: var(--text-muted); font-size: 13px; margin-bottom: 10px; font-family: system-ui; text-align: center; }
+        .ticket-input-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; width: 100%; max-width: 320px; }
+        .ticket-input-wrap input[type="range"] { flex: 1; accent-color: var(--accent-gold); height: 24px; }
+        .ticket-input-wrap .count { font-size: 20px; color: var(--accent-gold); min-width: 46px; text-align: center; }
+        #lottery-canvas { width: min(280px, 80vw); height: auto; border-radius: 12px; margin: 8px 0; }
+        .lottery-result { text-align: center; margin: 8px 0; font-size: 17px; }
         .lottery-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
-        /* ---- AD OVERLAY ---- */
-        #ad-overlay { z-index: 200; background: rgba(0,0,0,0.9); }
-        .ad-box {
-            width: 300px;
-            max-width: 90%;
-            background: linear-gradient(135deg, #333, #222);
-            border: 2px solid #555;
-            border-radius: 16px;
-            padding: 28px 20px;
-            text-align: center;
-        }
-        .ad-box h3 { margin-bottom: 14px; font-size: 18px; }
-        .ad-progress { width: 100%; height: 8px; background: #444; border-radius: 4px; overflow: hidden; margin: 14px 0; }
-        .ad-progress-bar { height: 100%; background: var(--accent-gold); width: 0%; transition: width 0.1s linear; }
-        .ad-timer { font-size: 22px; color: var(--accent-cyan); margin-bottom: 10px; }
-        .ad-skip { visibility: hidden; }
-        .ad-skip.visible { visibility: visible; }
-
         /* ---- DRAW HISTORY ---- */
-        .draw-history { margin-top: 10px; width: 100%; max-width: 320px; }
-        .draw-history-title { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; text-align: center; }
+        .draw-history { margin-top: 8px; width: 100%; max-width: 320px; }
+        .draw-history-title { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-align: center; letter-spacing: 0.06em; }
         .draw-entry {
             display: flex;
             justify-content: space-between;
@@ -383,17 +372,98 @@
         .draw-entry .won { color: var(--accent-gold); }
         .draw-entry .lost { color: var(--text-muted); }
 
+        /* ---- REWARDED AD INTERSTITIAL ---- */
+        #ad-overlay {
+            z-index: 999;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            justify-content: flex-start;
+        }
+
+        /* Ad top bar */
+        .ad-topbar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: calc(var(--sat) + 48px);
+            padding-top: var(--sat);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-left: 14px;
+            padding-right: 14px;
+            background: rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+        .ad-label {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.45);
+            font-family: system-ui;
+            text-transform: uppercase;
+        }
+        .ad-skip-btn {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 20px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            min-height: 36px;
+        }
+        .ad-skip-btn.visible { display: flex; }
+
+        /* Countdown bubble */
+        .ad-countdown {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.55);
+            border: 2px solid rgba(255,255,255,0.35);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            color: #fff;
+            font-family: system-ui;
+        }
+
+        /* Ad creative canvas */
+        #ad-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Progress bar at very bottom */
+        .ad-progress-wrap {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: calc(var(--sab) + 4px);
+            background: rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+        .ad-progress-fill {
+            height: 4px;
+            background: var(--accent-gold);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* ---- ANIMATIONS ---- */
         @keyframes shimmer {
-            0% { text-shadow: 0 0 20px rgba(255,215,0,0.3); }
+            0%   { text-shadow: 0 0 20px rgba(255,215,0,0.3); }
             100% { text-shadow: 0 0 40px rgba(255,215,0,0.6), 0 0 60px rgba(255,215,0,0.2); }
         }
         @keyframes float {
-            0% { transform: translateY(16px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+            0%   { transform: translateY(14px); opacity: 0; }
+            100% { transform: translateY(0);    opacity: 1; }
         }
         @keyframes pulse-glow {
-            0% { box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
-            50% { box-shadow: 0 4px 30px rgba(255,215,0,0.6); }
+            0%   { box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
+            50%  { box-shadow: 0 4px 30px rgba(255,215,0,0.6); }
             100% { box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
         }
         .pulse { animation: pulse-glow 2s ease-in-out infinite; }
@@ -402,13 +472,13 @@
 <body>
 
 <!-- Back Link -->
-<a href="../index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">&#8592; All Games</a>
+<a id="back-link" href="../index.html" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'">&#8592; All Games</a>
 
 <!-- Ticket Badge -->
 <div class="ticket-badge" id="ticketBadge">&#127915; <span id="ticketCount">0</span></div>
 
-<!-- ===== HOME SCREEN ===== -->
-<div class="screen active" id="home-screen">
+<!-- ===== HOME ===== -->
+<div class="screen active centered" id="home-screen">
     <div class="home-title">Mini Games Lottery</div>
     <div class="home-subtitle">Play games. Earn tickets. Win big!</div>
 
@@ -424,10 +494,12 @@
 
     <div class="pool-label">PRIZE POOL</div>
     <div class="pool-display" id="homePool">$0.00</div>
+
     <div class="countdown-box">
         <div class="label">NEXT DRAW IN</div>
         <div class="time" id="homeCountdown">--:--:--</div>
     </div>
+
     <div class="home-buttons">
         <button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play</button>
         <button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Lottery</button>
@@ -438,7 +510,7 @@
     <div class="draw-history" id="homeHistory"></div>
 </div>
 
-<!-- ===== HOW IT WORKS SCREEN ===== -->
+<!-- ===== HOW IT WORKS ===== -->
 <div class="screen" id="how-screen">
     <div class="how-title">&#9432; How It Works</div>
 
@@ -449,58 +521,55 @@
             <p>Choose any of the 5 mini-games. Each game lasts 15–30 seconds. Complete the goal to win the round.</p>
         </div>
     </div>
-
     <div class="how-block">
         <div class="icon">&#127915;</div>
         <div class="text">
             <h3>2. Earn Tickets</h3>
             <p>Win a round → <strong style="color:var(--accent-gold)">+1 ticket</strong>.<br>
             Watch a short ad after winning → <strong style="color:var(--accent-gold)">+100 tickets</strong>.<br>
-            Every ad also adds <strong style="color:var(--accent-gold)">$0.50</strong> to the prize pool (simulated revenue share).</p>
+            Every ad also adds <strong style="color:var(--accent-gold)">$0.50</strong> to the prize pool.</p>
         </div>
     </div>
-
     <div class="how-block">
         <div class="icon">&#127920;</div>
         <div class="text">
             <h3>3. Enter the Draw</h3>
-            <p>Go to Lottery and commit your tickets. More tickets = better odds. Each ticket is one entry. Draws happen once per day.</p>
+            <p>Go to Lottery and commit your tickets. More tickets = better odds. Each ticket is one entry. Daily draws.</p>
         </div>
     </div>
-
     <div class="how-block">
         <div class="icon">&#128176;</div>
         <div class="text">
             <h3>4. Win the Pool</h3>
-            <p>One winner takes the entire prize pool. The pool grows with every ad watched. If nobody wins, it rolls over.</p>
+            <p>One winner takes the entire prize pool. Pool grows with every ad watched. Rolls over if nobody wins.</p>
         </div>
     </div>
 
-    <button class="btn btn-primary" onclick="showScreen('home-screen')" style="margin-top:4px;">&#8592; Back</button>
+    <button class="btn btn-primary" onclick="showScreen('home-screen')" style="margin-top:6px;margin-bottom:8px;">&#8592; Back</button>
 </div>
 
-<!-- ===== GAME SELECT SCREEN ===== -->
+<!-- ===== GAME SELECT ===== -->
 <div class="screen" id="game-select-screen">
     <div class="select-title">Choose a Game</div>
     <button class="btn btn-primary" onclick="selectRandom()" style="margin-top:8px;font-size:14px;padding:10px 20px;">&#127922; Random Game</button>
     <div class="game-grid" id="gameGrid"></div>
-    <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="margin-top:14px;font-size:13px;padding:10px 20px;">&#8592; Back</button>
+    <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="margin-top:12px;margin-bottom:8px;font-size:13px;padding:10px 20px;">&#8592; Back</button>
 </div>
 
-<!-- ===== TUTORIAL SCREEN ===== -->
+<!-- ===== TUTORIAL ===== -->
 <div class="screen" id="tutorial-screen">
     <div class="tutorial-icon" id="tutIcon"></div>
     <div class="tutorial-game-name" id="tutName"></div>
     <div class="tutorial-goal" id="tutGoal"></div>
     <div class="tutorial-steps" id="tutSteps"></div>
     <div class="tutorial-reward">&#127915; Win the round → +1 Ticket</div>
-    <div style="display:flex;gap:12px;">
+    <div style="display:flex;gap:12px;margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="showScreen('game-select-screen')" style="font-size:14px;padding:10px 20px;">&#8592; Back</button>
         <button class="btn btn-gold" id="tutPlayBtn" style="font-size:16px;padding:12px 28px;">&#9654; Play!</button>
     </div>
 </div>
 
-<!-- ===== GAME PLAY SCREEN ===== -->
+<!-- ===== GAME PLAY ===== -->
 <div class="screen" id="game-play-screen">
     <div class="game-hud">
         <span class="game-hud-name" id="hudName">Game</span>
@@ -512,8 +581,8 @@
     <div id="game-dom"></div>
 </div>
 
-<!-- ===== RESULT SCREEN ===== -->
-<div class="screen" id="result-screen">
+<!-- ===== RESULT ===== -->
+<div class="screen centered" id="result-screen">
     <div class="result-icon" id="resultIcon">&#127942;</div>
     <div class="result-title" id="resultTitle">Game Complete!</div>
     <div class="result-score" id="resultScore"></div>
@@ -521,18 +590,18 @@
     <div class="result-buttons" id="resultButtons"></div>
 </div>
 
-<!-- ===== LOTTERY SCREEN ===== -->
+<!-- ===== LOTTERY ===== -->
 <div class="screen" id="lottery-screen">
     <div style="font-size:22px;margin-bottom:4px;">&#127920; Lottery</div>
     <div class="pool-label">PRIZE POOL</div>
     <div class="lottery-pool" id="lotteryPool">$0.00</div>
     <div class="lottery-info" id="lotteryInfo">Your tickets: 0</div>
-    <div class="countdown-box" style="margin-bottom:10px;">
+    <div class="countdown-box" style="margin-bottom:10px;width:100%;max-width:280px;">
         <div class="label">NEXT DRAW IN</div>
         <div class="time" id="lotteryCountdown">--:--:--</div>
     </div>
     <div class="ticket-input-wrap" id="ticketInputWrap" style="display:none">
-        <span style="font-size:13px;">Tickets:</span>
+        <span style="font-size:13px;white-space:nowrap;">Tickets:</span>
         <input type="range" id="ticketSlider" min="1" max="1" value="1">
         <span class="count" id="ticketSliderVal">1</span>
     </div>
@@ -541,20 +610,29 @@
     </div>
     <canvas id="lottery-canvas" width="280" height="200" style="display:none"></canvas>
     <div class="lottery-result" id="lotteryResult" style="display:none"></div>
-    <div class="lottery-buttons" style="margin-top:10px;">
+    <div class="lottery-buttons" style="margin-top:10px;margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="font-size:13px;padding:10px 18px;">&#8592; Home</button>
         <button class="btn btn-primary" onclick="demoDraw()" style="font-size:13px;padding:10px 18px;">Demo Draw</button>
     </div>
 </div>
 
-<!-- ===== AD OVERLAY ===== -->
+<!-- ===== REWARDED AD INTERSTITIAL ===== -->
 <div class="screen" id="ad-overlay">
-    <div class="ad-box">
-        <h3>&#128250; Ad Playing...</h3>
-        <p style="font-size:12px;color:#aaa;font-family:system-ui;margin-bottom:6px;">Revenue goes 50% to you, 50% to the lottery pool!</p>
-        <div class="ad-timer" id="adTimer">5</div>
-        <div class="ad-progress"><div class="ad-progress-bar" id="adProgressBar"></div></div>
-        <button class="btn btn-secondary ad-skip" id="adSkip" onclick="skipAd()" style="font-size:13px;padding:8px 18px;">Skip &#9654;</button>
+    <!-- Top bar: label + countdown + skip -->
+    <div class="ad-topbar">
+        <span class="ad-label">Advertisement</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <button class="ad-skip-btn" id="adSkipBtn" onclick="skipAd()">Skip &#9654;</button>
+            <div class="ad-countdown" id="adCountdown">30</div>
+        </div>
+    </div>
+
+    <!-- Full-screen ad creative (canvas) -->
+    <canvas id="ad-canvas"></canvas>
+
+    <!-- Bottom progress bar -->
+    <div class="ad-progress-wrap">
+        <div class="ad-progress-fill" id="adProgressFill"></div>
     </div>
 </div>
 
@@ -577,11 +655,14 @@
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if (id === 'home-screen') updateHome();
-        if (id === 'lottery-screen') updateLottery();
+        if (id === 'home-screen')        updateHome();
+        if (id === 'lottery-screen')     updateLottery();
         if (id === 'game-select-screen') buildGameGrid();
         const badge = document.getElementById('ticketBadge');
-        badge.style.display = (id === 'game-play-screen' || id === 'ad-overlay') ? 'none' : 'flex';
+        const backLink = document.getElementById('back-link');
+        const hide = id === 'game-play-screen' || id === 'ad-overlay';
+        badge.style.display    = hide ? 'none' : 'flex';
+        backLink.style.display = hide ? 'none' : 'flex';
     }
     window.showScreen = showScreen;
 
@@ -611,8 +692,7 @@
     setInterval(() => {
         const str = formatCountdown(getNextDrawTime() - new Date());
         ['homeCountdown','lotteryCountdown'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = str;
+            const el = document.getElementById(id); if (el) el.textContent = str;
         });
     }, 1000);
 
@@ -625,109 +705,32 @@
         let html = '<div class="draw-history-title">Recent Draws</div>';
         state.drawHistory.slice(-3).reverse().forEach(d => {
             const date = new Date(d.date).toLocaleDateString();
-            const cls = d.won ? 'won' : 'lost';
-            const txt = d.won ? `Won $${d.prize.toFixed(2)}` : 'No win';
-            html += `<div class="draw-entry"><span>${date}</span><span class="${cls}">${txt}</span></div>`;
+            html += `<div class="draw-entry"><span>${date}</span><span class="${d.won ? 'won' : 'lost'}">${d.won ? 'Won $' + d.prize.toFixed(2) : 'No win'}</span></div>`;
         });
         hist.innerHTML = html;
     }
 
-    // ===== MINI-GAME DEFINITIONS =====
-    // winOnTimer: true  → surviving the full timer with score > 0 earns a ticket
-    // winOnTimer: false → only an explicit endGame(true) call earns a ticket
+    // ===== GAME DEFINITIONS =====
     const MINI_GAMES = [
-        {
-            id: 'speed-tap',
-            name: 'Speed Tap',
-            emoji: '&#128308;',
-            desc: 'Tap shrinking circles!',
-            duration: 15,
-            winOnTimer: true,
-            tutorial: {
-                goal: 'Tap as many colored circles as you can before they shrink away. Miss 3 circles and the game ends.',
-                steps: [
-                    'Circles appear at random positions on screen.',
-                    'Tap/click a circle before it shrinks to nothing.',
-                    'If you miss 3 circles, game over!',
-                    'Survive the full 15 seconds to earn a ticket.'
-                ]
-            }
-        },
-        {
-            id: 'color-memory',
-            name: 'Color Memory',
-            emoji: '&#127912;',
-            desc: 'Repeat the color sequence',
-            duration: 30,
-            winOnTimer: false,
-            tutorial: {
-                goal: 'Watch the color panels flash in a sequence, then repeat it in the same order. Complete 3 rounds to win.',
-                steps: [
-                    'Four colored panels appear: Red, Blue, Yellow, Green.',
-                    'The panels will flash a sequence — watch carefully!',
-                    'Tap the panels in the exact same order.',
-                    'Each round adds one more step to the sequence.',
-                    'Complete all 3 rounds to earn a ticket.'
-                ]
-            }
-        },
-        {
-            id: 'catch-stars',
-            name: 'Catch Stars',
-            emoji: '&#11088;',
-            desc: 'Catch stars, dodge bombs!',
-            duration: 20,
-            winOnTimer: false,
-            tutorial: {
-                goal: 'Drag the basket left and right to catch 10 falling stars. Watch out — catching a bomb ends the game!',
-                steps: [
-                    'Stars (⭐) and bombs (💣) fall from the top.',
-                    'Drag your finger / mouse to move the basket.',
-                    'Catch 10 stars to earn a ticket.',
-                    'If you catch a bomb, game over immediately!'
-                ]
-            }
-        },
-        {
-            id: 'quick-math',
-            name: 'Quick Math',
-            emoji: '&#129518;',
-            desc: 'Solve 5 problems fast!',
-            duration: 25,
-            winOnTimer: false,
-            tutorial: {
-                goal: 'Solve simple arithmetic problems as fast as you can. Get 5 correct answers to win.',
-                steps: [
-                    'A math problem appears (+ − ×).',
-                    'Four possible answers are shown as buttons.',
-                    'Tap the correct answer.',
-                    'Get 5 correct before time runs out to earn a ticket.'
-                ]
-            }
-        },
-        {
-            id: 'reflex-test',
-            name: 'Reflex Test',
-            emoji: '&#9889;',
-            desc: 'Tap when it turns green!',
-            duration: 20,
-            winOnTimer: false,
-            tutorial: {
-                goal: 'Wait for the screen to turn GREEN, then tap as fast as possible. Complete 3 rounds to win.',
-                steps: [
-                    'Screen is RED — do not tap yet!',
-                    'After a random delay it turns GREEN.',
-                    'Tap immediately when you see green!',
-                    'Tapping during red counts as a false start.',
-                    'Complete all 3 rounds to earn a ticket.'
-                ]
-            }
-        }
+        { id:'speed-tap',    name:'Speed Tap',    emoji:'&#128308;', desc:'Tap shrinking circles!',   duration:15, winOnTimer:true,
+          tutorial:{ goal:'Tap as many colored circles as you can before they shrink away. Miss 3 and the game ends.',
+                     steps:['Circles appear at random positions on screen.','Tap/click a circle before it shrinks to nothing.','Miss 3 circles = game over!','Survive the full 15 seconds to earn a ticket.'] }},
+        { id:'color-memory', name:'Color Memory', emoji:'&#127912;', desc:'Repeat the color sequence', duration:30, winOnTimer:false,
+          tutorial:{ goal:'Watch the color panels flash in sequence, then repeat it. Complete 3 rounds to win.',
+                     steps:['Four colored panels: Red, Blue, Yellow, Green.','The panels flash a sequence — watch carefully!','Tap them in the exact same order.','Each round adds one more step.','Complete all 3 rounds to earn a ticket.'] }},
+        { id:'catch-stars',  name:'Catch Stars',  emoji:'&#11088;',  desc:'Catch stars, dodge bombs!', duration:20, winOnTimer:false,
+          tutorial:{ goal:'Drag the basket to catch 10 falling stars. Catching a bomb ends the game!',
+                     steps:['Stars ⭐ and bombs 💣 fall from the top.','Drag your finger to move the basket.','Catch 10 stars to earn a ticket.','Catching a bomb = instant game over!'] }},
+        { id:'quick-math',   name:'Quick Math',   emoji:'&#129518;', desc:'Solve 5 problems fast!',   duration:25, winOnTimer:false,
+          tutorial:{ goal:'Solve simple arithmetic problems. Get 5 correct answers to win.',
+                     steps:['A math problem appears (+ − ×).','Four possible answers are shown.','Tap the correct answer.','Get 5 correct before time runs out.'] }},
+        { id:'reflex-test',  name:'Reflex Test',  emoji:'&#9889;',   desc:'Tap when it turns green!',  duration:20, winOnTimer:false,
+          tutorial:{ goal:'Wait for the screen to turn GREEN, then tap as fast as possible. Complete 3 rounds.',
+                     steps:['Screen is RED — do NOT tap yet!','After a random delay it turns GREEN.','Tap as fast as you can!','Tapping during red = false start penalty.','Complete all 3 rounds to earn a ticket.'] }}
     ];
 
     function buildGameGrid() {
-        const grid = document.getElementById('gameGrid');
-        grid.innerHTML = MINI_GAMES.map(g =>
+        document.getElementById('gameGrid').innerHTML = MINI_GAMES.map(g =>
             `<div class="card" onclick="openTutorial('${g.id}')">
                 <div class="game-card-emoji">${g.emoji}</div>
                 <div class="game-card-name">${g.name}</div>
@@ -737,147 +740,106 @@
     }
 
     function openTutorial(id) {
-        const meta = MINI_GAMES.find(g => g.id === id);
-        if (!meta) return;
-        pendingGameId = id;
-
+        const meta = MINI_GAMES.find(g => g.id === id); if (!meta) return;
         document.getElementById('tutIcon').innerHTML = meta.emoji;
         document.getElementById('tutName').textContent = meta.name;
         document.getElementById('tutGoal').textContent = meta.tutorial.goal;
-
-        const stepsHtml = meta.tutorial.steps.map((s, i) =>
-            `<div class="tutorial-step">
-                <div class="num">${i + 1}</div>
-                <div>${s}</div>
-            </div>`
-        ).join('');
-        document.getElementById('tutSteps').innerHTML =
-            '<h4>HOW TO PLAY</h4>' + stepsHtml;
-
+        document.getElementById('tutSteps').innerHTML = '<h4>HOW TO PLAY</h4>' +
+            meta.tutorial.steps.map((s,i)=>`<div class="tutorial-step"><div class="num">${i+1}</div><div>${s}</div></div>`).join('');
         document.getElementById('tutPlayBtn').onclick = () => launchGame(id);
         showScreen('tutorial-screen');
     }
     window.openTutorial = openTutorial;
 
-    function selectRandom() {
-        const g = MINI_GAMES[Math.floor(Math.random() * MINI_GAMES.length)];
-        openTutorial(g.id);
-    }
+    function selectRandom() { openTutorial(MINI_GAMES[Math.floor(Math.random()*MINI_GAMES.length)].id); }
     window.selectRandom = selectRandom;
 
     // ===== GAME ENGINE =====
-    let currentGame = null;
-    let currentGameMeta = null;
-    let pendingGameId = null;
-    let gameActive = false;
-    let gameTimerTotal = 0;
-    let gameTimeLeft = 0;
-    let lastFrameTime = 0;
-    let animFrameId = null;
-    let gameScore = 0;
-    let gameWon = false;
+    let currentGame = null, currentGameMeta = null;
+    let gameActive = false, gameTimerTotal = 0, gameTimeLeft = 0;
+    let lastFrameTime = 0, animFrameId = null;
+    let gameScore = 0, gameWon = false;
 
-    const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas  = document.getElementById('game-canvas');
+    const ctx     = canvas.getContext('2d');
     const gameDom = document.getElementById('game-dom');
+
+    function getHudH() {
+        // HUD height = safe-area-top + 48px padding
+        const sat = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
+        return sat + 48;
+    }
 
     function resizeCanvas() {
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
+        const W = window.innerWidth, H = window.innerHeight;
+        canvas.width  = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width  = W + 'px';
+        canvas.style.height = H + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => { if (gameActive) resizeCanvas(); });
 
     function launchGame(id) {
-        const meta = MINI_GAMES.find(g => g.id === id);
-        if (!meta) return;
+        const meta = MINI_GAMES.find(g => g.id === id); if (!meta) return;
         currentGameMeta = meta;
-
         showScreen('game-play-screen');
         document.getElementById('hudName').textContent = meta.name;
-        gameTimerTotal = meta.duration;
-        gameTimeLeft = meta.duration;
-        gameScore = 0;
-        gameWon = false;
-        gameActive = true;
+        gameTimerTotal = meta.duration; gameTimeLeft = meta.duration;
+        gameScore = 0; gameWon = false; gameActive = true;
 
         canvas.style.display = 'none';
         gameDom.style.display = 'none';
         gameDom.innerHTML = '';
-        gameDom.style.flexDirection = '';
-        gameDom.style.flexWrap = '';
-        gameDom.style.alignItems = '';
-        gameDom.style.justifyContent = '';
-        gameDom.style.gap = '';
-        gameDom.style.padding = 'padding-top:56px';
+        gameDom.removeAttribute('style');
+        gameDom.style.display = 'none';
 
         resizeCanvas();
 
-        const CONSTRUCTORS = {
-            'speed-tap': SpeedTap,
-            'color-memory': ColorMemory,
-            'catch-stars': CatchStars,
-            'quick-math': QuickMath,
-            'reflex-test': ReflexTest
-        };
-        currentGame = new CONSTRUCTORS[id]();
+        const CTORS = { 'speed-tap':SpeedTap, 'color-memory':ColorMemory, 'catch-stars':CatchStars, 'quick-math':QuickMath, 'reflex-test':ReflexTest };
+        currentGame = new CTORS[id]();
         currentGame.init();
 
         lastFrameTime = performance.now();
         requestAnimationFrame(gameLoop);
     }
 
-    function gameLoop(timestamp) {
-        const dt = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
-        lastFrameTime = timestamp;
-
+    function gameLoop(ts) {
+        const dt = Math.min((ts - lastFrameTime) / 1000, 0.1);
+        lastFrameTime = ts;
         if (!gameActive) return;
 
         gameTimeLeft -= dt;
         if (gameTimeLeft <= 0) {
             gameTimeLeft = 0;
-            // If the game says "winning = surviving", we pass true/false based on score
-            const timerWon = currentGameMeta && currentGameMeta.winOnTimer && gameScore > 0;
-            endGame(timerWon);
+            endGame(currentGameMeta && currentGameMeta.winOnTimer && gameScore > 0);
             return;
         }
-
         document.getElementById('hudTimer').textContent = Math.ceil(gameTimeLeft);
         document.getElementById('timerBar').style.width = ((gameTimeLeft / gameTimerTotal) * 100) + '%';
 
         if (currentGame) currentGame.update(dt);
-
         if (canvas.style.display !== 'none' && currentGame) {
             ctx.globalAlpha = 1.0;
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
             currentGame.render(ctx);
         }
-
         animFrameId = requestAnimationFrame(gameLoop);
     }
 
-    // called from within mini-games or from timer expiry
     function endGame(won) {
-        if (!gameActive) return;   // guard against double-call
+        if (!gameActive) return;
         gameActive = false;
         gameWon = !!won && gameScore > 0;
-
         if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
         if (currentGame && currentGame.cleanup) currentGame.cleanup();
         currentGame = null;
-
         state.gamesPlayed++;
-        if (gameWon) {
-            state.tickets++;
-            state.totalTicketsEarned++;
-        }
+        if (gameWon) { state.tickets++; state.totalTicketsEarned++; }
         saveState();
         showResult();
     }
-    // expose so mini-game constructors can call it
     window._endGame = endGame;
 
     function quitGame() {
@@ -892,118 +854,299 @@
     // ===== RESULT =====
     function showResult() {
         showScreen('result-screen');
-        document.getElementById('resultIcon').innerHTML = gameWon ? '&#127942;' : '&#128546;';
+        document.getElementById('resultIcon').innerHTML  = gameWon ? '&#127942;' : '&#128546;';
         document.getElementById('resultTitle').textContent = gameWon ? 'You Won!' : 'Better luck next time!';
-
-        // Friendly score message per game
-        let scoreMsg = 'Score: ' + gameScore;
-        if (currentGameMeta) {
-            if (currentGameMeta.id === 'reflex-test' && gameWon) scoreMsg = 'Best time: ' + gameScore + ' ms';
-            else if (currentGameMeta.id === 'speed-tap') scoreMsg = 'Circles tapped: ' + gameScore;
-            else if (currentGameMeta.id === 'catch-stars') scoreMsg = 'Stars caught: ' + gameScore;
-            else if (currentGameMeta.id === 'color-memory') scoreMsg = 'Rounds completed: ' + gameScore;
-            else if (currentGameMeta.id === 'quick-math') scoreMsg = 'Correct answers: ' + gameScore;
-        }
-        document.getElementById('resultScore').textContent = scoreMsg;
+        const labels = { 'speed-tap':'Circles tapped', 'catch-stars':'Stars caught', 'color-memory':'Rounds completed', 'quick-math':'Correct answers', 'reflex-test':'Best reaction' };
+        const lbl = currentGameMeta ? (labels[currentGameMeta.id] || 'Score') : 'Score';
+        const sfx = currentGameMeta && currentGameMeta.id === 'reflex-test' && gameWon ? ' ms' : '';
+        document.getElementById('resultScore').textContent = `${lbl}: ${gameScore}${sfx}`;
 
         const ticketEl = document.getElementById('resultTicket');
         ticketEl.innerHTML = '&#127915; +1 Ticket Earned!';
         ticketEl.style.display = gameWon ? 'flex' : 'none';
 
-        const btns = document.getElementById('resultButtons');
+        const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
         let html = '';
-        if (gameWon) {
-            html += '<button class="btn btn-gold" onclick="watchAd()">&#128250; Watch Ad for +100 Tickets</button>';
-        }
-        html += `<button class="btn btn-primary" onclick="openTutorial('${currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id}')">&#127918; Play Again</button>`;
-        html += '<button class="btn btn-secondary" onclick="showScreen(\'home-screen\')">&#8592; Home</button>';
-        btns.innerHTML = html;
+        if (gameWon) html += `<button class="btn btn-gold" onclick="watchAd()">&#128250; Watch Ad for +100 Tickets</button>`;
+        html += `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>`;
+        html += `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
+        document.getElementById('resultButtons').innerHTML = html;
         updateTicketBadge();
     }
 
-    // ===== AD SIMULATION =====
-    let adInterval = null;
-    let adTimeLeft = 5;
+    // ===== REWARDED VIDEO AD =====
+    let adRaf = null, adTimerInterval = null;
+    const AD_DURATION = 30; // seconds
 
     function watchAd() {
         showScreen('ad-overlay');
-        adTimeLeft = 5;
-        document.getElementById('adTimer').textContent = '5';
-        document.getElementById('adProgressBar').style.width = '0%';
-        document.getElementById('adSkip').classList.remove('visible');
+        document.getElementById('adSkipBtn').classList.remove('visible');
+        document.getElementById('adCountdown').textContent = AD_DURATION;
+        document.getElementById('adProgressFill').style.width = '0%';
 
-        adInterval = setInterval(() => {
-            adTimeLeft -= 0.1;
-            const pct = ((5 - adTimeLeft) / 5) * 100;
-            document.getElementById('adProgressBar').style.width = pct + '%';
-            document.getElementById('adTimer').textContent = Math.ceil(adTimeLeft);
-            if (adTimeLeft <= 2) document.getElementById('adSkip').classList.add('visible');
-            if (adTimeLeft <= 0) finishAd();
-        }, 100);
+        let elapsed = 0;
+        if (adTimerInterval) clearInterval(adTimerInterval);
+        adTimerInterval = setInterval(() => {
+            elapsed++;
+            const pct = (elapsed / AD_DURATION) * 100;
+            document.getElementById('adProgressFill').style.width = pct + '%';
+            document.getElementById('adCountdown').textContent = Math.max(0, AD_DURATION - elapsed);
+            if (elapsed >= 5) document.getElementById('adSkipBtn').classList.add('visible');
+            if (elapsed >= AD_DURATION) finishAd();
+        }, 1000);
+
+        startAdCanvas();
     }
     window.watchAd = watchAd;
 
-    function skipAd() { finishAd(); }
+    function skipAd() {
+        if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
+        stopAdCanvas();
+        finishAd();
+    }
     window.skipAd = skipAd;
 
     function finishAd() {
-        if (!adInterval) return;
-        clearInterval(adInterval); adInterval = null;
+        if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
+        stopAdCanvas();
         state.tickets += 100;
         state.totalTicketsEarned += 100;
         state.prizePool += 0.50;
         saveState();
         updateTicketBadge();
-
         showScreen('result-screen');
+
+        const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
+        document.getElementById('resultIcon').innerHTML = '&#127915;';
+        document.getElementById('resultTitle').textContent = '+100 Tickets!';
+        document.getElementById('resultScore').textContent = '$0.50 added to the prize pool';
         const ticketEl = document.getElementById('resultTicket');
-        ticketEl.innerHTML = '&#127915; +100 Tickets! $0.50 added to pool!';
+        ticketEl.innerHTML = '&#127915; +100 Tickets from Ad!';
         ticketEl.style.display = 'flex';
-        const btns = document.getElementById('resultButtons');
-        btns.innerHTML =
-            `<button class="btn btn-primary" onclick="openTutorial('${currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id}')">&#127918; Play Again</button>` +
+        document.getElementById('resultButtons').innerHTML =
+            `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>` +
             `<button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Go to Lottery</button>` +
             `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
+    }
+
+    // ===== AD CANVAS ANIMATION =====
+    // Draws a realistic-looking mobile game interstitial ad for a fictional game "Lucky Coins"
+    const adCanvas = document.getElementById('ad-canvas');
+    const adCtx    = adCanvas.getContext('2d');
+    let adAnimT    = 0;
+    let adPrevT    = 0;
+
+    function resizeAdCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        adCanvas.width  = window.innerWidth * dpr;
+        adCanvas.height = window.innerHeight * dpr;
+        adCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function stopAdCanvas() {
+        if (adRaf) { cancelAnimationFrame(adRaf); adRaf = null; }
+    }
+
+    function startAdCanvas() {
+        stopAdCanvas();
+        resizeAdCanvas();
+        adAnimT = 0;
+        adPrevT = performance.now();
+        renderAd(adPrevT);
+    }
+
+    function renderAd(ts) {
+        const dt = Math.min((ts - adPrevT) / 1000, 0.05);
+        adPrevT = ts;
+        adAnimT += dt;
+
+        const W = window.innerWidth, H = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        adCtx.globalAlpha = 1;
+        adCtx.clearRect(0, 0, W, H);
+
+        // ---- Background gradient ----
+        const bg = adCtx.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, '#0a0a2e');
+        bg.addColorStop(0.5, '#1a0533');
+        bg.addColorStop(1, '#2d0a0a');
+        adCtx.fillStyle = bg;
+        adCtx.fillRect(0, 0, W, H);
+
+        // ---- Animated star field ----
+        adCtx.fillStyle = 'rgba(255,255,255,0.7)';
+        for (let i = 0; i < 40; i++) {
+            const sx = (Math.sin(i * 137.5 + adAnimT * 0.1) * 0.5 + 0.5) * W;
+            const sy = ((i * 0.0337 + adAnimT * 0.03) % 1) * H;
+            const sr = 0.5 + Math.sin(adAnimT * 2 + i) * 0.3;
+            adCtx.globalAlpha = 0.3 + Math.sin(adAnimT * 1.5 + i) * 0.2;
+            adCtx.beginPath(); adCtx.arc(sx, sy, Math.max(0.1, sr), 0, Math.PI * 2); adCtx.fill();
+        }
+        adCtx.globalAlpha = 1;
+
+        const cx = W / 2;
+        const cy = H / 2;
+
+        // ---- Game "logo box" ----
+        const boxW = Math.min(W * 0.7, 280), boxH = boxW;
+        const boxX = cx - boxW / 2, boxY = cy - boxH / 2 - H * 0.06;
+
+        // Shadow glow
+        adCtx.shadowColor = '#ffd700';
+        adCtx.shadowBlur = 20 + Math.sin(adAnimT * 2) * 10;
+
+        // Rounded rect helper
+        function rr(x, y, w, h, r) {
+            adCtx.beginPath();
+            adCtx.roundRect ? adCtx.roundRect(x,y,w,h,r) : (adCtx.beginPath(), adCtx.rect(x,y,w,h));
+            adCtx.fill();
+        }
+
+        // App icon background
+        const iconGrad = adCtx.createLinearGradient(boxX, boxY, boxX + boxW, boxY + boxH);
+        iconGrad.addColorStop(0, '#ff6b35');
+        iconGrad.addColorStop(0.5, '#ffd700');
+        iconGrad.addColorStop(1, '#ff3d00');
+        adCtx.fillStyle = iconGrad;
+        rr(boxX, boxY, boxW, boxH, boxW * 0.2);
+        adCtx.shadowBlur = 0;
+
+        // Coin stack (3 coins)
+        const coinR = boxW * 0.14;
+        const stackX = cx, stackBase = boxY + boxH * 0.72;
+        for (let i = 2; i >= 0; i--) {
+            const cy2 = stackBase - i * coinR * 0.6 + Math.sin(adAnimT * 2 + i * 0.7) * 3;
+            adCtx.beginPath();
+            adCtx.ellipse(stackX, cy2, coinR, coinR * 0.32, 0, 0, Math.PI * 2);
+            adCtx.fillStyle = i === 0 ? '#ffd700' : '#e6ac00';
+            adCtx.fill();
+            adCtx.strokeStyle = '#b8860b';
+            adCtx.lineWidth = 1.5;
+            adCtx.stroke();
+            // Top face
+            adCtx.beginPath();
+            adCtx.ellipse(stackX, cy2 - coinR * 0.1, coinR * 0.88, coinR * 0.25, 0, 0, Math.PI * 2);
+            adCtx.fillStyle = i === 0 ? '#ffe44d' : '#f0c000';
+            adCtx.fill();
+            // $ sign
+            if (i === 0) {
+                adCtx.fillStyle = '#b8860b';
+                adCtx.font = `bold ${coinR * 0.55}px Fredoka One, system-ui`;
+                adCtx.textAlign = 'center';
+                adCtx.textBaseline = 'middle';
+                adCtx.fillText('$', stackX, cy2 - coinR * 0.1);
+            }
+        }
+
+        // Stars decoration
+        for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2 - Math.PI / 2 + adAnimT * 0.3;
+            const r = boxW * 0.42;
+            const sx2 = boxX + boxW/2 + Math.cos(angle) * r;
+            const sy2 = boxY + boxH/2 + Math.sin(angle) * r;
+            const sr2 = 6 + Math.sin(adAnimT * 3 + i) * 2;
+            drawStar(adCtx, sx2, sy2, 5, sr2, sr2 * 0.45, '#ffd700');
+        }
+
+        // ---- Game title ----
+        adCtx.shadowBlur = 0;
+        const titleY = boxY + boxH + 22;
+        adCtx.fillStyle = '#ffd700';
+        adCtx.font = `bold ${Math.min(W * 0.09, 34)}px Fredoka One, system-ui`;
+        adCtx.textAlign = 'center';
+        adCtx.textBaseline = 'alphabetic';
+        adCtx.fillText('LUCKY COINS', cx, titleY);
+
+        // Rating stars
+        const starY = titleY + 20;
+        for (let i = 0; i < 5; i++) {
+            const sx3 = cx - 52 + i * 26;
+            drawStar(adCtx, sx3, starY, 5, 9, 4, '#ffd700');
+        }
+        adCtx.fillStyle = 'rgba(255,255,255,0.5)';
+        adCtx.font = '12px system-ui';
+        adCtx.fillText('4.8  ★  10M+ Downloads', cx, starY + 20);
+
+        // ---- CTA button ----
+        const btnW = Math.min(W * 0.7, 240), btnH = 52;
+        const btnX = cx - btnW / 2;
+        const btnY = H - H * 0.22;
+
+        // Pulse effect
+        const pulse = 1 + Math.sin(adAnimT * 3) * 0.03;
+        adCtx.save();
+        adCtx.translate(cx, btnY + btnH / 2);
+        adCtx.scale(pulse, pulse);
+        adCtx.translate(-cx, -(btnY + btnH / 2));
+
+        // Button shadow
+        adCtx.shadowColor = '#69f0ae';
+        adCtx.shadowBlur = 15;
+        const btnGrad = adCtx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
+        btnGrad.addColorStop(0, '#69f0ae');
+        btnGrad.addColorStop(1, '#00c853');
+        adCtx.fillStyle = btnGrad;
+        rr(btnX, btnY, btnW, btnH, btnH / 2);
+
+        adCtx.shadowBlur = 0;
+        adCtx.fillStyle = '#003300';
+        adCtx.font = `bold ${Math.min(W * 0.055, 20)}px Fredoka One, system-ui`;
+        adCtx.textAlign = 'center';
+        adCtx.textBaseline = 'middle';
+        adCtx.fillText('PLAY FOR FREE', cx, btnY + btnH / 2);
+        adCtx.restore();
+
+        // Store badges text
+        adCtx.fillStyle = 'rgba(255,255,255,0.35)';
+        adCtx.font = '11px system-ui';
+        adCtx.textAlign = 'center';
+        adCtx.textBaseline = 'alphabetic';
+        adCtx.fillText('Available on App Store & Google Play', cx, btnY + btnH + 18);
+
+        adRaf = requestAnimationFrame(renderAd);
+    }
+
+    function drawStar(ctx2, cx2, cy2, spikes, outerR, innerR, color) {
+        ctx2.beginPath();
+        for (let i = 0; i < spikes * 2; i++) {
+            const r = i % 2 === 0 ? outerR : innerR;
+            const angle = (i * Math.PI) / spikes - Math.PI / 2;
+            ctx2[i === 0 ? 'moveTo' : 'lineTo'](cx2 + Math.cos(angle) * r, cy2 + Math.sin(angle) * r);
+        }
+        ctx2.closePath();
+        ctx2.fillStyle = color;
+        ctx2.fill();
     }
 
     // ===== LOTTERY =====
     function updateLottery() {
         updateTicketBadge();
         document.getElementById('lotteryPool').textContent = '$' + state.prizePool.toFixed(2);
-        document.getElementById('lotteryInfo').textContent =
-            `Your tickets: ${state.tickets} | Already in draw: ${state.ticketsInDraw}`;
-
+        document.getElementById('lotteryInfo').textContent = `Your tickets: ${state.tickets} | In draw: ${state.ticketsInDraw}`;
         const wrap = document.getElementById('ticketInputWrap');
         const slider = document.getElementById('ticketSlider');
         const enterBtn = document.getElementById('enterDrawBtn');
-
         if (state.tickets > 0) {
             wrap.style.display = 'flex';
             slider.max = state.tickets;
             slider.value = Math.min(parseInt(slider.value) || 1, state.tickets);
             document.getElementById('ticketSliderVal').textContent = slider.value;
-            enterBtn.disabled = false;
-            enterBtn.style.opacity = '1';
+            enterBtn.disabled = false; enterBtn.style.opacity = '1';
         } else {
             wrap.style.display = 'none';
-            enterBtn.disabled = true;
-            enterBtn.style.opacity = '0.5';
+            enterBtn.disabled = true; enterBtn.style.opacity = '0.5';
         }
         document.getElementById('lottery-canvas').style.display = 'none';
         document.getElementById('lotteryResult').style.display = 'none';
     }
-
     document.getElementById('ticketSlider').addEventListener('input', function() {
         document.getElementById('ticketSliderVal').textContent = this.value;
     });
-
     function enterDraw() {
         const count = parseInt(document.getElementById('ticketSlider').value) || 0;
         if (count <= 0 || count > state.tickets) return;
-        state.tickets -= count;
-        state.ticketsInDraw += count;
-        saveState();
-        updateLottery();
+        state.tickets -= count; state.ticketsInDraw += count;
+        saveState(); updateLottery();
     }
     window.enterDraw = enterDraw;
 
@@ -1011,7 +1154,7 @@
         if (state.ticketsInDraw === 0) {
             const r = document.getElementById('lotteryResult');
             r.style.display = 'block';
-            r.innerHTML = '<span style="color:var(--text-muted)">Enter tickets first, then try the draw!</span>';
+            r.innerHTML = '<span style="color:var(--text-muted)">Enter tickets first!</span>';
             return;
         }
         runLotteryAnimation();
@@ -1020,139 +1163,118 @@
 
     function runLotteryAnimation() {
         const lCanvas = document.getElementById('lottery-canvas');
+        const lW = Math.min(280, window.innerWidth * 0.8);
         lCanvas.style.display = 'block';
-        const lCtx = lCanvas.getContext('2d');
+        lCanvas.style.width = lW + 'px';
+        lCanvas.style.height = (lW * 200 / 280) + 'px';
         const dpr = window.devicePixelRatio || 1;
-        lCanvas.width = 280 * dpr;
-        lCanvas.height = 200 * dpr;
+        lCanvas.width = lW * dpr; lCanvas.height = lW * dpr * 200 / 280;
+        const lCtx = lCanvas.getContext('2d');
         lCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const LW = lW, LH = lW * 200 / 280;
 
         const playerEntries = state.ticketsInDraw;
-        const otherEntries = 50 + Math.floor(Math.random() * 450);
-        const totalEntries = playerEntries + otherEntries;
-        const winningNum = Math.floor(Math.random() * totalEntries);
-        const playerWon = winningNum < playerEntries;
+        const otherEntries  = 50 + Math.floor(Math.random() * 450);
+        const totalEntries  = playerEntries + otherEntries;
+        const winningNum    = Math.floor(Math.random() * totalEntries);
+        const playerWon     = winningNum < playerEntries;
 
-        const numbers = [];
-        for (let i = 0; i < 50; i++) numbers.push(Math.floor(Math.random() * totalEntries));
+        const numbers = Array.from({length:50}, () => Math.floor(Math.random() * totalEntries));
         numbers.push(winningNum);
 
-        let elapsed = 0;
-        const duration = 3;
-        let scrollY = 0;
-        let prevT = performance.now();
+        let elapsed = 0, scrollY = 0, prevT = performance.now();
         const GOLD = '#ffd700';
-
         function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
         function animateDrum(ts) {
             const dt = Math.min((ts - prevT) / 1000, 0.1);
-            prevT = ts;
-            elapsed += dt;
-            const progress = Math.min(elapsed / duration, 1);
-            scrollY += 2000 * (1 - easeOut(progress)) * dt;
+            prevT = ts; elapsed += dt;
+            const prog = Math.min(elapsed / 3, 1);
+            scrollY += 2000 * (1 - easeOut(prog)) * dt;
 
             lCtx.globalAlpha = 1;
-            lCtx.clearRect(0, 0, 280, 200);
+            lCtx.clearRect(0, 0, LW, LH);
             lCtx.fillStyle = '#1a0533';
-            lCtx.fillRect(40, 0, 200, 200);
-            lCtx.strokeStyle = 'rgba(255,215,0,0.4)';
-            lCtx.lineWidth = 2;
-            lCtx.strokeRect(40, 0, 200, 200);
+            const px = LW * 0.14;
+            lCtx.fillRect(px, 0, LW - px*2, LH);
+            lCtx.strokeStyle = 'rgba(255,215,0,0.4)'; lCtx.lineWidth = 2;
+            lCtx.strokeRect(px, 0, LW - px*2, LH);
 
-            const numH = 50;
-            lCtx.font = 'bold 28px Fredoka One';
+            const numH = LH * 0.25;
+            lCtx.font = `bold ${LH * 0.16}px Fredoka One, system-ui`;
             lCtx.textAlign = 'center';
             for (let i = 0; i < 8; i++) {
                 const idx = Math.floor((scrollY / numH + i) % numbers.length);
-                const y = 100 + (i * numH) - (scrollY % numH) - numH * 3;
-                const alpha = Math.max(0, 1 - Math.abs(y - 100) / 120);
-                lCtx.globalAlpha = alpha;
+                const y = LH/2 + (i * numH) - (scrollY % numH) - numH * 3;
+                lCtx.globalAlpha = Math.max(0, 1 - Math.abs(y - LH/2) / (LH * 0.6));
                 lCtx.fillStyle = '#f0e6ff';
-                lCtx.fillText('#' + numbers[idx], 140, y + 12);
+                lCtx.fillText('#' + numbers[idx], LW/2, y + LH * 0.06);
             }
             lCtx.globalAlpha = 1;
-            lCtx.strokeStyle = GOLD;
-            lCtx.lineWidth = 3;
-            lCtx.strokeRect(50, 80, 180, 42);
+            lCtx.strokeStyle = GOLD; lCtx.lineWidth = 3;
+            lCtx.strokeRect(px + LW*0.04, LH*0.38, LW - (px+LW*0.04)*2, LH*0.24);
 
-            if (progress < 1) { requestAnimationFrame(animateDrum); return; }
-
-            // Final state
-            lCtx.clearRect(0, 0, 280, 200);
-            lCtx.fillStyle = '#1a0533';
-            lCtx.fillRect(40, 0, 200, 200);
-            lCtx.strokeStyle = GOLD; lCtx.lineWidth = 2;
-            lCtx.strokeRect(40, 0, 200, 200);
-            lCtx.strokeRect(50, 80, 180, 42);
+            if (prog < 1) { requestAnimationFrame(animateDrum); return; }
+            // Final
+            lCtx.clearRect(0, 0, LW, LH);
+            lCtx.fillStyle = '#1a0533'; lCtx.fillRect(px, 0, LW - px*2, LH);
+            lCtx.strokeStyle = GOLD; lCtx.lineWidth = 2; lCtx.strokeRect(px, 0, LW - px*2, LH);
+            lCtx.strokeRect(px + LW*0.04, LH*0.38, LW - (px+LW*0.04)*2, LH*0.24);
             lCtx.fillStyle = GOLD;
-            lCtx.font = 'bold 28px Fredoka One';
+            lCtx.font = `bold ${LH * 0.16}px Fredoka One, system-ui`;
             lCtx.textAlign = 'center';
-            lCtx.fillText('#' + winningNum, 140, 108);
+            lCtx.fillText('#' + winningNum, LW/2, LH * 0.56);
             finishDraw(playerWon);
         }
         requestAnimationFrame(animateDrum);
     }
 
     function finishDraw(playerWon) {
-        const resultEl = document.getElementById('lotteryResult');
-        resultEl.style.display = 'block';
+        const r = document.getElementById('lotteryResult');
+        r.style.display = 'block';
         const prize = state.prizePool;
         if (playerWon) {
-            resultEl.innerHTML =
-                `<div style="font-size:32px;margin-bottom:6px;">&#127881;</div>
-                 <div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div>
-                 <div style="font-size:18px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
+            r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#127881;</div><div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div><div style="font-size:18px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
             state.prizePool = 0;
             spawnConfetti();
         } else {
-            resultEl.innerHTML =
-                `<div style="font-size:32px;margin-bottom:6px;">&#128532;</div>
-                 <div style="color:var(--text-muted);font-size:16px;">Better luck next time!<br>
-                 <span style="font-size:12px;font-family:system-ui;">Pool rolls over to the next draw.</span></div>`;
+            r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#128532;</div><div style="color:var(--text-muted);font-size:15px;font-family:system-ui;">Better luck next time!<br><span style="font-size:12px;">Pool rolls over to next draw.</span></div>`;
         }
         state.ticketsInDraw = 0;
         state.lastDrawTime = new Date().toISOString();
         state.drawHistory.push({ date: state.lastDrawTime, pool: prize, won: playerWon, prize: playerWon ? prize : 0 });
         if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
-        saveState();
-        updateTicketBadge();
+        saveState(); updateTicketBadge();
     }
 
     function spawnConfetti() {
         const ov = document.createElement('canvas');
-        ov.style.cssText = 'position:fixed;inset:0;z-index:300;pointer-events:none;';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:500;pointer-events:none;';
         const dpr = window.devicePixelRatio || 1;
-        ov.width = window.innerWidth * dpr;
-        ov.height = window.innerHeight * dpr;
-        ov.style.width = window.innerWidth + 'px';
-        ov.style.height = window.innerHeight + 'px';
+        ov.width = window.innerWidth * dpr; ov.height = window.innerHeight * dpr;
+        ov.style.width = window.innerWidth + 'px'; ov.style.height = window.innerHeight + 'px';
         document.body.appendChild(ov);
-        const cCtx = ov.getContext('2d');
-        cCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const cc = ov.getContext('2d');
+        cc.setTransform(dpr, 0, 0, dpr, 0, 0);
         const W = window.innerWidth, H = window.innerHeight;
-        const colors = ['#ffd700','#ff4081','#00e5ff','#69f0ae','#ff5252','#9575cd'];
-        const particles = Array.from({length: 100}, () => ({
-            x: W/2 + (Math.random()-0.5)*100, y: H/2,
-            vx: (Math.random()-0.5)*12, vy: -Math.random()*10-5,
-            color: colors[Math.floor(Math.random()*colors.length)],
-            size: 4+Math.random()*6, rot: Math.random()*Math.PI*2, rotV: (Math.random()-0.5)*0.3
+        const COLS = ['#ffd700','#ff4081','#00e5ff','#69f0ae','#ff5252','#9575cd'];
+        const P = Array.from({length:120}, () => ({
+            x:W/2+(Math.random()-.5)*120, y:H/2,
+            vx:(Math.random()-.5)*14, vy:-Math.random()*12-6,
+            color:COLS[Math.floor(Math.random()*COLS.length)],
+            size:4+Math.random()*7, rot:Math.random()*Math.PI*2, rv:(Math.random()-.5)*0.35
         }));
         const start = performance.now();
         function anim(ts) {
             const t = (ts - start) / 1000;
-            if (t > 3) { document.body.removeChild(ov); return; }
-            cCtx.globalAlpha = 1;
-            cCtx.clearRect(0, 0, W, H);
-            particles.forEach(p => {
-                p.x += p.vx; p.vy += 0.25; p.y += p.vy; p.rot += p.rotV;
-                cCtx.save();
-                cCtx.translate(p.x, p.y);
-                cCtx.rotate(p.rot);
-                cCtx.fillStyle = p.color;
-                cCtx.globalAlpha = Math.max(0, 1 - t/3);
-                cCtx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
-                cCtx.restore();
+            if (t > 3.5) { document.body.removeChild(ov); return; }
+            cc.globalAlpha = 1; cc.clearRect(0, 0, W, H);
+            P.forEach(p => {
+                p.x += p.vx; p.vy += 0.3; p.y += p.vy; p.rot += p.rv;
+                cc.save(); cc.translate(p.x, p.y); cc.rotate(p.rot);
+                cc.fillStyle = p.color; cc.globalAlpha = Math.max(0, 1 - t/3.5);
+                cc.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+                cc.restore();
             });
             requestAnimationFrame(anim);
         }
@@ -1160,460 +1282,263 @@
     }
 
     // ===== MINI-GAME: SPEED TAP =====
-    // Win condition: survive 15 seconds (winOnTimer: true) with score > 0
-    function SpeedTap() {
-        this.circles = [];
-        this.spawnTimer = 0;
-        this.spawnInterval = 0.85;
-        this.misses = 0;
-        this._handler = null;
-    }
+    function SpeedTap() { this.circles=[]; this.spawnT=0; this.interval=0.85; this.misses=0; this._h=null; }
     SpeedTap.prototype.init = function() {
         canvas.style.display = 'block';
         const self = this;
-        this._handler = function(e) {
+        this._h = e => {
             e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            for (let i = self.circles.length - 1; i >= 0; i--) {
+            const r = canvas.getBoundingClientRect();
+            const x = e.clientX - r.left, y = e.clientY - r.top;
+            for (let i = self.circles.length-1; i >= 0; i--) {
                 const c = self.circles[i];
-                if (Math.hypot(x - c.x, y - c.y) < c.r) {
-                    self.circles.splice(i, 1);
-                    gameScore++;
-                    return;
-                }
+                if (Math.hypot(x-c.x, y-c.y) < c.r) { self.circles.splice(i,1); gameScore++; return; }
             }
         };
-        canvas.addEventListener('pointerdown', this._handler, { passive: false });
+        canvas.addEventListener('pointerdown', this._h, {passive:false});
         this._spawn();
     };
     SpeedTap.prototype._spawn = function() {
-        const pad = 60;
-        const COLORS = ['#ff4081','#00e5ff','#ffd700','#69f0ae','#ff5252'];
-        this.circles.push({
-            x: pad + Math.random() * (window.innerWidth - pad*2),
-            y: 70 + Math.random() * (window.innerHeight - 130),
-            r: 36, maxR: 36, life: 1.6, maxLife: 1.6,
-            color: COLORS[Math.floor(Math.random()*5)]
-        });
+        const pad = 60, hudH = getHudH();
+        const COLS = ['#ff4081','#00e5ff','#ffd700','#69f0ae','#ff5252'];
+        this.circles.push({ x:pad+Math.random()*(window.innerWidth-pad*2), y:hudH+20+Math.random()*(window.innerHeight-hudH-80),
+            r:36, maxR:36, life:1.6, maxLife:1.6, color:COLS[Math.floor(Math.random()*5)] });
     };
     SpeedTap.prototype.update = function(dt) {
-        this.spawnTimer += dt;
-        if (this.spawnTimer >= this.spawnInterval) {
-            this.spawnTimer = 0;
-            this._spawn();
-            if (this.spawnInterval > 0.4) this.spawnInterval -= 0.015;
-        }
-        for (let i = this.circles.length - 1; i >= 0; i--) {
-            const c = this.circles[i];
-            c.life -= dt;
-            c.r = c.maxR * Math.max(0, c.life / c.maxLife);
-            if (c.life <= 0) {
-                this.circles.splice(i, 1);
-                this.misses++;
-                if (this.misses >= 3) { gameScore = Math.max(gameScore, 0); _endGame(false); return; }
-            }
+        this.spawnT += dt;
+        if (this.spawnT >= this.interval) { this.spawnT=0; this._spawn(); if(this.interval>0.4) this.interval-=0.015; }
+        for (let i=this.circles.length-1; i>=0; i--) {
+            const c=this.circles[i]; c.life-=dt; c.r=c.maxR*Math.max(0,c.life/c.maxLife);
+            if (c.life<=0) { this.circles.splice(i,1); this.misses++; if(this.misses>=3){gameScore=Math.max(gameScore,0);_endGame(false);return;} }
         }
     };
     SpeedTap.prototype.render = function(ctx) {
-        const W = window.innerWidth, H = window.innerHeight;
+        const W=window.innerWidth, H=window.innerHeight;
         this.circles.forEach(c => {
-            if (c.r <= 0) return;
-            ctx.beginPath();
-            ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
-            ctx.fillStyle = c.color;
-            ctx.globalAlpha = 0.85;
-            ctx.fill();
-            ctx.globalAlpha = 1;
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            if(c.r<=0)return;
+            ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2);
+            ctx.fillStyle=c.color; ctx.globalAlpha=0.85; ctx.fill(); ctx.globalAlpha=1;
+            ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
         });
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 18px Fredoka One';
-        ctx.textAlign = 'left';
-        ctx.fillText('Tapped: ' + gameScore, 16, H - 20);
-        ctx.fillStyle = '#ff5252';
-        ctx.textAlign = 'right';
-        ctx.fillText('Miss: ' + this.misses + '/3', W - 16, H - 20);
+        ctx.fillStyle='#fff'; ctx.font='bold 17px Fredoka One'; ctx.textAlign='left';
+        ctx.fillText('Tapped: '+gameScore, 16, H-Math.max(20, parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab'))||0+20));
+        ctx.fillStyle='#ff5252'; ctx.textAlign='right';
+        ctx.fillText('Miss: '+this.misses+'/3', W-16, H-Math.max(20, parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab'))||0+20));
     };
-    SpeedTap.prototype.cleanup = function() {
-        canvas.removeEventListener('pointerdown', this._handler);
-    };
+    SpeedTap.prototype.cleanup = function() { canvas.removeEventListener('pointerdown', this._h); };
 
     // ===== MINI-GAME: COLOR MEMORY =====
-    // Win condition: complete 3 rounds via explicit endGame(true)
-    function ColorMemory() {
-        this.panels = [];
-        this.sequence = [];
-        this.playerInput = [];
-        this.round = 0;
-        this.correct = 0;
-        this.showing = false;
-        this.showIndex = 0;
-        this.flashTimer = 0;
-        this.statusEl = null;
-        this._done = false;
-    }
+    function ColorMemory() { this.panels=[]; this.sequence=[]; this.playerInput=[]; this.round=0; this.correct=0; this.showing=false; this.showIndex=0; this.flashT=0; this.statusEl=null; this._done=false; }
     ColorMemory.prototype.init = function() {
+        const hudH = getHudH();
         gameDom.style.display = 'flex';
         gameDom.style.flexWrap = 'wrap';
         gameDom.style.alignItems = 'center';
         gameDom.style.justifyContent = 'center';
         gameDom.style.gap = '12px';
-        gameDom.style.padding = '70px 20px 20px';
+        gameDom.style.paddingTop = (hudH + 12) + 'px';
+        gameDom.style.paddingBottom = 'calc(env(safe-area-inset-bottom, 0px) + 12px)';
+        gameDom.style.paddingLeft = '16px'; gameDom.style.paddingRight = '16px';
 
-        const COLORS = ['#ff4081','#00e5ff','#ffd700','#69f0ae'];
-        const NAMES  = ['Red','Blue','Yellow','Green'];
+        const COLS  = ['#ff4081','#00e5ff','#ffd700','#69f0ae'];
+        const NAMES = ['Red','Blue','Yellow','Green'];
+        const panelSize = Math.min((window.innerWidth - 56) / 2, 150) + 'px';
         const self = this;
-
-        COLORS.forEach((color, i) => {
+        COLS.forEach((color, i) => {
             const div = document.createElement('div');
-            div.style.cssText = `width:calc(50% - 8px);max-width:150px;max-height:150px;aspect-ratio:1;border-radius:16px;background:${color};opacity:0.35;transition:opacity 0.12s,transform 0.12s;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(0,0,0,0.6);`;
+            div.style.cssText = `width:${panelSize};height:${panelSize};border-radius:16px;background:${color};opacity:0.35;transition:opacity 0.12s,transform 0.12s;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(0,0,0,0.55);flex-shrink:0;`;
             div.textContent = NAMES[i];
             div.addEventListener('pointerdown', function(e) {
                 e.preventDefault();
-                if (self.showing || self._done) return;
-                self._flashPanel(i, 1);
-                self.playerInput.push(i);
-                self._checkInput();
-            }, { passive: false });
-            gameDom.appendChild(div);
-            this.panels.push(div);
+                if (self.showing||self._done) return;
+                self._flash(i,1); self.playerInput.push(i); self._check();
+            }, {passive:false});
+            gameDom.appendChild(div); this.panels.push(div);
         });
-
         this.statusEl = document.createElement('div');
         this.statusEl.style.cssText = 'width:100%;text-align:center;font-size:17px;color:#f0e6ff;margin-top:8px;';
         gameDom.appendChild(this.statusEl);
-
         this._startRound();
     };
-    ColorMemory.prototype._flashPanel = function(idx, bright) {
+    ColorMemory.prototype._flash = function(idx, on) {
         const p = this.panels[idx];
-        p.style.opacity = bright ? '1' : '0.35';
-        p.style.transform = bright ? 'scale(1.08)' : 'scale(1)';
-        if (bright) setTimeout(() => this._flashPanel(idx, 0), 350);
+        p.style.opacity = on ? '1' : '0.35'; p.style.transform = on ? 'scale(1.08)' : 'scale(1)';
+        if (on) setTimeout(() => this._flash(idx, 0), 350);
     };
     ColorMemory.prototype._startRound = function() {
-        this.round++;
-        this.sequence.push(Math.floor(Math.random() * 4));
-        this.playerInput = [];
-        this.showing = true;
-        this.showIndex = 0;
-        this.flashTimer = 0;
-        this.statusEl.textContent = 'Round ' + this.round + ' — Watch!';
+        this.round++; this.sequence.push(Math.floor(Math.random()*4));
+        this.playerInput=[]; this.showing=true; this.showIndex=0; this.flashT=0;
+        this.statusEl.textContent = 'Round '+this.round+' — Watch carefully!';
     };
-    ColorMemory.prototype._checkInput = function() {
-        const idx = this.playerInput.length - 1;
+    ColorMemory.prototype._check = function() {
+        const idx = this.playerInput.length-1;
         if (this.playerInput[idx] !== this.sequence[idx]) {
-            this._done = true;
-            this.statusEl.textContent = '✗ Wrong order! Game over.';
-            gameScore = this.correct;
-            setTimeout(() => _endGame(false), 700);
-            return;
+            this._done=true; this.statusEl.textContent='✗ Wrong! Game over.';
+            gameScore=this.correct; setTimeout(()=>_endGame(false), 700); return;
         }
         if (this.playerInput.length === this.sequence.length) {
-            this.correct++;
-            gameScore = this.correct;
-            if (this.round >= 3) {
-                this._done = true;
-                this.statusEl.textContent = '★ Perfect! You win!';
-                setTimeout(() => _endGame(true), 600);
-                return;
-            }
-            this.statusEl.textContent = '✓ Correct! Next round…';
-            setTimeout(() => this._startRound(), 900);
+            this.correct++; gameScore=this.correct;
+            if (this.round>=3) { this._done=true; this.statusEl.textContent='★ Perfect!'; setTimeout(()=>_endGame(true),600); return; }
+            this.statusEl.textContent='✓ Correct! Next round…'; setTimeout(()=>this._startRound(), 900);
         }
     };
     ColorMemory.prototype.update = function(dt) {
-        if (!this.showing) return;
-        this.flashTimer += dt;
-        if (this.flashTimer >= 0.65) {
-            this.flashTimer = 0;
-            if (this.showIndex < this.sequence.length) {
-                this._flashPanel(this.sequence[this.showIndex], 1);
-                this.showIndex++;
-            } else {
-                this.showing = false;
-                this.statusEl.textContent = 'Your turn! Repeat the sequence.';
-            }
+        if(!this.showing)return; this.flashT+=dt;
+        if(this.flashT>=0.65){this.flashT=0;
+            if(this.showIndex<this.sequence.length){this._flash(this.sequence[this.showIndex],1);this.showIndex++;}
+            else{this.showing=false;this.statusEl.textContent='Your turn! Repeat the sequence.';}
         }
     };
-    ColorMemory.prototype.render = function() {};
-    ColorMemory.prototype.cleanup = function() {};
+    ColorMemory.prototype.render = function(){};
+    ColorMemory.prototype.cleanup = function(){};
 
     // ===== MINI-GAME: CATCH STARS =====
-    // Win condition: catch 10 stars → explicit endGame(true)
-    function CatchStars() {
-        this.basketX = window.innerWidth / 2;
-        this.basketW = 72;
-        this.objects = [];
-        this.spawnTimer = 0;
-        this.caught = 0;
-        this._move = null;
-        this._done = false;
-    }
+    function CatchStars() { this.bx=window.innerWidth/2; this.bw=72; this.objs=[]; this.spawnT=0; this.caught=0; this._m=null; this._done=false; }
     CatchStars.prototype.init = function() {
-        canvas.style.display = 'block';
-        const self = this;
-        this._move = function(e) {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            self.basketX = e.clientX - rect.left;
-        };
-        canvas.addEventListener('pointermove', this._move, { passive: false });
-        canvas.addEventListener('pointerdown', this._move, { passive: false });
+        canvas.style.display='block';
+        const self=this;
+        this._m = e => { e.preventDefault(); const r=canvas.getBoundingClientRect(); self.bx=e.clientX-r.left; };
+        canvas.addEventListener('pointermove',this._m,{passive:false});
+        canvas.addEventListener('pointerdown',this._m,{passive:false});
     };
     CatchStars.prototype.update = function(dt) {
-        if (this._done) return;
-        const W = window.innerWidth, H = window.innerHeight;
-        this.spawnTimer += dt;
-        if (this.spawnTimer >= 0.45) {
-            this.spawnTimer = 0;
-            this.objects.push({
-                x: 30 + Math.random() * (W - 60),
-                y: -20,
-                speed: 140 + Math.random() * 210,
-                isBomb: Math.random() < 0.2
-            });
-        }
-        const basketY = H - 70;
-        for (let i = this.objects.length - 1; i >= 0; i--) {
-            const o = this.objects[i];
-            o.y += o.speed * dt;
-            const hit = o.y > basketY - 15 && o.y < basketY + 30 && Math.abs(o.x - this.basketX) < this.basketW/2 + 15;
-            if (hit) {
-                this.objects.splice(i, 1);
-                if (o.isBomb) {
-                    this._done = true;
-                    gameScore = this.caught;
-                    _endGame(false);
-                    return;
-                }
-                this.caught++;
-                gameScore = this.caught;
-                if (this.caught >= 10) {
-                    this._done = true;
-                    _endGame(true);
-                    return;
-                }
-            } else if (o.y > H + 30) {
-                this.objects.splice(i, 1);
-            }
+        if(this._done)return;
+        const W=window.innerWidth, H=window.innerHeight, sab=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab'))||0;
+        this.spawnT+=dt;
+        if(this.spawnT>=0.45){this.spawnT=0; this.objs.push({x:30+Math.random()*(W-60),y:-20,speed:140+Math.random()*210,isBomb:Math.random()<0.2});}
+        const basketY = H - sab - 72;
+        for(let i=this.objs.length-1;i>=0;i--){
+            const o=this.objs[i]; o.y+=o.speed*dt;
+            const hit=o.y>basketY-15&&o.y<basketY+30&&Math.abs(o.x-this.bx)<this.bw/2+15;
+            if(hit){this.objs.splice(i,1);if(o.isBomb){this._done=true;gameScore=this.caught;_endGame(false);return;}
+                this.caught++;gameScore=this.caught;if(this.caught>=10){this._done=true;_endGame(true);return;}}
+            else if(o.y>H+30) this.objs.splice(i,1);
         }
     };
     CatchStars.prototype.render = function(ctx) {
-        const W = window.innerWidth, H = window.innerHeight;
-        ctx.font = '26px serif';
-        ctx.textAlign = 'center';
-        this.objects.forEach(o => ctx.fillText(o.isBomb ? '\uD83D\uDCA3' : '\u2B50', o.x, o.y));
-        const basketY = H - 70;
-        const bx = this.basketX, bw = this.basketW;
-        ctx.fillStyle = '#8d6e63';
-        ctx.beginPath();
-        ctx.moveTo(bx - bw/2, basketY);
-        ctx.lineTo(bx - bw/2 + 10, basketY + 32);
-        ctx.lineTo(bx + bw/2 - 10, basketY + 32);
-        ctx.lineTo(bx + bw/2, basketY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#5d4037'; ctx.lineWidth = 2; ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 17px Fredoka One';
-        ctx.textAlign = 'left';
-        ctx.fillText('Stars: ' + this.caught + '/10', 16, H - 20);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#ff5252';
-        ctx.fillText('Bomb = instant fail!', W - 16, H - 20);
+        const W=window.innerWidth,H=window.innerHeight,sab=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab'))||0;
+        const basketY=H-sab-72, bw=this.bw, bx=this.bx;
+        ctx.font='26px serif'; ctx.textAlign='center';
+        this.objs.forEach(o=>ctx.fillText(o.isBomb?'\uD83D\uDCA3':'\u2B50',o.x,o.y));
+        ctx.fillStyle='#8d6e63'; ctx.beginPath();
+        ctx.moveTo(bx-bw/2,basketY); ctx.lineTo(bx-bw/2+10,basketY+32); ctx.lineTo(bx+bw/2-10,basketY+32); ctx.lineTo(bx+bw/2,basketY);
+        ctx.closePath(); ctx.fill(); ctx.strokeStyle='#5d4037'; ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle='#fff'; ctx.font='bold 17px Fredoka One'; ctx.textAlign='left';
+        ctx.fillText('Stars: '+this.caught+'/10', 16, H-sab-18);
+        ctx.fillStyle='#ff5252'; ctx.textAlign='right';
+        ctx.fillText('Bomb = instant fail!', W-16, H-sab-18);
     };
-    CatchStars.prototype.cleanup = function() {
-        canvas.removeEventListener('pointermove', this._move);
-        canvas.removeEventListener('pointerdown', this._move);
-    };
+    CatchStars.prototype.cleanup = function() { canvas.removeEventListener('pointermove',this._m); canvas.removeEventListener('pointerdown',this._m); };
 
     // ===== MINI-GAME: QUICK MATH =====
-    // Win condition: 5 correct → explicit endGame(true)
-    function QuickMath() {
-        this.correct = 0;
-        this._done = false;
-        this.questionEl = null;
-        this.ansGrid = null;
-        this.feedbackEl = null;
-    }
+    function QuickMath() { this.correct=0; this._done=false; }
     QuickMath.prototype.init = function() {
-        gameDom.style.display = 'flex';
-        gameDom.style.flexDirection = 'column';
-        gameDom.style.alignItems = 'center';
-        gameDom.style.justifyContent = 'center';
-        gameDom.style.gap = '14px';
-        gameDom.style.padding = '70px 20px 20px';
+        const hudH = getHudH();
+        gameDom.style.display='flex'; gameDom.style.flexDirection='column';
+        gameDom.style.alignItems='center'; gameDom.style.justifyContent='center';
+        gameDom.style.gap='14px';
+        gameDom.style.paddingTop=(hudH+12)+'px';
+        gameDom.style.paddingBottom='calc(env(safe-area-inset-bottom,0px) + 12px)';
+        gameDom.style.paddingLeft='16px'; gameDom.style.paddingRight='16px';
 
-        this.questionEl = document.createElement('div');
-        this.questionEl.style.cssText = 'font-size:clamp(34px,9vw,52px);color:#f0e6ff;text-align:center;';
-        gameDom.appendChild(this.questionEl);
-
-        this.ansGrid = document.createElement('div');
-        this.ansGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px;';
-        gameDom.appendChild(this.ansGrid);
-
-        this.feedbackEl = document.createElement('div');
-        this.feedbackEl.style.cssText = 'font-size:16px;min-height:26px;text-align:center;font-family:system-ui;';
-        gameDom.appendChild(this.feedbackEl);
-
-        this._generate();
+        this.qEl = document.createElement('div');
+        this.qEl.style.cssText = 'font-size:clamp(32px,10vw,52px);color:#f0e6ff;text-align:center;';
+        gameDom.appendChild(this.qEl);
+        this.aGrid = document.createElement('div');
+        this.aGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px;';
+        gameDom.appendChild(this.aGrid);
+        this.fbEl = document.createElement('div');
+        this.fbEl.style.cssText = 'font-size:16px;min-height:26px;text-align:center;font-family:system-ui;';
+        gameDom.appendChild(this.fbEl);
+        this._gen();
     };
-    QuickMath.prototype._generate = function() {
-        if (this._done) return;
-        const ops = ['+', '-', '\u00d7'];
-        const op = ops[Math.floor(Math.random() * ops.length)];
-        let a, b, answer;
-        if (op === '\u00d7') { a = 2+Math.floor(Math.random()*10); b = 2+Math.floor(Math.random()*10); answer = a*b; }
-        else if (op === '+') { a = 1+Math.floor(Math.random()*20); b = 1+Math.floor(Math.random()*20); answer = a+b; }
-        else { a = 5+Math.floor(Math.random()*20); b = 1+Math.floor(Math.random()*a); answer = a-b; }
-        this.questionEl.textContent = `${a} ${op} ${b} = ?`;
-
-        const options = new Set([answer]);
-        while (options.size < 4) {
-            const w = answer + Math.floor(Math.random()*11) - 5;
-            if (w !== answer && w >= 0) options.add(w);
-        }
-        const self = this;
-        this.ansGrid.innerHTML = '';
-        [...options].sort(() => Math.random()-0.5).forEach(val => {
-            const btn = document.createElement('button');
-            btn.style.cssText = 'background:var(--bg-secondary);color:var(--text-primary);border:2px solid rgba(255,255,255,0.15);font-size:22px;padding:14px;border-radius:12px;min-height:56px;font-family:Fredoka One,sans-serif;cursor:pointer;';
-            btn.textContent = val;
-            btn.addEventListener('pointerdown', function(e) {
-                e.preventDefault();
-                if (self._done) return;
-                if (val === answer) {
-                    self.correct++;
-                    gameScore = self.correct;
-                    self.feedbackEl.textContent = '✓ Correct!';
-                    self.feedbackEl.style.color = '#69f0ae';
-                    btn.style.background = '#69f0ae';
-                    btn.style.color = '#000';
-                    if (self.correct >= 5) { self._done = true; setTimeout(() => _endGame(true), 400); return; }
-                } else {
-                    self.feedbackEl.textContent = '✗ Wrong! Answer was ' + answer;
-                    self.feedbackEl.style.color = '#ff5252';
-                    btn.style.background = '#ff5252';
-                }
-                setTimeout(() => { self.feedbackEl.textContent = self.correct + '/5 correct'; self.feedbackEl.style.color = '#9575cd'; self._generate(); }, 600);
-            }, { passive: false });
-            self.ansGrid.appendChild(btn);
+    QuickMath.prototype._gen = function() {
+        if(this._done)return;
+        const ops=['+','-','\u00d7'], op=ops[Math.floor(Math.random()*ops.length)];
+        let a,b,ans;
+        if(op==='\u00d7'){a=2+~~(Math.random()*10);b=2+~~(Math.random()*10);ans=a*b;}
+        else if(op==='+'){a=1+~~(Math.random()*20);b=1+~~(Math.random()*20);ans=a+b;}
+        else{a=5+~~(Math.random()*20);b=1+~~(Math.random()*a);ans=a-b;}
+        this.qEl.textContent=`${a} ${op} ${b} = ?`;
+        const opts=new Set([ans]);
+        while(opts.size<4){const w=ans+~~(Math.random()*11)-5;if(w!==ans&&w>=0)opts.add(w);}
+        const self=this; this.aGrid.innerHTML='';
+        [...opts].sort(()=>Math.random()-.5).forEach(val=>{
+            const btn=document.createElement('button');
+            btn.style.cssText='background:var(--bg-secondary);color:var(--text-primary);border:2px solid rgba(255,255,255,0.15);font-size:22px;padding:14px;border-radius:12px;min-height:60px;font-family:Fredoka One,sans-serif;cursor:pointer;touch-action:manipulation;';
+            btn.textContent=val;
+            btn.addEventListener('pointerdown',function(e){
+                e.preventDefault(); if(self._done)return;
+                if(val===ans){self.correct++;gameScore=self.correct;self.fbEl.textContent='✓ Correct!';self.fbEl.style.color='#69f0ae';btn.style.background='#69f0ae';btn.style.color='#000';
+                    if(self.correct>=5){self._done=true;setTimeout(()=>_endGame(true),400);return;}}
+                else{self.fbEl.textContent='✗ Wrong! Answer was '+ans;self.fbEl.style.color='#ff5252';btn.style.background='#ff5252';}
+                setTimeout(()=>{self.fbEl.textContent=self.correct+'/5 correct';self.fbEl.style.color='#9575cd';self._gen();},600);
+            },{passive:false});
+            self.aGrid.appendChild(btn);
         });
-        this.feedbackEl.textContent = this.correct + '/5 correct';
-        this.feedbackEl.style.color = '#9575cd';
+        this.fbEl.textContent=this.correct+'/5 correct'; this.fbEl.style.color='#9575cd';
     };
-    QuickMath.prototype.update = function() {};
-    QuickMath.prototype.render = function() {};
-    QuickMath.prototype.cleanup = function() {};
+    QuickMath.prototype.update=function(){};
+    QuickMath.prototype.render=function(){};
+    QuickMath.prototype.cleanup=function(){};
 
     // ===== MINI-GAME: REFLEX TEST =====
-    // Win condition: complete 3 rounds → explicit endGame(true)
-    function ReflexTest() {
-        this.round = 0;
-        this.phase = 'wait';
-        this.waitTimer = 0;
-        this.waitTarget = 0;
-        this.goStart = 0;
-        this.times = [];
-        this.falseStart = false;
-        this._handler = null;
-        this._done = false;
-        this._pauseTimer = 0;
-    }
+    function ReflexTest() { this.round=0;this.phase='wait';this.waitT=0;this.waitTarget=0;this.goStart=0;this.times=[];this.falseStart=false;this._h=null;this._done=false; }
     ReflexTest.prototype.init = function() {
-        canvas.style.display = 'block';
-        const self = this;
-        this._handler = function(e) {
+        canvas.style.display='block';
+        const self=this;
+        this._h = e => {
             e.preventDefault();
-            if (self._done || self.phase === 'result') return;
-            if (self.phase === 'ready') {
-                self.falseStart = true;
-                self.times.push(999);
-                gameScore = self.times.length;
-                self.phase = 'result';
-                self.waitTimer = 0;
-                self.waitTarget = 1.2;
-            } else if (self.phase === 'go') {
-                const ms = Math.round(performance.now() - self.goStart);
-                self.times.push(ms);
-                gameScore = ms;
-                self.phase = 'result';
-                self.waitTimer = 0;
-                self.waitTarget = 1.2;
-            }
+            if(self._done||self.phase==='result')return;
+            if(self.phase==='ready'){self.falseStart=true;self.times.push(999);gameScore=self.times.length;self.phase='result';self.waitT=0;self.waitTarget=1.2;}
+            else if(self.phase==='go'){const ms=Math.round(performance.now()-self.goStart);self.times.push(ms);gameScore=ms;self.phase='result';self.waitT=0;self.waitTarget=1.2;}
         };
-        canvas.addEventListener('pointerdown', this._handler, { passive: false });
+        canvas.addEventListener('pointerdown',this._h,{passive:false});
         this._nextRound();
     };
-    ReflexTest.prototype._nextRound = function() {
-        this.round++;
-        this.phase = 'ready';
-        this.waitTimer = 0;
-        this.waitTarget = 1.5 + Math.random() * 3;
-        this.falseStart = false;
-    };
-    ReflexTest.prototype.update = function(dt) {
-        if (this._done) return;
-        this.waitTimer += dt;
-        if (this.phase === 'ready' && this.waitTimer >= this.waitTarget) {
-            this.phase = 'go';
-            this.goStart = performance.now();
-        } else if (this.phase === 'result' && this.waitTimer >= this.waitTarget) {
-            if (this.round >= 3) {
-                this._done = true;
-                const valid = this.times.filter(t => t < 999);
-                gameScore = valid.length ? Math.min(...valid) : 999;
-                _endGame(true);
-            } else {
-                this._nextRound();
-            }
+    ReflexTest.prototype._nextRound=function(){this.round++;this.phase='ready';this.waitT=0;this.waitTarget=1.5+Math.random()*3;this.falseStart=false;};
+    ReflexTest.prototype.update=function(dt){
+        if(this._done)return;
+        this.waitT+=dt;
+        if(this.phase==='ready'&&this.waitT>=this.waitTarget){this.phase='go';this.goStart=performance.now();}
+        else if(this.phase==='result'&&this.waitT>=this.waitTarget){
+            if(this.round>=3){this._done=true;const v=this.times.filter(t=>t<999);gameScore=v.length?Math.min(...v):999;_endGame(true);}
+            else this._nextRound();
         }
     };
-    ReflexTest.prototype.render = function(ctx) {
-        const W = window.innerWidth, H = window.innerHeight;
-        const phase = this.phase;
-        if (phase === 'ready') {
-            ctx.fillStyle = '#b71c1c';
-            ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = '#fff';
-            ctx.font = `bold ${Math.min(W*0.1, 44)}px Fredoka One`;
-            ctx.textAlign = 'center';
-            ctx.fillText('Wait...', W/2, H/2);
-            ctx.font = '16px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.55)';
-            ctx.fillText('Round ' + this.round + ' / 3', W/2, H/2 + 40);
-        } else if (phase === 'go') {
-            ctx.fillStyle = '#1b5e20';
-            ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = '#fff';
-            ctx.font = `bold ${Math.min(W*0.1, 44)}px Fredoka One`;
-            ctx.textAlign = 'center';
-            ctx.fillText('TAP NOW!', W/2, H/2);
+    ReflexTest.prototype.render=function(ctx){
+        const W=window.innerWidth,H=window.innerHeight;
+        const fSize=Math.min(W*0.1,44);
+        if(this.phase==='ready'){
+            ctx.fillStyle='#b71c1c'; ctx.fillRect(0,0,W,H);
+            ctx.fillStyle='#fff'; ctx.font=`bold ${fSize}px Fredoka One`; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('Wait...',W/2,H/2);
+            ctx.font='15px system-ui'; ctx.fillStyle='rgba(255,255,255,0.5)';
+            ctx.fillText('Round '+this.round+' / 3',W/2,H/2+fSize*0.9);
+        } else if(this.phase==='go'){
+            ctx.fillStyle='#1b5e20'; ctx.fillRect(0,0,W,H);
+            ctx.fillStyle='#fff'; ctx.font=`bold ${fSize}px Fredoka One`; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('TAP NOW!',W/2,H/2);
         } else {
-            const last = this.times[this.times.length - 1];
-            ctx.fillStyle = this.falseStart ? '#e65100' : '#263238';
-            ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = '#fff';
-            ctx.font = `bold ${Math.min(W*0.08, 36)}px Fredoka One`;
-            ctx.textAlign = 'center';
-            ctx.fillText(this.falseStart ? 'Too early! +500ms penalty' : last + ' ms', W/2, H/2 - 10);
-            ctx.font = '14px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            const next = this.round >= 3 ? 'Finishing…' : 'Next round in a moment…';
-            ctx.fillText(next, W/2, H/2 + 30);
+            const last=this.times[this.times.length-1];
+            ctx.fillStyle=this.falseStart?'#e65100':'#263238'; ctx.fillRect(0,0,W,H);
+            ctx.fillStyle='#fff'; ctx.font=`bold ${fSize*0.85}px Fredoka One`; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(this.falseStart?'Too early!':last+' ms',W/2,H/2-10);
+            ctx.font='14px system-ui'; ctx.fillStyle='rgba(255,255,255,0.5)';
+            ctx.fillText(this.round>=3?'Finishing…':'Next round soon…',W/2,H/2+fSize*0.8);
         }
     };
-    ReflexTest.prototype.cleanup = function() {
-        canvas.removeEventListener('pointerdown', this._handler);
-    };
+    ReflexTest.prototype.cleanup=function(){ canvas.removeEventListener('pointerdown',this._h); };
 
     // ===== BOOT =====
     updateHome();
+    // Stop any lingering ad animation when leaving ad screen
+    document.querySelectorAll('.screen').forEach(s => {
+        const obs = new MutationObserver(() => {
+            if (s.id === 'ad-overlay' && !s.classList.contains('active')) stopAdCanvas();
+        });
+        obs.observe(s, { attributes: true, attributeFilter: ['class'] });
+    });
 
 })();
 </script>
