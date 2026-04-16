@@ -18,6 +18,12 @@
       "runtimeExecutable": "/usr/bin/python3",
       "runtimeArgs": ["-m", "http.server", "3458", "-d", "."],
       "port": 3458
+    },
+    {
+      "name": "mini-games-lottery",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["-m", "http.server", "3459", "-d", "."],
+      "port": 3459
     }
   ]
 }

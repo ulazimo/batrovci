@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-1X91H99N2G');
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mini Games Lottery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1a0533;
+            --bg-secondary: #2d1b4e;
+            --accent-gold: #ffd700;
+            --accent-cyan: #00e5ff;
+            --accent-pink: #ff4081;
+            --text-primary: #f0e6ff;
+            --text-muted: #9575cd;
+            --success: #69f0ae;
+            --danger: #ff5252;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Fredoka One', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary), #0d0221);
+            color: var(--text-primary);
+            min-height: 100vh;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: fixed;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+        .screen.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .ticket-badge {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid var(--accent-gold);
+            border-radius: 20px;
+            font-size: 16px;
+            color: var(--accent-gold);
+            backdrop-filter: blur(6px);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), #0091ea);
+            color: #000;
+            box-shadow: 0 4px 20px rgba(0,229,255,0.3);
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--accent-gold), #ffab00);
+            color: #000;
+            box-shadow: 0 4px 20px rgba(255,215,0,0.3);
+        }
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #d50000);
+            color: #fff;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #00c853);
+            color: #000;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .card:active { transform: scale(0.96); border-color: var(--accent-gold); }
+
+        /* Home Screen */
+        .home-title {
+            font-size: clamp(28px, 7vw, 48px);
+            background: linear-gradient(135deg, var(--accent-gold), #ffab00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .home-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .pool-display {
+            font-size: clamp(32px, 8vw, 56px);
+            color: var(--accent-gold);
+            text-shadow: 0 0 30px rgba(255,215,0,0.4);
+            margin: 16px 0 8px;
+            animation: shimmer 2s ease-in-out infinite alternate;
+        }
+        .pool-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .countdown-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .countdown-box .label { color: var(--text-muted); font-size: 12px; }
+        .countdown-box .time { font-size: 28px; color: var(--accent-cyan); margin-top: 4px; }
+        .home-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+        /* Game Select */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 16px;
+        }
+        .game-card-emoji { font-size: 36px; margin-bottom: 8px; }
+        .game-card-name { font-size: 14px; }
+        .game-card-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: system-ui, sans-serif; }
+        .select-title { font-size: 24px; margin-bottom: 4px; }
+
+        /* Game Play */
+        #game-play-screen {
+            padding: 0;
+            background: var(--bg-primary);
+        }
+        .game-hud {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 50;
+        }
+        .game-hud-name { font-size: 16px; }
+        .game-hud-timer { font-size: 20px; color: var(--accent-cyan); }
+        .game-hud-quit {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #game-dom {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding-top: 56px;
+        }
+        .timer-bar {
+            position: fixed;
+            top: 46px;
+            left: 0;
+            height: 4px;
+            background: var(--accent-cyan);
+            z-index: 51;
+            transition: width 0.1s linear;
+        }
+
+        /* Result Screen */
+        .result-icon { font-size: 64px; margin-bottom: 12px; }
+        .result-title { font-size: 28px; margin-bottom: 8px; }
+        .result-score { font-size: 18px; color: var(--text-muted); margin-bottom: 16px; font-family: system-ui; }
+        .result-ticket {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 22px;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            animation: float 1s ease-in-out;
+        }
+        .result-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+        .result-buttons .btn { width: 100%; }
+
+        /* Lottery Screen */
+        .lottery-pool {
+            font-size: clamp(36px, 10vw, 64px);
+            color: var(--accent-gold);
+            text-shadow: 0 0 40px rgba(255,215,0,0.5);
+            margin: 12px 0;
+        }
+        .lottery-info { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; font-family: system-ui; text-align: center; }
+        .ticket-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .ticket-input-wrap input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-gold);
+            min-width: 120px;
+        }
+        .ticket-input-wrap .count {
+            font-size: 20px;
+            color: var(--accent-gold);
+            min-width: 50px;
+            text-align: center;
+        }
+        #lottery-canvas {
+            width: 280px;
+            height: 200px;
+            border-radius: 12px;
+            margin: 12px 0;
+        }
+        .lottery-result {
+            text-align: center;
+            margin: 12px 0;
+            font-size: 18px;
+        }
+        .lottery-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+        /* Ad Overlay */
+        #ad-overlay {
+            z-index: 200;
+            background: rgba(0,0,0,0.9);
+        }
+        .ad-box {
+            width: 300px;
+            max-width: 90%;
+            background: linear-gradient(135deg, #333, #222);
+            border: 2px solid #555;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .ad-box h3 { margin-bottom: 16px; font-size: 20px; }
+        .ad-progress {
+            width: 100%;
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+        .ad-progress-bar {
+            height: 100%;
+            background: var(--accent-gold);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .ad-timer { font-size: 24px; color: var(--accent-cyan); margin-bottom: 12px; }
+        .ad-skip { visibility: hidden; }
+        .ad-skip.visible { visibility: visible; }
+
+        /* Draw history */
+        .draw-history {
+            margin-top: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .draw-history-title {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .draw-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-family: system-ui;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+        .draw-entry .won { color: var(--accent-gold); }
+        .draw-entry .lost { color: var(--text-muted); }
+
+        @keyframes shimmer {
+            0% { text-shadow: 0 0 20px rgba(255,215,0,0.3); }
+            100% { text-shadow: 0 0 40px rgba(255,215,0,0.6), 0 0 60px rgba(255,215,0,0.2); }
+        }
+        @keyframes float {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
+            50% { box-shadow: 0 4px 30px rgba(255,215,0,0.6); }
+            100% { box-shadow: 0 4px 20px rgba(255,215,0,0.3); }
+        }
+        .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<!-- Back Link -->
+<a href="../index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">&#8592; All Games</a>
+
+<!-- Ticket Badge -->
+<div class="ticket-badge" id="ticketBadge">&#127915; <span id="ticketCount">0</span></div>
+
+<!-- Home Screen -->
+<div class="screen active" id="home-screen">
+    <div class="home-title">Mini Games Lottery</div>
+    <div class="home-subtitle">Play games. Earn tickets. Win big!</div>
+    <div class="pool-label">PRIZE POOL</div>
+    <div class="pool-display" id="homePool">$0.00</div>
+    <div class="countdown-box">
+        <div class="label">NEXT DRAW IN</div>
+        <div class="time" id="homeCountdown">--:--:--</div>
+    </div>
+    <div class="home-buttons">
+        <button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play</button>
+        <button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Lottery</button>
+    </div>
+    <div class="draw-history" id="homeHistory"></div>
+</div>
+
+<!-- Game Select Screen -->
+<div class="screen" id="game-select-screen">
+    <div class="select-title">Choose a Game</div>
+    <button class="btn btn-primary" onclick="startRandomGame()" style="margin-top:8px;font-size:15px;padding:10px 22px;">&#127922; Random Game</button>
+    <div class="game-grid" id="gameGrid"></div>
+    <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="margin-top:16px;font-size:14px;padding:10px 20px;">&#8592; Back</button>
+</div>
+
+<!-- Game Play Screen -->
+<div class="screen" id="game-play-screen">
+    <div class="game-hud">
+        <span class="game-hud-name" id="hudName">Game</span>
+        <span class="game-hud-timer" id="hudTimer">15</span>
+        <button class="game-hud-quit" onclick="quitGame()">&#10005;</button>
+    </div>
+    <div class="timer-bar" id="timerBar"></div>
+    <canvas id="game-canvas"></canvas>
+    <div id="game-dom"></div>
+</div>
+
+<!-- Result Screen -->
+<div class="screen" id="result-screen">
+    <div class="result-icon" id="resultIcon">&#127942;</div>
+    <div class="result-title" id="resultTitle">Game Complete!</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-ticket" id="resultTicket" style="display:none">&#127915; +1 Ticket Earned!</div>
+    <div class="result-buttons" id="resultButtons"></div>
+</div>
+
+<!-- Lottery Screen -->
+<div class="screen" id="lottery-screen">
+    <div style="font-size:24px;margin-bottom:4px;">&#127920; Lottery</div>
+    <div class="pool-label">PRIZE POOL</div>
+    <div class="lottery-pool" id="lotteryPool">$0.00</div>
+    <div class="lottery-info" id="lotteryInfo">Your tickets: 0</div>
+    <div class="countdown-box" style="margin-bottom:12px">
+        <div class="label">NEXT DRAW IN</div>
+        <div class="time" id="lotteryCountdown">--:--:--</div>
+    </div>
+    <div class="ticket-input-wrap" id="ticketInputWrap" style="display:none">
+        <span style="font-size:14px;">Enter:</span>
+        <input type="range" id="ticketSlider" min="1" max="1" value="1">
+        <span class="count" id="ticketSliderVal">1</span>
+    </div>
+    <div id="lotteryActions">
+        <button class="btn btn-gold" id="enterDrawBtn" onclick="enterDraw()">Enter Draw</button>
+    </div>
+    <canvas id="lottery-canvas" width="280" height="200" style="display:none"></canvas>
+    <div class="lottery-result" id="lotteryResult" style="display:none"></div>
+    <div class="lottery-buttons" style="margin-top:12px">
+        <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="font-size:14px;padding:10px 20px;">&#8592; Home</button>
+        <button class="btn btn-primary" id="demoDrawBtn" onclick="demoDraw()" style="font-size:14px;padding:10px 20px;">Demo Draw</button>
+    </div>
+</div>
+
+<!-- Ad Overlay -->
+<div class="screen" id="ad-overlay">
+    <div class="ad-box">
+        <h3>&#128250; Watching Ad...</h3>
+        <div class="ad-timer" id="adTimer">5</div>
+        <div class="ad-progress"><div class="ad-progress-bar" id="adProgressBar"></div></div>
+        <button class="btn btn-secondary ad-skip" id="adSkip" onclick="skipAd()" style="font-size:14px;padding:8px 20px;">Skip &#9654;</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ========== STATE ==========
+    function defaultState() {
+        return {
+            tickets: 0,
+            totalTicketsEarned: 0,
+            ticketsInDraw: 0,
+            gamesPlayed: 0,
+            lastDrawTime: null,
+            drawHistory: [],
+            prizePool: 0,
+            highScores: {}
+        };
+    }
+
+    function loadState() {
+        try { return Object.assign(defaultState(), JSON.parse(localStorage.getItem('miniGamesLottery'))); }
+        catch { return defaultState(); }
+    }
+    function saveState() { localStorage.setItem('miniGamesLottery', JSON.stringify(state)); }
+
+    let state = loadState();
+
+    // ========== SCREEN NAV ==========
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); });
+        const el = document.getElementById(id);
+        el.classList.add('active');
+        if (id === 'home-screen') updateHome();
+        if (id === 'lottery-screen') updateLottery();
+        if (id === 'game-select-screen') buildGameGrid();
+
+        const badge = document.getElementById('ticketBadge');
+        badge.style.display = (id === 'game-play-screen' || id === 'ad-overlay') ? 'none' : 'flex';
+    }
+    window.showScreen = showScreen;
+
+    function updateTicketBadge() {
+        document.getElementById('ticketCount').textContent = state.tickets;
+    }
+
+    // ========== COUNTDOWN ==========
+    function getNextDrawTime() {
+        if (state.lastDrawTime) {
+            const next = new Date(state.lastDrawTime);
+            next.setHours(next.getHours() + 24);
+            if (next > new Date()) return next;
+        }
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        return tomorrow;
+    }
+
+    function formatCountdown(ms) {
+        if (ms <= 0) return '00:00:00';
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    setInterval(() => {
+        const ms = getNextDrawTime() - new Date();
+        const str = formatCountdown(ms);
+        const hc = document.getElementById('homeCountdown');
+        const lc = document.getElementById('lotteryCountdown');
+        if (hc) hc.textContent = str;
+        if (lc) lc.textContent = str;
+    }, 1000);
+
+    // ========== HOME ==========
+    function updateHome() {
+        updateTicketBadge();
+        document.getElementById('homePool').textContent = '$' + state.prizePool.toFixed(2);
+        const hist = document.getElementById('homeHistory');
+        if (state.drawHistory.length === 0) {
+            hist.innerHTML = '';
+            return;
+        }
+        let html = '<div class="draw-history-title">Recent Draws</div>';
+        state.drawHistory.slice(-3).reverse().forEach(d => {
+            const date = new Date(d.date).toLocaleDateString();
+            const cls = d.won ? 'won' : 'lost';
+            const txt = d.won ? `Won $${d.prize.toFixed(2)}` : 'No win';
+            html += `<div class="draw-entry"><span>${date}</span><span class="${cls}">${txt}</span></div>`;
+        });
+        hist.innerHTML = html;
+    }
+
+    // ========== GAME SELECT ==========
+    const MINI_GAMES = [
+        { id: 'speed-tap', name: 'Speed Tap', emoji: '&#128308;', desc: 'Tap circles before they vanish!', duration: 15 },
+        { id: 'color-memory', name: 'Color Memory', emoji: '&#127912;', desc: 'Repeat the color sequence', duration: 30 },
+        { id: 'catch-stars', name: 'Catch Stars', emoji: '&#11088;', desc: 'Catch stars, dodge bombs!', duration: 20 },
+        { id: 'quick-math', name: 'Quick Math', emoji: '&#129518;', desc: 'Solve math fast!', duration: 20 },
+        { id: 'reflex-test', name: 'Reflex Test', emoji: '&#9889;', desc: 'Test your reaction time', duration: 15 }
+    ];
+
+    function buildGameGrid() {
+        const grid = document.getElementById('gameGrid');
+        grid.innerHTML = MINI_GAMES.map(g =>
+            `<div class="card" onclick="startGame('${g.id}')">
+                <div class="game-card-emoji">${g.emoji}</div>
+                <div class="game-card-name">${g.name}</div>
+                <div class="game-card-desc">${g.desc}</div>
+            </div>`
+        ).join('');
+    }
+
+    function startRandomGame() {
+        const g = MINI_GAMES[Math.floor(Math.random() * MINI_GAMES.length)];
+        startGame(g.id);
+    }
+    window.startRandomGame = startRandomGame;
+
+    // ========== GAME ENGINE ==========
+    let currentGame = null;
+    let gameActive = false;
+    let gameTimerTotal = 0;
+    let gameTimeLeft = 0;
+    let lastFrameTime = 0;
+    let animFrameId = null;
+    let gameScore = 0;
+    let gameWon = false;
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const gameDom = document.getElementById('game-dom');
+
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function startGame(id) {
+        const meta = MINI_GAMES.find(g => g.id === id);
+        if (!meta) return;
+
+        showScreen('game-play-screen');
+        document.getElementById('hudName').textContent = meta.name;
+        gameTimerTotal = meta.duration;
+        gameTimeLeft = meta.duration;
+        gameScore = 0;
+        gameWon = false;
+        gameActive = true;
+
+        canvas.style.display = 'none';
+        gameDom.style.display = 'none';
+        gameDom.innerHTML = '';
+
+        resizeCanvas();
+
+        const games = { 'speed-tap': SpeedTap, 'color-memory': ColorMemory, 'catch-stars': CatchStars, 'quick-math': QuickMath, 'reflex-test': ReflexTest };
+        currentGame = new games[id]();
+        currentGame.init();
+
+        lastFrameTime = performance.now();
+        gameLoop(lastFrameTime);
+    }
+    window.startGame = startGame;
+
+    function gameLoop(timestamp) {
+        const dt = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
+        lastFrameTime = timestamp;
+
+        if (gameActive) {
+            gameTimeLeft -= dt;
+            if (gameTimeLeft <= 0) {
+                gameTimeLeft = 0;
+                endGame(false);
+                return;
+            }
+            document.getElementById('hudTimer').textContent = Math.ceil(gameTimeLeft);
+            document.getElementById('timerBar').style.width = ((gameTimeLeft / gameTimerTotal) * 100) + '%';
+
+            currentGame.update(dt);
+
+            if (canvas.style.display !== 'none') {
+                ctx.globalAlpha = 1.0;
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                currentGame.render(ctx);
+            }
+        }
+
+        animFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame(won) {
+        gameActive = false;
+        gameWon = won !== false && gameScore > 0;
+        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+        if (currentGame && currentGame.cleanup) currentGame.cleanup();
+        currentGame = null;
+
+        state.gamesPlayed++;
+        if (gameWon) {
+            state.tickets++;
+            state.totalTicketsEarned++;
+        }
+        saveState();
+        showResult();
+    }
+
+    function quitGame() {
+        gameActive = false;
+        gameScore = 0;
+        gameWon = false;
+        if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+        if (currentGame && currentGame.cleanup) currentGame.cleanup();
+        currentGame = null;
+        showScreen('home-screen');
+    }
+    window.quitGame = quitGame;
+
+    // ========== RESULT ==========
+    function showResult() {
+        showScreen('result-screen');
+        document.getElementById('resultIcon').innerHTML = gameWon ? '&#127942;' : '&#128546;';
+        document.getElementById('resultTitle').textContent = gameWon ? 'Game Complete!' : "Time's Up!";
+        document.getElementById('resultScore').textContent = 'Score: ' + gameScore;
+
+        const ticketEl = document.getElementById('resultTicket');
+        ticketEl.style.display = gameWon ? 'flex' : 'none';
+
+        const btns = document.getElementById('resultButtons');
+        let html = '';
+        if (gameWon) {
+            html += '<button class="btn btn-gold" onclick="watchAd()">&#128250; Watch Ad for +100 Tickets</button>';
+        }
+        html += '<button class="btn btn-primary" onclick="showScreen(\'game-select-screen\')">&#127918; Play Again</button>';
+        html += '<button class="btn btn-secondary" onclick="showScreen(\'home-screen\')">&#8592; Home</button>';
+        btns.innerHTML = html;
+        updateTicketBadge();
+    }
+
+    // ========== AD SIMULATION ==========
+    let adInterval = null;
+    let adTimeLeft = 5;
+
+    function watchAd() {
+        showScreen('ad-overlay');
+        adTimeLeft = 5;
+        document.getElementById('adTimer').textContent = '5';
+        document.getElementById('adProgressBar').style.width = '0%';
+        document.getElementById('adSkip').classList.remove('visible');
+
+        adInterval = setInterval(() => {
+            adTimeLeft -= 0.1;
+            const pct = ((5 - adTimeLeft) / 5) * 100;
+            document.getElementById('adProgressBar').style.width = pct + '%';
+            document.getElementById('adTimer').textContent = Math.ceil(adTimeLeft);
+            if (adTimeLeft <= 2) document.getElementById('adSkip').classList.add('visible');
+            if (adTimeLeft <= 0) finishAd();
+        }, 100);
+    }
+    window.watchAd = watchAd;
+
+    function skipAd() { finishAd(); }
+    window.skipAd = skipAd;
+
+    function finishAd() {
+        if (adInterval) { clearInterval(adInterval); adInterval = null; }
+        state.tickets += 100;
+        state.totalTicketsEarned += 100;
+        state.prizePool += 0.50;
+        saveState();
+        updateTicketBadge();
+        showScreen('result-screen');
+
+        const ticketEl = document.getElementById('resultTicket');
+        ticketEl.innerHTML = '&#127915; +100 Tickets from Ad!';
+        ticketEl.style.display = 'flex';
+
+        const btns = document.getElementById('resultButtons');
+        btns.innerHTML = '<button class="btn btn-primary" onclick="showScreen(\'game-select-screen\')">&#127918; Play Again</button>' +
+            '<button class="btn btn-secondary" onclick="showScreen(\'home-screen\')">&#8592; Home</button>';
+    }
+
+    // ========== LOTTERY ==========
+    function updateLottery() {
+        updateTicketBadge();
+        document.getElementById('lotteryPool').textContent = '$' + state.prizePool.toFixed(2);
+        document.getElementById('lotteryInfo').textContent = `Your tickets: ${state.tickets} | In draw: ${state.ticketsInDraw}`;
+
+        const wrap = document.getElementById('ticketInputWrap');
+        const slider = document.getElementById('ticketSlider');
+        const enterBtn = document.getElementById('enterDrawBtn');
+
+        if (state.tickets > 0) {
+            wrap.style.display = 'flex';
+            slider.max = state.tickets;
+            slider.value = Math.min(slider.value, state.tickets);
+            document.getElementById('ticketSliderVal').textContent = slider.value;
+            enterBtn.disabled = false;
+            enterBtn.style.opacity = '1';
+        } else {
+            wrap.style.display = 'none';
+            enterBtn.disabled = true;
+            enterBtn.style.opacity = '0.5';
+        }
+
+        document.getElementById('lottery-canvas').style.display = 'none';
+        document.getElementById('lotteryResult').style.display = 'none';
+    }
+
+    document.getElementById('ticketSlider').addEventListener('input', function() {
+        document.getElementById('ticketSliderVal').textContent = this.value;
+    });
+
+    function enterDraw() {
+        const count = parseInt(document.getElementById('ticketSlider').value) || 0;
+        if (count <= 0 || count > state.tickets) return;
+        state.tickets -= count;
+        state.ticketsInDraw += count;
+        saveState();
+        updateLottery();
+    }
+    window.enterDraw = enterDraw;
+
+    function demoDraw() {
+        if (state.ticketsInDraw === 0) {
+            document.getElementById('lotteryResult').style.display = 'block';
+            document.getElementById('lotteryResult').innerHTML = '<span style="color:var(--text-muted)">Enter tickets first!</span>';
+            return;
+        }
+        runLotteryAnimation();
+    }
+    window.demoDraw = demoDraw;
+
+    function runLotteryAnimation() {
+        const lCanvas = document.getElementById('lottery-canvas');
+        lCanvas.style.display = 'block';
+        const lCtx = lCanvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        lCanvas.width = 280 * dpr;
+        lCanvas.height = 200 * dpr;
+        lCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const playerEntries = state.ticketsInDraw;
+        const otherEntries = 50 + Math.floor(Math.random() * 450);
+        const totalEntries = playerEntries + otherEntries;
+        const winningNum = Math.floor(Math.random() * totalEntries);
+        const playerWon = winningNum < playerEntries;
+
+        let elapsed = 0;
+        const duration = 3;
+        let scrollY = 0;
+        let speed = 2000;
+        const numbers = [];
+        for (let i = 0; i < 50; i++) numbers.push(Math.floor(Math.random() * totalEntries));
+        numbers.push(winningNum);
+
+        function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+        let prevT = performance.now();
+        function animateDrum(ts) {
+            const dt = (ts - prevT) / 1000;
+            prevT = ts;
+            elapsed += dt;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedSpeed = speed * (1 - easeOutCubic(progress));
+            scrollY += easedSpeed * dt;
+
+            lCtx.globalAlpha = 1.0;
+            lCtx.clearRect(0, 0, 280, 200);
+
+            // Drum background
+            lCtx.fillStyle = '#1a0533';
+            lCtx.fillRect(40, 0, 200, 200);
+            lCtx.strokeStyle = 'rgba(255,215,0,0.4)';
+            lCtx.lineWidth = 2;
+            lCtx.strokeRect(40, 0, 200, 200);
+
+            // Numbers scrolling
+            lCtx.fillStyle = '#f0e6ff';
+            lCtx.font = 'bold 32px Fredoka One';
+            lCtx.textAlign = 'center';
+            const numHeight = 50;
+            const offset = scrollY % (numbers.length * numHeight);
+            for (let i = 0; i < 8; i++) {
+                const idx = Math.floor((offset / numHeight + i) % numbers.length);
+                const y = 100 + (i * numHeight) - (offset % numHeight) - numHeight * 3;
+                lCtx.globalAlpha = 1 - Math.abs(y - 100) / 150;
+                if (lCtx.globalAlpha < 0) lCtx.globalAlpha = 0;
+                lCtx.fillText('#' + numbers[idx], 140, y + 12);
+            }
+
+            // Center highlight
+            lCtx.globalAlpha = 1.0;
+            lCtx.strokeStyle = var_gold;
+            lCtx.lineWidth = 3;
+            lCtx.strokeRect(50, 82, 180, 40);
+
+            if (progress < 1) {
+                requestAnimationFrame(animateDrum);
+            } else {
+                // Final number
+                lCtx.globalAlpha = 1.0;
+                lCtx.clearRect(0, 0, 280, 200);
+                lCtx.fillStyle = '#1a0533';
+                lCtx.fillRect(40, 0, 200, 200);
+                lCtx.strokeStyle = var_gold;
+                lCtx.lineWidth = 3;
+                lCtx.strokeRect(40, 0, 200, 200);
+                lCtx.strokeRect(50, 82, 180, 40);
+                lCtx.fillStyle = var_gold;
+                lCtx.font = 'bold 32px Fredoka One';
+                lCtx.textAlign = 'center';
+                lCtx.fillText('#' + winningNum, 140, 112);
+
+                finishDraw(playerWon);
+            }
+        }
+
+        const var_gold = '#ffd700';
+        requestAnimationFrame(animateDrum);
+    }
+
+    function finishDraw(playerWon) {
+        const resultEl = document.getElementById('lotteryResult');
+        resultEl.style.display = 'block';
+
+        const prize = state.prizePool;
+        if (playerWon) {
+            resultEl.innerHTML = `<div style="font-size:36px;margin-bottom:8px;">&#127881;</div>
+                <div style="color:var(--accent-gold);font-size:24px;">YOU WON!</div>
+                <div style="font-size:20px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
+            state.prizePool = 0;
+            spawnConfetti();
+        } else {
+            resultEl.innerHTML = `<div style="font-size:36px;margin-bottom:8px;">&#128532;</div>
+                <div style="color:var(--text-muted);">Better luck next time!</div>`;
+        }
+
+        state.ticketsInDraw = 0;
+        state.lastDrawTime = new Date().toISOString();
+        state.drawHistory.push({
+            date: new Date().toISOString(),
+            pool: prize,
+            won: playerWon,
+            prize: playerWon ? prize : 0
+        });
+        if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
+        saveState();
+        updateTicketBadge();
+    }
+
+    // Confetti
+    function spawnConfetti() {
+        const overlay = document.createElement('canvas');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:300;pointer-events:none;';
+        overlay.width = window.innerWidth * (window.devicePixelRatio || 1);
+        overlay.height = window.innerHeight * (window.devicePixelRatio || 1);
+        overlay.style.width = window.innerWidth + 'px';
+        overlay.style.height = window.innerHeight + 'px';
+        document.body.appendChild(overlay);
+        const cCtx = overlay.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        cCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const W = window.innerWidth, H = window.innerHeight;
+        const colors = ['#ffd700','#ff4081','#00e5ff','#69f0ae','#ff5252','#9575cd'];
+        const particles = [];
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: W / 2 + (Math.random() - 0.5) * 100,
+                y: H / 2,
+                vx: (Math.random() - 0.5) * 12,
+                vy: -Math.random() * 10 - 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: 4 + Math.random() * 6,
+                rot: Math.random() * Math.PI * 2,
+                rotV: (Math.random() - 0.5) * 0.3
+            });
+        }
+
+        let start = performance.now();
+        function animConfetti(ts) {
+            const t = (ts - start) / 1000;
+            if (t > 3) { document.body.removeChild(overlay); return; }
+            cCtx.globalAlpha = 1.0;
+            cCtx.clearRect(0, 0, W, H);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.vy += 0.25;
+                p.y += p.vy;
+                p.rot += p.rotV;
+                cCtx.save();
+                cCtx.translate(p.x, p.y);
+                cCtx.rotate(p.rot);
+                cCtx.fillStyle = p.color;
+                cCtx.globalAlpha = Math.max(0, 1 - t / 3);
+                cCtx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+                cCtx.restore();
+            });
+            requestAnimationFrame(animConfetti);
+        }
+        requestAnimationFrame(animConfetti);
+    }
+
+    // ========== MINI-GAME: SPEED TAP ==========
+    function SpeedTap() {
+        this.circles = [];
+        this.spawnTimer = 0;
+        this.spawnInterval = 0.8;
+        this.misses = 0;
+        this.handler = null;
+    }
+    SpeedTap.prototype.init = function() {
+        canvas.style.display = 'block';
+        const W = window.innerWidth, H = window.innerHeight;
+        const self = this;
+
+        this.handler = function(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            let hit = false;
+            for (let i = self.circles.length - 1; i >= 0; i--) {
+                const c = self.circles[i];
+                const dist = Math.hypot(x - c.x, y - c.y);
+                if (dist < c.r) {
+                    self.circles.splice(i, 1);
+                    gameScore++;
+                    hit = true;
+                    break;
+                }
+            }
+        };
+        canvas.addEventListener('pointerdown', this.handler, { passive: false });
+        this.spawnCircle();
+    };
+    SpeedTap.prototype.spawnCircle = function() {
+        const pad = 60;
+        this.circles.push({
+            x: pad + Math.random() * (window.innerWidth - pad * 2),
+            y: 80 + Math.random() * (window.innerHeight - 140),
+            r: 35,
+            maxR: 35,
+            life: 1.5,
+            maxLife: 1.5,
+            color: ['#ff4081','#00e5ff','#ffd700','#69f0ae','#ff5252'][Math.floor(Math.random()*5)]
+        });
+    };
+    SpeedTap.prototype.update = function(dt) {
+        this.spawnTimer += dt;
+        if (this.spawnTimer >= this.spawnInterval) {
+            this.spawnTimer = 0;
+            this.spawnCircle();
+            if (this.spawnInterval > 0.4) this.spawnInterval -= 0.02;
+        }
+        for (let i = this.circles.length - 1; i >= 0; i--) {
+            const c = this.circles[i];
+            c.life -= dt;
+            c.r = c.maxR * (c.life / c.maxLife);
+            if (c.life <= 0) {
+                this.circles.splice(i, 1);
+                this.misses++;
+                if (this.misses >= 3) { endGame(false); return; }
+            }
+        }
+    };
+    SpeedTap.prototype.render = function(ctx) {
+        this.circles.forEach(c => {
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, Math.max(c.r, 0), 0, Math.PI * 2);
+            ctx.fillStyle = c.color;
+            ctx.globalAlpha = 0.8;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+        // Score
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px Fredoka One';
+        ctx.textAlign = 'left';
+        ctx.fillText('Score: ' + gameScore, 16, window.innerHeight - 20);
+        // Misses
+        ctx.fillStyle = '#ff5252';
+        ctx.textAlign = 'right';
+        ctx.fillText('Miss: ' + this.misses + '/3', window.innerWidth - 16, window.innerHeight - 20);
+    };
+    SpeedTap.prototype.cleanup = function() {
+        canvas.removeEventListener('pointerdown', this.handler);
+    };
+
+    // ========== MINI-GAME: COLOR MEMORY ==========
+    function ColorMemory() {
+        this.colors = ['#ff4081','#00e5ff','#ffd700','#69f0ae'];
+        this.sequence = [];
+        this.playerInput = [];
+        this.round = 0;
+        this.showing = false;
+        this.showIndex = 0;
+        this.flashTimer = 0;
+        this.correct = 0;
+    }
+    ColorMemory.prototype.init = function() {
+        gameDom.style.display = 'flex';
+        gameDom.style.flexWrap = 'wrap';
+        gameDom.style.alignItems = 'center';
+        gameDom.style.justifyContent = 'center';
+        gameDom.style.gap = '12px';
+        gameDom.style.padding = '70px 20px 20px';
+
+        const self = this;
+        this.panels = [];
+        this.colors.forEach((color, i) => {
+            const div = document.createElement('div');
+            div.style.cssText = `width:calc(50% - 8px);aspect-ratio:1;border-radius:16px;background:${color};opacity:0.4;transition:opacity 0.15s,transform 0.15s;cursor:pointer;max-width:160px;max-height:160px;`;
+            div.addEventListener('pointerdown', function(e) {
+                e.preventDefault();
+                if (self.showing) return;
+                self.flashPanel(i);
+                self.playerInput.push(i);
+                self.checkInput();
+            }, { passive: false });
+            gameDom.appendChild(div);
+            this.panels.push(div);
+        });
+
+        // Status
+        this.statusEl = document.createElement('div');
+        this.statusEl.style.cssText = 'width:100%;text-align:center;font-size:18px;color:#f0e6ff;margin-top:8px;';
+        gameDom.appendChild(this.statusEl);
+
+        this.startRound();
+    };
+    ColorMemory.prototype.startRound = function() {
+        this.round++;
+        this.sequence.push(Math.floor(Math.random() * 4));
+        this.playerInput = [];
+        this.showing = true;
+        this.showIndex = 0;
+        this.flashTimer = 0;
+        this.statusEl.textContent = 'Watch carefully...';
+    };
+    ColorMemory.prototype.flashPanel = function(idx) {
+        const p = this.panels[idx];
+        p.style.opacity = '1';
+        p.style.transform = 'scale(1.08)';
+        setTimeout(() => { p.style.opacity = '0.4'; p.style.transform = 'scale(1)'; }, 300);
+    };
+    ColorMemory.prototype.checkInput = function() {
+        const idx = this.playerInput.length - 1;
+        if (this.playerInput[idx] !== this.sequence[idx]) {
+            this.statusEl.textContent = 'Wrong! Game Over';
+            gameScore = this.correct;
+            setTimeout(() => endGame(false), 800);
+            return;
+        }
+        if (this.playerInput.length === this.sequence.length) {
+            this.correct++;
+            gameScore = this.correct;
+            if (this.round >= 3) {
+                this.statusEl.textContent = 'Perfect!';
+                setTimeout(() => endGame(true), 600);
+                return;
+            }
+            this.statusEl.textContent = 'Round ' + (this.round + 1) + '!';
+            setTimeout(() => this.startRound(), 800);
+        }
+    };
+    ColorMemory.prototype.update = function(dt) {
+        if (!this.showing) return;
+        this.flashTimer += dt;
+        if (this.flashTimer >= 0.6) {
+            this.flashTimer = 0;
+            if (this.showIndex < this.sequence.length) {
+                this.flashPanel(this.sequence[this.showIndex]);
+                this.showIndex++;
+            } else {
+                this.showing = false;
+                this.statusEl.textContent = 'Your turn!';
+            }
+        }
+    };
+    ColorMemory.prototype.render = function() {};
+    ColorMemory.prototype.cleanup = function() {};
+
+    // ========== MINI-GAME: CATCH STARS ==========
+    function CatchStars() {
+        this.basketX = window.innerWidth / 2;
+        this.basketW = 70;
+        this.objects = [];
+        this.spawnTimer = 0;
+        this.caught = 0;
+        this.handler = null;
+    }
+    CatchStars.prototype.init = function() {
+        canvas.style.display = 'block';
+        const self = this;
+        this.handler = function(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            self.basketX = e.clientX - rect.left;
+        };
+        canvas.addEventListener('pointermove', this.handler, { passive: false });
+        canvas.addEventListener('pointerdown', this.handler, { passive: false });
+    };
+    CatchStars.prototype.update = function(dt) {
+        const W = window.innerWidth, H = window.innerHeight;
+        this.spawnTimer += dt;
+        if (this.spawnTimer >= 0.5) {
+            this.spawnTimer = 0;
+            const isBomb = Math.random() < 0.2;
+            this.objects.push({
+                x: 30 + Math.random() * (W - 60),
+                y: -20,
+                speed: 150 + Math.random() * 200,
+                isBomb: isBomb
+            });
+        }
+        const basketY = H - 60;
+        for (let i = this.objects.length - 1; i >= 0; i--) {
+            const o = this.objects[i];
+            o.y += o.speed * dt;
+            if (o.y > basketY - 15 && o.y < basketY + 25 && Math.abs(o.x - this.basketX) < this.basketW / 2 + 15) {
+                this.objects.splice(i, 1);
+                if (o.isBomb) {
+                    gameScore = this.caught;
+                    endGame(false);
+                    return;
+                }
+                this.caught++;
+                gameScore = this.caught;
+            } else if (o.y > H + 30) {
+                this.objects.splice(i, 1);
+            }
+        }
+        if (gameTimeLeft <= 0 && this.caught >= 10) gameWon = true;
+    };
+    CatchStars.prototype.render = function(ctx) {
+        const W = window.innerWidth, H = window.innerHeight;
+        // Objects
+        ctx.font = '28px serif';
+        ctx.textAlign = 'center';
+        this.objects.forEach(o => {
+            ctx.fillText(o.isBomb ? '\u{1F4A3}' : '\u{2B50}', o.x, o.y);
+        });
+        // Basket
+        const basketY = H - 60;
+        ctx.fillStyle = '#8d6e63';
+        ctx.beginPath();
+        ctx.moveTo(this.basketX - this.basketW/2, basketY);
+        ctx.lineTo(this.basketX - this.basketW/2 + 10, basketY + 30);
+        ctx.lineTo(this.basketX + this.basketW/2 - 10, basketY + 30);
+        ctx.lineTo(this.basketX + this.basketW/2, basketY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#5d4037';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Score
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 20px Fredoka One';
+        ctx.textAlign = 'left';
+        ctx.fillText('Stars: ' + this.caught + '/10', 16, H - 20);
+    };
+    CatchStars.prototype.cleanup = function() {
+        canvas.removeEventListener('pointermove', this.handler);
+        canvas.removeEventListener('pointerdown', this.handler);
+    };
+
+    // ========== MINI-GAME: QUICK MATH ==========
+    function QuickMath() {
+        this.correct = 0;
+        this.problem = null;
+    }
+    QuickMath.prototype.init = function() {
+        gameDom.style.display = 'flex';
+        gameDom.style.flexDirection = 'column';
+        gameDom.style.alignItems = 'center';
+        gameDom.style.justifyContent = 'center';
+        gameDom.style.gap = '16px';
+        gameDom.style.padding = '70px 20px 20px';
+
+        this.questionEl = document.createElement('div');
+        this.questionEl.style.cssText = 'font-size:clamp(36px,10vw,56px);color:#f0e6ff;text-align:center;';
+        gameDom.appendChild(this.questionEl);
+
+        this.ansGrid = document.createElement('div');
+        this.ansGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:320px;';
+        gameDom.appendChild(this.ansGrid);
+
+        this.feedbackEl = document.createElement('div');
+        this.feedbackEl.style.cssText = 'font-size:18px;min-height:28px;text-align:center;';
+        gameDom.appendChild(this.feedbackEl);
+
+        this.generateProblem();
+    };
+    QuickMath.prototype.generateProblem = function() {
+        const ops = ['+', '-', '\u00d7'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        let a, b, answer;
+        if (op === '\u00d7') {
+            a = 2 + Math.floor(Math.random() * 11);
+            b = 2 + Math.floor(Math.random() * 11);
+            answer = a * b;
+        } else if (op === '+') {
+            a = 1 + Math.floor(Math.random() * 20);
+            b = 1 + Math.floor(Math.random() * 20);
+            answer = a + b;
+        } else {
+            a = 5 + Math.floor(Math.random() * 20);
+            b = 1 + Math.floor(Math.random() * a);
+            answer = a - b;
+        }
+        this.problem = { a, b, op, answer };
+        this.questionEl.textContent = `${a} ${op} ${b} = ?`;
+
+        // Generate answer options
+        const options = new Set([answer]);
+        while (options.size < 4) {
+            const wrong = answer + Math.floor(Math.random() * 11) - 5;
+            if (wrong !== answer && wrong >= 0) options.add(wrong);
+        }
+        const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+        const self = this;
+        this.ansGrid.innerHTML = '';
+        shuffled.forEach(val => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'background:var(--bg-secondary);color:var(--text-primary);border:2px solid rgba(255,255,255,0.15);font-size:24px;padding:16px;border-radius:12px;min-height:60px;';
+            btn.textContent = val;
+            btn.addEventListener('pointerdown', function(e) {
+                e.preventDefault();
+                if (val === self.problem.answer) {
+                    self.correct++;
+                    gameScore = self.correct;
+                    self.feedbackEl.textContent = 'Correct!';
+                    self.feedbackEl.style.color = '#69f0ae';
+                    btn.style.background = '#69f0ae';
+                    btn.style.color = '#000';
+                    if (self.correct >= 5) {
+                        setTimeout(() => endGame(true), 400);
+                        return;
+                    }
+                } else {
+                    self.feedbackEl.textContent = 'Wrong!';
+                    self.feedbackEl.style.color = '#ff5252';
+                    btn.style.background = '#ff5252';
+                }
+                setTimeout(() => self.generateProblem(), 500);
+            }, { passive: false });
+            self.ansGrid.appendChild(btn);
+        });
+        this.feedbackEl.textContent = `${this.correct}/5 correct`;
+        this.feedbackEl.style.color = '#9575cd';
+    };
+    QuickMath.prototype.update = function() {};
+    QuickMath.prototype.render = function() {};
+    QuickMath.prototype.cleanup = function() {};
+
+    // ========== MINI-GAME: REFLEX TEST ==========
+    function ReflexTest() {
+        this.round = 0;
+        this.phase = 'wait'; // wait, ready, go, result
+        this.waitTime = 0;
+        this.waitTarget = 0;
+        this.goTime = 0;
+        this.times = [];
+        this.falseStart = false;
+        this.handler = null;
+    }
+    ReflexTest.prototype.init = function() {
+        canvas.style.display = 'block';
+        const self = this;
+        this.handler = function(e) {
+            e.preventDefault();
+            if (self.phase === 'ready') {
+                self.falseStart = true;
+                self.phase = 'result';
+                self.times.push(999);
+                gameScore = self.times.length;
+            } else if (self.phase === 'go') {
+                const reaction = performance.now() - self.goTime;
+                self.times.push(Math.round(reaction));
+                gameScore = self.times.length;
+                self.phase = 'result';
+            }
+        };
+        canvas.addEventListener('pointerdown', this.handler, { passive: false });
+        this.startRound();
+    };
+    ReflexTest.prototype.startRound = function() {
+        this.round++;
+        this.phase = 'ready';
+        this.waitTime = 0;
+        this.waitTarget = 1.5 + Math.random() * 3;
+        this.falseStart = false;
+    };
+    ReflexTest.prototype.update = function(dt) {
+        if (this.phase === 'ready') {
+            this.waitTime += dt;
+            if (this.waitTime >= this.waitTarget) {
+                this.phase = 'go';
+                this.goTime = performance.now();
+            }
+        } else if (this.phase === 'result') {
+            this.waitTime += dt;
+            if (this.waitTime > this.waitTarget + 1.5) {
+                if (this.round >= 3) {
+                    const best = Math.min(...this.times.filter(t => t < 999));
+                    gameScore = best || 0;
+                    endGame(true);
+                    return;
+                }
+                this.startRound();
+            }
+        }
+    };
+    ReflexTest.prototype.render = function(ctx) {
+        const W = window.innerWidth, H = window.innerHeight;
+        if (this.phase === 'ready') {
+            ctx.fillStyle = '#c62828';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold clamp(28px,7vw,42px) Fredoka One';
+            ctx.textAlign = 'center';
+            ctx.fillText('Wait...', W/2, H/2);
+            ctx.font = '16px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fillText('Round ' + this.round + '/3', W/2, H/2 + 40);
+        } else if (this.phase === 'go') {
+            ctx.fillStyle = '#2e7d32';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold clamp(28px,7vw,42px) Fredoka One';
+            ctx.textAlign = 'center';
+            ctx.fillText('TAP NOW!', W/2, H/2);
+        } else if (this.phase === 'result') {
+            const last = this.times[this.times.length - 1];
+            ctx.fillStyle = this.falseStart ? '#e65100' : '#1a0533';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px Fredoka One';
+            ctx.textAlign = 'center';
+            if (this.falseStart) {
+                ctx.fillText('Too early!', W/2, H/2 - 10);
+            } else {
+                ctx.fillText(last + ' ms', W/2, H/2 - 10);
+            }
+            ctx.font = '14px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillText(this.round >= 3 ? 'Finishing...' : 'Next round...', W/2, H/2 + 25);
+        }
+    };
+    ReflexTest.prototype.cleanup = function() {
+        canvas.removeEventListener('pointerdown', this.handler);
+    };
+
+    // ========== INIT ==========
+    updateHome();
+})();
+</script>
+
+<!-- Firebase Tracking -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('mini-games-lottery');
+</script>
+</body>
+</html>
