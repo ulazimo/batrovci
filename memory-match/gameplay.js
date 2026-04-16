@@ -581,6 +581,30 @@ const SFX = (() => {
       o.start(t); o.stop(t + dur + 0.02);
     } catch(e) {}
   }
+  // Preload audio files into Web Audio buffers
+  const audioBuffers = {};
+  function preload(name, url) {
+    fetch(url).then(r => r.arrayBuffer()).then(buf => {
+      const c = ac();
+      c.decodeAudioData(buf, decoded => { audioBuffers[name] = decoded; });
+    }).catch(() => {});
+  }
+  function playBuffer(name, vol = 0.5) {
+    try {
+      const c = ac();
+      const buf = audioBuffers[name];
+      if (!buf) return;
+      const src = c.createBufferSource();
+      const g = c.createGain();
+      src.buffer = buf;
+      src.connect(g); g.connect(c.destination);
+      g.gain.value = vol;
+      src.start(0);
+    } catch(e) {}
+  }
+  // Kick off preloads
+  preload('boom', 'audio/boom.mp3');
+
   return {
     flip()     { tone(880, 'sine',     0.07, 0.07); },
     match()    { tone(660, 'sine',     0.09, 0.11); tone(990, 'sine', 0.06, 0.11, 0.05); },
@@ -590,12 +614,63 @@ const SFX = (() => {
     fail()     { [380,300,220].forEach((f,i) => tone(f,'sawtooth',0.12,0.30,i*0.13)); },
     booster()  { tone(1200,'sine',0.09,0.12); tone(1600,'sine',0.06,0.10,0.08); },
     special()  { tone(440,'triangle',0.10,0.20); },
+    ding(i)    { const f = 1200 + (i % 5) * 100; tone(f,'sine',0.12,0.12); tone(f*1.5,'sine',0.06,0.08,0.04); },
+    boom()     { playBuffer('boom', 0.5); },
   };
 })();
 
 // ============================================================
 // JUICE HELPERS
 // ============================================================
+
+function spawnBombVFX(cellEl) {
+  const rect = cellEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const container = document.createElement('div');
+  container.className = 'bomb-vfx';
+  container.style.left = cx + 'px';
+  container.style.top = cy + 'px';
+  container.style.position = 'fixed';
+
+  const particles = [
+    { tx:  90, ty: -90, color: '#ffaa00' },
+    { tx:-105, ty: -60, color: '#ff0000' },
+    { tx:  60, ty: 105, color: '#ffcc00' },
+    { tx: -75, ty:  75, color: '#ff5500' },
+    { tx:   0, ty:-120, color: '#ffaa00' },
+    { tx: 120, ty:   0, color: '#ff0000' },
+    { tx:-120, ty:   0, color: '#ffcc00' },
+    { tx:   0, ty: 120, color: '#ff5500' },
+    { tx:  68, ty:  30, color: '#ffffff' },
+    { tx: -45, ty: -30, color: '#ffeeaa' },
+  ];
+  particles.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'vfx-particle';
+    el.style.cssText = `--tx:${p.tx}px;--ty:${p.ty}px;--color:${p.color}`;
+    container.appendChild(el);
+  });
+
+  document.body.appendChild(container);
+  // Trigger animation
+  void container.offsetWidth;
+  container.classList.add('is-exploding');
+  setTimeout(() => container.remove(), 600);
+}
+
+function explodeBomb(idx) {
+  const el = getCardEl(idx);
+  if (!el) return;
+  el.classList.add('bomb-exploding');
+  SFX.boom();
+  // Spawn particle VFX after the card starts fading (halfway through)
+  setTimeout(() => {
+    const cell = boardEl.children[idx];
+    if (cell) spawnBombVFX(cell);
+  }, 150);
+}
+
 function shakeBoard() {
   boardContainerEl.classList.remove('board-shake');
   void boardContainerEl.offsetWidth; // reflow to restart animation
@@ -616,6 +691,79 @@ function spawnParticles(indices, color) {
       setTimeout(() => p.remove(), 700);
     }
   });
+}
+
+// Fly matched cards to score element with staggered ding + score
+function flyCardsToGoal(indices, ptsTotal, cb) {
+  const scoreTarget = document.getElementById('score-value');
+  if (!scoreTarget || indices.length === 0) {
+    indices.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.add('exploding'); });
+    if (cb) setTimeout(cb, 450);
+    return;
+  }
+  const targetRect = scoreTarget.getBoundingClientRect();
+  const targetCX = targetRect.left + targetRect.width / 2;
+  const targetCY = targetRect.top + targetRect.height / 2;
+  const ptsPerCard = indices.length > 0 ? Math.floor(ptsTotal / indices.length) : 0;
+  const remainder = ptsTotal - ptsPerCard * indices.length;
+  const stagger = Math.min(120, 600 / indices.length);
+  const flyDuration = 350;
+
+  // Hide originals immediately
+  indices.forEach(idx => {
+    const el = getCardEl(idx);
+    if (el) el.style.opacity = '0';
+  });
+
+  indices.forEach((idx, i) => {
+    const cell = boardEl.children[idx];
+    if (!cell) return;
+    const cellRect = cell.getBoundingClientRect();
+
+    const clone = document.createElement('div');
+    clone.className = 'fly-to-goal';
+    clone.style.left = cellRect.left + 'px';
+    clone.style.top = cellRect.top + 'px';
+    clone.style.width = cellRect.width + 'px';
+    clone.style.height = cellRect.height + 'px';
+
+    const cardEl = getCardEl(idx);
+    const front = cardEl ? cardEl.querySelector('.card-front') : null;
+    if (front) clone.innerHTML = front.innerHTML;
+    clone.style.background = front ? getComputedStyle(front).background : '';
+    clone.style.borderRadius = '4px';
+
+    document.body.appendChild(clone);
+
+    setTimeout(() => {
+      clone.style.transition = `left ${flyDuration}ms cubic-bezier(.4,0,.2,1), top ${flyDuration}ms cubic-bezier(.4,0,.2,1), width ${flyDuration}ms ease-in, height ${flyDuration}ms ease-in, opacity ${flyDuration}ms ease-in`;
+      clone.style.left = (targetCX - 8) + 'px';
+      clone.style.top = (targetCY - 8) + 'px';
+      clone.style.width = '16px';
+      clone.style.height = '16px';
+      clone.style.opacity = '0.7';
+
+      setTimeout(() => {
+        SFX.ding(i);
+        clone.classList.add('burst');
+        setTimeout(() => clone.remove(), 300);
+
+        // Pop the score element
+        scoreTarget.style.transition = 'transform 0.15s ease-out';
+        scoreTarget.style.transform = 'scale(1.25)';
+        setTimeout(() => { scoreTarget.style.transform = 'scale(1)'; }, 150);
+
+        const cardPts = ptsPerCard + (i === indices.length - 1 ? remainder : 0);
+        if (cardPts > 0) {
+          score += cardPts;
+          animateScore(score);
+        }
+      }, flyDuration);
+    }, i * stagger);
+  });
+
+  const totalTime = (indices.length - 1) * stagger + flyDuration + 300;
+  if (cb) setTimeout(cb, totalTime);
 }
 
 function launchConfetti() {
@@ -1273,6 +1421,18 @@ function startGame(preplacedSpecials) {
 
 function retryLevel() { showPreLevel(); }
 
+function startTestLevel() {
+  // Temporarily inject a test level at the end and play it
+  const testLevel = { id: 999, cols: 8, rows: 8, colorCount: 4, turns: 99, goals: [{ type: 'score', target: 1000000 }] };
+  const testIdx = LEVELS.length;
+  LEVELS.push(testLevel);
+  // Ensure stars array covers it
+  if (progress.stars.length <= testIdx) progress.stars.push(0);
+  currentLevelIndex = testIdx;
+  closeAllOverlays();
+  startLevel();
+}
+
 function nextLevel() {
   if (currentLevelIndex < LEVELS.length - 1) {
     currentLevelIndex++;
@@ -1308,6 +1468,13 @@ const SPECIAL_TYPES = [
 ];
 
 function getSpecialType(id) { return SPECIAL_TYPES.find(s => s.id === id); }
+
+const SPECIAL_BADGE_IMAGES = {
+  cross:   'icons/small_bomb.png',
+  ring:    'icons/big_bomb.png',
+  diamond: 'icons/nuke.png',
+};
+function specialBadgeImage(id) { return SPECIAL_BADGE_IMAGES[id] || null; }
 initInventoryDefaults();
 
 // ============================================================
@@ -1410,7 +1577,11 @@ function buildCardHTML(card) {
   if (card.special) {
     const bombStyle = card.bombColor ? ` style="--bomb-color:${cssColor(card.bombColor)}"` : '';
     const bombCls = card.bombColor ? ' bomb-colored' : '';
-    return `<div class="card special${bombCls}" data-index="${i}"${bombStyle}><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}"><span class="special-icon">${specialIcon(card.special)}</span></div></div>`;
+    const imgPath = specialBadgeImage(card.special);
+    const iconHTML = imgPath
+      ? `<img class="special-icon-img" src="${imgPath}" alt="${card.special}">`
+      : `<span class="special-icon">${specialIcon(card.special)}</span>`;
+    return `<div class="card special${bombCls}" data-index="${i}"${bombStyle}><div class="card-face card-back"></div><div class="card-face card-front ${specialCSS(card.special)}">${iconHTML}</div></div>`;
   }
   const markedCls = card.marked ? ' marked' : '';
   const orderedCls = card.ordered ? ' ordered' : '';
@@ -1475,9 +1646,8 @@ boardEl.addEventListener('pointerdown', e => {
     longPressTriggered = true;
     removePeekProgress();
     if (inputLocked || !board[i] || board[i].flipped || board[i].special || board[i].locked) return;
-    if (!boosterCounts['peek'] || boosterCounts['peek'] <= 0) return;
-    boosterCounts['peek']--;
-    saveBoosterCounts();
+    if (!hasBooster('peek')) return;
+    consumeBooster('peek');
     executePeek(i);
     updateBoosterUI();
   }, 700);
@@ -1585,11 +1755,16 @@ function updateComboSpawnIndicator() {
   if (el) {
     el.classList.add('combo-spawn-indicator');
     // Add icon badge in top-right corner
-    const icon = specialIcon(specialId);
     const badge = document.createElement('span');
     badge.className = 'combo-spawn-badge';
-    badge.textContent = icon;
-    el.appendChild(badge);
+    const imgPath = specialBadgeImage(specialId);
+    if (imgPath) {
+      badge.style.backgroundImage = `url('${imgPath}')`;
+    } else {
+      badge.textContent = specialIcon(specialId);
+    }
+    const front = el.querySelector('.card-front');
+    (front || el).appendChild(badge);
   }
 }
 
@@ -1887,11 +2062,19 @@ function saveBoosterCounts() {
   saveProgress();
 }
 
+function hasBooster(id) {
+  return getRule('unlimitedPowerUps') || (boosterCounts[id] > 0);
+}
+function consumeBooster(id) {
+  if (!getRule('unlimitedPowerUps')) boosterCounts[id]--;
+  saveBoosterCounts();
+}
+
 function updateBoosterUI() {
   boosterBar.querySelectorAll('.booster-btn').forEach(btn => {
     const id = btn.dataset.booster;
     btn.querySelector('.badge').textContent = boosterCounts[id];
-    btn.classList.toggle('disabled', boosterCounts[id] <= 0 || inputLocked);
+    btn.classList.toggle('disabled', !hasBooster(id) || inputLocked);
     btn.classList.toggle('active', activeBooster === id);
   });
 }
@@ -1905,14 +2088,13 @@ function showTooltip(b, btn) {
 function hideTooltip() { tooltipEl.classList.remove('visible'); }
 
 function activateBooster(id) {
-  if (inputLocked || boosterCounts[id] <= 0) return;
+  if (inputLocked || !hasBooster(id)) return;
   dismissNudge(); clearNudgeTimer();
   if (activeBooster === id) { activeBooster = null; updateBoosterUI(); updateChainIndicator(); return; }
   const b = BOOSTERS.find(x => x.id === id);
   SFX.booster();
   if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
-  boosterCounts[id]--;
-  saveBoosterCounts();
+  consumeBooster(id);
   if (id === 'random3')   executeRandom3();
   else if (id === 'neighbor')  executeNeighbor();
   else if (id === 'colorpick') executeColorPick();
@@ -1972,7 +2154,7 @@ function executePeek(index) {
 }
 
 function executeBoosterTap(id, index) {
-  boosterCounts[id]--; activeBooster = null; saveBoosterCounts();
+  consumeBooster(id); activeBooster = null;
   const { r, c } = toRC(index);
   if (id === 'peek') { executePeek(index); return; }
   else if (id === 'joker') { executeJoker(index); return; }
@@ -2483,10 +2665,9 @@ function endTurn(manual, perfectSweep) {
   }
 
   if (toRemove.length>0 || newSP>=0 || revealTargets.length>0) {
-    score += pts; animateScore(score); turnsEl.textContent = turns;
+    turnsEl.textContent = turns;
     if (pts>0) {
       showScorePopup(pts, matched.length>0 ? matched : specialsUsed, perfectSweep ? '🧹 PERFECT SWEEP!' : null);
-      SFX.combo(combo);
       spawnParticles(matched.length>0 ? matched : specialsUsed, chainColor);
       if (perfectSweep) { SFX.win(); launchConfetti(); }
     }
@@ -2519,21 +2700,35 @@ function endTurn(manual, perfectSweep) {
       }
     });
 
-    // Check if all goals are met — if so, skip animations and finish immediately
+    // Separate normal cards (fly to goal) from bombs (explode in place after fly)
+    const isBomb = idx => board[idx] && board[idx].special && isBombType(board[idx].special);
+    const flyCards = toRemove.filter(idx => !isBomb(idx));
+    const bombCards = toRemove.filter(idx => isBomb(idx));
+
+    // Award bomb cards' share of points immediately; rest goes via fly animation
+    const bombPts = flyCards.length > 0 ? Math.floor(pts * bombCards.length / toRemove.length) : pts;
+    const flyPts = pts - bombPts;
+    if (bombPts > 0) { score += bombPts; animateScore(score); }
+
+    // Check if all goals are met — fly cards then finish
     if (checkAllGoalsMet()) {
-      // Brief delay for score popup / particles to show, then win
-      toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
-      setTimeout(() => finishTurn(), 800);
+      flyCardsToGoal(flyCards, flyPts, () => {
+        bombCards.forEach(idx => explodeBomb(idx));
+        setTimeout(() => finishTurn(), 450);
+      });
       return;
     }
 
-    toRemove.forEach(idx => { const el=getCardEl(idx); if(el) el.classList.add('exploding'); });
-    setTimeout(() => {
-      if (newSP>=0) { const bColor = (getRule('coloredBombs') && isBombType(newST)) ? chainColor : null; board[newSP]=createSpecialCard(newSP,newST,bColor); replaceCell(newSP); }
-      // Step 1: Reveal bomb targets (stay face-up, no auto-hide)
-      if (revealTargets.length > 0) {
-        revealCardsNoHide(revealTargets);
-      }
+    flyCardsToGoal(flyCards, flyPts, () => {
+      // Bombs explode after fly cards are collected
+      bombCards.forEach(idx => explodeBomb(idx));
+      const bombExplodeDelay = bombCards.length > 0 ? 450 : 0;
+      setTimeout(() => {
+        if (newSP>=0) { const bColor = (getRule('coloredBombs') && isBombType(newST)) ? chainColor : null; board[newSP]=createSpecialCard(newSP,newST,bColor); replaceCell(newSP); const spEl=getCardEl(newSP); if(spEl){spEl.classList.add('grow-in');spEl.addEventListener('animationend',()=>spEl.classList.remove('grow-in'),{once:true});} }
+        // Step 1: Reveal bomb targets (stay face-up, no auto-hide)
+        if (revealTargets.length > 0) {
+          revealCardsNoHide(revealTargets);
+        }
       // Step 2: After bomb reveal animation, drop in new cards
       const bombRevealTime = revealTargets.length > 0 ? 300 : 0;
       const willSweepReveal = perfectSweep && isSweepRevealActive();
@@ -2561,7 +2756,8 @@ function endTurn(manual, perfectSweep) {
           } else doFinishWithTutorial();
         }, dropDelay);
       }, bombRevealTime);
-    }, 500);
+    }, bombExplodeDelay);
+    });
   } else if (perfectSweep && isSweepRevealActive()) {
     showSweepBanner();
     setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1600);
