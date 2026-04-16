@@ -755,6 +755,9 @@
 (function() {
     'use strict';
 
+    // Analytics stub — replaced asynchronously by the Firebase module below
+    window.trackEvent = function() {};
+
     // ===== STATE =====
     function defaultState() {
         return { tickets: 0, totalTicketsEarned: 0, ticketsInDraw: 0, gamesPlayed: 0, lastDrawTime: null, drawHistory: [], prizePool: 0 };
@@ -791,6 +794,10 @@
 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        // Track screen views (skip internal overlays)
+        if (id !== 'game-play-screen' && id !== 'ad-overlay') {
+            window.trackEvent('screen_view', { screen: id });
+        }
         if (id === 'home-screen')        updateHome();
         if (id === 'lottery-screen')     updateLottery();
         if (id === 'game-select-screen') buildGameGrid();
@@ -935,6 +942,7 @@
     function launchGame(id) {
         const meta = GAMES_BY_ID[id]; if (!meta) return;
         currentGameMeta = meta;
+        window.trackEvent('minigame_start', { game: id });
         showScreen('game-play-screen');
         document.getElementById('hudName').textContent = meta.name;
         gameTimerTotal = meta.duration; gameTimeLeft = meta.duration;
@@ -986,6 +994,10 @@
         if (!gameActive) return;
         gameActive = false;
         gameWon = !!won && gameScore > 0;
+        window.trackEvent(gameWon ? 'minigame_win' : 'minigame_loss', {
+            game: currentGameMeta ? currentGameMeta.id : 'unknown',
+            score: gameScore
+        });
         // Hide canvas so stale game frame doesn't show through the result screen
         canvas.style.display = 'none';
         if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
@@ -1042,7 +1054,7 @@
     }
 
     // ===== REWARDED VIDEO AD =====
-    let adRaf = null, adTimerInterval = null;
+    let adRaf = null, adTimerInterval = null, adElapsedSec = 0;
     const AD_DURATION = 30; // seconds
 
     function watchAd() {
@@ -1051,17 +1063,18 @@
         document.getElementById('adCountdown').textContent = AD_DURATION;
         document.getElementById('adProgressFill').style.width = '0%';
 
-        let elapsed = 0;
+        adElapsedSec = 0;
         if (adTimerInterval) clearInterval(adTimerInterval);
         adTimerInterval = setInterval(() => {
-            elapsed++;
-            const pct = (elapsed / AD_DURATION) * 100;
+            adElapsedSec++;
+            const pct = (adElapsedSec / AD_DURATION) * 100;
             document.getElementById('adProgressFill').style.width = pct + '%';
-            document.getElementById('adCountdown').textContent = Math.max(0, AD_DURATION - elapsed);
-            if (elapsed >= 5) document.getElementById('adSkipBtn').classList.add('visible');
-            if (elapsed >= AD_DURATION) finishAd();
+            document.getElementById('adCountdown').textContent = Math.max(0, AD_DURATION - adElapsedSec);
+            if (adElapsedSec >= 5) document.getElementById('adSkipBtn').classList.add('visible');
+            if (adElapsedSec >= AD_DURATION) finishAd();
         }, 1000);
 
+        window.trackEvent('ad_started');
         startAdCanvas();
     }
     window.watchAd = watchAd;
@@ -1069,13 +1082,15 @@
     function skipAd() {
         if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
         stopAdCanvas();
-        finishAd();
+        window.trackEvent('ad_skipped', { secondsWatched: adElapsedSec });
+        finishAd(true);
     }
     window.skipAd = skipAd;
 
-    function finishAd() {
+    function finishAd(wasSkipped = false) {
         if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
         stopAdCanvas();
+        if (!wasSkipped) window.trackEvent('ad_completed', { duration: adElapsedSec });
         state.tickets += 100;
         state.totalTicketsEarned += 100;
         state.prizePool += 0.50;
@@ -1328,6 +1343,7 @@
         }
         state.tickets -= count; state.ticketsInDraw += count;
         saveState(); updateLottery();
+        window.trackEvent('lottery_entered', { tickets: count, ticketsTotal: state.ticketsInDraw });
     }
     window.enterDraw = enterDraw;
 
@@ -1414,6 +1430,7 @@
         const r = document.getElementById('lotteryResult');
         r.style.display = 'block';
         const prize = state.prizePool;
+        window.trackEvent('lottery_result', { won: playerWon, ticketsUsed: state.ticketsInDraw, pool: prize });
         if (playerWon) {
             r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#127881;</div><div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div><div style="font-size:18px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
             state.prizePool = 0;
@@ -1884,11 +1901,84 @@
 })();
 </script>
 
-<!-- Firebase Tracking -->
+<!-- Firebase: play count + time played (shared tracker) -->
 <script type="module">
     import('../firebase-tracker.js')
         .then(m => m.initTracking('mini-games-lottery'))
         .catch(e => console.warn('Firebase tracking unavailable', e));
+</script>
+
+<!-- Firebase: granular event analytics (game_events collection) -->
+<script type="module">
+(async () => {
+    const GAME_ID   = 'mini-games-lottery';
+    const SESSION_ID = Math.random().toString(36).slice(2, 10);
+    const firebaseConfig = {
+        apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+        authDomain: "prototypes-7691b.firebaseapp.com",
+        projectId: "prototypes-7691b",
+        storageBucket: "prototypes-7691b.firebasestorage.app",
+        messagingSenderId: "263652926534",
+        appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+    };
+
+    // Buffer events that arrive before Firebase is ready
+    const queue = [];
+    let writeEvent = payload => queue.push(payload);
+
+    // Replace the stub immediately so game code can call trackEvent() right away
+    window.trackEvent = function(event, data = {}) {
+        writeEvent({
+            gameId:    GAME_ID,
+            sessionId: SESSION_ID,
+            event,
+            clientTs:  Date.now(),
+            ...data
+        });
+    };
+
+    // Fire session_start (goes to queue until Firebase is ready)
+    window.trackEvent('session_start', {
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        dpr:      window.devicePixelRatio || 1,
+        touch:    'ontouchstart' in window,
+    });
+
+    try {
+        const [
+            { initializeApp, getApps },
+            { getFirestore, addDoc, collection, serverTimestamp },
+            { getAuth, signInAnonymously, setPersistence, inMemoryPersistence }
+        ] = await Promise.all([
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'),
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
+            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'),
+        ]);
+
+        // Use a separate app instance (name: 'mini-games-lottery-ev') so we
+        // don't conflict with the shared play-count tracker above
+        const appName = GAME_ID + '-ev';
+        const app = getApps().find(a => a.name === appName) || initializeApp(firebaseConfig, appName);
+        const db   = getFirestore(app);
+        const auth = getAuth(app);
+
+        await setPersistence(auth, inMemoryPersistence);
+        await signInAnonymously(auth);
+
+        const col = collection(db, 'game_events');
+
+        // Swap writeEvent to the real Firestore writer
+        writeEvent = payload =>
+            addDoc(col, { ...payload, ts: serverTimestamp() }).catch(() => {});
+
+        // Flush anything that arrived during init
+        for (const p of queue) writeEvent(p);
+        queue.length = 0;
+
+    } catch (e) {
+        console.warn('Event analytics unavailable:', e);
+    }
+})();
 </script>
 </body>
 </html>
