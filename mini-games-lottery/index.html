@@ -756,8 +756,10 @@
 (function() {
     'use strict';
 
-    // Analytics stub — replaced asynchronously by the Firebase module below
-    window.trackEvent = function() {};
+    // Google Analytics event wrapper
+    window.trackEvent = function(event, data) {
+        if (typeof gtag === 'function') gtag('event', event, data || {});
+    };
 
     // ===== STATE =====
     function defaultState() {
@@ -1995,79 +1997,6 @@
 
     } catch (e) {
         console.warn('Shared pool unavailable (offline fallback active):', e);
-    }
-})();
-</script>
-
-<!-- Firebase: granular event analytics (game_events collection) -->
-<script type="module">
-(async () => {
-    const GAME_ID   = 'mini-games-lottery';
-    const SESSION_ID = Math.random().toString(36).slice(2, 10);
-    const firebaseConfig = {
-        apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
-        authDomain: "prototypes-7691b.firebaseapp.com",
-        projectId: "prototypes-7691b",
-        storageBucket: "prototypes-7691b.firebasestorage.app",
-        messagingSenderId: "263652926534",
-        appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
-    };
-
-    // Buffer events that arrive before Firebase is ready
-    const queue = [];
-    let writeEvent = payload => queue.push(payload);
-
-    // Replace the stub immediately so game code can call trackEvent() right away
-    window.trackEvent = function(event, data = {}) {
-        writeEvent({
-            gameId:    GAME_ID,
-            sessionId: SESSION_ID,
-            event,
-            clientTs:  Date.now(),
-            ...data
-        });
-    };
-
-    // Fire session_start (goes to queue until Firebase is ready)
-    window.trackEvent('session_start', {
-        viewport: `${window.innerWidth}x${window.innerHeight}`,
-        dpr:      window.devicePixelRatio || 1,
-        touch:    'ontouchstart' in window,
-    });
-
-    try {
-        const [
-            { initializeApp, getApps },
-            { getFirestore, addDoc, collection, serverTimestamp },
-            { getAuth, signInAnonymously, setPersistence, inMemoryPersistence }
-        ] = await Promise.all([
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'),
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
-            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js'),
-        ]);
-
-        // Use a separate app instance (name: 'mini-games-lottery-ev') so we
-        // don't conflict with the shared play-count tracker above
-        const appName = GAME_ID + '-ev';
-        const app = getApps().find(a => a.name === appName) || initializeApp(firebaseConfig, appName);
-        const db   = getFirestore(app);
-        const auth = getAuth(app);
-
-        await setPersistence(auth, inMemoryPersistence);
-        await signInAnonymously(auth);
-
-        const col = collection(db, 'game_events');
-
-        // Swap writeEvent to the real Firestore writer
-        writeEvent = payload =>
-            addDoc(col, { ...payload, ts: serverTimestamp() }).catch(() => {});
-
-        // Flush anything that arrived during init
-        for (const p of queue) writeEvent(p);
-        queue.length = 0;
-
-    } catch (e) {
-        console.warn('Event analytics unavailable:', e);
     }
 })();
 </script>
