@@ -149,45 +149,174 @@
         .card:active { transform: scale(0.95); border-color: var(--accent-gold); }
 
         /* ---- HOME SCREEN ---- */
-        #home-screen { padding-top: calc(var(--sat) + 16px); justify-content: center; overflow: hidden; }
+        #home-screen {
+            padding-top: calc(var(--sat) + 56px);
+            padding-bottom: calc(var(--sab) + 20px);
+            justify-content: flex-start;
+            gap: 10px;
+        }
 
         .home-title {
-            font-size: clamp(24px, 7vw, 42px);
+            font-size: clamp(22px, 6.5vw, 36px);
             background: linear-gradient(135deg, var(--accent-gold), #ffab00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-align: center;
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
-        .home-subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 10px; text-align: center; }
+        .home-subtitle { color: var(--text-muted); font-size: 12px; margin-bottom: 6px; text-align: center; font-family: system-ui; }
 
-        .how-strip {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            background: rgba(255,215,0,0.07);
-            border: 1px solid rgba(255,215,0,0.18);
-            border-radius: 30px;
-            padding: 6px 14px;
-            font-size: 11px;
-            color: var(--accent-gold);
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            max-width: 340px;
+        /* Jackpot card */
+        .pool-card {
+            width: 100%;
+            max-width: 380px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 18px;
+            padding: 14px 18px 12px;
             text-align: center;
-            line-height: 1.6;
+            margin-bottom: 6px;
         }
-        .how-strip .arrow { color: var(--text-muted); }
-
-        .pool-label { color: var(--text-muted); font-size: 12px; letter-spacing: 0.05em; }
+        .pool-label { color: var(--text-muted); font-size: 11px; letter-spacing: 0.1em; }
         .pool-display {
-            font-size: clamp(32px, 10vw, 54px);
+            font-size: clamp(34px, 11vw, 56px);
             color: var(--accent-gold);
             text-shadow: 0 0 30px rgba(255,215,0,0.4);
-            margin: 6px 0 4px;
+            margin: 4px 0 6px;
             animation: shimmer 2s ease-in-out infinite alternate;
+            line-height: 1;
         }
+        .countdown-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            background: rgba(0,0,0,0.35);
+            border-radius: 20px;
+            font-family: system-ui;
+        }
+        .countdown-inline-label { color: var(--text-muted); font-size: 10px; letter-spacing: 0.08em; font-family: system-ui; }
+        .countdown-inline-time  { font-size: 14px; color: var(--accent-cyan); font-family: 'Fredoka One', system-ui; }
+
+        /* HERO PLAY BUTTON */
+        .btn-hero {
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px !important;
+            width: 100%;
+            max-width: 340px;
+            padding: 18px 24px !important;
+            border-radius: 20px !important;
+            min-height: 82px;
+        }
+        .btn-hero-icon { font-size: 26px; line-height: 1; }
+        .btn-hero-main { font-size: 22px; line-height: 1.1; letter-spacing: 0.04em; }
+        .btn-hero-sub  { font-size: 11px; font-family: system-ui; opacity: 0.72; font-weight: 500; margin-top: 2px; }
+
+        /* Secondary row */
+        .home-secondary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 340px;
+        }
+        .btn-secondary-action {
+            padding: 11px 10px !important;
+            font-size: 14px !important;
+            min-height: 48px;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px !important;
+        }
+        .btn-ghost {
+            background: rgba(255,255,255,0.05) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: none !important;
+        }
+        .badge-inline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.35);
+            color: inherit;
+            border-radius: 20px;
+            font-family: 'Fredoka One', system-ui;
+        }
+        .btn-ghost .badge-inline { background: rgba(255,215,0,0.2); color: var(--accent-gold); }
+
+        /* Mega pool strip */
+        .mega-strip {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 14px;
+            background: linear-gradient(90deg, rgba(149, 117, 205, 0.2), rgba(149, 117, 205, 0.05));
+            border: 1px solid rgba(149, 117, 205, 0.4);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.12s, border-color 0.12s;
+        }
+        .mega-strip:active { transform: scale(0.98); border-color: var(--text-muted); }
+        .mega-strip-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .mega-strip-icon { font-size: 26px; flex-shrink: 0; }
+        .mega-strip-title { font-size: 12px; color: var(--text-primary); letter-spacing: 0.08em; }
+        .mega-strip-sub   { font-size: 10px; color: var(--text-muted); font-family: system-ui; margin-top: 2px; }
+        .mega-strip-right { text-align: right; flex-shrink: 0; }
+        .mega-strip-amount   { font-size: 20px; color: var(--text-muted); }
+        .mega-strip-amount.has-value { color: #ce93d8; text-shadow: 0 0 20px rgba(206,147,216,0.4); }
+        .mega-strip-countdown { font-size: 10px; color: var(--text-muted); font-family: system-ui; margin-top: 2px; }
+
+        /* Winners feed */
+        .winners-feed {
+            width: 100%;
+            max-width: 380px;
+            margin-top: 2px;
+        }
+        .winners-feed-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            text-align: center;
+            margin-bottom: 6px;
+            font-family: system-ui;
+        }
+        .winner-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-family: system-ui;
+            background: rgba(0,0,0,0.25);
+            border-radius: 8px;
+            margin-bottom: 4px;
+            align-items: center;
+        }
+        .winner-row .wr-date { color: var(--text-muted); font-size: 11px; }
+        .winner-row .wr-name { color: var(--text-primary); }
+        .winner-row .wr-prize { color: var(--accent-gold); font-family: 'Fredoka One', system-ui; }
+        .winner-row.you { background: rgba(255,215,0,0.12); border: 1px solid rgba(255,215,0,0.3); }
+        .winner-row.you .wr-name { color: var(--accent-gold); }
+
+        .btn-link {
+            background: none; border: none; color: var(--text-muted);
+            font-family: system-ui; font-size: 12px;
+            padding: 8px 16px; cursor: pointer; min-height: 36px;
+            text-decoration: underline;
+            text-decoration-color: rgba(149,117,205,0.3);
+        }
+
+        /* Legacy countdown-box kept for lottery screen */
         .countdown-box {
             background: rgba(0,0,0,0.3);
             border: 1px solid rgba(255,215,0,0.2);
@@ -198,7 +327,6 @@
         }
         .countdown-box .label { color: var(--text-muted); font-size: 10px; letter-spacing: 0.08em; }
         .countdown-box .time { font-size: 26px; color: var(--accent-cyan); margin-top: 2px; }
-        .home-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
         /* ---- HOW IT WORKS ---- */
         #how-screen { padding-top: calc(var(--sat) + 60px); }
@@ -367,6 +495,55 @@
         .lottery-result { text-align: center; margin: 8px 0; font-size: 17px; }
         .lottery-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
+        /* ---- LOTTERY: tabs + empty state ---- */
+        .draw-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 30px;
+            padding: 4px;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .draw-tab {
+            flex: 1;
+            padding: 8px 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 12px;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s;
+            min-height: 36px;
+        }
+        .draw-tab.active {
+            background: linear-gradient(135deg, var(--accent-gold), #ffab00);
+            color: #000;
+        }
+        .lottery-entry {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .empty-lottery {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 16px 0;
+            text-align: center;
+            max-width: 320px;
+        }
+        .empty-emoji { font-size: 52px; margin-bottom: 4px; opacity: 0.7; }
+        .empty-title { font-size: 18px; color: var(--accent-gold); margin-bottom: 6px; }
+        .empty-sub   { font-size: 13px; color: var(--text-muted); font-family: system-ui; line-height: 1.5; margin-bottom: 10px; }
+
         /* ---- DRAW HISTORY ---- */
         .draw-history { margin-top: 8px; width: 100%; max-width: 320px; }
         .draw-history-title { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-align: center; letter-spacing: 0.06em; }
@@ -513,6 +690,13 @@
             display: flex; flex-direction: column; align-items: center;
             margin-bottom: 8px;
         }
+        .result-win-tier {
+            font-size: 14px;
+            letter-spacing: 0.16em;
+            color: var(--accent-cyan);
+            margin-bottom: 2px;
+            animation: riseIn 0.3s ease-out both;
+        }
         .result-win-emoji {
             font-size: 84px; line-height: 1; margin-bottom: 2px;
             animation: ticketBounceIn 0.65s cubic-bezier(0.34,1.56,0.64,1) 0.05s both;
@@ -579,6 +763,27 @@
             animation: riseIn 0.32s ease-out 0.92s both;
         }
 
+        /* SKIPPED AD (explanation) */
+        .skip-hero {
+            display: flex; flex-direction: column; align-items: center;
+            max-width: 340px; text-align: center; padding: 0 12px;
+            margin-bottom: 10px;
+        }
+        .skip-emoji {
+            font-size: 64px; line-height: 1; margin-bottom: 6px;
+            animation: riseIn 0.3s ease-out both;
+            opacity: 0.85;
+        }
+        .skip-title {
+            font-size: 20px; color: var(--text-primary); margin-bottom: 8px;
+            animation: riseIn 0.32s ease-out 0.1s both;
+        }
+        .skip-sub {
+            font-size: 13px; color: var(--text-muted);
+            font-family: system-ui; line-height: 1.5;
+            animation: riseIn 0.32s ease-out 0.22s both;
+        }
+
         /* QUICK-MATH button states */
         .qm-correct { animation: bounceScale 0.32s ease-out forwards !important;
                       background: #69f0ae !important; color: #000 !important;
@@ -596,37 +801,56 @@
 <div class="ticket-badge" id="ticketBadge">&#127915; <span id="ticketCount">0</span></div>
 
 <!-- ===== HOME ===== -->
-<div class="screen active centered" id="home-screen">
+<div class="screen active" id="home-screen">
     <div class="home-title">Mini Games Lottery</div>
-    <div class="home-subtitle">Play games. Earn tickets. Win big!</div>
+    <div class="home-subtitle">Play games. Earn tickets. Win the jackpot.</div>
 
-    <div class="how-strip">
-        &#127918; Play game
-        <span class="arrow">&#8594;</span>
-        &#127915; Earn ticket
-        <span class="arrow">&#8594;</span>
-        &#127920; Enter draw
-        <span class="arrow">&#8594;</span>
-        &#128176; Win pool
+    <div class="pool-card">
+        <div class="pool-label">DAILY JACKPOT &nbsp;<span id="poolLiveBadge" style="display:none;font-size:10px;background:rgba(105,240,174,0.18);color:#69f0ae;border:1px solid rgba(105,240,174,0.4);border-radius:8px;padding:2px 6px;letter-spacing:0.05em;vertical-align:middle;">🌐 LIVE</span></div>
+        <div class="pool-display" id="homePool">$0.00</div>
+        <div class="countdown-inline">
+            <span class="countdown-inline-label">NEXT DRAW</span>
+            <span class="countdown-inline-time" id="homeCountdown">--:--:--</span>
+        </div>
     </div>
 
-    <div class="pool-label">PRIZE POOL &nbsp;<span id="poolLiveBadge" style="display:none;font-size:10px;background:rgba(105,240,174,0.18);color:#69f0ae;border:1px solid rgba(105,240,174,0.4);border-radius:8px;padding:2px 6px;letter-spacing:0.05em;vertical-align:middle;">🌐 LIVE</span></div>
-    <div class="pool-display" id="homePool">$0.00</div>
-    <div id="lastWinnerInfo" style="font-size:11px;color:var(--text-muted);font-family:system-ui;margin-bottom:2px;min-height:16px;text-align:center;"></div>
+    <!-- HERO: Play button -->
+    <button class="btn btn-gold btn-hero pulse" onclick="showScreen('game-select-screen')">
+        <span class="btn-hero-icon">&#127918;</span>
+        <span class="btn-hero-main">PLAY GAME</span>
+        <span class="btn-hero-sub">Earn 1–3 tickets + combo bonus</span>
+    </button>
 
-    <div class="countdown-box">
-        <div class="label">NEXT DRAW IN</div>
-        <div class="time" id="homeCountdown">--:--:--</div>
+    <!-- Secondary row: Lottery + Watch Ad -->
+    <div class="home-secondary">
+        <button class="btn btn-primary btn-secondary-action" onclick="showScreen('lottery-screen')">
+            &#127920; Lottery <span class="badge-inline" id="homeTicketCount">0</span>
+        </button>
+        <button class="btn btn-ghost btn-secondary-action" onclick="watchAd('standalone')">
+            &#128250; Watch Ad <span class="badge-inline">+10</span>
+        </button>
     </div>
 
-    <div class="home-buttons">
-        <button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play</button>
-        <button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Lottery</button>
+    <!-- Mega Pool strip -->
+    <div class="mega-strip" onclick="showScreen('lottery-screen')">
+        <div class="mega-strip-left">
+            <span class="mega-strip-icon">&#127942;</span>
+            <div>
+                <div class="mega-strip-title">WEEKLY MEGA POOL</div>
+                <div class="mega-strip-sub">Top 10 win · drawn Sunday</div>
+            </div>
+        </div>
+        <div class="mega-strip-right">
+            <div class="mega-strip-amount" id="homeMega">$0.00</div>
+            <div class="mega-strip-countdown" id="homeMegaCountdown">--d --h</div>
+        </div>
     </div>
-    <div style="margin-top:10px;">
-        <button class="btn btn-secondary" onclick="showScreen('how-screen')" style="font-size:13px;padding:8px 18px;">&#9432; How it works</button>
-    </div>
-    <div class="draw-history" id="homeHistory"></div>
+
+    <!-- Recent winners feed -->
+    <div class="winners-feed" id="homeWinners"></div>
+
+    <!-- How-it-works link -->
+    <button class="btn-link" onclick="showScreen('how-screen')">&#9432; How it works</button>
 </div>
 
 <!-- ===== HOW IT WORKS ===== -->
@@ -644,23 +868,23 @@
         <div class="icon">&#127915;</div>
         <div class="text">
             <h3>2. Earn Tickets</h3>
-            <p>Win a round → <strong style="color:var(--accent-gold)">+1 ticket</strong>.<br>
-            Watch a short ad after winning → <strong style="color:var(--accent-gold)">+100 tickets</strong>.<br>
-            Every ad also adds <strong style="color:var(--accent-gold)">$0.50</strong> to the prize pool.</p>
+            <p>Win a mini-game → <strong style="color:var(--accent-gold)">+1–3 tickets</strong> (better score = more tickets).<br>
+            Watch an ad on its own → <strong style="color:var(--accent-gold)">+10 tickets</strong>.<br>
+            Win a game <em>and</em> watch the ad combo → <strong style="color:var(--accent-gold)">+100 tickets</strong>.</p>
         </div>
     </div>
     <div class="how-block">
         <div class="icon">&#127920;</div>
         <div class="text">
             <h3>3. Enter the Draw</h3>
-            <p>Go to Lottery and commit your tickets. More tickets = better odds. Each ticket is one entry. Daily draws.</p>
+            <p>Commit tickets to the <strong style="color:var(--accent-gold)">Daily</strong> draw (winner takes all) or the <strong style="color:var(--accent-gold)">Weekly Mega</strong> draw (top 10 split). More tickets = better odds.</p>
         </div>
     </div>
     <div class="how-block">
         <div class="icon">&#128176;</div>
         <div class="text">
             <h3>4. Win the Pool</h3>
-            <p>One winner takes the entire prize pool. Pool grows with every ad watched. Rolls over if nobody wins.</p>
+            <p>Daily: one random ticket wins the whole jackpot. Weekly: ten random tickets share the mega pool (40/20/10/5×4/4/3/3 %).</p>
         </div>
     </div>
 
@@ -681,7 +905,7 @@
     <div class="tutorial-game-name" id="tutName"></div>
     <div class="tutorial-goal" id="tutGoal"></div>
     <div class="tutorial-steps" id="tutSteps"></div>
-    <div class="tutorial-reward">&#127915; Win → +1 Ticket &nbsp;|&nbsp; &#128250; Watch Ad → +100 Tickets</div>
+    <div class="tutorial-reward">&#127915; Win → +1–3 Tickets &nbsp;|&nbsp; &#128250; Win + Ad combo → +100</div>
     <div style="display:flex;gap:12px;margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="showScreen('game-select-screen')" style="font-size:14px;padding:10px 20px;">&#8592; Back</button>
         <button class="btn btn-gold" id="tutPlayBtn" style="font-size:16px;padding:12px 28px;">&#9654; Play!</button>
@@ -708,22 +932,44 @@
 
 <!-- ===== LOTTERY ===== -->
 <div class="screen" id="lottery-screen">
-    <div style="font-size:22px;margin-bottom:4px;">&#127920; Lottery</div>
-    <div class="pool-label">PRIZE POOL</div>
+    <div style="font-size:22px;margin-bottom:6px;">&#127920; Lottery</div>
+
+    <!-- Draw mode tabs -->
+    <div class="draw-tabs">
+        <button class="draw-tab active" data-mode="daily"  onclick="setDrawMode('daily')">Daily</button>
+        <button class="draw-tab"        data-mode="weekly" onclick="setDrawMode('weekly')">&#127942; Weekly Mega</button>
+    </div>
+
+    <div class="pool-label" id="lotteryPoolLabel">DAILY JACKPOT</div>
     <div class="lottery-pool" id="lotteryPool">$0.00</div>
     <div class="lottery-info" id="lotteryInfo">Your tickets: 0</div>
     <div class="countdown-box" style="margin-bottom:10px;width:100%;max-width:280px;">
-        <div class="label">NEXT DRAW IN</div>
+        <div class="label" id="lotteryCountdownLabel">NEXT DRAW IN</div>
         <div class="time" id="lotteryCountdown">--:--:--</div>
+        <div class="time" id="lotteryMegaCountdown" style="display:none;">--d --h</div>
     </div>
-    <div class="ticket-input-wrap" id="ticketInputWrap" style="display:none">
-        <span style="font-size:13px;white-space:nowrap;">Tickets:</span>
-        <input type="range" id="ticketSlider" min="1" max="1" value="1">
-        <span class="count" id="ticketSliderVal">1</span>
+
+    <!-- Empty state: no tickets -->
+    <div class="empty-lottery" id="emptyLottery" style="display:none;">
+        <div class="empty-emoji">&#127915;</div>
+        <div class="empty-title">No tickets yet!</div>
+        <div class="empty-sub">Play a quick mini-game to earn your first ticket and join the draw.</div>
+        <button class="btn btn-gold pulse" onclick="showScreen('game-select-screen')" style="margin-top:6px;">&#127918; Play a game</button>
+        <button class="btn btn-ghost" onclick="watchAd('standalone')" style="margin-top:8px;font-size:13px;padding:10px 18px;min-height:44px;">&#128250; Or watch ad (+10 tickets)</button>
     </div>
-    <div id="lotteryActions">
-        <button class="btn btn-gold" id="enterDrawBtn" onclick="enterDraw()">Enter Draw</button>
+
+    <!-- Normal entry UI -->
+    <div class="lottery-entry" id="lotteryEntry">
+        <div class="ticket-input-wrap" id="ticketInputWrap" style="display:none">
+            <span style="font-size:13px;white-space:nowrap;">Tickets:</span>
+            <input type="range" id="ticketSlider" min="1" max="1" value="1">
+            <span class="count" id="ticketSliderVal">1</span>
+        </div>
+        <div id="lotteryActions">
+            <button class="btn btn-gold" id="enterDrawBtn" onclick="enterDraw()">Enter Draw</button>
+        </div>
     </div>
+
     <canvas id="lottery-canvas" width="280" height="200" style="display:none"></canvas>
     <div class="lottery-result" id="lotteryResult" style="display:none"></div>
     <div class="lottery-buttons" style="margin-top:10px;margin-bottom:8px;">
@@ -826,6 +1072,14 @@
         t.setHours(0, 0, 0, 0);
         return t;
     }
+    // Weekly mega draw: every Sunday 00:00 local time
+    function getNextMegaDrawTime() {
+        const t = new Date();
+        const daysUntilSunday = (7 - t.getDay()) % 7 || 7;
+        t.setDate(t.getDate() + daysUntilSunday);
+        t.setHours(0, 0, 0, 0);
+        return t;
+    }
     function formatCountdown(ms) {
         if (ms <= 0) return '00:00:00';
         const h = Math.floor(ms / 3600000);
@@ -833,43 +1087,82 @@
         const s = Math.floor((ms % 60000) / 1000);
         return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
+    function formatMegaCountdown(ms) {
+        if (ms <= 0) return '0d 0h';
+        const d = Math.floor(ms / 86400000);
+        const h = Math.floor((ms % 86400000) / 3600000);
+        return `${d}d ${h}h`;
+    }
     setInterval(() => {
-        const str = formatCountdown(getNextDrawTime() - new Date());
+        const dailyStr = formatCountdown(getNextDrawTime() - new Date());
         ['homeCountdown','lotteryCountdown'].forEach(id => {
-            const el = document.getElementById(id); if (el) el.textContent = str;
+            const el = document.getElementById(id); if (el) el.textContent = dailyStr;
+        });
+        const megaStr = formatMegaCountdown(getNextMegaDrawTime() - new Date());
+        ['homeMegaCountdown','lotteryMegaCountdown'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.textContent = megaStr;
         });
     }, 1000);
+
+    // ===== NICKNAME (used when this user wins — appears in shared winners feed) =====
+    const NICKNAME_POOL = ['Zvezda', 'Munja', 'Bogi', 'Djomla', 'Nina', 'Pera', 'Mika', 'Lala', 'Djo', 'Tesla', 'Sale', 'Voja', 'Branko', 'Kiki', 'Boki', 'Rade', 'Tara', 'Jana', 'Luka', 'Maja'];
+    function getNickname() {
+        let n = localStorage.getItem('miniGamesLotteryName');
+        if (!n) {
+            n = NICKNAME_POOL[Math.floor(Math.random() * NICKNAME_POOL.length)]
+              + Math.floor(Math.random() * 900 + 100);
+            localStorage.setItem('miniGamesLotteryName', n);
+        }
+        return n;
+    }
 
     // ===== HOME =====
     function updateHome() {
         updateTicketBadge();
         const pool = (typeof window._sharedPool === 'number') ? window._sharedPool : state.prizePool;
         document.getElementById('homePool').textContent = '$' + pool.toFixed(2);
-        // Last winner info (populated by Firebase pool module)
-        const lwEl = document.getElementById('lastWinnerInfo');
-        if (lwEl && window._lastWinner) {
-            const d = new Date(window._lastWinner.date).toLocaleDateString();
-            lwEl.textContent = `Last win: $${Number(window._lastWinner.prize).toFixed(2)} on ${d}`;
+
+        const mega = (typeof window._sharedMegaPool === 'number') ? window._sharedMegaPool : 0;
+        const megaEl = document.getElementById('homeMega');
+        if (megaEl) {
+            megaEl.textContent = '$' + mega.toFixed(2);
+            megaEl.classList.toggle('has-value', mega > 0);
         }
-        const hist = document.getElementById('homeHistory');
-        hist.innerHTML = '';
-        if (!state.drawHistory.length) return;
+
+        // Ticket count on secondary Lottery button
+        const homeTickets = document.getElementById('homeTicketCount');
+        if (homeTickets) homeTickets.textContent = state.tickets;
+
+        // Recent winners feed — pulled from shared Firestore state
+        renderWinnersFeed();
+    }
+
+    function renderWinnersFeed() {
+        const feed = document.getElementById('homeWinners');
+        if (!feed) return;
+        feed.innerHTML = '';
+        const winners = Array.isArray(window._recentWinners) ? window._recentWinners : [];
+        if (!winners.length) return;
         const title = document.createElement('div');
-        title.className = 'draw-history-title';
-        title.textContent = 'Recent Draws';
-        hist.appendChild(title);
-        // Use textContent for all user-data fields to prevent XSS
-        state.drawHistory.slice(-3).reverse().forEach(d => {
-            const entry = document.createElement('div');
-            entry.className = 'draw-entry';
-            const dateSpan = document.createElement('span');
-            dateSpan.textContent = new Date(d.date).toLocaleDateString();
-            const resultSpan = document.createElement('span');
-            resultSpan.className = d.won ? 'won' : 'lost';
-            resultSpan.textContent = d.won ? 'Won $' + Number(d.prize).toFixed(2) : 'No win';
-            entry.appendChild(dateSpan);
-            entry.appendChild(resultSpan);
-            hist.appendChild(entry);
+        title.className = 'winners-feed-title';
+        title.textContent = 'RECENT WINNERS';
+        feed.appendChild(title);
+        // Sort most recent first, take last 7
+        const sorted = [...winners]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 7);
+        const me = getNickname();
+        sorted.forEach(w => {
+            const row = document.createElement('div');
+            row.className = 'winner-row';
+            if (w.name === me) row.classList.add('you');
+            const d = new Date(w.date);
+            const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const dateEl  = document.createElement('span'); dateEl.className = 'wr-date';  dateEl.textContent = dateStr;
+            const nameEl  = document.createElement('span'); nameEl.className = 'wr-name';  nameEl.textContent = (w.name === me ? 'You' : (w.name || 'Anon'));
+            const prizeEl = document.createElement('span'); prizeEl.className = 'wr-prize'; prizeEl.textContent = '$' + Number(w.prize || 0).toFixed(2);
+            row.appendChild(dateEl); row.appendChild(nameEl); row.appendChild(prizeEl);
+            feed.appendChild(row);
         });
     }
 
@@ -998,6 +1291,23 @@
         animFrameId = requestAnimationFrame(gameLoop);
     }
 
+    // Score-based ticket scaling (1-3) — awarded only on a win.
+    // Thresholds are per-game: 3 = great, 2 = good, 1 = minimum pass.
+    function computeTicketReward(gameId, score) {
+        switch (gameId) {
+            case 'speed-tap':    return score >= 25 ? 3 : score >= 15 ? 2 : 1;
+            case 'catch-stars':  return score >= 15 ? 3 : score >= 12 ? 2 : 1; // win requires 10+
+            case 'color-memory': return 2;                                     // binary win (3 rounds)
+            case 'quick-math':   return 2;                                     // binary win (5 correct)
+            case 'reflex-test':  return score > 0 && score < 250 ? 3          // score = best reaction ms
+                                     : score < 400 ? 2 : 1;
+            default:             return 1;
+        }
+    }
+
+    // Track last reward so showResult() / watchAd() can reference it for copy
+    let lastTicketsAwarded = 0;
+
     function endGame(won) {
         if (!gameActive) return;
         gameActive = false;
@@ -1012,7 +1322,13 @@
         if (currentGame && currentGame.cleanup) currentGame.cleanup();
         currentGame = null;
         state.gamesPlayed++;
-        if (gameWon) { state.tickets++; state.totalTicketsEarned++; }
+        lastTicketsAwarded = 0;
+        if (gameWon) {
+            const reward = computeTicketReward(currentGameMeta ? currentGameMeta.id : '', gameScore);
+            lastTicketsAwarded = reward;
+            state.tickets           += reward;
+            state.totalTicketsEarned += reward;
+        }
         saveState();
         showResult();
     }
@@ -1037,14 +1353,18 @@
 
         if (gameWon) {
             // ---- TICKET IS THE HERO ----
+            const n = lastTicketsAwarded || 1;
+            const tierLabel = n >= 3 ? '&#127942; GREAT!' : n >= 2 ? '&#128165; GOOD!' : '&#127915; WIN!';
             document.getElementById('resultInner').innerHTML = `
                 <div class="result-win-hero">
+                    <div class="result-win-tier">${tierLabel}</div>
                     <div class="result-win-emoji">&#127915;</div>
-                    <div class="result-win-label">+1 TICKET!</div>
+                    <div class="result-win-label">+${n} TICKET${n > 1 ? 'S' : ''}!</div>
                 </div>
                 <div class="result-win-sub">${lbl}: ${gameScore}${sfx}</div>`;
+            // Ad after a win = combo bonus (+100 tickets)
             document.getElementById('resultButtons').innerHTML =
-                `<button class="btn btn-gold pulse" onclick="watchAd()">&#128250; Watch Ad → +100 Tickets</button>` +
+                `<button class="btn btn-gold pulse" onclick="watchAd('combo')">&#128250; Watch Ad → +100 Tickets!</button>` +
                 `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>` +
                 `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
             // Mini confetti burst on win
@@ -1054,18 +1374,29 @@
                 <div class="result-loss-emoji">&#128546;</div>
                 <div class="result-loss-title">Better luck next time!</div>
                 <div class="result-loss-score">${lbl}: ${gameScore}${sfx}</div>`;
+            // Still offer the user a way to earn tickets: standalone ad = +10
             document.getElementById('resultButtons').innerHTML =
                 `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Try Again</button>` +
+                `<button class="btn btn-ghost" onclick="watchAd('standalone')" style="font-size:14px;">&#128250; Watch Ad <span class="badge-inline">+10</span></button>` +
                 `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
         }
         updateTicketBadge();
     }
 
     // ===== REWARDED VIDEO AD =====
+    // Ad context determines reward:
+    //   'combo'      = watched immediately after winning a mini-game → +100 tickets
+    //   'standalone' = watched from home / lottery empty state       → +10 tickets
+    // Skipping (before the ad finishes) = 0 tickets, since rewarded-ad SDKs only pay for completed views.
     let adRaf = null, adTimerInterval = null, adElapsedSec = 0;
+    let adContext = 'standalone';
     const AD_DURATION = 30; // seconds
+    const AD_REWARD_COMBO      = 100;
+    const AD_REWARD_STANDALONE = 10;
+    const AD_POOL_VALUE        = 0.50; // total $ value added per completed view (split 80/20 daily/mega)
 
-    function watchAd() {
+    function watchAd(context) {
+        adContext = (context === 'combo') ? 'combo' : 'standalone';
         showScreen('ad-overlay');
         document.getElementById('adSkipBtn').classList.remove('visible');
         document.getElementById('adCountdown').textContent = AD_DURATION;
@@ -1082,7 +1413,7 @@
             if (adElapsedSec >= AD_DURATION) finishAd();
         }, 1000);
 
-        window.trackEvent('ad_started');
+        window.trackEvent('ad_started', { context: adContext });
         startAdCanvas();
     }
     window.watchAd = watchAd;
@@ -1090,7 +1421,7 @@
     function skipAd() {
         if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
         stopAdCanvas();
-        window.trackEvent('ad_skipped', { secondsWatched: adElapsedSec });
+        window.trackEvent('ad_skipped', { context: adContext, secondsWatched: adElapsedSec });
         finishAd(true);
     }
     window.skipAd = skipAd;
@@ -1098,32 +1429,66 @@
     function finishAd(wasSkipped = false) {
         if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
         stopAdCanvas();
-        if (!wasSkipped) window.trackEvent('ad_completed', { duration: adElapsedSec });
-        state.tickets += 100;
-        state.totalTicketsEarned += 100;
-        state.prizePool += 0.50; // local fallback
+
+        if (wasSkipped) {
+            // Skipped early → no reward, no pool contribution. Show explanation screen.
+            window.trackEvent('ad_skipped_no_reward', { context: adContext, secondsWatched: adElapsedSec });
+            updateTicketBadge();
+            showScreen('result-screen');
+            const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
+            const missedReward = (adContext === 'combo') ? AD_REWARD_COMBO : AD_REWARD_STANDALONE;
+            document.getElementById('resultInner').innerHTML = `
+                <div class="skip-hero">
+                    <div class="skip-emoji">&#9208;&#65039;</div>
+                    <div class="skip-title">Ad skipped — no tickets earned</div>
+                    <div class="skip-sub">Watch the next one to the end for <strong style="color:var(--accent-gold)">+${missedReward} tickets</strong>.</div>
+                </div>`;
+            // Re-offer the ad in the same context
+            const retryCtx = adContext;
+            document.getElementById('resultButtons').innerHTML =
+                `<button class="btn btn-gold pulse" onclick="watchAd('${retryCtx}')">&#128250; Try ad again</button>` +
+                (adContext === 'combo'
+                    ? `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>`
+                    : `<button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play Game</button>`) +
+                `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
+            return;
+        }
+
+        // Completed view: reward tickets + split pool contribution (80% daily / 20% mega)
+        window.trackEvent('ad_completed', { context: adContext, duration: adElapsedSec });
+        const reward = (adContext === 'combo') ? AD_REWARD_COMBO : AD_REWARD_STANDALONE;
+        state.tickets            += reward;
+        state.totalTicketsEarned += reward;
+        state.prizePool          += AD_POOL_VALUE; // local fallback
         saveState();
-        // Write $0.50 to shared Firestore pool
-        if (window._poolAdd) window._poolAdd(0.50);
+        if (window._poolAdd) window._poolAdd(AD_POOL_VALUE);
         updateTicketBadge();
         showScreen('result-screen');
 
         const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
-        // ---- +100 TICKETS IS THE HERO ----
+        const unitLabel = reward === 1 ? 'TICKET!' : 'TICKETS!';
+        const subLine = (adContext === 'combo')
+            ? `Huge combo bonus — total <strong style="color:var(--accent-gold)">${state.tickets}</strong> tickets`
+            : `Total <strong style="color:var(--accent-gold)">${state.tickets}</strong> tickets`;
         document.getElementById('resultInner').innerHTML = `
             <div class="ad-win-hero">
                 <div class="ad-win-emoji">&#127915;</div>
-                <div class="ad-win-amount">+100</div>
-                <div class="ad-win-unit">TICKETS!</div>
-                <div class="ad-win-total" style="margin-top:6px;">
-                    Total: <strong style="color:var(--accent-gold)">${state.tickets}</strong> tickets
-                    &nbsp;·&nbsp; $0.50 added to pool
-                </div>
+                <div class="ad-win-amount">+${reward}</div>
+                <div class="ad-win-unit">${unitLabel}</div>
+                <div class="ad-win-total" style="margin-top:6px;">${subLine}</div>
             </div>`;
-        document.getElementById('resultButtons').innerHTML =
-            `<button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Enter Lottery</button>` +
-            `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>` +
-            `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
+        // Different CTAs depending on context
+        if (adContext === 'combo') {
+            document.getElementById('resultButtons').innerHTML =
+                `<button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Enter Lottery</button>` +
+                `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>` +
+                `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
+        } else {
+            document.getElementById('resultButtons').innerHTML =
+                `<button class="btn btn-gold pulse" onclick="showScreen('game-select-screen')">&#127918; Play for combo +100!</button>` +
+                `<button class="btn btn-primary" onclick="showScreen('lottery-screen')">&#127920; Lottery</button>` +
+                `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
+        }
         spawnConfetti();
     }
 
@@ -1320,23 +1685,58 @@
     }
 
     // ===== LOTTERY =====
+    let drawMode = 'daily'; // 'daily' | 'weekly'
+
+    function setDrawMode(mode) {
+        drawMode = (mode === 'weekly') ? 'weekly' : 'daily';
+        document.querySelectorAll('.draw-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.mode === drawMode);
+        });
+        updateLottery();
+    }
+    window.setDrawMode = setDrawMode;
+
     function updateLottery() {
         updateTicketBadge();
-        const pool = (typeof window._sharedPool === 'number') ? window._sharedPool : state.prizePool;
+        const isWeekly = drawMode === 'weekly';
+        const pool = isWeekly
+            ? (typeof window._sharedMegaPool === 'number' ? window._sharedMegaPool : 0)
+            : (typeof window._sharedPool     === 'number' ? window._sharedPool     : state.prizePool);
+
+        document.getElementById('lotteryPoolLabel').textContent = isWeekly ? 'WEEKLY MEGA POOL' : 'DAILY JACKPOT';
         document.getElementById('lotteryPool').textContent = '$' + pool.toFixed(2);
-        document.getElementById('lotteryInfo').textContent = `Your tickets: ${state.tickets} | In draw: ${state.ticketsInDraw}`;
-        const wrap = document.getElementById('ticketInputWrap');
-        const slider = document.getElementById('ticketSlider');
+        document.getElementById('lotteryInfo').textContent = isWeekly
+            ? `Your tickets: ${state.tickets} · Top 10 win (40/20/10/5/5/5/5/4/3/3 %)`
+            : `Your tickets: ${state.tickets} · Winner takes all`;
+        document.getElementById('lotteryCountdownLabel').textContent = isWeekly ? 'MEGA DRAW IN' : 'NEXT DRAW IN';
+        document.getElementById('lotteryCountdown').style.display     = isWeekly ? 'none' : 'block';
+        document.getElementById('lotteryMegaCountdown').style.display = isWeekly ? 'block' : 'none';
+
+        const empty    = document.getElementById('emptyLottery');
+        const entry    = document.getElementById('lotteryEntry');
+        const wrap     = document.getElementById('ticketInputWrap');
+        const slider   = document.getElementById('ticketSlider');
         const enterBtn = document.getElementById('enterDrawBtn');
-        if (state.tickets > 0) {
-            wrap.style.display = 'flex';
-            slider.max = state.tickets;
-            slider.value = Math.min(parseInt(slider.value) || 1, state.tickets);
-            document.getElementById('ticketSliderVal').textContent = slider.value;
-            enterBtn.disabled = false; enterBtn.style.opacity = '1';
+
+        // Empty state — no tickets AND nothing already in draw
+        if (state.tickets === 0 && state.ticketsInDraw === 0) {
+            empty.style.display = 'flex';
+            entry.style.display = 'none';
         } else {
-            wrap.style.display = 'none';
-            enterBtn.disabled = true; enterBtn.style.opacity = '0.5';
+            empty.style.display = 'none';
+            entry.style.display = 'flex';
+            if (state.tickets > 0) {
+                wrap.style.display = 'flex';
+                slider.max = state.tickets;
+                slider.value = Math.min(parseInt(slider.value) || 1, state.tickets);
+                document.getElementById('ticketSliderVal').textContent = slider.value;
+                enterBtn.disabled = false; enterBtn.style.opacity = '1';
+                enterBtn.textContent = isWeekly ? 'Enter Mega Draw' : 'Enter Daily Draw';
+            } else {
+                wrap.style.display = 'none';
+                enterBtn.disabled = true; enterBtn.style.opacity = '0.5';
+                enterBtn.textContent = `In draw: ${state.ticketsInDraw}`;
+            }
         }
         document.getElementById('lottery-canvas').style.display = 'none';
         document.getElementById('lotteryResult').style.display = 'none';
@@ -1385,7 +1785,25 @@
         const otherEntries  = 50 + Math.floor(Math.random() * 450);
         const totalEntries  = playerEntries + otherEntries;
         const winningNum    = Math.floor(Math.random() * totalEntries);
-        const playerWon     = winningNum < playerEntries;
+
+        // Daily = single winner. Weekly = top-10 winners drawn one by one (player position reported).
+        let playerWon, playerPosition = 0;
+        if (drawMode === 'weekly') {
+            // Draw 10 distinct winning numbers in the entry pool
+            const ticketsUniverse = Math.max(totalEntries, 10);
+            const winners = new Set();
+            while (winners.size < 10 && winners.size < ticketsUniverse) {
+                winners.add(Math.floor(Math.random() * totalEntries));
+            }
+            // Assign each to a position (insertion order). Player owns tickets [0..playerEntries)
+            const ranked = Array.from(winners);
+            for (let i = 0; i < ranked.length; i++) {
+                if (ranked[i] < playerEntries) { playerPosition = i + 1; break; }
+            }
+            playerWon = playerPosition > 0;
+        } else {
+            playerWon = winningNum < playerEntries;
+        }
 
         const numbers = Array.from({length:50}, () => Math.floor(Math.random() * totalEntries));
         numbers.push(winningNum);
@@ -1432,29 +1850,64 @@
             lCtx.font = `bold ${LH * 0.16}px Fredoka One, system-ui`;
             lCtx.textAlign = 'center';
             lCtx.fillText('#' + winningNum, LW/2, LH * 0.56);
-            finishDraw(playerWon);
+            finishDraw(playerWon, { position: playerPosition });
         }
         requestAnimationFrame(animateDrum);
     }
 
-    function finishDraw(playerWon) {
+    // Top-10 prize split for weekly mega draw (sums to 100)
+    const MEGA_SPLIT_PCT = [40, 20, 10, 5, 5, 5, 5, 4, 3, 3];
+
+    function finishDraw(playerWon, options) {
+        options = options || {};
         const r = document.getElementById('lotteryResult');
         r.style.display = 'block';
-        // Use shared Firestore pool as prize amount (fall back to local if offline)
-        const prize = (typeof window._sharedPool === 'number') ? window._sharedPool : state.prizePool;
-        window.trackEvent('lottery_result', { won: playerWon, ticketsUsed: state.ticketsInDraw, pool: prize });
+
+        const isWeekly = drawMode === 'weekly';
+        const poolTotal = isWeekly
+            ? (typeof window._sharedMegaPool === 'number' ? window._sharedMegaPool : 0)
+            : (typeof window._sharedPool     === 'number' ? window._sharedPool     : state.prizePool);
+
+        // Weekly: user may land in top N — prize scales with position (1..10)
+        let position = 0, prize = 0;
+        if (isWeekly) {
+            position = options.position || 0;
+            prize = position > 0 ? poolTotal * (MEGA_SPLIT_PCT[position - 1] / 100) : 0;
+        } else {
+            prize = playerWon ? poolTotal : 0;
+        }
+
+        window.trackEvent('lottery_result', {
+            mode: drawMode,
+            won: playerWon,
+            position,
+            ticketsUsed: state.ticketsInDraw,
+            pool: poolTotal,
+            prize,
+        });
+
         if (playerWon) {
-            r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#127881;</div><div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div><div style="font-size:18px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>`;
-            state.prizePool = 0;
-            // Reset shared pool in Firestore and record winner
-            if (window._poolClaim) window._poolClaim(prize);
+            const posLabel = isWeekly ? `Position #${position} of 10` : 'Winner takes all';
+            r.innerHTML =
+                `<div style="font-size:30px;margin-bottom:6px;">&#127881;</div>` +
+                `<div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div>` +
+                `<div style="font-size:22px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>` +
+                `<div style="font-size:12px;color:var(--text-muted);font-family:system-ui;margin-top:4px;">${posLabel}</div>`;
+            // Record winner to shared feed — daily only resets daily pool
+            if (!isWeekly) {
+                state.prizePool = 0;
+                if (window._poolClaim) window._poolClaim(prize, getNickname());
+            }
             spawnConfetti();
         } else {
-            r.innerHTML = `<div style="font-size:30px;margin-bottom:6px;">&#128532;</div><div style="color:var(--text-muted);font-size:15px;font-family:system-ui;">Better luck next time!<br><span style="font-size:12px;">Pool rolls over to next draw.</span></div>`;
+            r.innerHTML =
+                `<div style="font-size:30px;margin-bottom:6px;">&#128532;</div>` +
+                `<div style="color:var(--text-muted);font-size:15px;font-family:system-ui;">Not a winner this time.<br>` +
+                `<span style="font-size:12px;">Earn more tickets and try again!</span></div>`;
         }
         state.ticketsInDraw = 0;
         state.lastDrawTime = new Date().toISOString();
-        state.drawHistory.push({ date: state.lastDrawTime, pool: prize, won: playerWon, prize: playerWon ? prize : 0 });
+        state.drawHistory.push({ date: state.lastDrawTime, mode: drawMode, pool: poolTotal, won: playerWon, prize });
         if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
         saveState(); updateTicketBadge();
     }
@@ -1950,7 +2403,7 @@
     try {
         const [
             { initializeApp, getApps },
-            { getFirestore, doc, onSnapshot, updateDoc, setDoc, increment, serverTimestamp },
+            { getFirestore, doc, onSnapshot, updateDoc, setDoc, getDoc, increment, arrayUnion, serverTimestamp },
             { getAuth, signInAnonymously, setPersistence, inMemoryPersistence }
         ] = await Promise.all([
             import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'),
@@ -1968,16 +2421,44 @@
 
         const poolDoc = doc(db, 'lottery_state', 'global');
 
-        // Ensure document exists (no-op if already there)
-        await setDoc(poolDoc, { pool: 0 }, { merge: true });
+        // ----- SEED: starting pool + fake recent winners. Uses a seedVersion so we can
+        // bump minimum pool without re-seeding everything. Current target: $100 min daily pool.
+        const SEED_VERSION = 2;
+        const MIN_POOL = 100;
+        const snap0 = await getDoc(poolDoc);
+        const existing = snap0.exists() ? (snap0.data() || {}) : {};
+        if ((existing.seedVersion || 0) < SEED_VERSION) {
+            const now = Date.now();
+            const day = 24 * 60 * 60 * 1000;
+            const seedWinners = [
+                { name: 'Djomla', prize: 47.00,  date: new Date(now - 1*day).toISOString() },
+                { name: 'Bogi',   prize: 89.50,  date: new Date(now - 2*day).toISOString() },
+                { name: 'Nina',   prize: 22.00,  date: new Date(now - 3*day).toISOString() },
+                { name: 'Pera',   prize: 61.00,  date: new Date(now - 4*day).toISOString() },
+                { name: 'Mika',   prize: 18.50,  date: new Date(now - 5*day).toISOString() },
+                { name: 'Lala',   prize: 105.00, date: new Date(now - 6*day).toISOString() },
+                { name: 'Djo',    prize: 33.00,  date: new Date(now - 7*day).toISOString() },
+            ];
+            const seedPayload = { initialized: true, seedVersion: SEED_VERSION };
+            // Top up pool to the minimum — preserves organic growth if already above it
+            const currentPool = typeof existing.pool === 'number' ? existing.pool : 0;
+            if (currentPool < MIN_POOL)                    seedPayload.pool     = MIN_POOL;
+            if (typeof existing.megaPool !== 'number')     seedPayload.megaPool = 0;
+            if (!Array.isArray(existing.recentWinners) || existing.recentWinners.length === 0) {
+                seedPayload.recentWinners = seedWinners;
+            }
+            await setDoc(poolDoc, seedPayload, { merge: true });
+        }
 
         // Real-time listener — updates pool display on all connected clients instantly
         onSnapshot(poolDoc, snap => {
             const data = snap.data();
             if (!data) return;
 
-            window._sharedPool = typeof data.pool === 'number' ? data.pool : 0;
-            window._lastWinner = data.lastWinner || null;
+            window._sharedPool     = typeof data.pool     === 'number' ? data.pool     : 0;
+            window._sharedMegaPool = typeof data.megaPool === 'number' ? data.megaPool : 0;
+            window._lastWinner     = data.lastWinner || null;
+            window._recentWinners  = Array.isArray(data.recentWinners) ? data.recentWinners : [];
 
             // Show LIVE badge
             const badge = document.getElementById('poolLiveBadge');
@@ -1987,17 +2468,25 @@
             if (window._refreshPoolUI) window._refreshPoolUI();
         });
 
-        // Called by finishAd() — adds $0.50 to the global pool
-        window._poolAdd = amount =>
-            updateDoc(poolDoc, { pool: increment(amount) })
-                .catch(e => console.warn('Pool add failed:', e));
+        // Called by finishAd() — 80% to daily pool, 20% to weekly mega pool
+        window._poolAdd = amount => {
+            const daily = amount * 0.8;
+            const mega  = amount * 0.2;
+            return updateDoc(poolDoc, {
+                pool:     increment(daily),
+                megaPool: increment(mega),
+            }).catch(e => console.warn('Pool add failed:', e));
+        };
 
-        // Called by finishDraw() on win — resets pool to $0 and records winner
-        window._poolClaim = prize =>
-            updateDoc(poolDoc, {
+        // Called by finishDraw() on win — resets pool to $0, records winner, appends to feed
+        window._poolClaim = (prize, winnerName) => {
+            const entry = { name: winnerName || 'Anon', prize, date: new Date().toISOString() };
+            return updateDoc(poolDoc, {
                 pool: 0,
-                lastWinner: { prize, date: new Date().toISOString(), ts: serverTimestamp() }
+                lastWinner: { prize, date: entry.date, ts: serverTimestamp() },
+                recentWinners: arrayUnion(entry),
             }).catch(e => console.warn('Pool claim failed:', e));
+        };
 
     } catch (e) {
         console.warn('Shared pool unavailable (offline fallback active):', e);
