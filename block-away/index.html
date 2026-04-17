@@ -664,5 +664,11 @@ const game = new Game();
     import { initTracking } from '../firebase-tracker.js';
     initTracking('block-away');
 </script>
+
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('block-away');
+</script>
 </body>
 </html>
