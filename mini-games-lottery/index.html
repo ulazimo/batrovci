@@ -756,10 +756,8 @@
 (function() {
     'use strict';
 
-    // Google Analytics event wrapper
-    window.trackEvent = function(event, data) {
-        if (typeof gtag === 'function') gtag('event', event, data || {});
-    };
+    // Stub — replaced by initAnalytics() below once module loads
+    window.trackEvent = function() {};
 
     // ===== STATE =====
     function defaultState() {
@@ -1922,6 +1920,12 @@
     }).observe(document.getElementById('ad-overlay'), { attributes: true, attributeFilter: ['class'] });
 
 })();
+</script>
+
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('mini-games-lottery');
 </script>
 
 <!-- Firebase: play count + time played (shared tracker) -->
