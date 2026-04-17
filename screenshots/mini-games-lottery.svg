@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0533"/>
+      <stop offset="100%" stop-color="#0d0220"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe259"/>
+      <stop offset="100%" stop-color="#ffa751"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d1060"/>
+      <stop offset="100%" stop-color="#1e0848"/>
+    </linearGradient>
+    <linearGradient id="btnGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd700"/>
+      <stop offset="100%" stop-color="#e6a800"/>
+    </linearGradient>
+    <radialGradient id="glowGold" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#ffd700" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ffd700" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="360" fill="url(#bgGrad)"/>
+
+  <!-- Stars scattered -->
+  <g fill="white" opacity="0.4">
+    <circle cx="30" cy="25" r="1"/><circle cx="80" cy="15" r="0.8"/><circle cx="150" cy="35" r="1"/>
+    <circle cx="220" cy="10" r="0.7"/><circle cx="310" cy="28" r="1.2"/><circle cx="400" cy="18" r="0.9"/>
+    <circle cx="480" cy="30" r="1"/><circle cx="555" cy="12" r="0.8"/><circle cx="570" cy="45" r="1"/>
+    <circle cx="45" cy="70" r="0.7"/><circle cx="530" cy="80" r="0.8"/><circle cx="15" cy="120" r="1"/>
+    <circle cx="585" cy="150" r="0.7"/><circle cx="20" cy="200" r="0.9"/><circle cx="580" cy="230" r="1"/>
+    <circle cx="35" cy="300" r="0.8"/><circle cx="565" cy="310" r="1"/><circle cx="590" cy="340" r="0.7"/>
+  </g>
+
+  <!-- Top: Prize pool banner -->
+  <rect x="150" y="18" width="300" height="48" rx="10" fill="url(#cardGrad)" stroke="#ffd700" stroke-width="1.5" opacity="0.9"/>
+  <text x="300" y="35" font-family="Arial Black, sans-serif" font-size="9" fill="#ffd700" text-anchor="middle" letter-spacing="2" opacity="0.8">JACKPOT PRIZE POOL</text>
+  <text x="300" y="56" font-family="Arial Black, sans-serif" font-size="22" fill="url(#goldGrad)" text-anchor="middle" font-weight="900" filter="url(#glow)">$47.50</text>
+
+  <!-- Ticket badge top-right -->
+  <rect x="490" y="18" width="95" height="40" rx="8" fill="#2d1060" stroke="#ffd700" stroke-width="1.5"/>
+  <text x="514" y="35" font-family="monospace" font-size="16">🎟️</text>
+  <text x="538" y="45" font-family="Arial Black, sans-serif" font-size="18" fill="#ffd700" font-weight="900">12</text>
+  <text x="538" y="53" font-family="Arial, sans-serif" font-size="7" fill="#a07fd0" letter-spacing="1">TICKETS</text>
+
+  <!-- Mini-game cards row -->
+  <!-- Card 1: Speed Tap -->
+  <rect x="22" y="88" width="100" height="120" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+  <circle cx="72" cy="128" r="24" fill="#3b1a6b" stroke="#a855f7" stroke-width="1.5"/>
+  <circle cx="72" cy="128" r="14" fill="#7c3aed" opacity="0.8"/>
+  <circle cx="72" cy="128" r="6" fill="#ffd700" filter="url(#glow)"/>
+  <!-- shrinking rings -->
+  <circle cx="72" cy="128" r="20" fill="none" stroke="#a855f7" stroke-width="1" opacity="0.4" stroke-dasharray="3,3"/>
+  <text x="72" y="168" font-family="Arial, sans-serif" font-size="8" fill="#c084fc" text-anchor="middle" letter-spacing="0.5">SPEED TAP</text>
+  <rect x="32" y="176" width="80" height="22" rx="5" fill="#7c3aed" opacity="0.8"/>
+  <text x="72" y="191" font-family="Arial Black, sans-serif" font-size="9" fill="white" text-anchor="middle">PLAY</text>
+
+  <!-- Card 2: Color Memory -->
+  <rect x="132" y="88" width="100" height="120" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+  <g transform="translate(157, 108)">
+    <rect width="22" height="22" rx="4" fill="#ef4444"/>
+    <rect x="26" width="22" height="22" rx="4" fill="#3b82f6"/>
+    <rect y="26" width="22" height="22" rx="4" fill="#22c55e"/>
+    <rect x="26" y="26" width="22" height="22" rx="4" fill="#ffd700"/>
+  </g>
+  <text x="182" y="168" font-family="Arial, sans-serif" font-size="8" fill="#c084fc" text-anchor="middle" letter-spacing="0.5">COLOR MEMORY</text>
+  <rect x="142" y="176" width="80" height="22" rx="5" fill="#7c3aed" opacity="0.8"/>
+  <text x="182" y="191" font-family="Arial Black, sans-serif" font-size="9" fill="white" text-anchor="middle">PLAY</text>
+
+  <!-- Card 3: Catch Stars (center, highlighted) -->
+  <rect x="242" y="78" width="116" height="136" rx="12" fill="#2d1060" stroke="#ffd700" stroke-width="2"/>
+  <!-- glow behind -->
+  <rect x="242" y="78" width="116" height="136" rx="12" fill="url(#glowGold)" opacity="0.5"/>
+  <text x="300" y="102" font-family="monospace" font-size="26" text-anchor="middle">⭐</text>
+  <!-- falling stars -->
+  <text x="262" y="130" font-family="monospace" font-size="14" opacity="0.6">⭐</text>
+  <text x="316" y="120" font-family="monospace" font-size="12" opacity="0.5">⭐</text>
+  <text x="338" y="138" font-family="monospace" font-size="10" opacity="0.4">💣</text>
+  <!-- basket -->
+  <rect x="276" y="148" width="48" height="12" rx="6" fill="#ffd700" opacity="0.9"/>
+  <text x="300" y="180" font-family="Arial, sans-serif" font-size="8" fill="#ffd700" text-anchor="middle" letter-spacing="0.5">CATCH STARS</text>
+  <rect x="256" y="188" width="88" height="22" rx="5" fill="url(#btnGrad)"/>
+  <text x="300" y="203" font-family="Arial Black, sans-serif" font-size="9" fill="#1a0533" text-anchor="middle" font-weight="900">PLAY</text>
+
+  <!-- Card 4: Quick Math -->
+  <rect x="368" y="88" width="100" height="120" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="418" y="135" font-family="Arial Black, sans-serif" font-size="22" fill="white" text-anchor="middle" font-weight="900">7+8</text>
+  <text x="418" y="153" font-family="Arial Black, sans-serif" font-size="13" fill="#ffd700" text-anchor="middle">=?</text>
+  <text x="418" y="168" font-family="Arial, sans-serif" font-size="8" fill="#c084fc" text-anchor="middle" letter-spacing="0.5">QUICK MATH</text>
+  <rect x="378" y="176" width="80" height="22" rx="5" fill="#7c3aed" opacity="0.8"/>
+  <text x="418" y="191" font-family="Arial Black, sans-serif" font-size="9" fill="white" text-anchor="middle">PLAY</text>
+
+  <!-- Card 5: Reflex -->
+  <rect x="478" y="88" width="100" height="120" rx="10" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.5"/>
+  <circle cx="528" cy="130" r="26" fill="#3b1a6b" stroke="#22c55e" stroke-width="2"/>
+  <circle cx="528" cy="130" r="18" fill="#22c55e" opacity="0.85"/>
+  <text x="528" y="136" font-family="monospace" font-size="16" text-anchor="middle" fill="white">GO!</text>
+  <text x="528" y="168" font-family="Arial, sans-serif" font-size="8" fill="#c084fc" text-anchor="middle" letter-spacing="0.5">REFLEX TEST</text>
+  <rect x="488" y="176" width="80" height="22" rx="5" fill="#7c3aed" opacity="0.8"/>
+  <text x="528" y="191" font-family="Arial Black, sans-serif" font-size="9" fill="white" text-anchor="middle">PLAY</text>
+
+  <!-- Bottom: Lottery button -->
+  <rect x="80" y="232" width="200" height="52" rx="12" fill="url(#btnGrad)" filter="url(#glow)"/>
+  <text x="180" y="253" font-family="Arial Black, sans-serif" font-size="10" fill="#1a0533" text-anchor="middle" letter-spacing="1">🎰 ENTER LOTTERY</text>
+  <text x="180" y="274" font-family="Arial, sans-serif" font-size="9" fill="#5c2d00" text-anchor="middle">Draw in 04:23:11</text>
+
+  <!-- Bottom: Watch Ad button -->
+  <rect x="320" y="232" width="200" height="52" rx="12" fill="#2d1060" stroke="#ffd700" stroke-width="1.5"/>
+  <text x="420" y="253" font-family="Arial Black, sans-serif" font-size="10" fill="#ffd700" text-anchor="middle" letter-spacing="1">📺 WATCH AD</text>
+  <text x="420" y="274" font-family="Arial, sans-serif" font-size="9" fill="#a07fd0" text-anchor="middle">+100 tickets · +$0.50 pool</text>
+
+  <!-- Draw history strip -->
+  <rect x="22" y="302" width="556" height="42" rx="8" fill="#150428" stroke="#3d1a7a" stroke-width="1"/>
+  <text x="40" y="320" font-family="monospace" font-size="7" fill="#6b3faa" letter-spacing="1">DRAW HISTORY</text>
+  <g font-family="monospace" font-size="8">
+    <text x="40" y="336" fill="#a07fd0">Apr 16 — No win · 3 tickets</text>
+    <text x="220" y="336" fill="#a07fd0">Apr 15 — No win · 7 tickets</text>
+    <text x="400" y="336" fill="#ffd700">Apr 14 — 🏆 WIN $22.00</text>
+  </g>
+</svg>
