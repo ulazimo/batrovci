@@ -1023,7 +1023,7 @@
     <div class="ad-topbar">
         <span class="ad-label">Advertisement</span>
         <div style="display:flex;align-items:center;gap:10px;">
-            <button class="ad-skip-btn" id="adSkipBtn" onclick="skipAd()">Skip &#9654;</button>
+            <button class="ad-skip-btn" id="adSkipBtn">Skip &#9654;</button>
             <div class="ad-countdown" id="adCountdown">30</div>
         </div>
     </div>
@@ -1486,82 +1486,38 @@
     }
 
     // ===== REWARDED VIDEO AD =====
-    // Ad context determines reward:
-    //   'combo'      = watched immediately after winning a mini-game → +100 tickets
-    //   'standalone' = watched from home / lottery empty state       → +10 tickets
-    // Skipping (before the ad finishes) = 0 tickets, since rewarded-ad SDKs only pay for completed views.
-    let adRaf = null, adTimerInterval = null, adElapsedSec = 0;
-    let adContext = 'standalone';
-    const AD_DURATION = 30; // seconds
+    // Playback delegated to rewarded-ad.js — swap the module's show() body for
+    // a real provider SDK (Poki / CrazyGames / IMA) and nothing here changes.
+    //   context = 'combo'      → after a mini-game win, +100 tickets
+    //   context = 'standalone' → from home or lottery empty state, +10 tickets
+    // Skipped view = 0 reward (rewarded SDKs only credit completed views).
     const AD_REWARD_COMBO      = 100;
     const AD_REWARD_STANDALONE = 10;
-    const AD_POOL_VALUE        = 0.50; // total $ value added per completed view (split 80/20 daily/mega)
+    const AD_POOL_VALUE        = 0.50; // $ per completed view (80% daily / 20% mega)
 
     function watchAd(context) {
-        adContext = (context === 'combo') ? 'combo' : 'standalone';
-        showScreen('ad-overlay');
-        document.getElementById('adSkipBtn').classList.remove('visible');
-        document.getElementById('adCountdown').textContent = AD_DURATION;
-        document.getElementById('adProgressFill').style.width = '0%';
-
-        adElapsedSec = 0;
-        if (adTimerInterval) clearInterval(adTimerInterval);
-        adTimerInterval = setInterval(() => {
-            adElapsedSec++;
-            const pct = (adElapsedSec / AD_DURATION) * 100;
-            document.getElementById('adProgressFill').style.width = pct + '%';
-            document.getElementById('adCountdown').textContent = Math.max(0, AD_DURATION - adElapsedSec);
-            if (adElapsedSec >= 5) document.getElementById('adSkipBtn').classList.add('visible');
-            if (adElapsedSec >= AD_DURATION) finishAd();
-        }, 1000);
-
-        window.trackEvent('ad_started', { context: adContext });
-        startAdCanvas();
+        const ctx = (context === 'combo') ? 'combo' : 'standalone';
+        window.trackEvent('ad_started', { context: ctx });
+        const runner = window.showRewardedAd;
+        if (!runner) {
+            // Module failed to load (offline / blocker). Fall back to a skip so
+            // the user sees a result screen instead of an empty overlay.
+            onAdSkipped(ctx, 0);
+            return;
+        }
+        runner({
+            onReward: ({ secondsWatched } = {}) => onAdRewarded(ctx, secondsWatched || 0),
+            onSkip:   ({ secondsWatched } = {}) => onAdSkipped(ctx, secondsWatched || 0),
+        });
     }
     window.watchAd = watchAd;
 
-    function skipAd() {
-        if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
-        stopAdCanvas();
-        window.trackEvent('ad_skipped', { context: adContext, secondsWatched: adElapsedSec });
-        finishAd(true);
-    }
-    window.skipAd = skipAd;
-
-    function finishAd(wasSkipped = false) {
-        if (adTimerInterval) { clearInterval(adTimerInterval); adTimerInterval = null; }
-        stopAdCanvas();
-
-        if (wasSkipped) {
-            // Skipped early → no reward, no pool contribution. Show explanation screen.
-            window.trackEvent('ad_skipped_no_reward', { context: adContext, secondsWatched: adElapsedSec });
-            updateTicketBadge();
-            showScreen('result-screen');
-            const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
-            const missedReward = (adContext === 'combo') ? AD_REWARD_COMBO : AD_REWARD_STANDALONE;
-            document.getElementById('resultInner').innerHTML = `
-                <div class="skip-hero">
-                    <div class="skip-emoji">&#9208;&#65039;</div>
-                    <div class="skip-title">Ad skipped — no tickets earned</div>
-                    <div class="skip-sub">Watch the next one to the end for <strong style="color:var(--accent-gold)">+${missedReward} tickets</strong>.</div>
-                </div>`;
-            // Re-offer the ad in the same context
-            const retryCtx = adContext;
-            document.getElementById('resultButtons').innerHTML =
-                `<button class="btn btn-gold pulse" onclick="watchAd('${retryCtx}')">&#128250; Try ad again</button>` +
-                (adContext === 'combo'
-                    ? `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>`
-                    : `<button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play Game</button>`) +
-                `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
-            return;
-        }
-
-        // Completed view: reward tickets + split pool contribution (80% daily / 20% mega)
-        window.trackEvent('ad_completed', { context: adContext, duration: adElapsedSec });
-        const reward = (adContext === 'combo') ? AD_REWARD_COMBO : AD_REWARD_STANDALONE;
+    function onAdRewarded(context, secondsWatched) {
+        window.trackEvent('ad_completed', { context, duration: secondsWatched });
+        const reward = (context === 'combo') ? AD_REWARD_COMBO : AD_REWARD_STANDALONE;
         state.tickets            += reward;
         state.totalTicketsEarned += reward;
-        state.prizePool          += AD_POOL_VALUE; // local fallback
+        state.prizePool          += AD_POOL_VALUE;
         saveState();
         if (window._poolAdd) window._poolAdd(AD_POOL_VALUE);
         updateTicketBadge();
@@ -1569,7 +1525,7 @@
 
         const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
         const unitLabel = reward === 1 ? 'TICKET!' : 'TICKETS!';
-        const subLine = (adContext === 'combo')
+        const subLine = (context === 'combo')
             ? `Huge combo bonus — total <strong style="color:var(--accent-gold)">${state.tickets}</strong> tickets`
             : `Total <strong style="color:var(--accent-gold)">${state.tickets}</strong> tickets`;
         document.getElementById('resultInner').innerHTML = `
@@ -1579,8 +1535,7 @@
                 <div class="ad-win-unit">${unitLabel}</div>
                 <div class="ad-win-total" style="margin-top:6px;">${subLine}</div>
             </div>`;
-        // Different CTAs depending on context
-        if (adContext === 'combo') {
+        if (context === 'combo') {
             document.getElementById('resultButtons').innerHTML =
                 `<button class="btn btn-gold pulse" onclick="showScreen('lottery-screen')">&#127920; Enter Lottery</button>` +
                 `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>` +
@@ -1594,196 +1549,24 @@
         spawnConfetti();
     }
 
-    // ===== AD CANVAS ANIMATION =====
-    // Draws a realistic-looking mobile game interstitial ad for a fictional game "Lucky Coins"
-    const adCanvas = document.getElementById('ad-canvas');
-    const adCtx    = adCanvas.getContext('2d');
-    let adAnimT    = 0;
-    let adPrevT    = 0;
-
-    function resizeAdCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        adCanvas.width  = window.innerWidth * dpr;
-        adCanvas.height = window.innerHeight * dpr;
-        adCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    function stopAdCanvas() {
-        if (adRaf) { cancelAnimationFrame(adRaf); adRaf = null; }
-    }
-
-    function startAdCanvas() {
-        stopAdCanvas();
-        resizeAdCanvas();
-        adAnimT = 0;
-        adPrevT = performance.now();
-        renderAd(adPrevT);
-    }
-
-    function renderAd(ts) {
-        // Cap ad animation to ~60fps
-        const adElapsed = ts - adPrevT;
-        if (adElapsed < 14) { adRaf = requestAnimationFrame(renderAd); return; }
-        const dt = Math.min(adElapsed / 1000, 0.05);
-        adPrevT = ts;
-        adAnimT += dt;
-
-        const W = window.innerWidth, H = window.innerHeight;
-        const dpr = window.devicePixelRatio || 1;
-        adCtx.globalAlpha = 1;
-        adCtx.clearRect(0, 0, W, H);
-
-        // ---- Background gradient ----
-        const bg = adCtx.createLinearGradient(0, 0, 0, H);
-        bg.addColorStop(0, '#0a0a2e');
-        bg.addColorStop(0.5, '#1a0533');
-        bg.addColorStop(1, '#2d0a0a');
-        adCtx.fillStyle = bg;
-        adCtx.fillRect(0, 0, W, H);
-
-        // ---- Animated star field ----
-        adCtx.fillStyle = 'rgba(255,255,255,0.7)';
-        for (let i = 0; i < 40; i++) {
-            const sx = (Math.sin(i * 137.5 + adAnimT * 0.1) * 0.5 + 0.5) * W;
-            const sy = ((i * 0.0337 + adAnimT * 0.03) % 1) * H;
-            const sr = 0.5 + Math.sin(adAnimT * 2 + i) * 0.3;
-            adCtx.globalAlpha = 0.3 + Math.sin(adAnimT * 1.5 + i) * 0.2;
-            adCtx.beginPath(); adCtx.arc(sx, sy, Math.max(0.1, sr), 0, Math.PI * 2); adCtx.fill();
-        }
-        adCtx.globalAlpha = 1;
-
-        const cx = W / 2;
-        const cy = H / 2;
-
-        // ---- Game "logo box" ----
-        const boxW = Math.min(W * 0.7, 280), boxH = boxW;
-        const boxX = cx - boxW / 2, boxY = cy - boxH / 2 - H * 0.06;
-
-        // Shadow glow
-        adCtx.shadowColor = '#ffd700';
-        adCtx.shadowBlur = 20 + Math.sin(adAnimT * 2) * 10;
-
-        // Rounded rect helper
-        function rr(x, y, w, h, r) {
-            adCtx.beginPath();
-            adCtx.roundRect ? adCtx.roundRect(x,y,w,h,r) : (adCtx.beginPath(), adCtx.rect(x,y,w,h));
-            adCtx.fill();
-        }
-
-        // App icon background
-        const iconGrad = adCtx.createLinearGradient(boxX, boxY, boxX + boxW, boxY + boxH);
-        iconGrad.addColorStop(0, '#ff6b35');
-        iconGrad.addColorStop(0.5, '#ffd700');
-        iconGrad.addColorStop(1, '#ff3d00');
-        adCtx.fillStyle = iconGrad;
-        rr(boxX, boxY, boxW, boxH, boxW * 0.2);
-        adCtx.shadowBlur = 0;
-
-        // Coin stack (3 coins)
-        const coinR = boxW * 0.14;
-        const stackX = cx, stackBase = boxY + boxH * 0.72;
-        for (let i = 2; i >= 0; i--) {
-            const cy2 = stackBase - i * coinR * 0.6 + Math.sin(adAnimT * 2 + i * 0.7) * 3;
-            adCtx.beginPath();
-            adCtx.ellipse(stackX, cy2, coinR, coinR * 0.32, 0, 0, Math.PI * 2);
-            adCtx.fillStyle = i === 0 ? '#ffd700' : '#e6ac00';
-            adCtx.fill();
-            adCtx.strokeStyle = '#b8860b';
-            adCtx.lineWidth = 1.5;
-            adCtx.stroke();
-            // Top face
-            adCtx.beginPath();
-            adCtx.ellipse(stackX, cy2 - coinR * 0.1, coinR * 0.88, coinR * 0.25, 0, 0, Math.PI * 2);
-            adCtx.fillStyle = i === 0 ? '#ffe44d' : '#f0c000';
-            adCtx.fill();
-            // $ sign
-            if (i === 0) {
-                adCtx.fillStyle = '#b8860b';
-                adCtx.font = `bold ${coinR * 0.55}px Fredoka One, system-ui`;
-                adCtx.textAlign = 'center';
-                adCtx.textBaseline = 'middle';
-                adCtx.fillText('$', stackX, cy2 - coinR * 0.1);
-            }
-        }
-
-        // Stars decoration
-        for (let i = 0; i < 5; i++) {
-            const angle = (i / 5) * Math.PI * 2 - Math.PI / 2 + adAnimT * 0.3;
-            const r = boxW * 0.42;
-            const sx2 = boxX + boxW/2 + Math.cos(angle) * r;
-            const sy2 = boxY + boxH/2 + Math.sin(angle) * r;
-            const sr2 = 6 + Math.sin(adAnimT * 3 + i) * 2;
-            drawStar(adCtx, sx2, sy2, 5, sr2, sr2 * 0.45, '#ffd700');
-        }
-
-        // ---- Game title ----
-        adCtx.shadowBlur = 0;
-        const titleY = boxY + boxH + 22;
-        adCtx.fillStyle = '#ffd700';
-        adCtx.font = `bold ${Math.min(W * 0.09, 34)}px Fredoka One, system-ui`;
-        adCtx.textAlign = 'center';
-        adCtx.textBaseline = 'alphabetic';
-        adCtx.fillText('LUCKY COINS', cx, titleY);
-
-        // Rating stars
-        const starY = titleY + 20;
-        for (let i = 0; i < 5; i++) {
-            const sx3 = cx - 52 + i * 26;
-            drawStar(adCtx, sx3, starY, 5, 9, 4, '#ffd700');
-        }
-        adCtx.fillStyle = 'rgba(255,255,255,0.5)';
-        adCtx.font = '12px system-ui';
-        adCtx.fillText('4.8  ★  10M+ Downloads', cx, starY + 20);
-
-        // ---- CTA button ----
-        const btnW = Math.min(W * 0.7, 240), btnH = 52;
-        const btnX = cx - btnW / 2;
-        const btnY = H - H * 0.22;
-
-        // Pulse effect
-        const pulse = 1 + Math.sin(adAnimT * 3) * 0.03;
-        adCtx.save();
-        adCtx.translate(cx, btnY + btnH / 2);
-        adCtx.scale(pulse, pulse);
-        adCtx.translate(-cx, -(btnY + btnH / 2));
-
-        // Button shadow
-        adCtx.shadowColor = '#69f0ae';
-        adCtx.shadowBlur = 15;
-        const btnGrad = adCtx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
-        btnGrad.addColorStop(0, '#69f0ae');
-        btnGrad.addColorStop(1, '#00c853');
-        adCtx.fillStyle = btnGrad;
-        rr(btnX, btnY, btnW, btnH, btnH / 2);
-
-        adCtx.shadowBlur = 0;
-        adCtx.fillStyle = '#003300';
-        adCtx.font = `bold ${Math.min(W * 0.055, 20)}px Fredoka One, system-ui`;
-        adCtx.textAlign = 'center';
-        adCtx.textBaseline = 'middle';
-        adCtx.fillText('PLAY FOR FREE', cx, btnY + btnH / 2);
-        adCtx.restore();
-
-        // Store badges text
-        adCtx.fillStyle = 'rgba(255,255,255,0.35)';
-        adCtx.font = '11px system-ui';
-        adCtx.textAlign = 'center';
-        adCtx.textBaseline = 'alphabetic';
-        adCtx.fillText('Available on App Store & Google Play', cx, btnY + btnH + 18);
-
-        adRaf = requestAnimationFrame(renderAd);
-    }
-
-    function drawStar(ctx2, cx2, cy2, spikes, outerR, innerR, color) {
-        ctx2.beginPath();
-        for (let i = 0; i < spikes * 2; i++) {
-            const r = i % 2 === 0 ? outerR : innerR;
-            const angle = (i * Math.PI) / spikes - Math.PI / 2;
-            ctx2[i === 0 ? 'moveTo' : 'lineTo'](cx2 + Math.cos(angle) * r, cy2 + Math.sin(angle) * r);
-        }
-        ctx2.closePath();
-        ctx2.fillStyle = color;
-        ctx2.fill();
+    function onAdSkipped(context, secondsWatched) {
+        window.trackEvent('ad_skipped_no_reward', { context, secondsWatched });
+        updateTicketBadge();
+        showScreen('result-screen');
+        const gid = currentGameMeta ? currentGameMeta.id : MINI_GAMES[0].id;
+        const missedReward = (context === 'combo') ? AD_REWARD_COMBO : AD_REWARD_STANDALONE;
+        document.getElementById('resultInner').innerHTML = `
+            <div class="skip-hero">
+                <div class="skip-emoji">&#9208;&#65039;</div>
+                <div class="skip-title">Ad skipped — no tickets earned</div>
+                <div class="skip-sub">Watch the next one to the end for <strong style="color:var(--accent-gold)">+${missedReward} tickets</strong>.</div>
+            </div>`;
+        document.getElementById('resultButtons').innerHTML =
+            `<button class="btn btn-gold pulse" onclick="watchAd('${context}')">&#128250; Try ad again</button>` +
+            (context === 'combo'
+                ? `<button class="btn btn-primary" onclick="openTutorial('${gid}')">&#127918; Play Again</button>`
+                : `<button class="btn btn-primary" onclick="showScreen('game-select-screen')">&#127918; Play Game</button>`) +
+            `<button class="btn btn-secondary" onclick="showScreen('home-screen')">&#8592; Home</button>`;
     }
 
     // ===== LOTTERY =====
@@ -2534,12 +2317,15 @@
         if (active.id === 'lottery-screen') updateLottery();
     };
     updateHome();
-    // Stop ad animation when the ad overlay is hidden (only observe the one screen we care about)
-    new MutationObserver(() => {
-        if (!document.getElementById('ad-overlay').classList.contains('active')) stopAdCanvas();
-    }).observe(document.getElementById('ad-overlay'), { attributes: true, attributeFilter: ['class'] });
 
 })();
+</script>
+
+<!-- Rewarded-ad wrapper: fake Lucky Coins interstitial today; swap the
+     module body to integrate a real provider SDK later. -->
+<script type="module">
+    import { showRewardedAd } from './rewarded-ad.js';
+    window.showRewardedAd = showRewardedAd;
 </script>
 
 <!-- Analytics: GA4 events with auto game_id -->
@@ -2653,7 +2439,7 @@
             }
         });
 
-        // Called by finishAd() — 80% to daily pool, 20% to weekly mega pool
+        // Called after a completed rewarded view — 80% daily / 20% mega pool
         window._poolAdd = amount => {
             const daily = amount * 0.8;
             const mega  = amount * 0.2;
