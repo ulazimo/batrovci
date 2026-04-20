@@ -2471,7 +2471,7 @@
     try {
         const [
             { initializeApp, getApps },
-            { getFirestore, doc, onSnapshot, updateDoc, setDoc, getDoc, increment, arrayUnion, serverTimestamp },
+            { getFirestore, doc, onSnapshot, updateDoc, setDoc, getDoc, increment, serverTimestamp },
             { getAuth, signInAnonymously, setPersistence, inMemoryPersistence }
         ] = await Promise.all([
             import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'),
@@ -2488,6 +2488,20 @@
         await signInAnonymously(auth);
 
         const poolDoc = doc(db, 'lottery_state', 'global');
+
+        // Keep the shared recentWinners array bounded. Filter to last 14 days and
+        // dedupe by (date, name) — replaces arrayUnion so we can cap growth.
+        const WINNERS_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+        function trimRecentWinners(existing, additions) {
+            const cutoff = Date.now() - WINNERS_TTL_MS;
+            const kept = (existing || []).filter(w => new Date(w.date).getTime() >= cutoff);
+            const seen = new Set(kept.map(w => w.date + '|' + w.name));
+            for (const e of (additions || [])) {
+                const key = e.date + '|' + e.name;
+                if (!seen.has(key)) { seen.add(key); kept.push(e); }
+            }
+            return kept;
+        }
 
         // Starting pool + recent winners. Bump seedVersion to top up minimums.
         // v4: replace hardcoded winners with synthetic ones from the same PRNG
@@ -2511,8 +2525,8 @@
             await setDoc(poolDoc, seedPayload, { merge: true });
         }
 
-        // Deterministic PRNG per UTC day → clients compute identical
-        // {name, prize, date} objects → arrayUnion dedupes races naturally.
+        // Deterministic PRNG per UTC day → clients compute identical synth entries,
+        // so read-modify-write converges even under cross-client races.
         let backfilledSynth = false;
 
         onSnapshot(poolDoc, snap => {
@@ -2524,19 +2538,18 @@
             window._lastWinner     = data.lastWinner || null;
             window._recentWinners  = Array.isArray(data.recentWinners) ? data.recentWinners : [];
 
-            // Show LIVE badge
             const badge = document.getElementById('poolLiveBadge');
             if (badge) badge.style.display = 'inline';
 
-            // Refresh whichever screen is currently visible
             if (window._refreshPoolUI) window._refreshPoolUI();
 
             if (!backfilledSynth && typeof window._computeMissingSynthWinners === 'function') {
                 const missing = window._computeMissingSynthWinners(window._recentWinners);
                 backfilledSynth = true;
                 if (missing.length) {
-                    updateDoc(poolDoc, { recentWinners: arrayUnion(...missing) })
-                        .catch(e => console.warn('Synth backfill failed:', e));
+                    updateDoc(poolDoc, {
+                        recentWinners: trimRecentWinners(window._recentWinners, missing)
+                    }).catch(e => console.warn('Synth backfill failed:', e));
                 }
             }
         });
@@ -2551,13 +2564,13 @@
             }).catch(e => console.warn('Pool add failed:', e));
         };
 
-        // Called by finishDraw() on win — resets pool to $0, records winner, appends to feed
+        // Called by finishDraw() on win — resets pool, records winner, appends to feed
         window._poolClaim = (prize, winnerName) => {
             const entry = { name: winnerName || 'Anon', prize, date: new Date().toISOString() };
             return updateDoc(poolDoc, {
                 pool: 0,
                 lastWinner: { prize, date: entry.date, ts: serverTimestamp() },
-                recentWinners: arrayUnion(entry),
+                recentWinners: trimRecentWinners(window._recentWinners, [entry]),
             }).catch(e => console.warn('Pool claim failed:', e));
         };
 
