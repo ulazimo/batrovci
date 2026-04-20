@@ -1007,7 +1007,8 @@
     <!-- Auto-entered status -->
     <div class="lottery-entry" id="lotteryEntry">
         <div class="auto-entered" id="lotteryEntryStatus">All of your tickets are already in today's draw.</div>
-        <button class="btn btn-gold" id="drawNowBtn" onclick="demoDraw()">Simulate Daily Draw</button>
+        <button class="btn btn-gold" id="drawNowBtn" onclick="demoDraw()" style="display:none">Simulate Mega Draw</button>
+        <button class="btn btn-primary" id="replayDrawBtn" onclick="replayDraw()" style="display:none">&#9654; Replay today's draw</button>
     </div>
 
     <canvas id="lottery-canvas" width="280" height="200" style="display:none"></canvas>
@@ -1046,7 +1047,14 @@
 
     // ===== STATE =====
     function defaultState() {
-        return { tickets: 0, totalTicketsEarned: 0, gamesPlayed: 0, lastDrawTime: null, drawHistory: [], prizePool: 0 };
+        return {
+            tickets: 0, totalTicketsEarned: 0, gamesPlayed: 0,
+            lastDrawTime: null, drawHistory: [], prizePool: 0,
+            // Daily draw is auto-run on the first lottery visit of each UTC day.
+            // lastDrawResult snapshot keeps enough data to replay the animation.
+            lastDrawDate: null,
+            lastDrawResult: null,
+        };
     }
     function loadState() {
         try {
@@ -1790,6 +1798,12 @@
     }
     window.setDrawMode = setDrawMode;
 
+    // Set while auto-draw animation is mid-flight so repeated updateLottery()
+    // calls (tab switches, snapshot refreshes) don't re-fire the trigger.
+    let _dailyDrawInFlight = false;
+
+    function todayUTCStr() { return new Date().toISOString().slice(0, 10); }
+
     function updateLottery() {
         updateTicketBadge();
         const isWeekly = drawMode === 'weekly';
@@ -1801,31 +1815,68 @@
         document.getElementById('lotteryPool').textContent = '$' + pool.toFixed(2);
         document.getElementById('lotteryInfo').textContent = isWeekly
             ? 'Top 10 win · split 40/20/10/5×4/4/3/3 %'
-            : 'Winner takes all';
+            : 'Winner takes all · drawn automatically each day';
         document.getElementById('lotteryCountdownLabel').textContent = isWeekly ? 'MEGA DRAW IN' : 'NEXT DRAW IN';
         document.getElementById('lotteryCountdown').style.display     = isWeekly ? 'none' : 'block';
         document.getElementById('lotteryMegaCountdown').style.display = isWeekly ? 'block' : 'none';
 
-        const empty  = document.getElementById('emptyLottery');
-        const entry  = document.getElementById('lotteryEntry');
-        const status = document.getElementById('lotteryEntryStatus');
-        const drawBtn = document.getElementById('drawNowBtn');
+        const empty    = document.getElementById('emptyLottery');
+        const entry    = document.getElementById('lotteryEntry');
+        const status   = document.getElementById('lotteryEntryStatus');
+        const drawBtn  = document.getElementById('drawNowBtn');
+        const replayBtn = document.getElementById('replayDrawBtn');
 
-        if (state.tickets === 0) {
-            empty.style.display = 'flex';
-            entry.style.display = 'none';
-        } else {
-            empty.style.display = 'none';
-            entry.style.display = 'flex';
-            const scope = isWeekly ? 'the weekly mega draw' : "today's draw";
-            status.innerHTML = `All <strong>${state.tickets}</strong> of your tickets are already in ${scope}.`;
-            drawBtn.textContent = isWeekly ? 'Simulate Mega Draw' : 'Simulate Daily Draw';
-        }
+        drawBtn.style.display   = 'none';
+        replayBtn.style.display = 'none';
         document.getElementById('lottery-canvas').style.display = 'none';
         document.getElementById('lotteryResult').style.display = 'none';
+
+        if (isWeekly) {
+            // Weekly mega still uses a manual simulate button for now.
+            if (state.tickets === 0) {
+                empty.style.display = 'flex'; entry.style.display = 'none';
+            } else {
+                empty.style.display = 'none'; entry.style.display = 'flex';
+                status.innerHTML = `All <strong>${state.tickets}</strong> of your tickets are in the weekly mega draw.`;
+                drawBtn.style.display = 'inline-flex';
+            }
+            return;
+        }
+
+        // DAILY mode
+        const drewToday = state.lastDrawDate === todayUTCStr();
+        const hasReplay = !!state.lastDrawResult;
+
+        if (drewToday) {
+            empty.style.display = 'none'; entry.style.display = 'flex';
+            const r = state.lastDrawResult;
+            const headline = r.won
+                ? `&#127881; You won <strong style="color:var(--accent-gold)">$${(r.prize || 0).toFixed(2)}</strong> in today's draw!`
+                : `No win today. Earn tickets to enter tomorrow's draw.`;
+            const reserved = state.tickets > 0
+                ? `<br><span style="color:var(--text-muted)"><strong>${state.tickets}</strong> tickets reserved for tomorrow</span>`
+                : '';
+            status.innerHTML = headline + reserved;
+            replayBtn.style.display = 'inline-flex';
+        } else if (state.tickets === 0) {
+            empty.style.display = 'flex'; entry.style.display = 'none';
+            if (hasReplay) replayBtn.style.display = 'inline-flex';
+        } else {
+            // Tickets waiting, no draw yet today → auto-trigger
+            empty.style.display = 'none'; entry.style.display = 'flex';
+            status.innerHTML = `Drawing <strong>${state.tickets}</strong> tickets now…`;
+            if (!_dailyDrawInFlight) {
+                _dailyDrawInFlight = true;
+                setTimeout(() => {
+                    if (drawMode === 'daily') runLotteryAnimation();
+                    else _dailyDrawInFlight = false;
+                }, 600);
+            }
+        }
     }
 
     function demoDraw() {
+        // Weekly mega still uses manual simulate; daily is auto-only.
         if (state.tickets === 0) {
             const r = document.getElementById('lotteryResult');
             r.style.display = 'block';
@@ -1836,7 +1887,13 @@
     }
     window.demoDraw = demoDraw;
 
-    function runLotteryAnimation() {
+    function replayDraw() {
+        if (!state.lastDrawResult) return;
+        runLotteryAnimation(state.lastDrawResult);
+    }
+    window.replayDraw = replayDraw;
+
+    function runLotteryAnimation(replay) {
         const lCanvas = document.getElementById('lottery-canvas');
         const lW = Math.min(280, window.innerWidth * 0.8);
         lCanvas.style.display = 'block';
@@ -1848,28 +1905,37 @@
         lCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const LW = lW, LH = lW * 200 / 280;
 
-        const playerEntries = state.tickets;
-        const otherEntries  = 50 + Math.floor(Math.random() * 450);
-        const totalEntries  = playerEntries + otherEntries;
-        const winningNum    = Math.floor(Math.random() * totalEntries);
-
-        // Daily = single winner. Weekly = top-10 winners drawn one by one (player position reported).
+        let playerEntries, otherEntries, totalEntries, winningNum;
         let playerWon, playerPosition = 0;
-        if (drawMode === 'weekly') {
-            // Draw 10 distinct winning numbers in the entry pool
-            const ticketsUniverse = Math.max(totalEntries, 10);
-            const winners = new Set();
-            while (winners.size < 10 && winners.size < ticketsUniverse) {
-                winners.add(Math.floor(Math.random() * totalEntries));
-            }
-            // Assign each to a position (insertion order). Player owns tickets [0..playerEntries)
-            const ranked = Array.from(winners);
-            for (let i = 0; i < ranked.length; i++) {
-                if (ranked[i] < playerEntries) { playerPosition = i + 1; break; }
-            }
-            playerWon = playerPosition > 0;
+
+        if (replay) {
+            // Replay uses the stored snapshot — no random gen, no state mutation.
+            playerEntries  = replay.playerEntries;
+            otherEntries   = replay.otherEntries;
+            totalEntries   = playerEntries + otherEntries;
+            winningNum     = replay.winningNum;
+            playerWon      = !!replay.won;
+            playerPosition = replay.position || 0;
         } else {
-            playerWon = winningNum < playerEntries;
+            playerEntries = state.tickets;
+            otherEntries  = 50 + Math.floor(Math.random() * 450);
+            totalEntries  = playerEntries + otherEntries;
+            winningNum    = Math.floor(Math.random() * totalEntries);
+
+            if (drawMode === 'weekly') {
+                const ticketsUniverse = Math.max(totalEntries, 10);
+                const winners = new Set();
+                while (winners.size < 10 && winners.size < ticketsUniverse) {
+                    winners.add(Math.floor(Math.random() * totalEntries));
+                }
+                const ranked = Array.from(winners);
+                for (let i = 0; i < ranked.length; i++) {
+                    if (ranked[i] < playerEntries) { playerPosition = i + 1; break; }
+                }
+                playerWon = playerPosition > 0;
+            } else {
+                playerWon = winningNum < playerEntries;
+            }
         }
 
         const numbers = Array.from({length:50}, () => Math.floor(Math.random() * totalEntries));
@@ -1917,7 +1983,11 @@
             lCtx.font = `bold ${LH * 0.16}px Fredoka One, system-ui`;
             lCtx.textAlign = 'center';
             lCtx.fillText('#' + winningNum, LW/2, LH * 0.56);
-            finishDraw(playerWon, { position: playerPosition });
+            finishDraw(playerWon, {
+                position: playerPosition,
+                isReplay: !!replay,
+                snapshot: replay || { playerEntries, otherEntries, winningNum, position: playerPosition },
+            });
         }
         requestAnimationFrame(animateDrum);
     }
@@ -1927,15 +1997,19 @@
 
     function finishDraw(playerWon, options) {
         options = options || {};
+        const isReplay = !!options.isReplay;
         const r = document.getElementById('lotteryResult');
         r.style.display = 'block';
 
         const isWeekly = drawMode === 'weekly';
-        const poolTotal = isWeekly
-            ? (typeof window._sharedMegaPool === 'number' ? window._sharedMegaPool : 0)
-            : (typeof window._sharedPool     === 'number' ? window._sharedPool     : state.prizePool);
+        // Replay uses the pool snapshotted at draw time so prize matches what the
+        // player originally won, even after live pool has moved on.
+        const poolTotal = isReplay && options.snapshot && typeof options.snapshot.poolAtDraw === 'number'
+            ? options.snapshot.poolAtDraw
+            : (isWeekly
+                ? (typeof window._sharedMegaPool === 'number' ? window._sharedMegaPool : 0)
+                : (typeof window._sharedPool === 'number' ? window._sharedPool : state.prizePool));
 
-        // Weekly: user may land in top N — prize scales with position (1..10)
         let position = 0, prize = 0;
         if (isWeekly) {
             position = options.position || 0;
@@ -1943,41 +2017,59 @@
         } else {
             prize = playerWon ? poolTotal : 0;
         }
+        // Replay — use exact prize from snapshot (pool may have changed since)
+        if (isReplay && options.snapshot && typeof options.snapshot.prize === 'number') {
+            prize = options.snapshot.prize;
+        }
 
-        window.trackEvent('lottery_result', {
-            mode: drawMode,
-            won: playerWon,
-            position,
-            ticketsUsed: state.tickets,
-            pool: poolTotal,
-            prize,
-        });
+        if (!isReplay) {
+            window.trackEvent('lottery_result', {
+                mode: drawMode, won: playerWon, position,
+                ticketsUsed: state.tickets, pool: poolTotal, prize,
+            });
+        }
 
         if (playerWon) {
             const posLabel = isWeekly ? `Position #${position} of 10` : 'Winner takes all';
             r.innerHTML =
                 `<div style="font-size:30px;margin-bottom:6px;">&#127881;</div>` +
-                `<div style="color:var(--accent-gold);font-size:22px;">YOU WON!</div>` +
+                `<div style="color:var(--accent-gold);font-size:22px;">${isReplay ? 'YOU WON!' : 'YOU WON!'}</div>` +
                 `<div style="font-size:22px;color:var(--accent-gold);margin-top:4px;">$${prize.toFixed(2)}</div>` +
                 `<div style="font-size:12px;color:var(--text-muted);font-family:system-ui;margin-top:4px;">${posLabel}</div>`;
-            // Record winner to shared feed — daily only resets daily pool
-            if (!isWeekly) {
+            if (!isReplay && !isWeekly) {
                 state.prizePool = 0;
                 if (window._poolClaim) window._poolClaim(prize, getNickname());
             }
-            spawnConfetti();
+            if (!isReplay) spawnConfetti();
         } else {
             r.innerHTML =
                 `<div style="font-size:30px;margin-bottom:6px;">&#128532;</div>` +
                 `<div style="color:var(--text-muted);font-size:15px;font-family:system-ui;">Not a winner this time.<br>` +
                 `<span style="font-size:12px;">Earn more tickets and try again!</span></div>`;
         }
-        // Drawing consumes all tickets — earn more to enter the next draw
+
+        if (isReplay) return;
+
+        // Fresh draw — consume tickets and persist snapshot for later replay.
         state.tickets = 0;
         state.lastDrawTime = new Date().toISOString();
         state.drawHistory.push({ date: state.lastDrawTime, mode: drawMode, pool: poolTotal, won: playerWon, prize });
         if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
-        saveState(); updateTicketBadge();
+
+        if (!isWeekly) {
+            state.lastDrawDate = todayUTCStr();
+            state.lastDrawResult = Object.assign({}, options.snapshot, {
+                mode: 'daily',
+                won: playerWon,
+                prize,
+                poolAtDraw: poolTotal,
+                timestamp: state.lastDrawTime,
+            });
+            _dailyDrawInFlight = false;
+        }
+
+        saveState();
+        updateTicketBadge();
     }
 
     function spawnConfetti() {
