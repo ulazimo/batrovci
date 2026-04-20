@@ -536,9 +536,25 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
             max-width: 320px;
+        }
+        .auto-entered {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-family: system-ui;
+            text-align: center;
+            line-height: 1.4;
+            padding: 10px 16px;
+            background: rgba(105,240,174,0.08);
+            border: 1px solid rgba(105,240,174,0.3);
+            border-radius: 10px;
+        }
+        .auto-entered strong {
+            color: var(--accent-gold);
+            font-family: 'Fredoka One', system-ui;
+            font-size: 15px;
         }
         .empty-lottery {
             display: flex;
@@ -906,15 +922,15 @@
     <div class="how-block">
         <div class="icon">&#127920;</div>
         <div class="text">
-            <h3>3. Enter the Draw</h3>
-            <p>Commit tickets to the <strong style="color:var(--accent-gold)">Daily</strong> draw (winner takes all) or the <strong style="color:var(--accent-gold)">Weekly Mega</strong> draw (top 10 split). More tickets = better odds.</p>
+            <h3>3. Auto-Entered</h3>
+            <p>No commit step — every ticket you hold is <strong style="color:var(--accent-gold)">automatically in that day's draw</strong> AND the weekly mega. More tickets = better odds.</p>
         </div>
     </div>
     <div class="how-block">
         <div class="icon"><i class="lg-icon lg-icon--coins" aria-hidden="true"></i></div>
         <div class="text">
             <h3>4. Win the Pool</h3>
-            <p>Daily: one random ticket wins the whole jackpot. Weekly: ten random tickets share the mega pool (40/20/10/5×4/4/3/3 %).</p>
+            <p>Daily: one random ticket wins the whole jackpot. Weekly: top 10 share the mega pool (40/20/10/5×4/4/3/3 %). Drawing <strong style="color:var(--accent-gold)">consumes all tickets</strong> — earn more to stay in.</p>
         </div>
     </div>
 
@@ -988,23 +1004,16 @@
         <button class="btn btn-ghost" onclick="watchAd('standalone')" style="margin-top:8px;font-size:13px;padding:10px 18px;min-height:44px;">&#128250; Or watch ad (+10 tickets)</button>
     </div>
 
-    <!-- Normal entry UI -->
+    <!-- Auto-entered status -->
     <div class="lottery-entry" id="lotteryEntry">
-        <div class="ticket-input-wrap" id="ticketInputWrap" style="display:none">
-            <span style="font-size:13px;white-space:nowrap;">Tickets:</span>
-            <input type="range" id="ticketSlider" min="1" max="1" value="1">
-            <span class="count" id="ticketSliderVal">1</span>
-        </div>
-        <div id="lotteryActions">
-            <button class="btn btn-gold" id="enterDrawBtn" onclick="enterDraw()">Enter Draw</button>
-        </div>
+        <div class="auto-entered" id="lotteryEntryStatus">All of your tickets are already in today's draw.</div>
+        <button class="btn btn-gold" id="drawNowBtn" onclick="demoDraw()">Simulate Daily Draw</button>
     </div>
 
     <canvas id="lottery-canvas" width="280" height="200" style="display:none"></canvas>
     <div class="lottery-result" id="lotteryResult" style="display:none"></div>
     <div class="lottery-buttons" style="margin-top:10px;margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="showScreen('home-screen')" style="font-size:13px;padding:10px 18px;">&#8592; Home</button>
-        <button class="btn btn-primary" onclick="demoDraw()" style="font-size:13px;padding:10px 18px;">Demo Draw</button>
     </div>
 </div>
 
@@ -1037,7 +1046,7 @@
 
     // ===== STATE =====
     function defaultState() {
-        return { tickets: 0, totalTicketsEarned: 0, ticketsInDraw: 0, gamesPlayed: 0, lastDrawTime: null, drawHistory: [], prizePool: 0 };
+        return { tickets: 0, totalTicketsEarned: 0, gamesPlayed: 0, lastDrawTime: null, drawHistory: [], prizePool: 0 };
     }
     function loadState() {
         try {
@@ -1048,9 +1057,10 @@
             const clamp = (v, def) => (Number.isFinite(v) && v >= 0) ? v : def;
             s.tickets          = clamp(s.tickets, 0);
             s.totalTicketsEarned = clamp(s.totalTicketsEarned, 0);
-            s.ticketsInDraw    = clamp(s.ticketsInDraw, 0);
             s.gamesPlayed      = clamp(s.gamesPlayed, 0);
             s.prizePool        = clamp(s.prizePool, 0);
+            // Legacy state may still have ticketsInDraw — discard it.
+            delete s.ticketsInDraw;
             if (!Array.isArray(s.drawHistory)) s.drawHistory = [];
             // Trim to last 10 draws in case of runaway growth
             s.drawHistory = s.drawHistory.slice(-10);
@@ -1790,63 +1800,36 @@
         document.getElementById('lotteryPoolLabel').textContent = isWeekly ? 'WEEKLY MEGA POOL' : 'DAILY JACKPOT';
         document.getElementById('lotteryPool').textContent = '$' + pool.toFixed(2);
         document.getElementById('lotteryInfo').textContent = isWeekly
-            ? `Your tickets: ${state.tickets} · Top 10 win (40/20/10/5/5/5/5/4/3/3 %)`
-            : `Your tickets: ${state.tickets} · Winner takes all`;
+            ? 'Top 10 win · split 40/20/10/5×4/4/3/3 %'
+            : 'Winner takes all';
         document.getElementById('lotteryCountdownLabel').textContent = isWeekly ? 'MEGA DRAW IN' : 'NEXT DRAW IN';
         document.getElementById('lotteryCountdown').style.display     = isWeekly ? 'none' : 'block';
         document.getElementById('lotteryMegaCountdown').style.display = isWeekly ? 'block' : 'none';
 
-        const empty    = document.getElementById('emptyLottery');
-        const entry    = document.getElementById('lotteryEntry');
-        const wrap     = document.getElementById('ticketInputWrap');
-        const slider   = document.getElementById('ticketSlider');
-        const enterBtn = document.getElementById('enterDrawBtn');
+        const empty  = document.getElementById('emptyLottery');
+        const entry  = document.getElementById('lotteryEntry');
+        const status = document.getElementById('lotteryEntryStatus');
+        const drawBtn = document.getElementById('drawNowBtn');
 
-        // Empty state — no tickets AND nothing already in draw
-        if (state.tickets === 0 && state.ticketsInDraw === 0) {
+        if (state.tickets === 0) {
             empty.style.display = 'flex';
             entry.style.display = 'none';
         } else {
             empty.style.display = 'none';
             entry.style.display = 'flex';
-            if (state.tickets > 0) {
-                wrap.style.display = 'flex';
-                slider.max = state.tickets;
-                slider.value = Math.min(parseInt(slider.value) || 1, state.tickets);
-                document.getElementById('ticketSliderVal').textContent = slider.value;
-                enterBtn.disabled = false; enterBtn.style.opacity = '1';
-                enterBtn.textContent = isWeekly ? 'Enter Mega Draw' : 'Enter Daily Draw';
-            } else {
-                wrap.style.display = 'none';
-                enterBtn.disabled = true; enterBtn.style.opacity = '0.5';
-                enterBtn.textContent = `In draw: ${state.ticketsInDraw}`;
-            }
+            const scope = isWeekly ? 'the weekly mega draw' : "today's draw";
+            status.innerHTML = `All <strong>${state.tickets}</strong> of your tickets are already in ${scope}.`;
+            drawBtn.textContent = isWeekly ? 'Simulate Mega Draw' : 'Simulate Daily Draw';
         }
         document.getElementById('lottery-canvas').style.display = 'none';
         document.getElementById('lotteryResult').style.display = 'none';
     }
-    document.getElementById('ticketSlider').addEventListener('input', function() {
-        document.getElementById('ticketSliderVal').textContent = this.value;
-    });
-    function enterDraw() {
-        const count = parseInt(document.getElementById('ticketSlider').value) || 0;
-        if (count <= 0 || count > state.tickets) {
-            const r = document.getElementById('lotteryResult');
-            r.style.display = 'block';
-            r.innerHTML = '<span style="color:var(--danger)">No tickets available! Play a game first.</span>';
-            return;
-        }
-        state.tickets -= count; state.ticketsInDraw += count;
-        saveState(); updateLottery();
-        window.trackEvent('lottery_entered', { tickets: count, ticketsTotal: state.ticketsInDraw });
-    }
-    window.enterDraw = enterDraw;
 
     function demoDraw() {
-        if (state.ticketsInDraw === 0) {
+        if (state.tickets === 0) {
             const r = document.getElementById('lotteryResult');
             r.style.display = 'block';
-            r.innerHTML = '<span style="color:var(--text-muted)">Enter tickets first!</span>';
+            r.innerHTML = '<span style="color:var(--text-muted)">Earn tickets first — play a game!</span>';
             return;
         }
         runLotteryAnimation();
@@ -1865,7 +1848,7 @@
         lCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const LW = lW, LH = lW * 200 / 280;
 
-        const playerEntries = state.ticketsInDraw;
+        const playerEntries = state.tickets;
         const otherEntries  = 50 + Math.floor(Math.random() * 450);
         const totalEntries  = playerEntries + otherEntries;
         const winningNum    = Math.floor(Math.random() * totalEntries);
@@ -1965,7 +1948,7 @@
             mode: drawMode,
             won: playerWon,
             position,
-            ticketsUsed: state.ticketsInDraw,
+            ticketsUsed: state.tickets,
             pool: poolTotal,
             prize,
         });
@@ -1989,7 +1972,8 @@
                 `<div style="color:var(--text-muted);font-size:15px;font-family:system-ui;">Not a winner this time.<br>` +
                 `<span style="font-size:12px;">Earn more tickets and try again!</span></div>`;
         }
-        state.ticketsInDraw = 0;
+        // Drawing consumes all tickets — earn more to enter the next draw
+        state.tickets = 0;
         state.lastDrawTime = new Date().toISOString();
         state.drawHistory.push({ date: state.lastDrawTime, mode: drawMode, pool: poolTotal, won: playerWon, prize });
         if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
