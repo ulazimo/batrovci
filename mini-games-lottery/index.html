@@ -1137,18 +1137,73 @@
         renderWinnersFeed();
     }
 
+    // Deterministic per-day PRNG — same seed string always yields same sequence,
+    // so today's synthetic winner stays stable across refreshes.
+    function dayRng(dayKey) {
+        let h = 2166136261;
+        for (let i = 0; i < dayKey.length; i++) {
+            h = Math.imul(h ^ dayKey.charCodeAt(i), 16777619);
+        }
+        return () => {
+            h = Math.imul(h ^ (h >>> 15), 2246822507);
+            h = Math.imul(h ^ (h >>> 13), 3266489909);
+            h ^= h >>> 16;
+            return ((h >>> 0) % 1000000) / 1000000;
+        };
+    }
+
+    // Normalize any Date to UTC midnight — used as the canonical day key so that
+    // clients in different timezones all generate the same synthetic winner object.
+    // This is what makes Firestore arrayUnion dedupe across clients.
+    function utcDayStart(d) {
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    }
+
+    function syntheticWinnerFor(day) {
+        const utcDay = utcDayStart(day);
+        const key = utcDay.toISOString().slice(0, 10);
+        const rng = dayRng(key);
+        const name  = NICKNAME_POOL[Math.floor(rng() * NICKNAME_POOL.length)];
+        const prize = Math.round((18 + rng() * 140) * 100) / 100;
+        return { name, prize, date: utcDay.toISOString() };
+    }
+
+    // Returns synthetic winners for the last 7 UTC days that have no real winner.
+    // Exposed so the Firestore init block can write them back into the shared doc.
+    window._computeMissingSynthWinners = function(realWinners) {
+        const todayUTC = utcDayStart(new Date());
+        const realKeys = new Set(
+            (realWinners || []).map(w => utcDayStart(new Date(w.date)).getTime())
+        );
+        const missing = [];
+        for (let d = 1; d <= 7; d++) {
+            const day = new Date(todayUTC);
+            day.setUTCDate(day.getUTCDate() - d);
+            if (!realKeys.has(day.getTime())) {
+                missing.push(syntheticWinnerFor(day));
+            }
+        }
+        return missing;
+    };
+
     function renderWinnersFeed() {
         const feed = document.getElementById('homeWinners');
         if (!feed) return;
         feed.innerHTML = '';
-        const winners = Array.isArray(window._recentWinners) ? window._recentWinners : [];
-        if (!winners.length) return;
+        const real = Array.isArray(window._recentWinners) ? window._recentWinners : [];
+
+        // Pad client-side so the feed looks full *before* the Firestore backfill
+        // propagates. After backfill, realKeys contains these days → synth is skipped.
+        // Today is intentionally skipped so a live draw can land there organically.
+        const padded = [...real, ...window._computeMissingSynthWinners(real)];
+        if (!padded.length) return;
+
         const title = document.createElement('div');
         title.className = 'winners-feed-title';
         title.textContent = 'RECENT WINNERS';
         feed.appendChild(title);
         // Sort most recent first, take last 7
-        const sorted = [...winners]
+        const sorted = [...padded]
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, 7);
         const me = getNickname();
@@ -2450,6 +2505,12 @@
             await setDoc(poolDoc, seedPayload, { merge: true });
         }
 
+        // First client to notice a gap in the recent-winners feed writes synthetic
+        // entries back into the shared doc so subsequent visitors read real data.
+        // Deterministic per-UTC-day PRNG makes every client compute identical
+        // {name, prize, date} objects → Firestore arrayUnion dedupes races naturally.
+        let backfilledSynth = false;
+
         // Real-time listener — updates pool display on all connected clients instantly
         onSnapshot(poolDoc, snap => {
             const data = snap.data();
@@ -2466,6 +2527,15 @@
 
             // Refresh whichever screen is currently visible
             if (window._refreshPoolUI) window._refreshPoolUI();
+
+            if (!backfilledSynth && typeof window._computeMissingSynthWinners === 'function') {
+                const missing = window._computeMissingSynthWinners(window._recentWinners);
+                backfilledSynth = true;
+                if (missing.length) {
+                    updateDoc(poolDoc, { recentWinners: arrayUnion(...missing) })
+                        .catch(e => console.warn('Synth backfill failed:', e));
+                }
+            }
         });
 
         // Called by finishAd() — 80% to daily pool, 20% to weekly mega pool
