@@ -824,7 +824,7 @@
 <a id="back-link" href="../index.html" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'">&#8592; All Games</a>
 
 <!-- Ticket Badge -->
-<div class="ticket-badge" id="ticketBadge">&#127915; <span id="ticketCount">0</span></div>
+<div class="ticket-badge" id="ticketBadge"><i class="lg-icon lg-icon--ticket" aria-hidden="true" style="color:var(--accent-gold);font-size:18px"></i> <span id="ticketCount">0</span></div>
 
 <!-- ===== HOME ===== -->
 <div class="screen active" id="home-screen">
@@ -860,7 +860,7 @@
     <!-- Mega Pool strip -->
     <div class="mega-strip" onclick="showScreen('lottery-screen')">
         <div class="mega-strip-left">
-            <span class="mega-strip-icon">&#127942;</span>
+            <span class="mega-strip-icon"><i class="lg-icon lg-icon--trophy" aria-hidden="true" style="color:var(--accent-gold)"></i></span>
             <div>
                 <div class="mega-strip-title">WEEKLY MEGA POOL</div>
                 <div class="mega-strip-sub">Top 10 win · drawn Sunday</div>
@@ -891,7 +891,7 @@
         </div>
     </div>
     <div class="how-block">
-        <div class="icon">&#127915;</div>
+        <div class="icon"><i class="lg-icon lg-icon--ticket" aria-hidden="true" style="color:var(--accent-gold)"></i></div>
         <div class="text">
             <h3>2. Earn Tickets</h3>
             <p>Win a mini-game → <strong style="color:var(--accent-gold)">+1–3 tickets</strong> (better score = more tickets).<br>
@@ -907,7 +907,7 @@
         </div>
     </div>
     <div class="how-block">
-        <div class="icon">&#128176;</div>
+        <div class="icon"><i class="lg-icon lg-icon--coins" aria-hidden="true" style="color:var(--accent-gold)"></i></div>
         <div class="text">
             <h3>4. Win the Pool</h3>
             <p>Daily: one random ticket wins the whole jackpot. Weekly: ten random tickets share the mega pool (40/20/10/5×4/4/3/3 %).</p>
@@ -2503,9 +2503,11 @@
         const poolDoc = doc(db, 'lottery_state', 'global');
 
         // ----- SEED: starting pool + fake recent winners. Uses a seedVersion so we can
-        // bump minimum pool without re-seeding everything. Current target: $100 min daily pool.
-        const SEED_VERSION = 2;
-        const MIN_POOL = 100;
+        // bump minimums without re-seeding everything. v3: top up mega pool baseline.
+        const SEED_VERSION = 3;
+        const MIN_POOL = 100;   // daily jackpot baseline
+        const MIN_MEGA = 500;   // weekly mega baseline — top-10 split so it needs to feel big
+                                // (40% = $200 for position #1 at the minimum)
         const snap0 = await getDoc(poolDoc);
         const existing = snap0.exists() ? (snap0.data() || {}) : {};
         if ((existing.seedVersion || 0) < SEED_VERSION) {
@@ -2521,10 +2523,11 @@
                 { name: 'Djo',    prize: 33.00,  date: new Date(now - 7*day).toISOString() },
             ];
             const seedPayload = { initialized: true, seedVersion: SEED_VERSION };
-            // Top up pool to the minimum — preserves organic growth if already above it
-            const currentPool = typeof existing.pool === 'number' ? existing.pool : 0;
-            if (currentPool < MIN_POOL)                    seedPayload.pool     = MIN_POOL;
-            if (typeof existing.megaPool !== 'number')     seedPayload.megaPool = 0;
+            // Top up pools to the minimum — preserves organic growth if already above it
+            const currentPool = typeof existing.pool     === 'number' ? existing.pool     : 0;
+            const currentMega = typeof existing.megaPool === 'number' ? existing.megaPool : 0;
+            if (currentPool < MIN_POOL) seedPayload.pool     = MIN_POOL;
+            if (currentMega < MIN_MEGA) seedPayload.megaPool = MIN_MEGA;
             if (!Array.isArray(existing.recentWinners) || existing.recentWinners.length === 0) {
                 seedPayload.recentWinners = seedWinners;
             }
