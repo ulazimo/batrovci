@@ -2489,32 +2489,24 @@
 
         const poolDoc = doc(db, 'lottery_state', 'global');
 
-        // Starting pool + fake recent winners. Bump seedVersion to top up minimums.
-        const SEED_VERSION = 3;
+        // Starting pool + recent winners. Bump seedVersion to top up minimums.
+        // v4: replace hardcoded winners with synthetic ones from the same PRNG
+        // the client uses — so there's no flicker when Firestore loads.
+        const SEED_VERSION = 4;
         const MIN_POOL = 100;
         const MIN_MEGA = 500;   // top-10 split, 40% = $200 for position #1 at baseline
         const snap0 = await getDoc(poolDoc);
         const existing = snap0.exists() ? (snap0.data() || {}) : {};
         if ((existing.seedVersion || 0) < SEED_VERSION) {
-            const now = Date.now();
-            const day = 24 * 60 * 60 * 1000;
-            const seedWinners = [
-                { name: 'Djomla', prize: 47.00,  date: new Date(now - 1*day).toISOString() },
-                { name: 'Bogi',   prize: 89.50,  date: new Date(now - 2*day).toISOString() },
-                { name: 'Nina',   prize: 22.00,  date: new Date(now - 3*day).toISOString() },
-                { name: 'Pera',   prize: 61.00,  date: new Date(now - 4*day).toISOString() },
-                { name: 'Mika',   prize: 18.50,  date: new Date(now - 5*day).toISOString() },
-                { name: 'Lala',   prize: 105.00, date: new Date(now - 6*day).toISOString() },
-                { name: 'Djo',    prize: 33.00,  date: new Date(now - 7*day).toISOString() },
-            ];
             const seedPayload = { initialized: true, seedVersion: SEED_VERSION };
-            // Top up pools to the minimum — preserves organic growth if already above it
             const currentPool = typeof existing.pool     === 'number' ? existing.pool     : 0;
             const currentMega = typeof existing.megaPool === 'number' ? existing.megaPool : 0;
             if (currentPool < MIN_POOL) seedPayload.pool     = MIN_POOL;
             if (currentMega < MIN_MEGA) seedPayload.megaPool = MIN_MEGA;
-            if (!Array.isArray(existing.recentWinners) || existing.recentWinners.length === 0) {
-                seedPayload.recentWinners = seedWinners;
+            // Overwrite any hardcoded v2/v3 winners with the deterministic synthetic
+            // set — the same set every client computes for the last 7 UTC days.
+            if (typeof window._computeMissingSynthWinners === 'function') {
+                seedPayload.recentWinners = window._computeMissingSynthWinners([]);
             }
             await setDoc(poolDoc, seedPayload, { merge: true });
         }
