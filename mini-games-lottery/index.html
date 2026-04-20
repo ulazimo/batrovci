@@ -790,6 +790,32 @@
                       border-color: #69f0ae !important; }
         .qm-wrong   { animation: shake 0.38s ease-out forwards !important;
                       background: #ff5252 !important; border-color: #ff5252 !important; }
+
+        /* Icon system — CSS mask-image so SVGs inherit color via `currentColor`.
+           Icons are from game-icons.net (CC BY 3.0) — see assets/icons/CREDITS.md.
+           Size via parent font-size; recolor via `color: ...` on parent. */
+        .lg-icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            background: currentColor;
+            vertical-align: middle;
+            -webkit-mask-repeat: no-repeat;    mask-repeat: no-repeat;
+            -webkit-mask-position: center;     mask-position: center;
+            -webkit-mask-size: contain;        mask-size: contain;
+        }
+        .lg-icon--ticket { -webkit-mask-image: url('assets/icons/ticket.svg');       mask-image: url('assets/icons/ticket.svg'); }
+        .lg-icon--trophy { -webkit-mask-image: url('assets/icons/trophy.svg');       mask-image: url('assets/icons/trophy.svg'); }
+        .lg-icon--coins  { -webkit-mask-image: url('assets/icons/coins.svg');        mask-image: url('assets/icons/coins.svg'); }
+        .lg-icon--dice   { -webkit-mask-image: url('assets/icons/dice.svg');         mask-image: url('assets/icons/dice.svg'); }
+        .lg-icon--clover { -webkit-mask-image: url('assets/icons/clover.svg');       mask-image: url('assets/icons/clover.svg'); }
+        .lg-icon--party  { -webkit-mask-image: url('assets/icons/party-popper.svg'); mask-image: url('assets/icons/party-popper.svg'); }
+
+        /* Gold ticket hero: sits on result/ad/empty screens as the big visual */
+        .ticket-hero {
+            color: var(--accent-gold);
+            filter: drop-shadow(0 4px 14px rgba(255,215,0,0.35));
+        }
     </style>
 </head>
 <body>
@@ -951,7 +977,7 @@
 
     <!-- Empty state: no tickets -->
     <div class="empty-lottery" id="emptyLottery" style="display:none;">
-        <div class="empty-emoji">&#127915;</div>
+        <div class="empty-emoji"><i class="lg-icon lg-icon--ticket ticket-hero" aria-hidden="true"></i></div>
         <div class="empty-title">No tickets yet!</div>
         <div class="empty-sub">Play a quick mini-game to earn your first ticket and join the draw.</div>
         <button class="btn btn-gold pulse" onclick="showScreen('game-select-screen')" style="margin-top:6px;">&#127918; Play a game</button>
@@ -1413,7 +1439,7 @@
             document.getElementById('resultInner').innerHTML = `
                 <div class="result-win-hero">
                     <div class="result-win-tier">${tierLabel}</div>
-                    <div class="result-win-emoji">&#127915;</div>
+                    <div class="result-win-emoji"><i class="lg-icon lg-icon--ticket ticket-hero" aria-hidden="true"></i></div>
                     <div class="result-win-label">+${n} TICKET${n > 1 ? 'S' : ''}!</div>
                 </div>
                 <div class="result-win-sub">${lbl}: ${gameScore}${sfx}</div>`;
@@ -1527,7 +1553,7 @@
             : `Total <strong style="color:var(--accent-gold)">${state.tickets}</strong> tickets`;
         document.getElementById('resultInner').innerHTML = `
             <div class="ad-win-hero">
-                <div class="ad-win-emoji">&#127915;</div>
+                <div class="ad-win-emoji"><i class="lg-icon lg-icon--ticket ticket-hero" aria-hidden="true"></i></div>
                 <div class="ad-win-amount">+${reward}</div>
                 <div class="ad-win-unit">${unitLabel}</div>
                 <div class="ad-win-total" style="margin-top:6px;">${subLine}</div>
