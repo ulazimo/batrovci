@@ -115,9 +115,9 @@
         }
 
         /* ---- BUTTONS ----
-           Kenney UI Pack (CC0) 9-slice PNG buttons via CSS border-image.
-           PNG sources: assets/ui/btn_{yellow,blue,grey}.png (192×64 with 18px
-           rounded corners). Border is transparent; border-image paints the frame. */
+           9-slice PNG frames via border-image. Each variant sets --btn-frame;
+           base rule stamps it through border-image. 14px transparent border is
+           reserved for the frame art — keep any inline padding override >= 2px. */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -137,26 +137,16 @@
             min-width: 56px;
             -webkit-tap-highlight-color: transparent;
             color: #3a2a10;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+            text-shadow: 0 1px 0 rgba(255,255,255,0.45);
         }
-        /* Press-down effect — "pushing the button into its depth stripe" */
+        .btn[class*="btn-"] {
+            border-image: var(--btn-frame) 18 fill / 14px stretch;
+        }
         .btn:active { transform: translateY(2px); filter: brightness(0.93); }
 
-        .btn-primary {
-            border-image: url('assets/ui/btn_blue.png') 18 fill / 14px stretch;
-            color: #083f6b;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .btn-gold {
-            border-image: url('assets/ui/btn_yellow.png') 18 fill / 14px stretch;
-            color: #5a3700;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.35);
-        }
-        .btn-secondary {
-            border-image: url('assets/ui/btn_grey.png') 18 fill / 14px stretch;
-            color: #2d2d38;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.5);
-        }
+        .btn-primary   { --btn-frame: url('assets/ui/btn_blue.png');   color: #083f6b; }
+        .btn-gold      { --btn-frame: url('assets/ui/btn_yellow.png'); color: #5a3700; }
+        .btn-secondary { --btn-frame: url('assets/ui/btn_grey.png');   color: #2d2d38; }
 
         .card {
             background: var(--bg-secondary);
@@ -251,12 +241,7 @@
             flex-wrap: wrap;
             gap: 5px !important;
         }
-        .btn-ghost {
-            border-image: url('assets/ui/btn_grey.png') 18 fill / 14px stretch;
-            color: #2d2d38;
-            text-shadow: 0 1px 0 rgba(255,255,255,0.5);
-            opacity: 0.92;
-        }
+        .btn-ghost { --btn-frame: url('assets/ui/btn_grey.png'); color: #2d2d38; opacity: 0.92; }
         .badge-inline {
             display: inline-flex;
             align-items: center;
@@ -814,14 +799,14 @@
         .qm-wrong   { animation: shake 0.38s ease-out forwards !important;
                       background: #ff5252 !important; border-color: #ff5252 !important; }
 
-        /* Icon system — CSS mask-image so SVGs inherit color via `currentColor`.
-           Icons are from game-icons.net (CC BY 3.0) — see assets/icons/CREDITS.md.
-           Size via parent font-size; recolor via `color: ...` on parent. */
+        /* Icon system — sized via parent font-size, recolored via `color:`.
+           Defaults to gold since every current call site wants it. */
         .lg-icon {
             display: inline-block;
             width: 1em;
             height: 1em;
             background: currentColor;
+            color: var(--accent-gold);
             vertical-align: middle;
             -webkit-mask-repeat: no-repeat;    mask-repeat: no-repeat;
             -webkit-mask-position: center;     mask-position: center;
@@ -834,11 +819,7 @@
         .lg-icon--clover { -webkit-mask-image: url('assets/icons/clover.svg');       mask-image: url('assets/icons/clover.svg'); }
         .lg-icon--party  { -webkit-mask-image: url('assets/icons/party-popper.svg'); mask-image: url('assets/icons/party-popper.svg'); }
 
-        /* Gold ticket hero: sits on result/ad/empty screens as the big visual */
-        .ticket-hero {
-            color: var(--accent-gold);
-            filter: drop-shadow(0 4px 14px rgba(255,215,0,0.35));
-        }
+        .ticket-hero { filter: drop-shadow(0 4px 14px rgba(255,215,0,0.35)); }
     </style>
 </head>
 <body>
@@ -847,7 +828,7 @@
 <a id="back-link" href="../index.html" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'">&#8592; All Games</a>
 
 <!-- Ticket Badge -->
-<div class="ticket-badge" id="ticketBadge"><i class="lg-icon lg-icon--ticket" aria-hidden="true" style="color:var(--accent-gold);font-size:18px"></i> <span id="ticketCount">0</span></div>
+<div class="ticket-badge" id="ticketBadge"><i class="lg-icon lg-icon--ticket" aria-hidden="true" style="font-size:18px"></i> <span id="ticketCount">0</span></div>
 
 <!-- ===== HOME ===== -->
 <div class="screen active" id="home-screen">
@@ -883,7 +864,7 @@
     <!-- Mega Pool strip -->
     <div class="mega-strip" onclick="showScreen('lottery-screen')">
         <div class="mega-strip-left">
-            <span class="mega-strip-icon"><i class="lg-icon lg-icon--trophy" aria-hidden="true" style="color:var(--accent-gold)"></i></span>
+            <span class="mega-strip-icon"><i class="lg-icon lg-icon--trophy" aria-hidden="true"></i></span>
             <div>
                 <div class="mega-strip-title">WEEKLY MEGA POOL</div>
                 <div class="mega-strip-sub">Top 10 win · drawn Sunday</div>
@@ -914,7 +895,7 @@
         </div>
     </div>
     <div class="how-block">
-        <div class="icon"><i class="lg-icon lg-icon--ticket" aria-hidden="true" style="color:var(--accent-gold)"></i></div>
+        <div class="icon"><i class="lg-icon lg-icon--ticket" aria-hidden="true"></i></div>
         <div class="text">
             <h3>2. Earn Tickets</h3>
             <p>Win a mini-game → <strong style="color:var(--accent-gold)">+1–3 tickets</strong> (better score = more tickets).<br>
@@ -930,7 +911,7 @@
         </div>
     </div>
     <div class="how-block">
-        <div class="icon"><i class="lg-icon lg-icon--coins" aria-hidden="true" style="color:var(--accent-gold)"></i></div>
+        <div class="icon"><i class="lg-icon lg-icon--coins" aria-hidden="true"></i></div>
         <div class="text">
             <h3>4. Win the Pool</h3>
             <p>Daily: one random ticket wins the whole jackpot. Weekly: ten random tickets share the mega pool (40/20/10/5×4/4/3/3 %).</p>
@@ -1186,8 +1167,7 @@
         renderWinnersFeed();
     }
 
-    // Deterministic per-day PRNG — same seed string always yields same sequence,
-    // so today's synthetic winner stays stable across refreshes.
+    // Deterministic PRNG — seed → stable sequence across refreshes.
     function dayRng(dayKey) {
         let h = 2166136261;
         for (let i = 0; i < dayKey.length; i++) {
@@ -1201,29 +1181,30 @@
         };
     }
 
-    // Normalize any Date to UTC midnight — used as the canonical day key so that
-    // clients in different timezones all generate the same synthetic winner object.
-    // This is what makes Firestore arrayUnion dedupe across clients.
+    // UTC day key — makes Firestore arrayUnion dedupe across timezones.
     function utcDayStart(d) {
         return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
     }
 
     function syntheticWinnerFor(day) {
-        const utcDay = utcDayStart(day);
-        const key = utcDay.toISOString().slice(0, 10);
-        const rng = dayRng(key);
+        const iso = utcDayStart(day).toISOString();
+        const rng = dayRng(iso.slice(0, 10));
         const name  = NICKNAME_POOL[Math.floor(rng() * NICKNAME_POOL.length)];
         const prize = Math.round((18 + rng() * 140) * 100) / 100;
-        return { name, prize, date: utcDay.toISOString() };
+        return { name, prize, date: iso };
     }
 
-    // Returns synthetic winners for the last 7 UTC days that have no real winner.
-    // Exposed so the Firestore init block can write them back into the shared doc.
+    // Exposed on window so the separate Firestore module can call it.
+    // Memoized on (today's UTC day, winner count) — result stable until a new
+    // winner arrives or the date rolls over, which is the only time it can change.
+    let _synthCache = { key: null, result: null };
     window._computeMissingSynthWinners = function(realWinners) {
         const todayUTC = utcDayStart(new Date());
-        const realKeys = new Set(
-            (realWinners || []).map(w => utcDayStart(new Date(w.date)).getTime())
-        );
+        const real = realWinners || [];
+        const cacheKey = todayUTC.getTime() + ':' + real.length;
+        if (_synthCache.key === cacheKey) return _synthCache.result;
+
+        const realKeys = new Set(real.map(w => utcDayStart(new Date(w.date)).getTime()));
         const missing = [];
         for (let d = 1; d <= 7; d++) {
             const day = new Date(todayUTC);
@@ -1232,6 +1213,7 @@
                 missing.push(syntheticWinnerFor(day));
             }
         }
+        _synthCache = { key: cacheKey, result: missing };
         return missing;
     };
 
@@ -1241,8 +1223,6 @@
         feed.innerHTML = '';
         const real = Array.isArray(window._recentWinners) ? window._recentWinners : [];
 
-        // Pad client-side so the feed looks full *before* the Firestore backfill
-        // propagates. After backfill, realKeys contains these days → synth is skipped.
         // Today is intentionally skipped so a live draw can land there organically.
         const padded = [...real, ...window._computeMissingSynthWinners(real)];
         if (!padded.length) return;
@@ -2525,12 +2505,10 @@
 
         const poolDoc = doc(db, 'lottery_state', 'global');
 
-        // ----- SEED: starting pool + fake recent winners. Uses a seedVersion so we can
-        // bump minimums without re-seeding everything. v3: top up mega pool baseline.
+        // Starting pool + fake recent winners. Bump seedVersion to top up minimums.
         const SEED_VERSION = 3;
-        const MIN_POOL = 100;   // daily jackpot baseline
-        const MIN_MEGA = 500;   // weekly mega baseline — top-10 split so it needs to feel big
-                                // (40% = $200 for position #1 at the minimum)
+        const MIN_POOL = 100;
+        const MIN_MEGA = 500;   // top-10 split, 40% = $200 for position #1 at baseline
         const snap0 = await getDoc(poolDoc);
         const existing = snap0.exists() ? (snap0.data() || {}) : {};
         if ((existing.seedVersion || 0) < SEED_VERSION) {
@@ -2557,13 +2535,10 @@
             await setDoc(poolDoc, seedPayload, { merge: true });
         }
 
-        // First client to notice a gap in the recent-winners feed writes synthetic
-        // entries back into the shared doc so subsequent visitors read real data.
-        // Deterministic per-UTC-day PRNG makes every client compute identical
-        // {name, prize, date} objects → Firestore arrayUnion dedupes races naturally.
+        // Deterministic PRNG per UTC day → clients compute identical
+        // {name, prize, date} objects → arrayUnion dedupes races naturally.
         let backfilledSynth = false;
 
-        // Real-time listener — updates pool display on all connected clients instantly
         onSnapshot(poolDoc, snap => {
             const data = snap.data();
             if (!data) return;
