@@ -26,35 +26,110 @@
         }
         canvas { display: block; }
         .back-link {
-            position: fixed; top: 12px; left: 12px; z-index: 100;
-            color: #fff; text-decoration: none; font-size: 14px;
-            background: rgba(0,0,0,0.5); padding: 6px 12px; border-radius: 6px;
+            position: fixed; top: 10px; left: 10px; z-index: 110;
+            color: #fff; text-decoration: none; font-size: 13px;
+            background: rgba(0,0,0,0.45); padding: 5px 10px; border-radius: 8px;
             backdrop-filter: blur(4px);
         }
         .back-link:hover { background: rgba(0,0,0,0.7); }
 
         #hud {
-            position: fixed; top: 0; left: 0; right: 0;
+            position: fixed; inset: 0;
             pointer-events: none; z-index: 50;
             display: none;
+            font-family: 'Segoe UI', system-ui, sans-serif;
         }
-        #timer {
+        .card {
+            background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.22);
+            border-radius: 14px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.25), 0 6px 14px rgba(0,0,0,0.35);
+            padding: 6px 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .hud-left {
+            position: absolute; top: 48px; left: 10px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .level-pill { font-size: 15px; text-align: center; padding: 7px 16px; }
+        .goal-row { display: flex; gap: 8px; }
+        .goal-card {
+            width: 66px; height: 82px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            padding: 6px 4px; gap: 2px;
+        }
+        .goal-icon {
+            width: 48px; height: 48px; border-radius: 10px;
+            background: rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
+        }
+        .goal-count { font-size: 15px; }
+        .hud-center {
             position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-            color: #fff; font-size: 28px; font-weight: 700;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-            transition: color 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            min-width: 180px;
         }
-        #timer.warning { color: #ff4444; animation: pulse 0.5s infinite alternate; }
-        @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
-        #score-box {
-            position: absolute; top: 12px; right: 60px;
-            color: #fff; text-align: right;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        .timer-card {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 16px 6px 10px; font-size: 20px;
         }
-        #score { font-size: 24px; font-weight: 700; }
+        .timer-icon {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: #f59e0b; border: 2px solid #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 900; color: #fff;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+        }
+        #timer { font-variant-numeric: tabular-nums; }
+        #timer.warning { color: #ff6b6b; animation: pulse 0.5s infinite alternate; }
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.55; } }
+        .timer-bar {
+            width: 160px; height: 8px; border-radius: 4px;
+            background: rgba(0,0,0,0.35);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        #timer-bar-fill {
+            height: 100%; width: 100%;
+            background: linear-gradient(180deg, #86efac 0%, #4ade80 100%);
+        }
+        .hud-right { position: absolute; top: 12px; right: 12px; }
+        .pause-btn {
+            pointer-events: auto;
+            width: 44px; height: 44px; padding: 0;
+            font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #joystick {
+            position: fixed; right: 30px; bottom: 40px;
+            width: 130px; height: 130px; z-index: 60;
+            pointer-events: none;
+            opacity: 0.85;
+            display: none;
+        }
+        #joystick::before {
+            content: ''; position: absolute; inset: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            border: 3px solid rgba(255,255,255,0.5);
+        }
+        #joystick-knob {
+            position: absolute; left: 50%; top: 50%;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: rgba(255,255,255,0.55);
+            border: 2px solid rgba(255,255,255,0.85);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            transform: translate(-50%, -50%);
+        }
+
         #hint {
-            position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-            color: rgba(255,255,255,0.6); font-size: 14px; z-index: 50;
+            position: fixed; bottom: 180px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.75); font-size: 13px; z-index: 55;
+            background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 8px;
             transition: opacity 1s;
         }
 
@@ -85,11 +160,31 @@
     <a href="../index.html" class="back-link">&#8592; All Games</a>
 
     <div id="hud">
-        <div id="timer">2:00</div>
-        <div id="score-box">
-            <div id="score">0</div>
+        <div class="hud-left">
+            <div class="card level-pill">Level <span id="level-num">1</span></div>
+            <div class="goal-row">
+                <div class="card goal-card">
+                    <div class="goal-icon">&#128100;</div>
+                    <div class="goal-count" id="goal-1">0</div>
+                </div>
+                <div class="card goal-card">
+                    <div class="goal-icon">&#128663;</div>
+                    <div class="goal-count" id="goal-2">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="hud-center">
+            <div class="card timer-card">
+                <span class="timer-icon">&#9201;</span>
+                <span id="timer">2:00</span>
+            </div>
+            <div class="timer-bar"><div id="timer-bar-fill"></div></div>
+        </div>
+        <div class="hud-right">
+            <button id="pause-btn" class="card pause-btn" aria-label="Pause">&#9208;</button>
         </div>
     </div>
+    <div id="joystick"><div id="joystick-knob"></div></div>
     <div id="hint">Drag or WASD to move</div>
 
     <div id="start-overlay" class="overlay">
@@ -219,7 +314,12 @@
         ]);
 
         // ---- State ----
-        let state = 'MENU'; // MENU, PLAYING, GAMEOVER
+        let state = 'MENU'; // MENU, PLAYING, PAUSED, GAMEOVER
+        let needsRedraw = false;
+        const PAUSE_ICON = '\u23F8';
+        const PLAY_ICON = '\u25B6';
+        const GRAD_TIMER_OK = 'linear-gradient(180deg, #86efac 0%, #4ade80 100%)';
+        const GRAD_TIMER_LOW = 'linear-gradient(180deg, #fca5a5 0%, #ef4444 100%)';
         let hole = { x: WORLD_W/2, y: WORLD_H/2, radius: INITIAL_RADIUS, mass: 0 };
         let camera = { x: 0, y: 0 };
         let objects = [];
@@ -233,14 +333,21 @@
         let shakeFrames = 0;
         let consumed = [0,0,0,0,0];
         let hintTimer = 3;
-        let inputDir = { x: 0, y: 0 };
+        let inputDir = { x: 0, y: 0, len: 0 };
+        let lastKnobKx = 0, lastKnobKy = 0;
         let dpr = 1;
         let mapCanvas = null;
 
         // ---- DOM refs ----
         const hud = document.getElementById('hud');
         const timerEl = document.getElementById('timer');
-        const scoreEl = document.getElementById('score');
+        const levelNumEl = document.getElementById('level-num');
+        const goal1El = document.getElementById('goal-1');
+        const goal2El = document.getElementById('goal-2');
+        const timerBarFillEl = document.getElementById('timer-bar-fill');
+        const pauseBtnEl = document.getElementById('pause-btn');
+        const joystickEl = document.getElementById('joystick');
+        const joystickKnobEl = document.getElementById('joystick-knob');
         const hintEl = document.getElementById('hint');
         const startOverlay = document.getElementById('start-overlay');
         const gameOverOverlay = document.getElementById('game-over-overlay');
@@ -254,6 +361,7 @@
             canvas.height = window.innerHeight * dpr;
             canvas.style.width = window.innerWidth + 'px';
             canvas.style.height = window.innerHeight + 'px';
+            needsRedraw = true;
         }
         window.addEventListener('resize', resize);
         resize();
@@ -264,8 +372,31 @@
             mapCanvas.width = WORLD_W;
             mapCanvas.height = WORLD_H;
             const mc = mapCanvas.getContext('2d');
-            mc.fillStyle = '#4a5568';
+
+            mc.fillStyle = '#3c4655';
             mc.fillRect(0, 0, WORLD_W, WORLD_H);
+
+            const vignette = mc.createRadialGradient(
+                WORLD_W/2, WORLD_H/2, WORLD_W * 0.15,
+                WORLD_W/2, WORLD_H/2, WORLD_W * 0.75
+            );
+            vignette.addColorStop(0, 'rgba(95,108,124,0.35)');
+            vignette.addColorStop(1, 'rgba(18,22,30,0.55)');
+            mc.fillStyle = vignette;
+            mc.fillRect(0, 0, WORLD_W, WORLD_H);
+
+            const STONE = 34;
+            mc.fillStyle = '#b8bec8';
+            mc.fillRect(0, 0, WORLD_W, STONE);
+            mc.fillRect(0, WORLD_H - STONE, WORLD_W, STONE);
+            mc.fillRect(0, 0, STONE, WORLD_H);
+            mc.fillRect(WORLD_W - STONE, 0, STONE, WORLD_H);
+
+            mc.fillStyle = 'rgba(0,0,0,0.28)';
+            mc.fillRect(0, STONE, WORLD_W, 3);
+            mc.fillRect(0, WORLD_H - STONE - 3, WORLD_W, 3);
+            mc.fillRect(STONE, 0, 3, WORLD_H);
+            mc.fillRect(WORLD_W - STONE - 3, 0, 3, WORLD_H);
         }
 
         // ---- Object generation ----
@@ -276,48 +407,63 @@
                 if (obj.body) World.remove(world, obj.body);
             }
             objects = [];
-            const margin = 80;
+            const margin = 120;
             for (let ti = 0; ti < TIERS.length; ti++) {
                 const tier = TIERS[ti];
-                for (let i = 0; i < tier.count; i++) {
-                    const size = randomInRange(tier.minSize, tier.maxSize);
-                    const x = randomInRange(margin, WORLD_W - margin);
-                    const y = randomInRange(margin, WORLD_H - margin);
-                    const type = tier.types[Math.floor(Math.random() * tier.types.length)];
-                    const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
-                    const sprites = spriteCache[type];
-                    const img = sprites ? sprites[Math.floor(Math.random() * sprites.length)] : null;
-                    const isBig = ti >= 3;
-                    const body = Bodies.circle(x, y, size, {
-                        mass: tier.mass,
-                        frictionAir: 0.08,
-                        friction: 0.25,
-                        restitution: 0.1,
-                        angle: isBig ? 0 : Math.random() * Math.PI * 2,
-                        inertia: isBig ? Infinity : undefined,
-                        isStatic: isBig,
-                        sleepThreshold: 30,
-                    });
-                    World.add(world, body);
-                    objects.push({
-                        x, y, size, tier: ti, mass: tier.mass,
-                        type, color, img,
-                        body,
-                        consumed: false, beingConsumed: false, consumeProgress: 0,
-                        rotation: body.angle,
-                    });
+                const clusters = Math.max(4, Math.round(tier.count / 18));
+                const perCluster = Math.ceil(tier.count / clusters);
+                const spacing = tier.maxSize * 2.2 + 4;
+                const cols = Math.ceil(Math.sqrt(perCluster));
+                const rows = Math.ceil(perCluster / cols);
+                const clusterHalfW = (cols * spacing) / 2;
+                const clusterHalfH = (rows * spacing) / 2;
+                let placed = 0;
+                for (let c = 0; c < clusters && placed < tier.count; c++) {
+                    const cx = randomInRange(margin + clusterHalfW, WORLD_W - margin - clusterHalfW);
+                    const cy = randomInRange(margin + clusterHalfH, WORLD_H - margin - clusterHalfH);
+                    for (let i = 0; i < perCluster && placed < tier.count; i++) {
+                        const col = i % cols;
+                        const row = Math.floor(i / cols);
+                        const x = cx + (col - (cols - 1) / 2) * spacing + randomInRange(-3, 3);
+                        const y = cy + (row - (rows - 1) / 2) * spacing + randomInRange(-3, 3);
+                        const size = randomInRange(tier.minSize, tier.maxSize);
+                        const type = tier.types[Math.floor(Math.random() * tier.types.length)];
+                        const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
+                        const sprites = spriteCache[type];
+                        const img = sprites ? sprites[Math.floor(Math.random() * sprites.length)] : null;
+                        const isBig = ti >= 3;
+                        const body = Bodies.circle(x, y, size, {
+                            mass: tier.mass,
+                            frictionAir: 0.04,
+                            friction: 0.3,
+                            restitution: 0.2,
+                            angle: isBig ? 0 : Math.random() * Math.PI * 2,
+                            inertia: isBig ? Infinity : undefined,
+                            isStatic: isBig,
+                            sleepThreshold: 30,
+                        });
+                        World.add(world, body);
+                        objects.push({
+                            x, y, size, tier: ti, mass: tier.mass,
+                            type, color, img,
+                            body,
+                            consumed: false, beingConsumed: false, consumeProgress: 0,
+                            rotation: body.angle,
+                        });
+                        placed++;
+                    }
                 }
             }
         }
 
         // ---- Drawing objects ----
         function drawObject(obj, ox, oy) {
-            const s = obj.size * (1 - obj.consumeProgress);
+            const s = obj.size * (1 - obj.consumeProgress * 0.85);
             if (s < 1) return;
             ctx.save();
             ctx.translate(ox, oy);
             ctx.rotate(obj.rotation);
-            ctx.globalAlpha = 1 - obj.consumeProgress * 0.5;
+            ctx.globalAlpha = 1 - obj.consumeProgress * 0.65;
 
             // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
@@ -524,6 +670,35 @@
 
             const len = Math.sqrt(inputDir.x*inputDir.x + inputDir.y*inputDir.y);
             if (len > 1) { inputDir.x /= len; inputDir.y /= len; }
+            inputDir.len = len > 1 ? 1 : len;
+
+            const kx = (inputDir.x * 34) | 0;
+            const ky = (inputDir.y * 34) | 0;
+            if (kx !== lastKnobKx || ky !== lastKnobKy) {
+                joystickKnobEl.style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
+                lastKnobKx = kx;
+                lastKnobKy = ky;
+            }
+        }
+
+        let _hudLevel = -1, _hudG1 = -1, _hudG2 = -1, _hudBucket = -1, _hudDanger = null;
+        function updateHud() {
+            const lvl = getSizeLevel(hole.mass);
+            if (lvl !== _hudLevel) { levelNumEl.textContent = lvl; _hudLevel = lvl; }
+            const g1 = consumed[0] + consumed[1];
+            if (g1 !== _hudG1) { goal1El.textContent = g1; _hudG1 = g1; }
+            if (consumed[2] !== _hudG2) { goal2El.textContent = consumed[2]; _hudG2 = consumed[2]; }
+            const pct = Math.max(0, Math.min(1, timeLeft / ROUND_DURATION));
+            const bucket = (pct * 200) | 0;
+            if (bucket !== _hudBucket) {
+                timerBarFillEl.style.width = (pct * 100) + '%';
+                _hudBucket = bucket;
+            }
+            const danger = pct < 0.15;
+            if (danger !== _hudDanger) {
+                timerBarFillEl.style.background = danger ? GRAD_TIMER_LOW : GRAD_TIMER_OK;
+                _hudDanger = danger;
+            }
         }
 
         // ---- Update ----
@@ -601,17 +776,16 @@
                             lastEatTime = now;
                             const points = (obj.tier + 1) * combo;
                             score += points;
-                            scoreEl.textContent = score;
                             spawnComboText(hole.x, hole.y - hole.radius - 20, `+${points}`);
 
                             if (obj.tier >= 3) shakeFrames = 8;
                         }
                     }
                 } else if (obj.beingConsumed) {
-                    obj.x += (hole.x - obj.x) * 0.35;
-                    obj.y += (hole.y - obj.y) * 0.35;
-                    obj.consumeProgress = Math.min(1, obj.consumeProgress + 0.09);
-                    obj.rotation += 0.22;
+                    obj.x += (hole.x - obj.x) * 0.18;
+                    obj.y += (hole.y - obj.y) * 0.18;
+                    obj.consumeProgress = Math.min(1, obj.consumeProgress + 0.045);
+                    obj.rotation += 0.18;
                     if (obj.consumeProgress >= 1) obj.consumed = true;
                 }
             }
@@ -643,7 +817,7 @@
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#4a5568';
+            ctx.fillStyle = '#5cb85a';
             ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
             let shakeX = 0, shakeY = 0;
@@ -721,6 +895,23 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
             ctx.fillText(`Size ${sizeLevel}`, x, y + outerR + 8);
+
+            if (inputDir.len > 0.05) {
+                const nx = inputDir.x / inputDir.len;
+                const ny = inputDir.y / inputDir.len;
+                const arrowR = outerR + rimWidth * 0.9;
+                const arrowSize = Math.max(6, rimWidth * 0.55);
+                const ax = x + nx * arrowR;
+                const ay = y + ny * arrowR;
+                const perpX = -ny, perpY = nx;
+                ctx.fillStyle = 'rgba(255,255,255,0.55)';
+                ctx.beginPath();
+                ctx.moveTo(ax + nx * arrowSize, ay + ny * arrowSize);
+                ctx.lineTo(ax - nx * arrowSize * 0.6 + perpX * arrowSize * 0.7, ay - ny * arrowSize * 0.6 + perpY * arrowSize * 0.7);
+                ctx.lineTo(ax - nx * arrowSize * 0.6 - perpX * arrowSize * 0.7, ay - ny * arrowSize * 0.6 - perpY * arrowSize * 0.7);
+                ctx.closePath();
+                ctx.fill();
+            }
         }
 
         function drawParticlesLocal(sx, sy) {
@@ -766,7 +957,6 @@
             consumed = [0,0,0,0,0];
             hintTimer = 3;
             shakeFrames = 0;
-            scoreEl.textContent = '0';
 
             renderMap();
             generateObjects();
@@ -774,13 +964,17 @@
             startOverlay.style.display = 'none';
             gameOverOverlay.style.display = 'none';
             hud.style.display = 'block';
+            joystickEl.style.display = 'block';
+            pauseBtnEl.textContent = PAUSE_ICON;
             hintEl.style.opacity = '1';
             hintEl.style.display = 'block';
+            updateHud();
         }
 
         function endGame() {
             state = 'GAMEOVER';
             hud.style.display = 'none';
+            joystickEl.style.display = 'none';
             hintEl.style.display = 'none';
             gameOverOverlay.style.display = 'flex';
             finalScoreEl.textContent = score;
@@ -810,6 +1004,7 @@
                 updateCamera();
                 updateParticles(dt);
                 updateTimer(dt);
+                updateHud();
 
                 if (hintTimer > 0) {
                     hintTimer -= dt / 1000;
@@ -819,16 +1014,27 @@
                 }
             }
 
-            if (state !== 'MENU') {
+            if (state === 'PLAYING' || needsRedraw) {
                 draw();
+                needsRedraw = false;
             }
 
             requestAnimationFrame(gameLoop);
         }
 
-        // ---- Event listeners ----
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', startGame);
+        pauseBtnEl.addEventListener('click', () => {
+            if (state === 'PLAYING') {
+                state = 'PAUSED';
+                pauseBtnEl.textContent = PLAY_ICON;
+                needsRedraw = true;
+            } else if (state === 'PAUSED') {
+                state = 'PLAYING';
+                pauseBtnEl.textContent = PAUSE_ICON;
+                lastTimestamp = performance.now();
+            }
+        });
 
         lastTimestamp = performance.now();
         requestAnimationFrame(gameLoop);
