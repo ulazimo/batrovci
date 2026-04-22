@@ -12,6 +12,7 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Black Hole City</title>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -109,6 +110,8 @@
 
     <script>
     (function() {
+        const { Engine, World, Bodies, Body } = Matter;
+
         // roundRect polyfill for older browsers
         if (!CanvasRenderingContext2D.prototype.roundRect) {
             CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
@@ -144,7 +147,6 @@
             { types: ['building','skyscraper'], minSize: 55, maxSize: 75, mass: 150, count: 30, unlockRadius: 160, colors: ['#6c757d','#adb5bd','#495057','#8d99ae'] },
         ];
 
-        // ---- Size levels ----
         // Each level requires cumulative mass to reach
         const SIZE_LEVELS = [
             { level: 1, massNeeded: 0 },
@@ -175,6 +177,47 @@
             return (mass - current) / (next - current);
         }
 
+        // ---- Sprite manifest ----
+        // Drop Kenney (CC0) PNGs into hole-io/assets/ with these names.
+        // Missing files transparently fall back to the hand-drawn shapes below.
+        const SPRITE_MANIFEST = {
+            person:     ['person-1.png', 'person-2.png', 'person-3.png'],
+            cone:       ['cone.png'],
+            hydrant:    ['hydrant.png'],
+            tree:       ['tree-1.png', 'tree-2.png'],
+            bench:      ['bench.png'],
+            mailbox:    ['mailbox.png'],
+            car:        ['car-1.png', 'car-2.png', 'car-3.png'],
+            truck:      ['truck.png'],
+            bus:        ['bus.png'],
+            house:      ['house-1.png', 'house-2.png'],
+            shop:       ['shop.png'],
+            building:   ['building-1.png', 'building-2.png'],
+            skyscraper: ['skyscraper.png'],
+        };
+        const spriteCache = {};
+        for (const [type, files] of Object.entries(SPRITE_MANIFEST)) {
+            spriteCache[type] = files.map(f => {
+                const img = new Image();
+                img.src = 'assets/' + f;
+                return img;
+            });
+        }
+
+        // ---- Physics world ----
+        const engine = Engine.create({ enableSleeping: true });
+        engine.gravity.x = 0;
+        engine.gravity.y = 0;
+        const world = engine.world;
+
+        const WALL = 200;
+        World.add(world, [
+            Bodies.rectangle(WORLD_W/2, -WALL/2, WORLD_W + WALL*2, WALL, { isStatic: true }),
+            Bodies.rectangle(WORLD_W/2, WORLD_H + WALL/2, WORLD_W + WALL*2, WALL, { isStatic: true }),
+            Bodies.rectangle(-WALL/2, WORLD_H/2, WALL, WORLD_H + WALL*2, { isStatic: true }),
+            Bodies.rectangle(WORLD_W + WALL/2, WORLD_H/2, WALL, WORLD_H + WALL*2, { isStatic: true }),
+        ]);
+
         // ---- State ----
         let state = 'MENU'; // MENU, PLAYING, GAMEOVER
         let hole = { x: WORLD_W/2, y: WORLD_H/2, radius: INITIAL_RADIUS, mass: 0 };
@@ -187,7 +230,6 @@
         let lastEatTime = 0;
         let timeLeft = ROUND_DURATION;
         let lastTimestamp = 0;
-        let swirlAngle = 0;
         let shakeFrames = 0;
         let consumed = [0,0,0,0,0];
         let hintTimer = 3;
@@ -222,8 +264,6 @@
             mapCanvas.width = WORLD_W;
             mapCanvas.height = WORLD_H;
             const mc = mapCanvas.getContext('2d');
-
-            // Solid background
             mc.fillStyle = '#4a5568';
             mc.fillRect(0, 0, WORLD_W, WORLD_H);
         }
@@ -232,6 +272,9 @@
         function randomInRange(min, max) { return min + Math.random() * (max - min); }
 
         function generateObjects() {
+            for (const obj of objects) {
+                if (obj.body) World.remove(world, obj.body);
+            }
             objects = [];
             const margin = 80;
             for (let ti = 0; ti < TIERS.length; ti++) {
@@ -242,11 +285,26 @@
                     const y = randomInRange(margin, WORLD_H - margin);
                     const type = tier.types[Math.floor(Math.random() * tier.types.length)];
                     const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
+                    const sprites = spriteCache[type];
+                    const img = sprites ? sprites[Math.floor(Math.random() * sprites.length)] : null;
+                    const isBig = ti >= 3;
+                    const body = Bodies.circle(x, y, size, {
+                        mass: tier.mass,
+                        frictionAir: 0.08,
+                        friction: 0.25,
+                        restitution: 0.1,
+                        angle: isBig ? 0 : Math.random() * Math.PI * 2,
+                        inertia: isBig ? Infinity : undefined,
+                        isStatic: isBig,
+                        sleepThreshold: 30,
+                    });
+                    World.add(world, body);
                     objects.push({
                         x, y, size, tier: ti, mass: tier.mass,
-                        type, color,
+                        type, color, img,
+                        body,
                         consumed: false, beingConsumed: false, consumeProgress: 0,
-                        rotation: 0,
+                        rotation: body.angle,
                     });
                 }
             }
@@ -264,9 +322,22 @@
             // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
             ctx.beginPath();
-            ctx.ellipse(2, 2, s * 0.8, s * 0.4, 0, 0, Math.PI * 2);
+            ctx.ellipse(2, 2, s * 0.9, s * 0.6, 0, 0, Math.PI * 2);
             ctx.fill();
 
+            const img = obj.img;
+            if (img && img.complete && img.naturalWidth > 0) {
+                const iw = img.naturalWidth, ih = img.naturalHeight;
+                const maxDim = Math.max(iw, ih);
+                const scale = (s * 2) / maxDim;
+                ctx.drawImage(img, -iw * scale / 2, -ih * scale / 2, iw * scale, ih * scale);
+            } else {
+                drawObjectShape(obj, s);
+            }
+            ctx.restore();
+        }
+
+        function drawObjectShape(obj, s) {
             switch(obj.type) {
                 case 'person':
                     ctx.fillStyle = obj.color;
@@ -305,22 +376,21 @@
                     ctx.fillRect(-s*0.06, s*0.2, s*0.12, s*0.4);
                     break;
                 case 'car':
-                case 'truck':
+                case 'truck': {
                     ctx.fillStyle = obj.color;
                     const cw = s * 1.4, ch = s * 0.7;
                     ctx.beginPath();
                     ctx.roundRect(-cw/2, -ch/2, cw, ch, s*0.15);
                     ctx.fill();
-                    // Windows
                     ctx.fillStyle = 'rgba(200,230,255,0.7)';
                     ctx.fillRect(-cw*0.15, -ch/2 + 3, cw*0.3, ch - 6);
-                    // Wheels
                     ctx.fillStyle = '#222';
                     ctx.beginPath(); ctx.arc(-cw*0.3, -ch/2, s*0.12, 0, Math.PI*2); ctx.fill();
                     ctx.beginPath(); ctx.arc(cw*0.3, -ch/2, s*0.12, 0, Math.PI*2); ctx.fill();
                     ctx.beginPath(); ctx.arc(-cw*0.3, ch/2, s*0.12, 0, Math.PI*2); ctx.fill();
                     ctx.beginPath(); ctx.arc(cw*0.3, ch/2, s*0.12, 0, Math.PI*2); ctx.fill();
                     break;
+                }
                 case 'bus':
                     ctx.fillStyle = obj.color;
                     ctx.fillRect(-s*0.9, -s*0.4, s*1.8, s*0.8);
@@ -332,8 +402,7 @@
                 case 'house':
                 case 'shop':
                     ctx.fillStyle = obj.color;
-                    ctx.fillRect(-s*0.5, -s*0.3, s, s*0.7); // walls
-                    // Roof
+                    ctx.fillRect(-s*0.5, -s*0.3, s, s*0.7);
                     ctx.fillStyle = '#8B4513';
                     ctx.beginPath();
                     ctx.moveTo(-s*0.6, -s*0.3);
@@ -341,20 +410,17 @@
                     ctx.lineTo(s*0.6, -s*0.3);
                     ctx.closePath();
                     ctx.fill();
-                    // Door
                     ctx.fillStyle = '#5c3a1e';
                     ctx.fillRect(-s*0.1, s*0.05, s*0.2, s*0.35);
-                    // Windows
                     ctx.fillStyle = 'rgba(255,255,200,0.8)';
                     ctx.fillRect(-s*0.35, -s*0.15, s*0.18, s*0.15);
                     ctx.fillRect(s*0.17, -s*0.15, s*0.18, s*0.15);
                     break;
                 case 'building':
-                case 'skyscraper':
+                case 'skyscraper': {
                     ctx.fillStyle = obj.color;
                     const bw = s * 0.7, bh = s * 1.2;
                     ctx.fillRect(-bw/2, -bh/2, bw, bh);
-                    // Window grid
                     ctx.fillStyle = 'rgba(255,255,200,0.5)';
                     const cols = 3, rows = 5;
                     const ww = bw / (cols * 2 + 1), wh = bh / (rows * 2 + 1);
@@ -368,11 +434,10 @@
                         }
                     }
                     break;
+                }
             }
-            ctx.restore();
         }
 
-        // ---- Hole drawing ----
         // ---- Particles ----
         function spawnParticles(x, y, color, count) {
             for (let i = 0; i < count; i++) {
@@ -392,7 +457,6 @@
         function updateParticles(dt) {
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
-                // Pull toward hole
                 const dx = hole.x - p.x, dy = hole.y - p.y;
                 const dist = Math.sqrt(dx*dx + dy*dy) || 1;
                 p.vx += (dx/dist) * 0.3;
@@ -404,37 +468,9 @@
             }
         }
 
-        function drawParticles() {
-            for (const p of particles) {
-                const sx = (p.x - camera.x) * dpr;
-                const sy = (p.y - camera.y) * dpr;
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); ctx.arc(sx, sy, p.size * dpr, 0, Math.PI * 2); ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        }
-
         // ---- Combo text ----
         function spawnComboText(x, y, text) {
             comboTexts.push({ x, y, text, life: 1, vy: -1.5 });
-        }
-
-        function drawComboTexts() {
-            for (let i = comboTexts.length - 1; i >= 0; i--) {
-                const ct = comboTexts[i];
-                ct.y += ct.vy;
-                ct.life -= 0.02;
-                if (ct.life <= 0) { comboTexts.splice(i, 1); continue; }
-                const sx = (ct.x - camera.x) * dpr;
-                const sy = (ct.y - camera.y) * dpr;
-                ctx.globalAlpha = ct.life;
-                ctx.fillStyle = '#ffd166';
-                ctx.font = `bold ${18 * dpr}px system-ui`;
-                ctx.textAlign = 'center';
-                ctx.fillText(ct.text, sx, sy);
-            }
-            ctx.globalAlpha = 1;
         }
 
         // ---- Input ----
@@ -467,14 +503,11 @@
         function updateInput() {
             inputDir.x = 0;
             inputDir.y = 0;
-
-            // Keyboard
             if (keys['w'] || keys['arrowup']) inputDir.y -= 1;
             if (keys['s'] || keys['arrowdown']) inputDir.y += 1;
             if (keys['a'] || keys['arrowleft']) inputDir.x -= 1;
             if (keys['d'] || keys['arrowright']) inputDir.x += 1;
 
-            // Pointer
             if (pointerActive) {
                 const cx = window.innerWidth / 2;
                 const cy = window.innerHeight / 2;
@@ -489,7 +522,6 @@
                 }
             }
 
-            // Normalize
             const len = Math.sqrt(inputDir.x*inputDir.x + inputDir.y*inputDir.y);
             if (len > 1) { inputDir.x /= len; inputDir.y /= len; }
         }
@@ -511,48 +543,76 @@
 
         function updateObjects(dt) {
             const now = performance.now();
+            const pullRange = hole.radius * 4.5;
+            const pullRangeSq = pullRange * pullRange;
+            const pullStrength = 0.0009;
+            const eatRadius = hole.radius * 0.85;
+            const eatDist = hole.radius * 0.9;
+            const eatDistSq = eatDist * eatDist;
+
+            for (const obj of objects) {
+                if (obj.consumed || obj.beingConsumed || !obj.body) continue;
+                const body = obj.body;
+                if (obj.size >= eatRadius) continue;
+                if (body.isStatic) {
+                    Body.setStatic(body, false);
+                    Body.setInertia(body, Infinity);
+                }
+                const dx = hole.x - body.position.x;
+                const dy = hole.y - body.position.y;
+                const distSq = dx*dx + dy*dy;
+                if (distSq >= pullRangeSq || distSq < 0.01) continue;
+                const dist = Math.sqrt(distSq);
+                const falloff = 1 - dist / pullRange;
+                const mag = pullStrength * falloff * falloff * body.mass;
+                Body.applyForce(body, body.position, {
+                    x: (dx / dist) * mag,
+                    y: (dy / dist) * mag,
+                });
+            }
+
+            // clamp step for long frames
+            Engine.update(engine, Math.min(dt, 20));
+
             for (const obj of objects) {
                 if (obj.consumed) continue;
-                const dx = hole.x - obj.x;
-                const dy = hole.y - obj.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                const canEat = obj.size < hole.radius * 0.85;
-                const inRange = dist < hole.radius + obj.size * 0.3;
 
-                if (canEat && inRange) {
-                    obj.beingConsumed = true;
-                }
+                if (obj.body) {
+                    if (obj.body.isStatic) continue;
+                    const bp = obj.body.position;
+                    obj.x = bp.x;
+                    obj.y = bp.y;
+                    obj.rotation = obj.body.angle;
 
-                if (obj.beingConsumed) {
-                    if (!canEat) { obj.beingConsumed = false; obj.consumeProgress = 0; continue; }
-                    obj.x += dx * 0.15;
-                    obj.y += dy * 0.15;
-                    obj.consumeProgress += 0.06;
-                    obj.rotation += 0.15;
-                    if (obj.consumeProgress >= 1 || dist < 5) {
-                        obj.consumed = true;
-                        hole.mass += obj.mass;
-                        consumed[obj.tier]++;
-                        spawnParticles(obj.x, obj.y, obj.color, 6);
+                    if (obj.size < eatRadius) {
+                        const dx = hole.x - bp.x;
+                        const dy = hole.y - bp.y;
+                        if (dx*dx + dy*dy < eatDistSq) {
+                            World.remove(world, obj.body);
+                            obj.body = null;
+                            obj.beingConsumed = true;
+                            hole.mass += obj.mass;
+                            consumed[obj.tier]++;
+                            spawnParticles(obj.x, obj.y, obj.color, 6);
 
-                        // Scoring
-                        const timeSinceLastEat = now - lastEatTime;
-                        if (timeSinceLastEat < 1000) {
-                            combo++;
-                        } else {
-                            combo = 1;
+                            const timeSinceLastEat = now - lastEatTime;
+                            if (timeSinceLastEat < 1000) combo++;
+                            else combo = 1;
+                            lastEatTime = now;
+                            const points = (obj.tier + 1) * combo;
+                            score += points;
+                            scoreEl.textContent = score;
+                            spawnComboText(hole.x, hole.y - hole.radius - 20, `+${points}`);
+
+                            if (obj.tier >= 3) shakeFrames = 8;
                         }
-                        lastEatTime = now;
-                        const points = (obj.tier + 1) * combo;
-                        score += points;
-                        scoreEl.textContent = score;
-
-                        // Always show points gained floating above hole
-                        spawnComboText(hole.x, hole.y - hole.radius - 20, `+${points}`);
-
-                        // Screen shake for big objects
-                        if (obj.tier >= 3) shakeFrames = 8;
                     }
+                } else if (obj.beingConsumed) {
+                    obj.x += (hole.x - obj.x) * 0.35;
+                    obj.y += (hole.y - obj.y) * 0.35;
+                    obj.consumeProgress = Math.min(1, obj.consumeProgress + 0.09);
+                    obj.rotation += 0.22;
+                    if (obj.consumeProgress >= 1) obj.consumed = true;
                 }
             }
         }
@@ -583,11 +643,9 @@
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Background - solid dark blue-gray
             ctx.fillStyle = '#4a5568';
             ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-            // Shake offset
             let shakeX = 0, shakeY = 0;
             if (shakeFrames > 0) {
                 shakeX = (Math.random() - 0.5) * 6;
@@ -598,12 +656,10 @@
             const cx = -camera.x + shakeX;
             const cy = -camera.y + shakeY;
 
-            // Map
             if (mapCanvas) {
                 ctx.drawImage(mapCanvas, cx, cy, WORLD_W, WORLD_H);
             }
 
-            // Objects (sorted by tier for draw order)
             const vx1 = camera.x - 100, vy1 = camera.y - 100;
             const vx2 = camera.x + window.innerWidth + 100;
             const vy2 = camera.y + window.innerHeight + 100;
@@ -611,35 +667,21 @@
             for (const obj of objects) {
                 if (obj.consumed) continue;
                 if (obj.x < vx1 || obj.x > vx2 || obj.y < vy1 || obj.y > vy2) continue;
-                const ox = (obj.x + cx) * dpr;
-                const oy = (obj.y + cy) * dpr;
-                // Scale object drawing for dpr
-                ctx.save();
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 drawObject(obj, obj.x + cx, obj.y + cy);
-                ctx.restore();
             }
 
-            // Hole
             drawHoleLocal(hole.x - camera.x + shakeX, hole.y - camera.y + shakeY, hole.radius);
-
-            // Particles
-            ctx.save();
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             drawParticlesLocal(shakeX, shakeY);
             drawComboTextsLocal(shakeX, shakeY);
-            ctx.restore();
         }
 
         function drawHoleLocal(x, y, r) {
             const rimWidth = Math.max(6, r * 0.18);
             const outerR = r + rimWidth;
 
-            // Shadow under rim
             ctx.fillStyle = 'rgba(0,0,0,0.25)';
             ctx.beginPath(); ctx.arc(x + 2, y + 2, outerR, 0, Math.PI * 2); ctx.fill();
 
-            // Outer rim - thick gray ring like hole.io
             const rimGrad = ctx.createRadialGradient(x - rimWidth*0.3, y - rimWidth*0.3, r * 0.8, x, y, outerR);
             rimGrad.addColorStop(0, '#e0e0e0');
             rimGrad.addColorStop(0.5, '#b0b0b0');
@@ -648,7 +690,6 @@
             ctx.fillStyle = rimGrad;
             ctx.beginPath(); ctx.arc(x, y, outerR, 0, Math.PI * 2); ctx.fill();
 
-            // Inner dark hole
             const holeGrad = ctx.createRadialGradient(x, y, 0, x, y, r);
             holeGrad.addColorStop(0, '#000');
             holeGrad.addColorStop(0.8, '#080808');
@@ -656,12 +697,10 @@
             ctx.fillStyle = holeGrad;
             ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
 
-            // Inner rim edge (subtle dark ring at the inner edge of the rim)
             ctx.strokeStyle = 'rgba(0,0,0,0.3)';
             ctx.lineWidth = 1.5;
             ctx.beginPath(); ctx.arc(x, y, r + 1, 0, Math.PI * 2); ctx.stroke();
 
-            // Progress arc - yellow arc showing progress to next size
             const progress = getSizeProgress(hole.mass);
             if (progress > 0 && progress < 1) {
                 const arcR = outerR + 3;
@@ -676,7 +715,6 @@
                 ctx.lineCap = 'butt';
             }
 
-            // "Size X" label below the hole
             const sizeLevel = getSizeLevel(hole.mass);
             ctx.fillStyle = '#f5a623';
             ctx.font = `bold ${Math.max(14, r * 0.35)}px system-ui`;
@@ -705,12 +743,11 @@
                 const px = ct.x - camera.x + sx;
                 const py = ct.y - camera.y + sy;
                 ctx.globalAlpha = ct.life;
-                // White bold text with dark shadow like hole.io
                 ctx.font = 'bold 22px system-ui';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = 'rgba(0,0,0,0.5)';
                 ctx.fillText(ct.text, px + 1, py + 1);
-                ctx.fillStyle = '#fff'
+                ctx.fillStyle = '#fff';
                 ctx.fillText(ct.text, px, py);
             }
             ctx.globalAlpha = 1;
@@ -721,7 +758,6 @@
             state = 'PLAYING';
             hole = { x: WORLD_W/2, y: WORLD_H/2, radius: INITIAL_RADIUS, mass: 0 };
             camera = { x: hole.x - window.innerWidth/2, y: hole.y - window.innerHeight/2 };
-            objects = [];
             particles = [];
             comboTexts = [];
             score = 0;
@@ -774,9 +810,7 @@
                 updateCamera();
                 updateParticles(dt);
                 updateTimer(dt);
-                swirlAngle += 0.03;
 
-                // Fade hint
                 if (hintTimer > 0) {
                     hintTimer -= dt / 1000;
                     if (hintTimer <= 0) {
@@ -796,7 +830,6 @@
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', startGame);
 
-        // Start loop
         lastTimestamp = performance.now();
         requestAnimationFrame(gameLoop);
     })();
