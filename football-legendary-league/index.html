@@ -259,7 +259,7 @@
 
         .app-view {
             width: 100%;
-            max-width: 28rem; 
+            max-width: 28rem;
             height: 100dvh;
             display: flex;
             flex-direction: column;
@@ -267,6 +267,152 @@
             overflow: hidden;
             position: relative;
         }
+
+        /* ── LIVE MODE ─────────────────────────────────────────────── */
+        @keyframes defense-pulse {
+            0%   { transform: scale(0.92); opacity: 0.92; }
+            50%  { transform: scale(1.04); opacity: 1; }
+            100% { transform: scale(0.92); opacity: 0.92; }
+        }
+        #live-defense-alert.active { opacity: 1 !important; }
+        #live-defense-alert.active > div { animation: defense-pulse 0.6s ease-in-out infinite; }
+        #live-fulltime.active { opacity: 1 !important; pointer-events: auto !important; }
+
+        @keyframes live-goal-flash {
+            0%   { background: transparent; }
+            30%  { background: rgba(59, 130, 246, 0.35); }
+            100% { background: transparent; }
+        }
+        @keyframes live-concede-flash {
+            0%   { background: transparent; }
+            30%  { background: rgba(239, 68, 68, 0.35); }
+            100% { background: transparent; }
+        }
+        #view-live-match.flash-goal    { animation: live-goal-flash    0.6s ease-out; }
+        #view-live-match.flash-concede { animation: live-concede-flash 0.6s ease-out; }
+
+        .live-shot-pop {
+            position: absolute;
+            font-weight: 900;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 60;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        /* ── LIVE FIELD ─────────────────────────────────────────────── */
+        #live-field {
+            position: relative;
+            height: 60px;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #14532d 0%, #166534 25%, #15803d 50%, #166534 75%, #14532d 100%);
+            border: 1px solid rgba(34,197,94,0.25);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 0 18px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+        #live-field::before {
+            /* center line */
+            content: '';
+            position: absolute;
+            top: 4px; bottom: 4px; left: 50%;
+            width: 1px;
+            background: rgba(255,255,255,0.18);
+        }
+        #live-field::after {
+            /* center circle */
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 24px; height: 24px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .field-goal {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 28px;
+            background: rgba(255,255,255,0.55);
+            box-shadow: 0 0 6px rgba(255,255,255,0.4);
+        }
+        .field-goal.left  { left: 0;  border-radius: 0 3px 3px 0; }
+        .field-goal.right { right: 0; border-radius: 3px 0 0 3px; }
+        .field-goal.lit-blue { background: #60a5fa; box-shadow: 0 0 16px #60a5fa, 0 0 28px #3b82f6; }
+        .field-goal.lit-red  { background: #f87171; box-shadow: 0 0 16px #f87171, 0 0 28px #ef4444; }
+
+        .player-dot {
+            position: absolute;
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.5s ease-out;
+            z-index: 2;
+        }
+        .player-dot.lfc { background: #3b82f6; box-shadow: 0 0 4px #60a5fa, inset 0 -1px 2px rgba(0,0,0,0.4); }
+        .player-dot.opp { background: #ef4444; box-shadow: 0 0 4px #f87171, inset 0 -1px 2px rgba(0,0,0,0.4); }
+
+        @keyframes player-kick {
+            0%   { transform: translate(-50%, -50%) scale(1); }
+            30%  { transform: translate(-50%, -50%) scale(1.7); }
+            60%  { transform: translate(-50%, -50%) scale(0.9); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes player-block {
+            0%   { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+            40%  { transform: translate(-50%, -50%) scale(1.5); filter: brightness(2) drop-shadow(0 0 6px white); }
+            100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+        }
+        .player-dot.kick  { animation: player-kick  0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .player-dot.block { animation: player-block 0.55s ease-out; }
+
+        #live-ball {
+            position: absolute;
+            top: 50%;
+            width: 11px; height: 11px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff, #cbd5e1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 6px rgba(255,255,255,0.5);
+            transform: translate(-50%, -50%);
+            transition: left 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
+            z-index: 4;
+        }
+        @keyframes ball-shoot-left {
+            0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            70%  { transform: translate(-50%, -50%) scale(1.4) rotate(-720deg); }
+            100% { transform: translate(-1500%, -50%) scale(0.8) rotate(-1440deg); opacity: 0.3; }
+        }
+        @keyframes ball-shoot-right {
+            0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            70%  { transform: translate(-50%, -50%) scale(1.4) rotate(720deg); }
+            100% { transform: translate(1500%, -50%) scale(0.8) rotate(1440deg); opacity: 0.3; }
+        }
+        #live-ball.shoot-left  { animation: ball-shoot-left  0.6s ease-in forwards; transition: none; }
+        #live-ball.shoot-right { animation: ball-shoot-right 0.6s ease-in forwards; transition: none; }
+
+        @keyframes shot-alert-pulse {
+            0%   { transform: scale(0.92); opacity: 0.92; }
+            50%  { transform: scale(1.04); opacity: 1; }
+            100% { transform: scale(0.92); opacity: 0.92; }
+        }
+        #live-shoot-alert.active { opacity: 1 !important; }
+        #live-shoot-alert.active > div { animation: shot-alert-pulse 0.55s ease-in-out infinite; }
+
+        /* meter color-dots */
+        .meter-tile {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 3px;
+            vertical-align: middle;
+        }
+        .meter-tile.attack  { background: #ff6b6b; box-shadow: 0 0 4px #ff6b6b; }
+        .meter-tile.pass    { background: #55efc4; box-shadow: 0 0 4px #55efc4; }
+        .meter-tile.defense { background: #74b9ff; box-shadow: 0 0 4px #74b9ff; }
+        .meter-tile.stamina { background: #ffeaa7; box-shadow: 0 0 4px #ffeaa7; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
@@ -288,8 +434,38 @@
         </div>
     </div>
 
+    <!-- MODE SELECT (entry) -->
+    <div id="view-mode-select" class="app-view">
+        <div class="flex flex-col h-full justify-center gap-5">
+            <div class="text-center mb-2">
+                <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Football<br>Legendary League</h1>
+                <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-3">Pick a prototype</p>
+            </div>
+
+            <button onclick="enterClassicMode()" class="bg-slate-900 border-2 border-red-600/40 hover:border-red-600 hover:bg-red-600/10 rounded-2xl p-5 text-left transition-all active:scale-95 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-red-500 text-[9px] font-black uppercase tracking-widest">Prototype A</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 px-2 py-0.5 bg-slate-800 rounded">turn-based</div>
+                </div>
+                <div class="text-white text-2xl font-black uppercase italic leading-none mb-2">Classic</div>
+                <div class="text-slate-400 text-[11px] leading-snug">Solve a 15-move puzzle to fill your stat bars, then watch the match unfold segment by segment.</div>
+            </button>
+
+            <button onclick="enterLiveMode()" class="bg-slate-900 border-2 border-blue-500/40 hover:border-blue-500 hover:bg-blue-500/10 rounded-2xl p-5 text-left transition-all active:scale-95 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="text-blue-400 text-[9px] font-black uppercase tracking-widest">Prototype B</div>
+                    <div class="text-[9px] uppercase font-bold text-slate-500 px-2 py-0.5 bg-slate-800 rounded">real-time</div>
+                </div>
+                <div class="text-white text-2xl font-black uppercase italic leading-none mb-2">Live Match</div>
+                <div class="text-slate-400 text-[11px] leading-snug">The puzzle IS the match. 90 real seconds — attack to score, defend on the clock or concede.</div>
+            </button>
+
+            <p class="text-center text-[9px] uppercase tracking-widest text-slate-600 mt-2">Reload to switch modes</p>
+        </div>
+    </div>
+
     <!-- LEAGUE VIEW -->
-    <div id="view-standings" class="app-view">
+    <div id="view-standings" class="app-view view-hidden">
         <div class="flex justify-between items-center mb-4 shrink-0">
             <h1 class="text-3xl font-black italic uppercase tracking-tighter text-red-600">Premier League</h1>
             <div class="text-right">
@@ -397,6 +573,184 @@
             <div class="text-xs font-mono text-slate-400 mt-3" id="season-end-stats"></div>
         </div>
         <button onclick="restartGame()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95">
+            Play Again
+        </button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- LIVE MODE VIEWS (Prototype B) -->
+    <!-- ============================================================ -->
+
+    <!-- LIVE LEAGUE -->
+    <div id="view-live-standings" class="app-view view-hidden">
+        <div class="flex justify-between items-center mb-4 shrink-0">
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-blue-400">Live League</h1>
+            <div class="text-right">
+                <div class="text-[10px] uppercase text-slate-500 font-bold">Round</div>
+                <div class="text-lg font-bold" id="live-round-display">1 / 18</div>
+            </div>
+        </div>
+        <div class="flex gap-6 mb-4 px-1 border-b border-white/5 pb-2 shrink-0">
+            <button onclick="liveSetTab('table')" id="live-tab-table" class="tab-btn active text-sm font-black uppercase tracking-widest text-white">Table</button>
+            <button onclick="liveSetTab('results')" id="live-tab-results" class="tab-btn text-sm font-black uppercase tracking-widest text-slate-500">Results</button>
+        </div>
+        <div id="live-subview-table" class="flex-1 bg-slate-900/50 rounded-2xl border border-white/5 overflow-hidden flex flex-col mb-4 min-h-0">
+            <div class="grid grid-cols-9 gap-1 p-3 bg-slate-800/50 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                <div class="col-span-1">#</div><div class="col-span-3">Team</div><div class="col-span-1 text-center">MP</div><div class="col-span-1 text-center">W</div><div class="col-span-1 text-center">D</div><div class="col-span-1 text-center">GD</div><div class="col-span-1 text-center">PTS</div>
+            </div>
+            <div id="live-standings-list" class="flex-1 overflow-y-auto"></div>
+        </div>
+        <div id="live-subview-results" class="flex-1 overflow-y-auto space-y-3 mb-4 view-hidden min-h-0"><div id="live-results-list" class="space-y-3 pb-4"></div></div>
+        <button onclick="liveStartSquadSelection()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95 mb-4 shrink-0">
+            Next Match: <span id="live-next-opp-label">---</span>
+        </button>
+    </div>
+
+    <!-- LIVE SQUAD -->
+    <div id="view-live-squad" class="app-view view-hidden">
+        <div class="mb-4 shrink-0">
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-blue-400">Pick Lineup</h1>
+            <p class="text-xs text-slate-400 uppercase tracking-widest">Choose 5 players (<span id="live-selection-count">0</span>/5)</p>
+            <p class="text-[10px] text-slate-500 mt-1">Each picks boosts their color on the live board</p>
+        </div>
+        <div id="live-squad-grid" class="flex-1 overflow-y-auto space-y-2 mb-4 px-1 min-h-0"></div>
+        <div class="flex gap-2 mb-4 shrink-0">
+            <button onclick="switchView('view-live-standings')" class="bg-slate-800 text-white px-6 rounded-xl font-bold uppercase text-xs">Back</button>
+            <button id="live-confirm-squad-btn" onclick="liveStartMatch()" class="flex-1 bg-blue-600 opacity-50 pointer-events-none py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">Kick Off</button>
+        </div>
+    </div>
+
+    <!-- LIVE MATCH -->
+    <div id="view-live-match" class="app-view view-hidden relative">
+        <!-- Score header -->
+        <div class="flex justify-between items-center mb-3 shrink-0 bg-slate-900/80 p-2 rounded-2xl border border-white/5">
+            <div id="live-home" class="text-center w-16">
+                <div id="live-home-crest" class="w-9 h-9 mx-auto rounded-xl flex items-center justify-center font-black shadow-lg text-[10px]">LFC</div>
+                <div id="live-home-label" class="text-[7px] font-bold text-slate-400 uppercase mt-0.5 truncate">Home</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-black italic flex gap-1.5">
+                    <span id="live-score-h">0</span><span class="text-slate-700">:</span><span id="live-score-a">0</span>
+                </div>
+                <div id="live-clock" class="text-[10px] uppercase tracking-widest font-bold text-blue-400">90"</div>
+            </div>
+            <div id="live-away" class="text-center w-16">
+                <div id="live-away-crest" class="w-9 h-9 mx-auto rounded-xl flex items-center justify-center font-black shadow-lg text-[10px]">OPP</div>
+                <div id="live-away-label" class="text-[7px] font-bold text-slate-400 uppercase mt-0.5 truncate">Away</div>
+            </div>
+        </div>
+
+        <!-- Match clock progress -->
+        <div class="h-1 rounded-full overflow-hidden bg-slate-800 mb-3 shrink-0">
+            <div id="live-clock-fill" class="h-full bg-blue-500 transition-none" style="width:100%"></div>
+        </div>
+
+        <!-- LIVE FIELD: ball + players visualize the action -->
+        <div id="live-field">
+            <div class="field-goal left" id="live-goal-left"></div>
+            <div class="field-goal right" id="live-goal-right"></div>
+            <!-- LFC players (left half) -->
+            <div class="player-dot lfc" data-base="14" data-row="35" style="left:14%;top:35%"></div>
+            <div class="player-dot lfc" data-base="22" data-row="65" style="left:22%;top:65%"></div>
+            <div class="player-dot lfc" data-base="32" data-row="50" style="left:32%;top:50%"></div>
+            <div class="player-dot lfc" data-base="40" data-row="30" style="left:40%;top:30%"></div>
+            <div class="player-dot lfc" data-base="44" data-row="70" style="left:44%;top:70%"></div>
+            <!-- OPP players (right half, mirror) -->
+            <div class="player-dot opp" data-base="86" data-row="35" style="left:86%;top:35%"></div>
+            <div class="player-dot opp" data-base="78" data-row="65" style="left:78%;top:65%"></div>
+            <div class="player-dot opp" data-base="68" data-row="50" style="left:68%;top:50%"></div>
+            <div class="player-dot opp" data-base="60" data-row="30" style="left:60%;top:30%"></div>
+            <div class="player-dot opp" data-base="56" data-row="70" style="left:56%;top:70%"></div>
+            <!-- Ball -->
+            <div id="live-ball" style="left:50%"></div>
+        </div>
+
+        <!-- Shot meter (LFC) + Pressure (OPP) — color dots show which tiles feed each -->
+        <div class="grid grid-cols-2 gap-2 mb-3 shrink-0">
+            <div class="bg-slate-900 border border-blue-500/20 rounded-xl p-2">
+                <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
+                    <span class="text-blue-400"><span class="meter-tile attack"></span><span class="meter-tile pass"></span>Shot</span><span id="live-shot-pct" class="text-slate-500">0%</span>
+                </div>
+                <div class="h-2 rounded-full overflow-hidden bg-slate-800">
+                    <div id="live-shot-fill" class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-150" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="bg-slate-900 border border-red-500/20 rounded-xl p-2">
+                <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
+                    <span class="text-red-400"><span class="meter-tile defense"></span>Pressure</span><span id="live-pressure-pct" class="text-slate-500">0%</span>
+                </div>
+                <div class="h-2 rounded-full overflow-hidden bg-slate-800">
+                    <div id="live-pressure-fill" class="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-150" style="width:0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Board -->
+        <div id="live-board" class="grid-container mb-3"></div>
+
+        <!-- Stamina -->
+        <div class="bg-slate-900 border border-yellow-500/20 rounded-xl p-2 mb-3 shrink-0">
+            <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
+                <span class="text-yellow-400"><span class="meter-tile stamina"></span>Stamina</span><span id="live-stamina-pct" class="text-slate-500">100%</span>
+            </div>
+            <div class="h-1.5 rounded-full overflow-hidden bg-slate-800">
+                <div id="live-stamina-fill" class="h-full bg-yellow-500 transition-all duration-150" style="width:100%"></div>
+            </div>
+        </div>
+
+        <!-- Quit -->
+        <button onclick="liveQuitMatch()" class="w-full py-2 text-slate-500 text-[10px] uppercase font-bold tracking-widest hover:text-slate-300 shrink-0">Forfeit Match</button>
+
+        <!-- Shoot alert: compact banner over the field area, leaves the board clear -->
+        <div id="live-shoot-alert" class="absolute left-0 right-0 pointer-events-none flex justify-center px-4" style="top:88px;opacity:0;transition:opacity 0.18s;z-index:120">
+            <div class="bg-blue-600/95 px-4 py-1.5 rounded-xl shadow-2xl border-2 border-cyan-200 backdrop-blur-sm">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg font-black italic text-white tracking-tight leading-none">SHOOT!</span>
+                    <span class="text-[10px] uppercase font-bold text-cyan-100">match <span class="text-red-300 font-black">RED</span></span>
+                </div>
+                <div class="h-1 mt-1.5 rounded-full overflow-hidden bg-blue-900/60">
+                    <div id="live-shoot-fill" class="h-full bg-white" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Defense alert: compact banner over the field area, leaves the board clear -->
+        <div id="live-defense-alert" class="absolute left-0 right-0 pointer-events-none flex justify-center px-4" style="top:88px;opacity:0;transition:opacity 0.18s;z-index:120">
+            <div class="bg-red-600/95 px-4 py-1.5 rounded-xl shadow-2xl border-2 border-red-300 backdrop-blur-sm">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg font-black italic text-white tracking-tight leading-none" id="live-defense-color">DEFEND!</span>
+                    <span class="text-[10px] uppercase font-bold text-red-100" id="live-defense-hint">match <span class="text-blue-300 font-black">BLUE</span></span>
+                </div>
+                <div class="h-1 mt-1.5 rounded-full overflow-hidden bg-red-900/60">
+                    <div id="live-defense-fill" class="h-full bg-white" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full-time overlay -->
+        <div id="live-fulltime" class="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/85 backdrop-blur-sm" style="opacity:0;transition:opacity 0.3s;z-index:130">
+            <div class="text-center">
+                <div class="text-[11px] uppercase tracking-widest text-blue-400 font-black">Full Time</div>
+                <div id="live-fulltime-score" class="text-6xl font-black italic my-2">0 - 0</div>
+                <div id="live-fulltime-msg" class="text-sm font-bold uppercase tracking-widest text-slate-300 mb-5">Draw</div>
+                <button id="live-fulltime-btn" onclick="liveFinishMatch()" class="bg-blue-600 hover:bg-blue-500 px-8 py-3 rounded-xl font-black uppercase tracking-widest shadow-lg pointer-events-auto active:scale-95">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE SEASON END -->
+    <div id="view-live-season-end" class="app-view view-hidden flex flex-col items-center justify-center text-center gap-6">
+        <div class="text-8xl" id="live-season-trophy">🏆</div>
+        <div>
+            <h1 class="text-4xl font-black italic uppercase tracking-tighter text-blue-400">Season Over</h1>
+            <p class="text-xs uppercase tracking-widest text-slate-400 mt-1">Liverpool FC finished</p>
+        </div>
+        <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-6 w-full shadow-xl">
+            <div class="text-5xl font-black text-white" id="live-season-position">1st Place</div>
+            <div class="text-xl font-bold text-blue-400 mt-2" id="live-season-msg">Champions!</div>
+            <div class="text-xs font-mono text-slate-400 mt-3" id="live-season-stats"></div>
+        </div>
+        <button onclick="location.reload()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-transform active:scale-95">
             Play Again
         </button>
     </div>
@@ -543,7 +897,8 @@
         let gamePhase = 'standings';
         let standingsTab = 'table';
 
-        const boardEl = document.getElementById('board');
+        let gameMode = null; // 'classic' | 'live' — set when user picks a prototype
+        let boardEl = document.getElementById('board'); // swapped to #live-board in live mode
         const simLogs = document.getElementById('sim-logs');
         const TYPES = ['attack', 'defense', 'pass', 'stamina'];
         const GRID_SIZE = 7;
@@ -984,6 +1339,21 @@
 
         async function performSwap(r1, c1, r2, c2) {
             if (isAnimating) return;
+            if (gameMode === 'live') {
+                // LIVE: no moves counter, no combo collect mode — immediate breaks
+                if (!liveMatch || liveMatch.gameOver) return;
+                try {
+                    isAnimating = true;
+                    await swapTiles(r1, c1, r2, c2);
+                    const matched = await checkMatches(r2, c2);
+                    if (!matched) {
+                        SFX.noMatch();
+                        await swapTiles(r1, c1, r2, c2); // revert
+                    }
+                } finally { isAnimating = false; }
+                return;
+            }
+            // CLASSIC
             try {
                 isAnimating = true;
                 moves--;
@@ -1112,9 +1482,13 @@
                 if(tile.booster === 'rocket') for(let i=0; i<GRID_SIZE; i++) { if(board[r][i]){matches.add(r+","+i); gains[board[r][i].type]++;} if(board[i][c]){matches.add(i+","+c); gains[board[i][c].type]++;} }
                 else if (tile.booster === 'bomb') { const tc = tile.type; for(let i=0; i<GRID_SIZE; i++) for(let j=0; j<GRID_SIZE; j++) if(board[i][j]?.type === tc){matches.add(i+","+j); gains[tc]++;} }
             });
-            tickCombo();
-            const mult = Math.max(1, combo);
-            for(let k in gains) if(gains[k]) { const earned = gains[k] * 2 * mult; stats[k] += earned; spawnStatIndicator(k, earned); }
+            if (gameMode === 'live') {
+                liveOnGains(gains);
+            } else {
+                tickCombo();
+                const mult = Math.max(1, combo);
+                for(let k in gains) if(gains[k]) { const earned = gains[k] * 2 * mult; stats[k] += earned; spawnStatIndicator(k, earned); }
+            }
             // Detect boosters & play sound
             let hasRocket = false, hasBomb = false;
             matches.forEach(m => { const [r,c]=m.split(',').map(Number); const tile=board[r][c]; if(tile?.booster==='rocket') hasRocket=true; if(tile?.booster==='bomb') hasBomb=true; });
@@ -1343,15 +1717,698 @@
         }
 
         function updateTeamStats(t, f, a) { t.mp++; t.gf += f; t.ga += a; if(f > a) { t.w++; t.pts += 3; } else if(f === a) { t.d++; t.pts += 1; } else { t.l++; } }
-        function showTutorial() { 
+        function showTutorial() {
             const el = document.getElementById('tutorial-modal');
-            if (el) el.classList.remove('view-hidden'); 
+            if (el) el.classList.remove('view-hidden');
         }
-        function closeTutorial() { 
+        function closeTutorial() {
             const el = document.getElementById('tutorial-modal');
-            if (el) el.classList.add('view-hidden'); 
+            if (el) el.classList.add('view-hidden');
         }
-        window.onload = () => { generateSchedule(); updateStandingsUI(); };
+
+        // ════════════════════════════════════════════════════════════════
+        // MODE ENTRY
+        // ════════════════════════════════════════════════════════════════
+        function hideAllViews() {
+            ['view-mode-select','view-standings','view-squad','view-puzzle','view-sim','view-season-end',
+             'view-live-standings','view-live-squad','view-live-match','view-live-season-end']
+              .forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('view-hidden'); });
+        }
+
+        function enterClassicMode() {
+            gameMode = 'classic';
+            boardEl = document.getElementById('board');
+            generateSchedule();
+            updateStandingsUI();
+            hideAllViews();
+            document.getElementById('view-standings').classList.remove('view-hidden');
+        }
+
+        function enterLiveMode() {
+            gameMode = 'live';
+            boardEl = document.getElementById('live-board');
+            liveInit();
+            hideAllViews();
+            document.getElementById('view-live-standings').classList.remove('view-hidden');
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        // LIVE MODE — Independent state + flow
+        // ════════════════════════════════════════════════════════════════
+        let liveTeams = [];
+        let liveSchedule = [];
+        let liveHistory = [];
+        let liveCurrentRound = 1;
+        let liveSelectedIds = [];
+        let liveTab = 'table';
+        let liveMatch = null; // active match runtime state
+        let liveRafId = null;
+
+        const LIVE_MATCH_DURATION_MS = 90 * 1000; // 90s = 90 in-game minutes
+
+        function liveInit() {
+            liveTeams = teamNames.map((name, i) => ({
+                id: i, name, mp:0, w:0, d:0, l:0, gf:0, ga:0, pts:0,
+                ovr: i === 0 ? 65 : 45 + Math.floor(Math.random()*35), isPlayer: i === 0
+            }));
+            liveSchedule = [];
+            liveHistory = [];
+            liveCurrentRound = 1;
+            liveSelectedIds = [];
+            liveMatch = null;
+            liveGenerateSchedule();
+            liveUpdateStandings();
+        }
+
+        function liveGenerateSchedule() {
+            const pool = liveTeams.map(t => t.id);
+            const n = liveTeams.length;
+            for (let r = 0; r < n - 1; r++) {
+                const round = [];
+                for (let i = 0; i < n / 2; i++) {
+                    let h = pool[i], a = pool[n - 1 - i];
+                    if (i === 0 && r % 2 === 1) [h, a] = [a, h];
+                    round.push({ home: liveTeams[h], away: liveTeams[a] });
+                }
+                liveSchedule.push(round);
+                pool.splice(1, 0, pool.pop());
+            }
+            const second = liveSchedule.map(rd => rd.map(m => ({ home: m.away, away: m.home })));
+            liveSchedule = liveSchedule.concat(second);
+        }
+
+        function liveSetTab(tab) {
+            liveTab = tab;
+            const tT = document.getElementById('live-tab-table');
+            const rT = document.getElementById('live-tab-results');
+            const sT = document.getElementById('live-subview-table');
+            const sR = document.getElementById('live-subview-results');
+            if (tT) tT.classList.toggle('active', tab === 'table');
+            if (rT) rT.classList.toggle('active', tab === 'results');
+            if (sT) sT.classList.toggle('view-hidden', tab !== 'table');
+            if (sR) sR.classList.toggle('view-hidden', tab !== 'results');
+            if (tab === 'table') liveUpdateStandings(); else liveUpdateResults();
+        }
+
+        function liveUpdateStandings() {
+            const list = document.getElementById('live-standings-list');
+            if (!list) return;
+            list.innerHTML = '';
+            const sorted = [...liveTeams].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+            sorted.forEach((t, i) => {
+                const row = document.createElement('div');
+                row.className = `grid grid-cols-9 gap-1 p-3 border-b border-white/5 text-[10px] items-center ${t.isPlayer ? 'bg-blue-600/10' : ''}`;
+                row.innerHTML = `<div class="col-span-1 font-bold ${i < 1 ? 'text-yellow-400' : 'text-slate-500'}">${i+1}</div><div class="col-span-3 font-bold ${t.isPlayer ? 'text-blue-400' : ''}">${t.name}</div><div class="col-span-1 text-center font-mono text-slate-400">${t.mp}</div><div class="col-span-1 text-center font-mono">${t.w}</div><div class="col-span-1 text-center font-mono">${t.d}</div><div class="col-span-1 text-center font-mono">${t.gf - t.ga}</div><div class="col-span-1 text-center font-black">${t.pts}</div>`;
+                list.appendChild(row);
+            });
+            const r = document.getElementById('live-round-display');
+            if (r) r.innerText = `${liveCurrentRound} / 18`;
+            const pm = liveSchedule[liveCurrentRound - 1]?.find(m => m.home.isPlayer || m.away.isPlayer);
+            if (pm) {
+                const isHome = pm.home.isPlayer;
+                const opp = isHome ? pm.away : pm.home;
+                const lbl = document.getElementById('live-next-opp-label');
+                if (lbl) lbl.innerText = `${isHome ? '(H)' : '(A)'} ${opp.name}`;
+            }
+        }
+
+        function liveUpdateResults() {
+            const list = document.getElementById('live-results-list');
+            if (!list) return;
+            list.innerHTML = '';
+            if (!liveHistory.length) { list.innerHTML = '<div class="text-center py-10 text-slate-500 uppercase text-xs tracking-widest italic">No results yet</div>'; return; }
+            const grouped = {};
+            liveHistory.forEach(m => { if (!grouped[m.round]) grouped[m.round] = []; grouped[m.round].push(m); });
+            Object.keys(grouped).sort((a,b)=>b-a).forEach(r => {
+                list.innerHTML += `<div class="text-[10px] font-black uppercase text-slate-500 mt-4 mb-2 tracking-widest border-b border-slate-800 pb-1 px-1">Round ${r}</div>`;
+                grouped[r].forEach(res => {
+                    list.innerHTML += `<div class="p-3 bg-slate-900 rounded-xl flex justify-between items-center text-[11px] border border-white/5 mb-2 ${res.isPlayerMatch ? 'border-blue-500/30' : ''}"><div class="w-[40%] text-right font-bold truncate ${res.homeTeam.isPlayer?'text-blue-400':''}">${res.homeTeam.name}</div><div class="w-[20%] bg-slate-800 py-1 px-2 rounded-lg text-center font-black italic shadow-inner mx-2">${res.homeGoals}-${res.awayGoals}</div><div class="w-[40%] text-left font-bold truncate ${res.awayTeam.isPlayer?'text-blue-400':''}">${res.awayTeam.name}</div></div>`;
+                });
+            });
+        }
+
+        function liveStartSquadSelection() {
+            // Squad selection skipped in live mode — auto-pick a balanced default XI:
+            // Salah (attack), Mac Allister + Szoboszlai (pass), Van Dijk + TAA (defense)
+            if (liveCurrentRound > totalRounds) return liveShowSeasonEnd();
+            liveSelectedIds = ['s1', 's4', 's5', 's8', 's10'];
+            liveStartMatch();
+        }
+
+        function liveUpdateSquadUI() {
+            const grid = document.getElementById('live-squad-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            SQUAD.forEach(player => {
+                const isSelected = liveSelectedIds.includes(player.id);
+                const col = POS_COLORS[player.pos] || POS_COLORS.defense;
+                const card = document.createElement('div');
+                card.className = `player-card p-3 rounded-xl border-2 flex justify-between items-center cursor-pointer ${isSelected ? 'selected' : ''}`;
+                card.style.borderColor = isSelected ? col.borderSel : col.border;
+                card.style.background  = isSelected ? col.bgSel    : col.bg;
+                card.onclick = () => liveTogglePlayer(player.id);
+                const badgeBg    = isSelected ? col.badge : 'rgba(255,255,255,0.06)';
+                const badgeColor = isSelected ? '#fff'    : 'rgba(255,255,255,0.25)';
+                const nameColor  = isSelected ? '#fff'    : 'rgba(255,255,255,0.55)';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs" style="background:${badgeBg};color:${badgeColor}">${player.pos.slice(0,3).toUpperCase()}</div>
+                        <div>
+                            <div class="text-sm font-bold" style="color:${nameColor}">${player.name}</div>
+                            <div class="text-[10px] uppercase font-bold" style="color:${isSelected ? col.textSel : col.text}">${player.pos}</div>
+                        </div>
+                    </div>
+                    <div class="text-xs font-black uppercase" style="color:${isSelected ? col.textSel : 'rgba(255,255,255,0.2)'}">${isSelected ? '✓ IN' : 'PICK'}</div>
+                `;
+                grid.appendChild(card);
+            });
+            document.getElementById('live-selection-count').innerText = liveSelectedIds.length;
+            const btn = document.getElementById('live-confirm-squad-btn');
+            if (liveSelectedIds.length === 5) btn.classList.remove('opacity-50', 'pointer-events-none');
+            else btn.classList.add('opacity-50', 'pointer-events-none');
+        }
+
+        function liveTogglePlayer(id) {
+            if (liveSelectedIds.includes(id)) liveSelectedIds = liveSelectedIds.filter(p => p !== id);
+            else if (liveSelectedIds.length < 5) liveSelectedIds.push(id);
+            liveUpdateSquadUI();
+        }
+
+        // ─── LIVE MATCH RUNTIME ─────────────────────────────────────────
+        function liveStartMatch() {
+            if (liveSelectedIds.length !== 5) return;
+            const pm = liveSchedule[liveCurrentRound - 1].find(m => m.home.isPlayer || m.away.isPlayer);
+            const homeIsPlayer = pm.home.isPlayer;
+            const opponent = homeIsPlayer ? pm.away : pm.home;
+            const selectedPlayers = SQUAD.filter(p => liveSelectedIds.includes(p.id));
+
+            // Multipliers from squad composition
+            const counts = { attack: 0, pass: 0, defense: 0 };
+            selectedPlayers.forEach(p => { counts[p.pos] = (counts[p.pos] || 0) + 1; });
+            const mult = {
+                attack:  1 + counts.attack  * 0.18,
+                pass:    1 + counts.pass    * 0.13,
+                defense: 1 + counts.defense * 0.18,
+                stamina: 1
+            };
+
+            liveMatch = {
+                startTimeMs: performance.now(),
+                lastTickMs:  performance.now(),
+                remainingMs: LIVE_MATCH_DURATION_MS,
+                hG: 0, aG: 0,
+                homeIsPlayer,
+                opponent,
+                selectedPlayers,
+                mult,
+                shotMeter: 0,
+                pressure:  0,
+                stamina:   100,
+                defenseAlert: null, // { color, remainingMs, totalMs }
+                shootAlert:   null, // { remainingMs, totalMs }
+                gameOver: false,
+                pressureBaseRate: 8 + (opponent.ovr - 45) * 0.18, // % per second; tougher opps press faster
+                shotThreshold: 100,
+                stunUntilMs: 0
+            };
+
+            // Header / score / labels
+            document.getElementById('live-score-h').innerText = '0';
+            document.getElementById('live-score-a').innerText = '0';
+            const homeCrest = document.getElementById('live-home-crest');
+            const homeLbl   = document.getElementById('live-home-label');
+            const awayCrest = document.getElementById('live-away-crest');
+            const awayLbl   = document.getElementById('live-away-label');
+            const homeT = pm.home, awayT = pm.away;
+            homeCrest.innerText = homeT.isPlayer ? 'LFC' : homeT.name.substring(0,3).toUpperCase();
+            homeCrest.style.background = homeT.isPlayer ? '#1d4ed8' : '#475569';
+            homeCrest.style.color = '#fff';
+            homeLbl.innerText = homeT.name;
+            awayCrest.innerText = awayT.isPlayer ? 'LFC' : awayT.name.substring(0,3).toUpperCase();
+            awayCrest.style.background = awayT.isPlayer ? '#1d4ed8' : '#475569';
+            awayCrest.style.color = '#fff';
+            awayLbl.innerText = awayT.name;
+
+            // Build board
+            selectedTile = null;
+            isAnimating = false;
+            createBoard();
+
+            // Hide overlays
+            const ft = document.getElementById('live-fulltime');
+            if (ft) ft.classList.remove('active');
+            const da = document.getElementById('live-defense-alert');
+            if (da) da.classList.remove('active');
+            const sa = document.getElementById('live-shoot-alert');
+            if (sa) sa.classList.remove('active');
+
+            // Reset field visuals
+            liveResetPlayers();
+            const ball = document.getElementById('live-ball');
+            if (ball) { ball.classList.remove('shoot-left','shoot-right'); ball.style.left = '50%'; }
+            const gL = document.getElementById('live-goal-left');
+            const gR = document.getElementById('live-goal-right');
+            if (gL) gL.classList.remove('lit-blue','lit-red');
+            if (gR) gR.classList.remove('lit-blue','lit-red');
+
+            switchView('view-live-match');
+            liveUpdateBars();
+            liveLoop();
+        }
+
+        function liveLoop() {
+            if (!liveMatch || liveMatch.gameOver) return;
+            const now = performance.now();
+            const dt = Math.min(100, now - liveMatch.lastTickMs); // ms; clamp tab-throttling spikes
+            liveMatch.lastTickMs = now;
+
+            // Match clock
+            liveMatch.remainingMs -= dt;
+            if (liveMatch.remainingMs <= 0) {
+                liveMatch.remainingMs = 0;
+                liveEndMatch();
+                return;
+            }
+
+            // Pressure rises (faster when stamina low; paused during stun, alerts)
+            if (now >= liveMatch.stunUntilMs && !liveMatch.defenseAlert && !liveMatch.shootAlert) {
+                const fatigue = 1 + (100 - liveMatch.stamina) / 80; // up to ~2.25× when exhausted
+                liveMatch.pressure += (liveMatch.pressureBaseRate * fatigue) * (dt / 1000);
+                if (liveMatch.pressure >= 100) {
+                    liveMatch.pressure = 100;
+                    liveSpawnDefenseAlert();
+                }
+            }
+
+            // Stamina drains slowly
+            liveMatch.stamina -= 0.55 * (dt / 1000);
+            if (liveMatch.stamina < 0) liveMatch.stamina = 0;
+
+            // Defense alert countdown
+            if (liveMatch.defenseAlert) {
+                liveMatch.defenseAlert.remainingMs -= dt;
+                const fillEl = document.getElementById('live-defense-fill');
+                if (fillEl) fillEl.style.width = Math.max(0, (liveMatch.defenseAlert.remainingMs / liveMatch.defenseAlert.totalMs) * 100) + '%';
+                if (liveMatch.defenseAlert.remainingMs <= 0) {
+                    liveResolveDefenseAlert(false); // failed
+                }
+            }
+
+            // Shoot alert countdown
+            if (liveMatch.shootAlert) {
+                liveMatch.shootAlert.remainingMs -= dt;
+                const fillEl = document.getElementById('live-shoot-fill');
+                if (fillEl) fillEl.style.width = Math.max(0, (liveMatch.shootAlert.remainingMs / liveMatch.shootAlert.totalMs) * 100) + '%';
+                if (liveMatch.shootAlert.remainingMs <= 0) {
+                    liveResolveShootAlert(false); // saved
+                }
+            }
+
+            liveUpdateBars();
+            liveRafId = requestAnimationFrame(liveLoop);
+        }
+
+        function liveSpawnDefenseAlert() {
+            // Pick a defense color randomly weighted: defense most common, pass second
+            const roll = Math.random();
+            const color = roll < 0.6 ? 'defense' : (roll < 0.85 ? 'pass' : 'attack');
+            liveMatch.defenseAlert = { color, remainingMs: 4500, totalMs: 4500 };
+            const overlay = document.getElementById('live-defense-alert');
+            const txt = document.getElementById('live-defense-color');
+            const hint = document.getElementById('live-defense-hint');
+            const labels = { defense:'DEFEND!', pass:'PASS OUT!', attack:'COUNTER!' };
+            const colors = { defense:'#74b9ff', pass:'#55efc4', attack:'#ff6b6b' };
+            const hintHTML = {
+                defense:'match <span class="text-blue-300 font-black">BLUE</span>',
+                pass:   'match <span class="text-green-300 font-black">GREEN</span>',
+                attack: 'match <span class="text-red-300 font-black">RED</span>'
+            };
+            if (txt) {
+                txt.innerText = labels[color] || color.toUpperCase();
+                txt.style.color = colors[color] || '#fff';
+            }
+            if (hint) hint.innerHTML = hintHTML[color] || `match ${color}`;
+            if (overlay) overlay.classList.add('active');
+            // Visual: opp striker advances toward LFC goal, ball follows
+            liveAdvanceStriker('opp');
+            liveBallTo(12);
+            SFX.bomb();
+        }
+
+        function liveResolveDefenseAlert(success) {
+            if (!liveMatch || !liveMatch.defenseAlert) return;
+            const overlay = document.getElementById('live-defense-alert');
+            if (overlay) overlay.classList.remove('active');
+            liveMatch.defenseAlert = null;
+
+            if (success) {
+                liveMatch.pressure = 0;
+                SFX.match(3);
+                liveSpawnFloatText('CLEARED', '#55efc4');
+                liveResetPlayers();
+                liveBallTo(50);
+            } else {
+                // Opponent shot rolls
+                const opp = liveMatch.opponent;
+                const av = Math.floor(Math.random() * (opp.ovr + 10));
+                const dv = Math.floor(Math.random() * (40 + liveMatch.stamina * 0.5));
+                if (av > dv + 12) {
+                    // GOAL CONCEDED
+                    if (liveMatch.homeIsPlayer) liveMatch.aG++; else liveMatch.hG++;
+                    liveTriggerConcede();
+                } else {
+                    liveSpawnFloatText('SAVED', '#74b9ff');
+                    SFX.bounce();
+                    liveResetPlayers();
+                    liveBallTo(50);
+                }
+                liveMatch.pressure = 30; // partial reset, opp keeps some momentum
+                liveMatch.stunUntilMs = performance.now() + 700; // brief stun
+            }
+        }
+
+        function liveSpawnShootAlert() {
+            liveMatch.shootAlert = { remainingMs: 3500, totalMs: 3500 };
+            const overlay = document.getElementById('live-shoot-alert');
+            if (overlay) overlay.classList.add('active');
+            // Visual: LFC striker pushes into OPP box, ball follows
+            liveAdvanceStriker('lfc');
+            liveBallTo(88);
+            SFX.rocket();
+        }
+
+        function liveResolveShootAlert(success) {
+            if (!liveMatch || !liveMatch.shootAlert) return;
+            const overlay = document.getElementById('live-shoot-alert');
+            if (overlay) overlay.classList.remove('active');
+            liveMatch.shootAlert = null;
+
+            if (success) {
+                liveMatch.shotMeter = 0;
+                if (liveMatch.homeIsPlayer) liveMatch.hG++; else liveMatch.aG++;
+                liveTriggerGoal();
+            } else {
+                liveMatch.shotMeter = 35; // partial reset on saved shot
+                liveSpawnFloatText('SAVED!', '#cbd5e1');
+                SFX.bounce();
+                liveResetPlayers();
+                liveBallTo(50);
+            }
+        }
+
+        // ─── FIELD VISUAL HELPERS ───────────────────────────────────────
+        function liveAnimateAttacker() {
+            const dots = document.querySelectorAll('#live-field .player-dot.lfc');
+            if (!dots.length) return;
+            let pick = dots[0], maxBase = -1;
+            dots.forEach(d => { const b = parseFloat(d.dataset.base); if (b > maxBase) { maxBase = b; pick = d; } });
+            pick.classList.remove('kick'); void pick.offsetWidth; pick.classList.add('kick');
+        }
+
+        function liveAnimateDefender() {
+            const dots = document.querySelectorAll('#live-field .player-dot.lfc');
+            if (!dots.length) return;
+            let pick = dots[0], minBase = 999;
+            dots.forEach(d => { const b = parseFloat(d.dataset.base); if (b < minBase) { minBase = b; pick = d; } });
+            pick.classList.remove('block'); void pick.offsetWidth; pick.classList.add('block');
+        }
+
+        function liveAdvanceStriker(side) {
+            const sel = side === 'lfc' ? '#live-field .player-dot.lfc' : '#live-field .player-dot.opp';
+            const dots = document.querySelectorAll(sel);
+            if (!dots.length) return;
+            let pick = dots[0];
+            if (side === 'lfc') {
+                let max = -1;
+                dots.forEach(d => { const b = parseFloat(d.dataset.base); if (b > max) { max = b; pick = d; } });
+                pick.style.left = '78%';
+            } else {
+                let min = 999;
+                dots.forEach(d => { const b = parseFloat(d.dataset.base); if (b < min) { min = b; pick = d; } });
+                pick.style.left = '22%';
+            }
+            pick.style.top = '50%';
+        }
+
+        function liveResetPlayers() {
+            document.querySelectorAll('#live-field .player-dot').forEach(d => {
+                d.style.left = d.dataset.base + '%';
+                d.style.top  = d.dataset.row  + '%';
+            });
+        }
+
+        function liveBallTo(pct) {
+            const ball = document.getElementById('live-ball');
+            if (!ball) return;
+            ball.classList.remove('shoot-left','shoot-right');
+            ball.style.left = pct + '%';
+        }
+
+        function liveUpdateBall() {
+            if (!liveMatch) return;
+            // During alerts the ball is parked at the goal area — don't move it
+            if (liveMatch.shootAlert || liveMatch.defenseAlert) return;
+            const ball = document.getElementById('live-ball');
+            if (!ball) return;
+            const pct = Math.max(15, Math.min(85, 50 + (liveMatch.shotMeter - liveMatch.pressure) * 0.35));
+            ball.style.left = pct + '%';
+        }
+
+        function liveOnGains(gains) {
+            if (!liveMatch || liveMatch.gameOver) return;
+            const m = liveMatch;
+            const mult = m.mult;
+
+            const atkN  = gains.attack  || 0;
+            const passN = gains.pass    || 0;
+            const defN  = gains.defense || 0;
+            const stamN = gains.stamina || 0;
+
+            const atkPts  = atkN  * 14 * mult.attack;
+            const passPts = passN * 6  * mult.pass;
+            const defRel  = defN  * 18 * mult.defense;
+            const stamRec = stamN * 5;
+
+            m.shotMeter += atkPts + passPts;
+            m.pressure  = Math.max(0, m.pressure - defRel);
+            m.stamina   = Math.min(100, m.stamina + stamRec);
+
+            // Player animations on the field
+            if (atkN > 0)  liveAnimateAttacker();
+            if (defN > 0)  liveAnimateDefender();
+
+            // Resolve active alerts FIRST (they take precedence over spawning a new one)
+            if (m.defenseAlert && (gains[m.defenseAlert.color] || 0) >= 1) {
+                liveResolveDefenseAlert(true);
+            }
+            if (m.shootAlert && atkN >= 1) {
+                liveResolveShootAlert(true);
+            }
+
+            // Spawn shoot alert when meter caps (no auto-goal anymore)
+            if (m.shotMeter >= m.shotThreshold && !m.shootAlert && !m.defenseAlert) {
+                m.shotMeter = m.shotThreshold; // visually pinned at 100% during alert
+                liveSpawnShootAlert();
+            }
+
+            // Floating gain feedback (with labels so player learns the system)
+            if (atkPts > 0)  liveSpawnFloatText(`+${Math.round(atkPts)} SHOT`,   '#ff6b6b');
+            if (passPts > 0) liveSpawnFloatText(`+${Math.round(passPts)} SHOT`,  '#55efc4', 22);
+            if (defRel > 0)  liveSpawnFloatText(`-${Math.round(defRel)} PRESS`,  '#74b9ff', 44);
+
+            liveUpdateBars();
+        }
+
+        function liveTriggerGoal() {
+            const view = document.getElementById('view-live-match');
+            if (view) { view.classList.remove('flash-goal'); void view.offsetHeight; view.classList.add('flash-goal'); }
+            // Ball flies into OPP goal (right)
+            const ball = document.getElementById('live-ball');
+            if (ball) { ball.classList.remove('shoot-right'); void ball.offsetWidth; ball.classList.add('shoot-right'); }
+            const goal = document.getElementById('live-goal-right');
+            if (goal) { goal.classList.add('lit-blue'); setTimeout(() => goal.classList.remove('lit-blue'), 1200); }
+            setTimeout(() => {
+                if (ball) { ball.classList.remove('shoot-right'); ball.style.left = '50%'; }
+                liveResetPlayers();
+            }, 700);
+            const sel = liveMatch.selectedPlayers.filter(p => p.pos === 'attack');
+            const scorer = sel[Math.floor(Math.random() * sel.length)]?.name || 'LFC';
+            SFX.goal();
+            // Reuse classic goal celebration overlay
+            const overlay = document.getElementById('goal-celebration');
+            const content = document.getElementById('goal-content');
+            const nameEl  = document.getElementById('goal-scorer-name');
+            const banner  = document.getElementById('goal-banner-text');
+            if (overlay && content && nameEl && banner) {
+                banner.innerText = 'GOAL!';
+                nameEl.innerText = scorer;
+                nameEl.style.backgroundColor = '#1d4ed8';
+                overlay.classList.add('active'); content.classList.remove('scale-50'); content.classList.add('scale-100');
+                setTimeout(() => { overlay.classList.remove('active'); content.classList.add('scale-50'); content.classList.remove('scale-100'); }, 1600);
+            }
+        }
+
+        function liveTriggerConcede() {
+            const view = document.getElementById('view-live-match');
+            if (view) { view.classList.remove('flash-concede'); void view.offsetHeight; view.classList.add('flash-concede'); }
+            // Ball flies into LFC goal (left)
+            const ball = document.getElementById('live-ball');
+            if (ball) { ball.classList.remove('shoot-left'); void ball.offsetWidth; ball.classList.add('shoot-left'); }
+            const goal = document.getElementById('live-goal-left');
+            if (goal) { goal.classList.add('lit-red'); setTimeout(() => goal.classList.remove('lit-red'), 1200); }
+            setTimeout(() => {
+                if (ball) { ball.classList.remove('shoot-left'); ball.style.left = '50%'; }
+                liveResetPlayers();
+            }, 700);
+            SFX.goal();
+            const overlay = document.getElementById('goal-celebration');
+            const content = document.getElementById('goal-content');
+            const nameEl  = document.getElementById('goal-scorer-name');
+            const banner  = document.getElementById('goal-banner-text');
+            if (overlay && content && nameEl && banner) {
+                banner.innerText = 'CONCEDED';
+                nameEl.innerText = liveMatch.opponent.name;
+                nameEl.style.backgroundColor = '#b91c1c';
+                overlay.classList.add('active'); content.classList.remove('scale-50'); content.classList.add('scale-100');
+                setTimeout(() => { overlay.classList.remove('active'); content.classList.add('scale-50'); content.classList.remove('scale-100'); }, 1400);
+            }
+        }
+
+        function liveSpawnFloatText(text, color, offsetX = 0) {
+            if (!boardEl) return;
+            const el = document.createElement('div');
+            el.className = 'live-shot-pop';
+            el.style.color = color;
+            el.style.textShadow = `0 0 8px ${color}`;
+            el.style.left = `calc(50% + ${offsetX}px)`;
+            el.style.top  = '40%';
+            el.style.transform = 'translate(-50%, 0)';
+            el.innerText = text;
+            boardEl.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function liveUpdateBars() {
+            if (!liveMatch) return;
+            const m = liveMatch;
+            // Score (header is always home-on-left, away-on-right)
+            document.getElementById('live-score-h').innerText = m.hG;
+            document.getElementById('live-score-a').innerText = m.aG;
+            // Clock
+            const secLeft = Math.ceil(m.remainingMs / 1000);
+            const minute = 90 - secLeft;
+            document.getElementById('live-clock').innerText = `${minute}'`;
+            const fillPct = (m.remainingMs / LIVE_MATCH_DURATION_MS) * 100;
+            const cf = document.getElementById('live-clock-fill');
+            if (cf) cf.style.width = fillPct + '%';
+            // Shot
+            const sPct = Math.min(100, (m.shotMeter / m.shotThreshold) * 100);
+            document.getElementById('live-shot-pct').innerText  = Math.round(sPct) + '%';
+            document.getElementById('live-shot-fill').style.width = sPct + '%';
+            // Pressure
+            document.getElementById('live-pressure-pct').innerText  = Math.round(m.pressure) + '%';
+            document.getElementById('live-pressure-fill').style.width = m.pressure + '%';
+            // Stamina
+            document.getElementById('live-stamina-pct').innerText  = Math.round(m.stamina) + '%';
+            document.getElementById('live-stamina-fill').style.width = m.stamina + '%';
+            // Ball position follows shot vs pressure delta
+            liveUpdateBall();
+        }
+
+        function liveEndMatch() {
+            if (!liveMatch) return;
+            liveMatch.gameOver = true;
+            if (liveRafId) { cancelAnimationFrame(liveRafId); liveRafId = null; }
+            // Hide any pending defense alert
+            const da = document.getElementById('live-defense-alert');
+            if (da) da.classList.remove('active');
+
+            const ft = document.getElementById('live-fulltime');
+            const scoreEl = document.getElementById('live-fulltime-score');
+            const msgEl   = document.getElementById('live-fulltime-msg');
+            const m = liveMatch;
+            if (scoreEl) scoreEl.innerText = `${m.hG} - ${m.aG}`;
+            const lfcGoals = m.homeIsPlayer ? m.hG : m.aG;
+            const oppGoals = m.homeIsPlayer ? m.aG : m.hG;
+            let msg = 'Draw';
+            if (lfcGoals > oppGoals) msg = 'WIN';
+            else if (lfcGoals < oppGoals) msg = 'LOSS';
+            if (msgEl) {
+                msgEl.innerText = msg;
+                msgEl.style.color = msg === 'WIN' ? '#60a5fa' : msg === 'LOSS' ? '#f87171' : '#cbd5e1';
+            }
+            if (ft) ft.classList.add('active');
+        }
+
+        function liveFinishMatch() {
+            const m = liveMatch;
+            if (!m) return;
+            const pm = liveSchedule[liveCurrentRound - 1].find(x => x.home.isPlayer || x.away.isPlayer);
+            const homeT = pm.home, awayT = pm.away;
+            updateTeamStats(homeT, m.hG, m.aG);
+            updateTeamStats(awayT, m.aG, m.hG);
+            liveHistory.push({ round: liveCurrentRound, homeTeam:{...homeT}, awayTeam:{...awayT}, homeGoals:m.hG, awayGoals:m.aG, isPlayerMatch:true });
+            // Sim the rest of the round (other matches)
+            liveSchedule[liveCurrentRound - 1].forEach(match => {
+                if (!match.home.isPlayer && !match.away.isPlayer) {
+                    const h = Math.floor(Math.random() * (match.home.ovr / 15));
+                    const a = Math.floor(Math.random() * (match.away.ovr / 15));
+                    updateTeamStats(match.home, h, a);
+                    updateTeamStats(match.away, a, h);
+                    liveHistory.push({ round: liveCurrentRound, homeTeam:{...match.home}, awayTeam:{...match.away}, homeGoals:h, awayGoals:a, isPlayerMatch:false });
+                }
+            });
+            liveCurrentRound++;
+            liveMatch = null;
+            const ft = document.getElementById('live-fulltime');
+            if (ft) ft.classList.remove('active');
+            if (liveCurrentRound > totalRounds) { liveShowSeasonEnd(); return; }
+            liveUpdateStandings();
+            switchView('view-live-standings');
+        }
+
+        function liveQuitMatch() {
+            if (!liveMatch) return;
+            // Forfeit: opponent gets 3-0 by default
+            liveMatch.gameOver = true;
+            if (liveRafId) { cancelAnimationFrame(liveRafId); liveRafId = null; }
+            if (liveMatch.homeIsPlayer) { liveMatch.hG = 0; liveMatch.aG = Math.max(liveMatch.aG, 3); }
+            else { liveMatch.aG = 0; liveMatch.hG = Math.max(liveMatch.hG, 3); }
+            liveEndMatch();
+        }
+
+        function liveShowSeasonEnd() {
+            const sorted = [...liveTeams].sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga));
+            const pos = sorted.findIndex(t => t.isPlayer) + 1;
+            const lfc = liveTeams.find(t => t.isPlayer);
+            const suffix = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th';
+            const trophy = pos === 1 ? '🏆' : pos <= 4 ? '🎉' : pos <= 6 ? '👍' : '😔';
+            const msg = pos === 1 ? 'Champions!' : pos <= 4 ? 'Champions League!' : pos <= 6 ? 'Europa League!' : 'Better luck next season.';
+            document.getElementById('live-season-position').innerText = `${pos}${suffix} Place`;
+            document.getElementById('live-season-trophy').innerText = trophy;
+            document.getElementById('live-season-msg').innerText = msg;
+            document.getElementById('live-season-stats').innerText = `W${lfc.w} D${lfc.d} L${lfc.l}  •  ${lfc.gf}-${lfc.ga}  •  ${lfc.pts} pts`;
+            switchView('view-live-season-end');
+        }
+
+        // Extend switchView to know about live views (without breaking classic)
+        switchView = function(viewId) {
+            const ALL = ['view-mode-select','view-standings','view-puzzle','view-sim','view-squad','view-season-end',
+                         'view-live-standings','view-live-squad','view-live-match','view-live-season-end'];
+            ALL.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('view-hidden'); });
+            const target = document.getElementById(viewId);
+            if (target) target.classList.remove('view-hidden');
+            gamePhase = (viewId === 'view-standings' || viewId === 'view-live-standings') ? 'standings'
+                      : (viewId === 'view-sim' || viewId === 'view-live-match' ? 'sim' : 'prep');
+            if (viewId === 'view-standings') setStandingsTab(standingsTab);
+            if (viewId === 'view-live-standings') liveSetTab(liveTab);
+        };
+
+        // Entry: show mode-select, do nothing else until user picks
+        window.onload = () => {
+            const ms = document.getElementById('view-mode-select');
+            if (ms) ms.classList.remove('view-hidden');
+        };
     </script>
 
 <!-- FIREBASE TRACKING -->
