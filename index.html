@@ -370,7 +370,7 @@
                 <p class="text-sm text-cyber-muted font-mono">
                     &copy; <span id="year"></span> // PROTOTYPE_DIRECTORY
                 </p>
-                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-05-07 11:47:25">v2026-05-07 11:47:25</p>
+                <p class="text-xs text-cyber-border font-mono mt-1" id="build-version" data-built="2026-05-07 12:13:12">v2026-05-07 12:13:12</p>
             </div>
             <div class="flex gap-6 text-sm font-mono text-cyber-muted">
                 <a href="https://www.linkedin.com/in/mladendulanovic/" target="_blank" rel="noopener noreferrer" class="hover:text-cyber-primary transition-colors hover:underline decoration-cyber-primary underline-offset-4">LINKEDIN</a>
@@ -807,16 +807,18 @@
                 emptyState.classList.add('hidden');
             }
 
+            const CATEGORY_ICONS = {
+                'tool':   'icons/tool.png',
+                'puzzle': 'icons/puzzle.png',
+                'board':  'icons/board.png',
+                'action': 'icons/action.png',
+                'sports': 'icons/sports.png',
+                'arcade': 'icons/arcade.png',
+                'party':  'icons/party.png',
+            };
             grid.innerHTML = filtered.map(project => {
-                let iconName = 'gamepad-2';
                 const catLower = (project.category || '').toLowerCase();
-                if (catLower === 'tool')    iconName = 'cpu';
-                if (catLower === 'puzzle')  iconName = 'box-select';
-                if (catLower === 'board')   iconName = 'dice-5';
-                if (catLower === 'action')  iconName = 'crosshair';
-                if (catLower === 'sports')  iconName = 'trophy';
-                if (catLower === 'arcade')  iconName = 'zap';
-                if (catLower === 'party')   iconName = 'users';
+                const iconSrc = CATEGORY_ICONS[catLower] || 'icons/puzzle.png';
 
                 // Get Real Stats or Default to 0
                 const stats = gameStats[project.id] || { plays: 0, timePlayed: 0 };
@@ -861,7 +863,7 @@
                     <div class="p-6 pb-4 border-b border-cyber-border/50 bg-gradient-to-b from-white/5 to-transparent">
                         <div class="flex justify-between items-start mb-4">
                             <div class="p-3 rounded-sm ${iconContainerClass} transition-all duration-300">
-                                <i data-lucide="${iconName}" class="w-8 h-8"></i>
+                                <img src="${iconSrc}" alt="" class="w-8 h-8 object-contain">
                             </div>
                             <div class="flex flex-col items-end">
                                 <span class="font-mono text-xs text-cyber-muted opacity-50">#${project.id.split('-')[0].toUpperCase()}</span>
