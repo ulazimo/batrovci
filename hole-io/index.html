@@ -277,18 +277,18 @@
         // Missing files transparently fall back to the hand-drawn shapes below.
         const SPRITE_MANIFEST = {
             person:     ['person-1.png', 'person-2.png', 'person-3.png'],
-            cone:       ['cone.png'],
-            hydrant:    ['hydrant.png'],
-            tree:       ['tree-1.png', 'tree-2.png'],
-            bench:      ['bench.png'],
-            mailbox:    ['mailbox.png'],
+            cone:       ['cone-1.png', 'cone-2.png', 'cone-3.png'],
+            hydrant:    ['hydrant-1.png', 'hydrant-2.png', 'hydrant-3.png'],
+            tree:       ['tree-1.png', 'tree-2.png', 'tree-3.png'],
+            bench:      ['bench-1.png', 'bench-2.png', 'bench-3.png'],
+            mailbox:    ['mailbox-1.png', 'mailbox-2.png', 'mailbox-3.png'],
             car:        ['car-1.png', 'car-2.png', 'car-3.png'],
-            truck:      ['truck.png'],
-            bus:        ['bus.png'],
-            house:      ['house-1.png', 'house-2.png'],
-            shop:       ['shop.png'],
-            building:   ['building-1.png', 'building-2.png'],
-            skyscraper: ['skyscraper.png'],
+            truck:      ['truck-1.png', 'truck-2.png', 'truck-3.png'],
+            bus:        ['bus-1.png', 'bus-2.png', 'bus-3.png'],
+            house:      ['house-1.png', 'house-2.png', 'house-3.png'],
+            shop:       ['shop-1.png', 'shop-2.png', 'shop-3.png'],
+            building:   ['building-1.png', 'building-2.png', 'building-3.png'],
+            skyscraper: ['skyscraper-1.png', 'skyscraper-2.png', 'skyscraper-3.png'],
         };
         const spriteCache = {};
         for (const [type, files] of Object.entries(SPRITE_MANIFEST)) {
@@ -298,6 +298,9 @@
                 return img;
             });
         }
+        const groundTexture = new Image();
+        groundTexture.src = 'assets/map.png';
+        groundTexture.onload = () => { renderMap(); needsRedraw = true; };
 
         // ---- Physics world ----
         const engine = Engine.create({ enableSleeping: true });
@@ -376,27 +379,18 @@
             mc.fillStyle = '#3c4655';
             mc.fillRect(0, 0, WORLD_W, WORLD_H);
 
+            if (groundTexture.complete && groundTexture.naturalWidth > 0) {
+                mc.drawImage(groundTexture, 0, 0, WORLD_W, WORLD_H);
+            }
+
             const vignette = mc.createRadialGradient(
-                WORLD_W/2, WORLD_H/2, WORLD_W * 0.15,
-                WORLD_W/2, WORLD_H/2, WORLD_W * 0.75
+                WORLD_W/2, WORLD_H/2, WORLD_W * 0.25,
+                WORLD_W/2, WORLD_H/2, WORLD_W * 0.7
             );
-            vignette.addColorStop(0, 'rgba(95,108,124,0.35)');
-            vignette.addColorStop(1, 'rgba(18,22,30,0.55)');
+            vignette.addColorStop(0, 'rgba(0,0,0,0)');
+            vignette.addColorStop(1, 'rgba(0,0,0,0.45)');
             mc.fillStyle = vignette;
             mc.fillRect(0, 0, WORLD_W, WORLD_H);
-
-            const STONE = 34;
-            mc.fillStyle = '#b8bec8';
-            mc.fillRect(0, 0, WORLD_W, STONE);
-            mc.fillRect(0, WORLD_H - STONE, WORLD_W, STONE);
-            mc.fillRect(0, 0, STONE, WORLD_H);
-            mc.fillRect(WORLD_W - STONE, 0, STONE, WORLD_H);
-
-            mc.fillStyle = 'rgba(0,0,0,0.28)';
-            mc.fillRect(0, STONE, WORLD_W, 3);
-            mc.fillRect(0, WORLD_H - STONE - 3, WORLD_W, 3);
-            mc.fillRect(STONE, 0, 3, WORLD_H);
-            mc.fillRect(WORLD_W - STONE - 3, 0, 3, WORLD_H);
         }
 
         // ---- Object generation ----
@@ -408,50 +402,48 @@
             }
             objects = [];
             const margin = 120;
+            const placed = [];
             for (let ti = 0; ti < TIERS.length; ti++) {
                 const tier = TIERS[ti];
-                const clusters = Math.max(4, Math.round(tier.count / 18));
-                const perCluster = Math.ceil(tier.count / clusters);
-                const spacing = tier.maxSize * 2.2 + 4;
-                const cols = Math.ceil(Math.sqrt(perCluster));
-                const rows = Math.ceil(perCluster / cols);
-                const clusterHalfW = (cols * spacing) / 2;
-                const clusterHalfH = (rows * spacing) / 2;
-                let placed = 0;
-                for (let c = 0; c < clusters && placed < tier.count; c++) {
-                    const cx = randomInRange(margin + clusterHalfW, WORLD_W - margin - clusterHalfW);
-                    const cy = randomInRange(margin + clusterHalfH, WORLD_H - margin - clusterHalfH);
-                    for (let i = 0; i < perCluster && placed < tier.count; i++) {
-                        const col = i % cols;
-                        const row = Math.floor(i / cols);
-                        const x = cx + (col - (cols - 1) / 2) * spacing + randomInRange(-3, 3);
-                        const y = cy + (row - (rows - 1) / 2) * spacing + randomInRange(-3, 3);
-                        const size = randomInRange(tier.minSize, tier.maxSize);
-                        const type = tier.types[Math.floor(Math.random() * tier.types.length)];
-                        const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
-                        const sprites = spriteCache[type];
-                        const img = sprites ? sprites[Math.floor(Math.random() * sprites.length)] : null;
-                        const isBig = ti >= 3;
-                        const body = Bodies.circle(x, y, size, {
-                            mass: tier.mass,
-                            frictionAir: 0.04,
-                            friction: 0.3,
-                            restitution: 0.2,
-                            angle: isBig ? 0 : Math.random() * Math.PI * 2,
-                            inertia: isBig ? Infinity : undefined,
-                            isStatic: isBig,
-                            sleepThreshold: 30,
-                        });
-                        World.add(world, body);
-                        objects.push({
-                            x, y, size, tier: ti, mass: tier.mass,
-                            type, color, img,
-                            body,
-                            consumed: false, beingConsumed: false, consumeProgress: 0,
-                            rotation: body.angle,
-                        });
-                        placed++;
+                for (let i = 0; i < tier.count; i++) {
+                    const size = randomInRange(tier.minSize, tier.maxSize);
+                    let x = 0, y = 0, ok = false;
+                    for (let attempt = 0; attempt < 30; attempt++) {
+                        x = randomInRange(margin + size, WORLD_W - margin - size);
+                        y = randomInRange(margin + size, WORLD_H - margin - size);
+                        ok = true;
+                        for (const p of placed) {
+                            const dx = p.x - x, dy = p.y - y;
+                            const minDist = p.size + size + 4;
+                            if (dx*dx + dy*dy < minDist * minDist) { ok = false; break; }
+                        }
+                        if (ok) break;
                     }
+                    if (!ok) continue;
+                    placed.push({ x, y, size });
+                    const type = tier.types[Math.floor(Math.random() * tier.types.length)];
+                    const color = tier.colors[Math.floor(Math.random() * tier.colors.length)];
+                    const sprites = spriteCache[type];
+                    const img = sprites ? sprites[Math.floor(Math.random() * sprites.length)] : null;
+                    const isBig = ti >= 3;
+                    const body = Bodies.circle(x, y, size, {
+                        mass: tier.mass,
+                        frictionAir: 0.04,
+                        friction: 0.3,
+                        restitution: 0.2,
+                        angle: isBig ? 0 : Math.random() * Math.PI * 2,
+                        inertia: isBig ? Infinity : undefined,
+                        isStatic: isBig,
+                        sleepThreshold: 30,
+                    });
+                    World.add(world, body);
+                    objects.push({
+                        x, y, size, tier: ti, mass: tier.mass,
+                        type, color, img,
+                        body,
+                        consumed: false, beingConsumed: false, consumeProgress: 0,
+                        rotation: body.angle,
+                    });
                 }
             }
         }
@@ -817,7 +809,7 @@
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#5cb85a';
+            ctx.fillStyle = '#1a1d24';
             ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
             let shakeX = 0, shakeY = 0;
