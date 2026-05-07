@@ -526,7 +526,7 @@ class Game {
                 inner.style.borderBottom = hasBottom ? 'none' : '1px solid rgba(0,0,0,0.3)';
                 inner.style.borderRight = hasRight ? 'none' : '1px solid rgba(0,0,0,0.3)';
 
-                cell.addEventListener('mousedown', (e) => this.handleBlockClick(block.id, e.clientX, e.clientY));
+                cell.addEventListener('pointerdown', (e) => this.handleBlockClick(block.id, e.clientX, e.clientY));
 
                 if (pt.r === 0 && pt.c === 0) {
                     const arrow = document.createElement('div');
