@@ -10,7 +10,7 @@
         gtag('js', new Date());
         gtag('config', 'G-1X91H99N2G');
     </script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Soccer Match-3: Liverpool Squad Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -413,10 +413,69 @@
         .meter-tile.pass    { background: #55efc4; box-shadow: 0 0 4px #55efc4; }
         .meter-tile.defense { background: #74b9ff; box-shadow: 0 0 4px #74b9ff; }
         .meter-tile.stamina { background: #ffeaa7; box-shadow: 0 0 4px #ffeaa7; }
+
+        /* ── SAFE AREA + MOBILE OPTIMIZATIONS ─────────────────────────── */
+
+        /* Back button: stays below notch and Dynamic Island */
+        #back-btn {
+            top: max(12px, env(safe-area-inset-top)) !important;
+            left: max(12px, env(safe-area-inset-left)) !important;
+        }
+
+        /* Main shell: respect notch + home indicator on all views */
+        .app-view {
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+
+        /* iOS momentum scrolling for all list/log areas */
+        #standings-list, #results-list, #sim-logs,
+        #live-standings-list, #live-results-list,
+        #squad-grid, #live-squad-grid {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        /* GPU hint for frequently animated tiles */
+        .tile { will-change: transform; }
+
+        /* ── Compact layout: screens ≤ 720px tall (iPhone SE, small Android) ── */
+        @media (max-height: 720px) {
+            .app-view {
+                padding-top: max(0.5rem, env(safe-area-inset-top));
+                padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            /* Live match: tighten all vertical spacing */
+            #live-scorebox      { padding: 6px 8px !important; margin-bottom: 8px !important; }
+            #live-clockbar      { margin-bottom: 8px !important; }
+            #live-field         { height: 48px !important; margin-bottom: 8px !important; }
+            #live-meters-grid   { margin-bottom: 8px !important; }
+            #live-board         { margin-bottom: 8px !important; }
+            #live-stamina-box   { padding: 6px 8px !important; margin-bottom: 6px !important; }
+
+            /* Puzzle: tighten header + stat cards + board */
+            #puzzle-header          { margin-bottom: 8px !important; }
+            #prep-player-stats      { gap: 4px !important; margin-bottom: 8px !important; }
+            #prep-player-stats .stats-card { padding: 5px 6px !important; }
+            #prep-player-stats .progress-bar { margin-top: 2px !important; }
+            #board                  { margin-bottom: 6px !important; }
+            #combo-container        { margin-bottom: 6px !important; }
+        }
+
+        /* ── Extra compact: screens ≤ 640px tall (iPhone SE, narrow Android) ── */
+        @media (max-height: 640px) {
+            #live-field { height: 38px !important; }
+            #live-scorebox .w-9 { width: 2rem !important; height: 2rem !important; }
+            #prep-player-stats .stats-card { padding: 4px 5px !important; }
+            #prep-player-stats .text-\[9px\] { font-size: 8px !important; }
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-<a href="../index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">← All Games</a>
+<body class="flex items-center justify-center min-h-dvh">
+<a id="back-btn" href="../index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">← All Games</a>
 
     <!-- GOAL CELEBRATION OVERLAY -->
     <div id="goal-celebration" class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -504,7 +563,7 @@
 
     <!-- PUZZLE VIEW -->
     <div id="view-puzzle" class="app-view view-hidden relative">
-        <div class="flex justify-between items-start mb-4 shrink-0">
+        <div id="puzzle-header" class="flex justify-between items-start mb-4 shrink-0">
             <div>
                 <h1 class="text-2xl font-bold uppercase tracking-tighter italic leading-none text-red-500">Match Prep</h1>
                 <p class="text-xs text-slate-400 mt-1 uppercase tracking-wider">Moves: <span id="moves-count" class="text-white font-bold text-lg">15</span></p>
@@ -623,7 +682,7 @@
     <!-- LIVE MATCH -->
     <div id="view-live-match" class="app-view view-hidden relative">
         <!-- Score header -->
-        <div class="flex justify-between items-center mb-3 shrink-0 bg-slate-900/80 p-2 rounded-2xl border border-white/5">
+        <div id="live-scorebox" class="flex justify-between items-center mb-3 shrink-0 bg-slate-900/80 p-2 rounded-2xl border border-white/5">
             <div id="live-home" class="text-center w-16">
                 <div id="live-home-crest" class="w-9 h-9 mx-auto rounded-xl flex items-center justify-center font-black shadow-lg text-[10px]">LFC</div>
                 <div id="live-home-label" class="text-[7px] font-bold text-slate-400 uppercase mt-0.5 truncate">Home</div>
@@ -641,7 +700,7 @@
         </div>
 
         <!-- Match clock progress -->
-        <div class="h-1 rounded-full overflow-hidden bg-slate-800 mb-3 shrink-0">
+        <div id="live-clockbar" class="h-1 rounded-full overflow-hidden bg-slate-800 mb-3 shrink-0">
             <div id="live-clock-fill" class="h-full bg-blue-500 transition-none" style="width:100%"></div>
         </div>
 
@@ -666,7 +725,7 @@
         </div>
 
         <!-- Shot meter (LFC) + Pressure (OPP) — color dots show which tiles feed each -->
-        <div class="grid grid-cols-2 gap-2 mb-3 shrink-0">
+        <div id="live-meters-grid" class="grid grid-cols-2 gap-2 mb-3 shrink-0">
             <div class="bg-slate-900 border border-blue-500/20 rounded-xl p-2">
                 <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
                     <span class="text-blue-400"><span class="meter-tile attack"></span><span class="meter-tile pass"></span>Shot</span><span id="live-shot-pct" class="text-slate-500">0%</span>
@@ -689,7 +748,7 @@
         <div id="live-board" class="grid-container mb-3"></div>
 
         <!-- Stamina -->
-        <div class="bg-slate-900 border border-yellow-500/20 rounded-xl p-2 mb-3 shrink-0">
+        <div id="live-stamina-box" class="bg-slate-900 border border-yellow-500/20 rounded-xl p-2 mb-3 shrink-0">
             <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
                 <span class="text-yellow-400"><span class="meter-tile stamina"></span>Stamina</span><span id="live-stamina-pct" class="text-slate-500">100%</span>
             </div>
