@@ -56,14 +56,8 @@
         .bg-pass     { background-color: #16a34a; background-image: url('assets/tile-pass.png');    }
         .bg-stamina  { background-color: #d97706; background-image: url('assets/tile-stamina.png'); }
 
-        /* Boosters keep the colored badge but drop the sprite so the rocket/star emoji reads clearly */
-        .booster-rocket .tile-inner,
-        .booster-bomb   .tile-inner {
-            background-image: none;
-            font-size: 1.6em;
-            line-height: 1;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
+        .booster-rocket .tile-inner { background-color: #7c3aed; background-image: url('assets/tile-booster-rocket.png'); }
+        .booster-bomb   .tile-inner { background-color: #7c3aed; background-image: url('assets/tile-booster-bomb.png');   }
 
         .booster-rocket::after {
             content: '';
@@ -260,6 +254,7 @@
         }
         #live-defense-alert.active { opacity: 1 !important; }
         #live-defense-alert.active > div { animation: defense-pulse 0.6s ease-in-out infinite; }
+        #live-defense-fill, #live-shoot-fill { transition: width 0.35s ease-out; }
         #live-fulltime.active { opacity: 1 !important; pointer-events: auto !important; }
 
         @keyframes live-goal-flash {
@@ -847,11 +842,11 @@
                 <div class="bg-slate-800/40 p-4 rounded-2xl border border-white/5 space-y-3">
                     <p class="text-xs font-black uppercase text-blue-400 tracking-widest">Special Balls</p>
                     <div class="flex gap-3 items-center">
-                        <div class="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center border border-white/20 text-xs shadow-inner">🚀</div>
+                        <div class="w-8 h-8 rounded-full shrink-0 border border-white/15 shadow-lg" style="background:#7c3aed url('assets/tile-booster-rocket.png') center/108%"></div>
                         <div class="flex-1"><p class="text-white font-bold text-[11px] uppercase">Rocket Ball</p><p class="text-[10px] text-slate-400">Match 4 to clear row/column.</p></div>
                     </div>
                     <div class="flex gap-3 items-center pt-1">
-                        <div class="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center border border-yellow-400 text-xs shadow-lg shadow-yellow-900/20">⭐</div>
+                        <div class="w-8 h-8 rounded-full shrink-0 border border-white/15 shadow-lg" style="background:#7c3aed url('assets/tile-booster-bomb.png') center/108%"></div>
                         <div class="flex-1"><p class="text-yellow-400 font-bold text-[11px] uppercase">Star Boost</p><p class="text-[10px] text-slate-400">Match 5+ to clear ALL tiles of that color.</p></div>
                     </div>
                 </div>
@@ -1357,8 +1352,6 @@
             el.className = "tile" + (booster ? " booster-" + booster : "");
             const inner = document.createElement('div');
             inner.className = "tile-inner bg-" + type;
-            if (booster === 'rocket') inner.innerHTML = '🚀';
-            if (booster === 'bomb') inner.innerHTML = '⭐';
             el.appendChild(inner);
             el.style.touchAction = 'none'; // prevent scroll during swipe
             initTilePointer(el);
@@ -1422,6 +1415,7 @@
                         await swapTiles(r1, c1, r2, c2); // revert
                     }
                 } finally { isAnimating = false; }
+                liveOnPlayerSwap();
                 return;
             }
             // CLASSIC
@@ -1833,9 +1827,11 @@
         let liveSelectedIds = [];
         let liveTab = 'table';
         let liveMatch = null; // active match runtime state
-        let liveRafId = null;
 
-        const LIVE_MATCH_DURATION_MS = 90 * 1000; // 90s = 90 in-game minutes
+        const TOTAL_MATCH_MINUTES = 90;        // in-game match length
+        const MINUTES_PER_MOVE    = 3;         // each swap (matched or reverted) advances the clock 3 minutes
+        const DEFENSE_ALERT_MOVES = 3;         // moves you get to match the demanded color before goal roll
+        const SHOOT_ALERT_MOVES   = 2;         // moves you get to match attack and convert the shot
 
         // ─── MATCH DRAMATIC STRUCTURE ───────────────────────────────────
         // Each match runs through 4 acts that re-pace pressure, stamina drain
@@ -2010,9 +2006,7 @@
             };
 
             liveMatch = {
-                startTimeMs: performance.now(),
-                lastTickMs:  performance.now(),
-                remainingMs: LIVE_MATCH_DURATION_MS,
+                currentMinute: 0,
                 hG: 0, aG: 0,
                 homeIsPlayer,
                 opponent,
@@ -2021,14 +2015,12 @@
                 shotMeter: 0,
                 pressure:  0,
                 stamina:   100,
-                defenseAlert: null, // { color, remainingMs, totalMs }
-                shootAlert:   null, // { remainingMs, totalMs }
+                defenseAlert: null, // { color, movesLeft }
+                shootAlert:   null, // { movesLeft }
                 gameOver: false,
-                pressureBaseRate: 8 + (opponent.ovr - 45) * 0.18, // % per second; tougher opps press faster
+                pressurePerMoveBase: 18 + (opponent.ovr - 45) * 0.4, // % per swap; tougher opps press harder
                 shotThreshold: 100,
-                stunUntilMs: 0,
-                currentAct: 0,                  // 0 → first loop tick fires OPENING transition banner
-                currentActObj: liveGetAct(0)    // cached so liveOnGains/liveUpdateBars don't recompute
+                currentActObj: null,
             };
 
             // Header / score / labels
@@ -2071,76 +2063,62 @@
             if (gR) gR.classList.remove('lit-blue','lit-red');
 
             switchView('view-live-match');
+            const openAct = liveGetAct(0);
+            liveMatch.currentActObj = openAct;
+            liveShowActTransition(openAct);
             liveUpdateBars();
-            liveLoop();
         }
 
-        function liveLoop() {
+        function liveOnPlayerSwap() {
             if (!liveMatch || liveMatch.gameOver) return;
-            const now = performance.now();
-            const dt = Math.min(100, now - liveMatch.lastTickMs); // ms; clamp tab-throttling spikes
-            liveMatch.lastTickMs = now;
 
-            // Match clock
-            liveMatch.remainingMs -= dt;
-            if (liveMatch.remainingMs <= 0) {
-                liveMatch.remainingMs = 0;
+            liveMatch.currentMinute += MINUTES_PER_MOVE;
+            liveSpawnMinuteAdvance(MINUTES_PER_MOVE);
+            if (liveMatch.currentMinute >= TOTAL_MATCH_MINUTES) {
+                liveMatch.currentMinute = TOTAL_MATCH_MINUTES;
+                liveUpdateBars();
                 liveEndMatch();
                 return;
             }
 
-            // Determine current dramatic act based on in-game minute; fire transition banner on change
-            const minuteNow = 90 - Math.ceil(liveMatch.remainingMs / 1000);
-            const act = liveGetAct(minuteNow);
-            liveMatch.currentActObj = act;
-            if (act.id !== liveMatch.currentAct) {
-                liveMatch.currentAct = act.id;
+            const act = liveGetAct(liveMatch.currentMinute);
+            if (liveMatch.currentActObj.id !== act.id) {
+                liveMatch.currentActObj = act;
                 liveShowActTransition(act);
             }
 
-            // Pressure rises (faster when stamina low; paused during stun, alerts); scaled per act
-            if (now >= liveMatch.stunUntilMs && !liveMatch.defenseAlert && !liveMatch.shootAlert) {
-                const fatigue = 1 + (100 - liveMatch.stamina) / 80; // up to ~2.25× when exhausted
-                liveMatch.pressure += (liveMatch.pressureBaseRate * fatigue * act.pressureMult) * (dt / 1000);
+            liveMatch.stamina = Math.max(0, liveMatch.stamina - 1.7 * act.staminaMult);
+
+            const tickAlert = (alert, resolve) => {
+                if (!alert) return false;
+                if (--alert.movesLeft <= 0) resolve(false);
+                return true;
+            };
+            if (!tickAlert(liveMatch.defenseAlert, liveResolveDefenseAlert)
+             && !tickAlert(liveMatch.shootAlert,   liveResolveShootAlert)) {
+                const fatigue = Math.min(1.6, 1 + (100 - liveMatch.stamina) / 100);
+                liveMatch.pressure += liveMatch.pressurePerMoveBase * fatigue * act.pressureMult;
                 if (liveMatch.pressure >= 100) {
                     liveMatch.pressure = 100;
                     liveSpawnDefenseAlert();
                 }
             }
 
-            // Stamina drains slowly; later acts burn it down faster
-            liveMatch.stamina -= 0.55 * act.staminaMult * (dt / 1000);
-            if (liveMatch.stamina < 0) liveMatch.stamina = 0;
-
-            // Defense alert countdown
-            if (liveMatch.defenseAlert) {
-                liveMatch.defenseAlert.remainingMs -= dt;
-                const fillEl = document.getElementById('live-defense-fill');
-                if (fillEl) fillEl.style.width = Math.max(0, (liveMatch.defenseAlert.remainingMs / liveMatch.defenseAlert.totalMs) * 100) + '%';
-                if (liveMatch.defenseAlert.remainingMs <= 0) {
-                    liveResolveDefenseAlert(false); // failed
-                }
-            }
-
-            // Shoot alert countdown
-            if (liveMatch.shootAlert) {
-                liveMatch.shootAlert.remainingMs -= dt;
-                const fillEl = document.getElementById('live-shoot-fill');
-                if (fillEl) fillEl.style.width = Math.max(0, (liveMatch.shootAlert.remainingMs / liveMatch.shootAlert.totalMs) * 100) + '%';
-                if (liveMatch.shootAlert.remainingMs <= 0) {
-                    liveResolveShootAlert(false); // saved
-                }
-            }
-
             liveUpdateBars();
-            liveRafId = requestAnimationFrame(liveLoop);
+        }
+
+        function liveSpawnMinuteAdvance(amount) {
+            const clockHost = document.getElementById('live-clock')?.parentElement;
+            if (!clockHost) return;
+            clockHost.style.position = 'relative';
+            liveSpawnFloatText(`+${amount}'`, '#94a3b8', 0, clockHost, '-6px');
         }
 
         function liveSpawnDefenseAlert() {
             // Pick a defense color randomly weighted: defense most common, pass second
             const roll = Math.random();
             const color = roll < 0.6 ? 'defense' : (roll < 0.85 ? 'pass' : 'attack');
-            liveMatch.defenseAlert = { color, remainingMs: 4500, totalMs: 4500 };
+            liveMatch.defenseAlert = { color, movesLeft: DEFENSE_ALERT_MOVES };
             const overlay = document.getElementById('live-defense-alert');
             const txt = document.getElementById('live-defense-color');
             const hint = document.getElementById('live-defense-hint');
@@ -2191,12 +2169,11 @@
                     liveBallTo(50);
                 }
                 liveMatch.pressure = 30; // partial reset, opp keeps some momentum
-                liveMatch.stunUntilMs = performance.now() + 700; // brief stun
             }
         }
 
         function liveSpawnShootAlert() {
-            liveMatch.shootAlert = { remainingMs: 3500, totalMs: 3500 };
+            liveMatch.shootAlert = { movesLeft: SHOOT_ALERT_MOVES };
             const overlay = document.getElementById('live-shoot-alert');
             if (overlay) overlay.classList.add('active');
             // Visual: LFC striker pushes into OPP box, ball follows
@@ -2384,17 +2361,17 @@
             }
         }
 
-        function liveSpawnFloatText(text, color, offsetX = 0) {
-            if (!boardEl) return;
+        function liveSpawnFloatText(text, color, offsetX = 0, host = boardEl, top = '40%') {
+            if (!host) return;
             const el = document.createElement('div');
             el.className = 'live-shot-pop';
             el.style.color = color;
             el.style.textShadow = `0 0 8px ${color}`;
             el.style.left = `calc(50% + ${offsetX}px)`;
-            el.style.top  = '40%';
+            el.style.top  = top;
             el.style.transform = 'translate(-50%, 0)';
             el.innerText = text;
-            boardEl.appendChild(el);
+            host.appendChild(el);
             setTimeout(() => el.remove(), 1000);
         }
 
@@ -2404,9 +2381,7 @@
             // Score (header is always home-on-left, away-on-right)
             document.getElementById('live-score-h').innerText = m.hG;
             document.getElementById('live-score-a').innerText = m.aG;
-            // Clock
-            const secLeft = Math.ceil(m.remainingMs / 1000);
-            const minute = 90 - secLeft;
+            const minute  = m.currentMinute;
             const clockEl = document.getElementById('live-clock');
             const tagEl   = document.getElementById('live-act-tag');
             const act     = m.currentActObj || liveGetAct(minute);
@@ -2416,11 +2391,19 @@
                 clockEl.classList.toggle('stoppage', act.id === 4);
             }
             if (tagEl) { tagEl.innerText = act.name; tagEl.style.color = act.color; }
-            const fillPct = (m.remainingMs / LIVE_MATCH_DURATION_MS) * 100;
+            const fillPct = ((TOTAL_MATCH_MINUTES - minute) / TOTAL_MATCH_MINUTES) * 100;
             const cf = document.getElementById('live-clock-fill');
             if (cf) {
                 cf.style.width = fillPct + '%';
                 cf.style.background = act.color;
+            }
+            if (m.defenseAlert) {
+                const df = document.getElementById('live-defense-fill');
+                if (df) df.style.width = Math.max(0, (m.defenseAlert.movesLeft / DEFENSE_ALERT_MOVES) * 100) + '%';
+            }
+            if (m.shootAlert) {
+                const sf = document.getElementById('live-shoot-fill');
+                if (sf) sf.style.width = Math.max(0, (m.shootAlert.movesLeft / SHOOT_ALERT_MOVES) * 100) + '%';
             }
             // Shot
             const sPct = Math.min(100, (m.shotMeter / m.shotThreshold) * 100);
@@ -2439,7 +2422,6 @@
         function liveEndMatch() {
             if (!liveMatch) return;
             liveMatch.gameOver = true;
-            if (liveRafId) { cancelAnimationFrame(liveRafId); liveRafId = null; }
             // Hide any pending alerts (defense + shoot + act banner)
             const da = document.getElementById('live-defense-alert');
             if (da) da.classList.remove('active');
@@ -2499,7 +2481,6 @@
             if (!liveMatch) return;
             // Forfeit: opponent gets 3-0 by default
             liveMatch.gameOver = true;
-            if (liveRafId) { cancelAnimationFrame(liveRafId); liveRafId = null; }
             if (liveMatch.homeIsPlayer) { liveMatch.hG = 0; liveMatch.aG = Math.max(liveMatch.aG, 3); }
             else { liveMatch.aG = 0; liveMatch.hG = Math.max(liveMatch.hG, 3); }
             liveEndMatch();
