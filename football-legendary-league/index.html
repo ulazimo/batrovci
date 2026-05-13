@@ -933,6 +933,18 @@
             }
         }
 
+        function setCrestImage(el, team) {
+            if (!el || !team) return;
+            el.style.backgroundImage    = `url('assets/crest-${team.id}.png')`;
+            el.style.backgroundSize     = '108%';
+            el.style.backgroundPosition = 'center';
+            el.style.backgroundRepeat   = 'no-repeat';
+            el.style.backgroundColor    = 'transparent';
+            el.style.borderRadius       = '50%';
+            el.style.color              = 'transparent';
+            el.innerText                = '';
+        }
+
         // LFC SQUAD DATA
         const SQUAD = [
             { id: 's1', name: 'M. Salah', pos: 'attack', color: 'red' },
@@ -1709,9 +1721,9 @@
             const homeScoreEl = document.getElementById('score-home'), awayScoreEl = document.getElementById('score-away'), hCrest = document.getElementById('home-crest'), aCrest = document.getElementById('away-crest'), hLabel = document.querySelector('#sim-home-team .text-slate-400'), aLabel = document.querySelector('#sim-away-team .text-slate-400'), finishBtn = document.getElementById('finish-match-btn');
             if (homeScoreEl) homeScoreEl.innerText = '0'; if (awayScoreEl) awayScoreEl.innerText = '0'; if (finishBtn) finishBtn.classList.add('view-hidden');
             const pm = schedule[currentRound-1].find(m => m.home.isPlayer || m.away.isPlayer), homeTeamObj = pm.home, awayTeamObj = pm.away;
-            if(hCrest) { hCrest.innerText = homeTeamObj.isPlayer ? "LFC" : homeTeamObj.name.substring(0, 3).toUpperCase(); hCrest.style.backgroundColor = homeTeamObj.isPlayer ? "#b91c1c" : "#2563eb"; }
+            setCrestImage(hCrest, homeTeamObj);
             if(hLabel) hLabel.innerText = homeTeamObj.name;
-            if(aCrest) { aCrest.innerText = awayTeamObj.isPlayer ? "LFC" : awayTeamObj.name.substring(0, 3).toUpperCase(); aCrest.style.backgroundColor = awayTeamObj.isPlayer ? "#b91c1c" : "#2563eb"; }
+            setCrestImage(aCrest, awayTeamObj);
             if(aLabel) aLabel.innerText = awayTeamObj.name;
 
             const selectedPlayers = SQUAD.filter(p => selectedPlayerIds.includes(p.id));
@@ -2031,13 +2043,9 @@
             const awayCrest = document.getElementById('live-away-crest');
             const awayLbl   = document.getElementById('live-away-label');
             const homeT = pm.home, awayT = pm.away;
-            homeCrest.innerText = homeT.isPlayer ? 'LFC' : homeT.name.substring(0,3).toUpperCase();
-            homeCrest.style.background = homeT.isPlayer ? '#1d4ed8' : '#475569';
-            homeCrest.style.color = '#fff';
+            setCrestImage(homeCrest, homeT);
             homeLbl.innerText = homeT.name;
-            awayCrest.innerText = awayT.isPlayer ? 'LFC' : awayT.name.substring(0,3).toUpperCase();
-            awayCrest.style.background = awayT.isPlayer ? '#1d4ed8' : '#475569';
-            awayCrest.style.color = '#fff';
+            setCrestImage(awayCrest, awayT);
             awayLbl.innerText = awayT.name;
 
             // Build board
