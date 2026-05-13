@@ -45,41 +45,25 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 3px 6px rgba(255,255,255,0.25);
+            background-size: 108% 108%;     /* small overscan so the sprite's white outer ring sits flush with the circle */
+            background-position: center;
+            background-repeat: no-repeat;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.18);
         }
 
-        /* Football panel pattern overlay */
-        .tile-inner::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background:
-                radial-gradient(circle at 68% 22%, rgba(255,255,255,0.18) 0%, transparent 45%),
-                radial-gradient(circle at 30% 75%, rgba(0,0,0,0.15) 0%, transparent 40%);
-            pointer-events: none;
-            z-index: 2;
-        }
+        .bg-attack   { background-color: #c0392b; background-image: url('assets/tile-attack.png');  }
+        .bg-defense  { background-color: #2563eb; background-image: url('assets/tile-defense.png'); }
+        .bg-pass     { background-color: #16a34a; background-image: url('assets/tile-pass.png');    }
+        .bg-stamina  { background-color: #d97706; background-image: url('assets/tile-stamina.png'); }
 
-        /* Pentagon seam lines */
-        .tile-inner::after {
-            content: '';
-            position: absolute;
-            inset: 10%;
-            border-radius: 50%;
-            border: 2px solid rgba(0,0,0,0.25);
-            box-shadow:
-                4px -8px 0 -5px rgba(0,0,0,0.2),
-                -8px 4px 0 -5px rgba(0,0,0,0.2),
-                8px 6px 0 -5px rgba(0,0,0,0.2);
-            pointer-events: none;
-            z-index: 1;
+        /* Boosters keep the colored badge but drop the sprite so the rocket/star emoji reads clearly */
+        .booster-rocket .tile-inner,
+        .booster-bomb   .tile-inner {
+            background-image: none;
+            font-size: 1.6em;
+            line-height: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
-
-        .bg-attack   { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
-        .bg-defense  { background: radial-gradient(circle at 35% 35%, #74b9ff, #2563eb); }
-        .bg-pass     { background: radial-gradient(circle at 35% 35%, #55efc4, #16a34a); }
-        .bg-stamina  { background: radial-gradient(circle at 35% 35%, #ffeaa7, #d97706); }
 
         .booster-rocket::after {
             content: '';
