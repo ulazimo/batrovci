@@ -40,46 +40,10 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 3px 6px rgba(255,255,255,0.25);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-
-        /* Football panel pattern overlay */
-        .tile-inner::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background:
-                radial-gradient(circle at 68% 22%, rgba(255,255,255,0.18) 0%, transparent 45%),
-                radial-gradient(circle at 30% 75%, rgba(0,0,0,0.15) 0%, transparent 40%);
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        /* Pentagon seam lines */
-        .tile-inner::after {
-            content: '';
-            position: absolute;
-            inset: 10%;
-            border-radius: 50%;
-            border: 2px solid rgba(0,0,0,0.25);
-            box-shadow:
-                4px -8px 0 -5px rgba(0,0,0,0.2),
-                -8px 4px 0 -5px rgba(0,0,0,0.2),
-                8px 6px 0 -5px rgba(0,0,0,0.2);
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .bg-attack   { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); }
-        .bg-defense  { background: radial-gradient(circle at 35% 35%, #74b9ff, #2563eb); }
-        .bg-pass     { background: radial-gradient(circle at 35% 35%, #55efc4, #16a34a); }
-        .bg-stamina  { background: radial-gradient(circle at 35% 35%, #ffeaa7, #d97706); }
 
         .booster-rocket::after {
             content: '';
@@ -123,8 +87,7 @@
         .pending-break { pointer-events: none; z-index: 10; }
         .pending-break .tile-inner {
             animation: pending-pulse 0.45s ease-in-out infinite alternate !important;
-            outline: 2px solid rgba(255,220,50,0.6);
-            outline-offset: -2px;
+            box-shadow: 0 0 0 2px rgba(255,220,50,0.7);
         }
 
         @keyframes timer-drain {
@@ -141,10 +104,8 @@
         #combo-bar       { transition: background 0.3s; }
 
         .selected .tile-inner {
-            outline: 3px solid white;
-            outline-offset: -3px;
             transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(255,255,255,0.4);
+            box-shadow: 0 0 0 3px white, 0 0 20px rgba(255,255,255,0.4);
             z-index: 50;
         }
 
@@ -205,8 +166,6 @@
         }
         .shake { animation: shake 0.5s; animation-iteration-count: 2; }
 
-        /* bg-* ball colors now defined with tile-inner above */
-        
         #sim-logs::-webkit-scrollbar, #results-list::-webkit-scrollbar, #standings-list::-webkit-scrollbar { width: 4px; }
         #sim-logs::-webkit-scrollbar-thumb, #results-list::-webkit-scrollbar-thumb, #standings-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
@@ -1340,15 +1299,190 @@
             });
         }
 
+        // ── TILE CANVAS RENDERING ─────────────────────────────────────────
+        const TILE_PALETTE = {
+            attack:  { light: '#ff8585', mid: '#e84040', dark: '#a82020' },
+            defense: { light: '#90c9ff', mid: '#4b8de8', dark: '#1a4dbf' },
+            pass:    { light: '#72f5cd', mid: '#28c88a', dark: '#0f8040' },
+            stamina: { light: '#fff2b0', mid: '#f0c030', dark: '#c07010' }
+        };
+
+        function regularPolygon(ctx, cx, cy, radius, sides, startAngle) {
+            for (let i = 0; i < sides; i++) {
+                const a = startAngle + (i / sides) * Math.PI * 2;
+                i === 0 ? ctx.moveTo(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius)
+                        : ctx.lineTo(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+            }
+            ctx.closePath();
+        }
+
+        function starPath(ctx, cx, cy, points, outerR, innerR) {
+            for (let i = 0; i < points * 2; i++) {
+                const a = (i * Math.PI) / points - Math.PI / 2;
+                const r2 = i % 2 === 0 ? outerR : innerR;
+                i === 0 ? ctx.moveTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2)
+                        : ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+            }
+            ctx.closePath();
+        }
+
+        function drawSoccerBallLayer(ctx, cx, cy, r) {
+            // Center pentagon
+            ctx.beginPath();
+            regularPolygon(ctx, cx, cy, r * 0.26, 5, -Math.PI / 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.fill();
+            // 5 surrounding pentagons
+            for (let i = 0; i < 5; i++) {
+                const a = (i * 72 - 90) * Math.PI / 180;
+                const px = cx + Math.cos(a) * r * 0.46;
+                const py = cy + Math.sin(a) * r * 0.46;
+                ctx.beginPath();
+                regularPolygon(ctx, px, py, r * 0.21, 5, a + Math.PI / 5);
+                ctx.fillStyle = 'rgba(0,0,0,0.38)';
+                ctx.fill();
+            }
+            // Seam lines connecting pentagons
+            ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+            ctx.lineWidth = 1.2;
+            for (let i = 0; i < 5; i++) {
+                const a = (i * 72 - 90) * Math.PI / 180;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(a) * r * 0.26, cy + Math.sin(a) * r * 0.26);
+                ctx.lineTo(cx + Math.cos(a) * r * 0.46, cy + Math.sin(a) * r * 0.46);
+                ctx.stroke();
+            }
+        }
+
+        function drawShieldLayer(ctx, cx, cy, r) {
+            const sw = r * 1.08, sh = r * 1.22;
+            const sx = cx - sw / 2, sy = cy - sh / 2 - 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, sy);
+            ctx.lineTo(sx + sw, sy + sh * 0.3);
+            ctx.lineTo(sx + sw, sy + sh * 0.56);
+            ctx.bezierCurveTo(sx + sw, sy + sh * 0.84, cx, sy + sh, cx, sy + sh);
+            ctx.bezierCurveTo(sx, sy + sh * 0.84, sx, sy + sh * 0.56, sx, sy + sh * 0.56);
+            ctx.lineTo(sx, sy + sh * 0.3);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255,255,255,0.22)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.60)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Star inside
+            ctx.beginPath();
+            starPath(ctx, cx, cy + r * 0.1, 5, r * 0.24, r * 0.10);
+            ctx.fillStyle = 'rgba(255,255,255,0.80)';
+            ctx.fill();
+        }
+
+        function drawChevronLayer(ctx, cx, cy, r) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.80)';
+            ctx.lineWidth = r * 0.12;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            const h = r * 0.40, aw = r * 0.25;
+            // Left chevron
+            ctx.beginPath();
+            ctx.moveTo(cx - aw - r * 0.14, cy - h);
+            ctx.lineTo(cx - r * 0.14, cy);
+            ctx.lineTo(cx - aw - r * 0.14, cy + h);
+            ctx.stroke();
+            // Right chevron
+            ctx.beginPath();
+            ctx.moveTo(cx + r * 0.10, cy - h);
+            ctx.lineTo(cx + aw + r * 0.10, cy);
+            ctx.lineTo(cx + r * 0.10, cy + h);
+            ctx.stroke();
+        }
+
+        function drawLightningLayer(ctx, cx, cy, r) {
+            ctx.beginPath();
+            ctx.moveTo(cx + r * 0.14, cy - r * 0.52);
+            ctx.lineTo(cx - r * 0.14, cy - r * 0.02);
+            ctx.lineTo(cx + r * 0.08, cy - r * 0.02);
+            ctx.lineTo(cx - r * 0.20, cy + r * 0.56);
+            ctx.lineTo(cx + r * 0.48, cy - r * 0.10);
+            ctx.lineTo(cx + r * 0.12, cy - r * 0.10);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255,255,255,0.82)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        function drawTileCanvas(canvas, type, booster) {
+            const ctx = canvas.getContext('2d');
+            const S = 100, cx = 50, cy = 50, r = 47;
+            const pal = TILE_PALETTE[type] || TILE_PALETTE.attack;
+
+            ctx.clearRect(0, 0, S, S);
+            ctx.save();
+            // Clip to circle
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.clip();
+
+            // Layer 1 — radial gradient background
+            const bg = ctx.createRadialGradient(cx - 13, cy - 16, 2, cx, cy, r);
+            bg.addColorStop(0,   pal.light);
+            bg.addColorStop(0.5, pal.mid);
+            bg.addColorStop(1,   pal.dark);
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, S, S);
+
+            // Layer 2 — shape
+            if (type === 'attack')  drawSoccerBallLayer(ctx, cx, cy, r);
+            else if (type === 'defense') drawShieldLayer(ctx, cx, cy, r);
+            else if (type === 'pass')    drawChevronLayer(ctx, cx, cy, r);
+            else if (type === 'stamina') drawLightningLayer(ctx, cx, cy, r);
+
+            // Layer 3 — specular highlight
+            const hi = ctx.createRadialGradient(cx - 15, cy - 17, 0, cx - 8, cy - 9, r * 0.55);
+            hi.addColorStop(0,   'rgba(255,255,255,0.42)');
+            hi.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+            hi.addColorStop(1,   'rgba(255,255,255,0)');
+            ctx.fillStyle = hi;
+            ctx.fillRect(0, 0, S, S);
+
+            // Layer 4 — bottom shadow
+            const sh = ctx.createRadialGradient(cx + 10, cy + 20, 0, cx + 10, cy + 20, r * 0.6);
+            sh.addColorStop(0,   'rgba(0,0,0,0.22)');
+            sh.addColorStop(1,   'rgba(0,0,0,0)');
+            ctx.fillStyle = sh;
+            ctx.fillRect(0, 0, S, S);
+
+            // Layer 5 — booster overlay
+            if (booster) {
+                ctx.font = `bold ${r * 0.50}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(booster === 'rocket' ? '🚀' : '⭐', cx, cy);
+            }
+
+            ctx.restore();
+
+            // Rim shadow (outside clip)
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0,0,0,0.28)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        // ── END TILE CANVAS RENDERING ─────────────────────────────────────
+
         function createTileElement(r, c, type, booster = null) {
             const el = document.createElement('div');
             el.className = "tile" + (booster ? " booster-" + booster : "");
-            const inner = document.createElement('div');
-            inner.className = "tile-inner bg-" + type;
-            if (booster === 'rocket') inner.innerHTML = '🚀';
-            if (booster === 'bomb') inner.innerHTML = '⭐';
+            const inner = document.createElement('canvas');
+            inner.className = "tile-inner";
+            inner.width = 100;
+            inner.height = 100;
+            drawTileCanvas(inner, type, booster);
             el.appendChild(inner);
-            el.style.touchAction = 'none'; // prevent scroll during swipe
+            el.style.touchAction = 'none';
             initTilePointer(el);
             updateTilePosition(el, r, c);
             return el;
