@@ -401,6 +401,23 @@
         #live-shoot-alert.active { opacity: 1 !important; }
         #live-shoot-alert.active > div { animation: shot-alert-pulse 0.55s ease-in-out infinite; }
 
+        /* Act transition banner */
+        #live-act-banner { opacity: 0; transition: opacity 0.3s; }
+        #live-act-banner.active { opacity: 1 !important; }
+        @keyframes act-banner-pop {
+            0%   { transform: scale(0.85) translateY(-6px); }
+            45%  { transform: scale(1.04) translateY(0);    }
+            100% { transform: scale(1)    translateY(0);    }
+        }
+        #live-act-banner.active > div { animation: act-banner-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* Stoppage time: clock pulses red */
+        @keyframes clock-stoppage-pulse {
+            0%, 100% { text-shadow: 0 0 0 transparent; }
+            50%      { text-shadow: 0 0 10px rgba(239,68,68,0.9); }
+        }
+        #live-clock.stoppage { animation: clock-stoppage-pulse 0.8s ease-in-out infinite; }
+
         /* meter color-dots */
         .meter-tile {
             display: inline-block;
@@ -692,6 +709,7 @@
                     <span id="live-score-h">0</span><span class="text-slate-700">:</span><span id="live-score-a">0</span>
                 </div>
                 <div id="live-clock" class="text-[10px] uppercase tracking-widest font-bold text-blue-400">90"</div>
+                <div id="live-act-tag" class="text-[8px] uppercase tracking-widest font-black mt-0.5" style="color:#22c55e">OPENING</div>
             </div>
             <div id="live-away" class="text-center w-16">
                 <div id="live-away-crest" class="w-9 h-9 mx-auto rounded-xl flex items-center justify-center font-black shadow-lg text-[10px]">OPP</div>
@@ -759,6 +777,16 @@
 
         <!-- Quit -->
         <button onclick="liveQuitMatch()" class="w-full py-2 text-slate-500 text-[10px] uppercase font-bold tracking-widest hover:text-slate-300 shrink-0">Forfeit Match</button>
+
+        <!-- Act transition banner: brief message when match phase changes -->
+        <div id="live-act-banner" class="absolute left-0 right-0 pointer-events-none flex justify-center px-4" style="top:56px;z-index:118">
+            <div class="bg-slate-900/95 px-4 py-1.5 rounded-xl shadow-2xl border-2 backdrop-blur-sm" style="border-color:rgba(234,179,8,0.55)">
+                <div class="text-center">
+                    <div id="live-act-banner-label" class="text-sm font-black italic tracking-tight leading-none">OPENING</div>
+                    <div id="live-act-banner-sub" class="text-[9px] uppercase font-bold text-slate-400 mt-0.5">feeling each other out</div>
+                </div>
+            </div>
+        </div>
 
         <!-- Shoot alert: compact banner over the field area, leaves the board clear -->
         <div id="live-shoot-alert" class="absolute left-0 right-0 pointer-events-none flex justify-center px-4" style="top:88px;opacity:0;transition:opacity 0.18s;z-index:120">
@@ -1825,6 +1853,32 @@
 
         const LIVE_MATCH_DURATION_MS = 90 * 1000; // 90s = 90 in-game minutes
 
+        // ─── MATCH DRAMATIC STRUCTURE ───────────────────────────────────
+        // Each match runs through 4 acts that re-pace pressure, stamina drain
+        // and shot generation so the 90s arc actually has a narrative shape.
+        function liveGetAct(minute) {
+            if (minute < 30) return { id: 1, name: 'OPENING',    hint: 'feeling each other out', color: '#22c55e', pressureMult: 0.60, staminaMult: 0.70, shotMult: 0.95 };
+            if (minute < 60) return { id: 2, name: 'TENSION',    hint: 'match opening up',       color: '#eab308', pressureMult: 1.00, staminaMult: 1.00, shotMult: 1.00 };
+            if (minute < 80) return { id: 3, name: 'FINAL PUSH', hint: 'both sides press',       color: '#f97316', pressureMult: 1.35, staminaMult: 1.20, shotMult: 1.15 };
+            return                  { id: 4, name: 'STOPPAGE',   hint: 'all-out chaos',          color: '#ef4444', pressureMult: 1.85, staminaMult: 1.50, shotMult: 1.45 };
+        }
+
+        function liveShowActTransition(act) {
+            const banner = document.getElementById('live-act-banner');
+            if (!banner) return;
+            const label = document.getElementById('live-act-banner-label');
+            const sub   = document.getElementById('live-act-banner-sub');
+            const box   = banner.querySelector('div');
+            if (label) { label.innerText = act.name; label.style.color = act.color; }
+            if (sub)   { sub.innerText   = act.hint; }
+            if (box)   { box.style.borderColor = act.color + '8c'; } // ~55% opacity hex
+            banner.classList.add('active');
+            // Soft click for act change; tone scales up the scale per act
+            try { SFX.click(); } catch(e) {}
+            clearTimeout(liveShowActTransition._t);
+            liveShowActTransition._t = setTimeout(() => banner.classList.remove('active'), 1800);
+        }
+
         function liveInit() {
             liveTeams = teamNames.map((name, i) => ({
                 id: i, name, mp:0, w:0, d:0, l:0, gf:0, ga:0, pts:0,
@@ -1988,7 +2042,9 @@
                 gameOver: false,
                 pressureBaseRate: 8 + (opponent.ovr - 45) * 0.18, // % per second; tougher opps press faster
                 shotThreshold: 100,
-                stunUntilMs: 0
+                stunUntilMs: 0,
+                currentAct: 0,                  // 0 → first loop tick fires OPENING transition banner
+                currentActObj: liveGetAct(0)    // cached so liveOnGains/liveUpdateBars don't recompute
             };
 
             // Header / score / labels
@@ -2049,18 +2105,27 @@
                 return;
             }
 
-            // Pressure rises (faster when stamina low; paused during stun, alerts)
+            // Determine current dramatic act based on in-game minute; fire transition banner on change
+            const minuteNow = 90 - Math.ceil(liveMatch.remainingMs / 1000);
+            const act = liveGetAct(minuteNow);
+            liveMatch.currentActObj = act;
+            if (act.id !== liveMatch.currentAct) {
+                liveMatch.currentAct = act.id;
+                liveShowActTransition(act);
+            }
+
+            // Pressure rises (faster when stamina low; paused during stun, alerts); scaled per act
             if (now >= liveMatch.stunUntilMs && !liveMatch.defenseAlert && !liveMatch.shootAlert) {
                 const fatigue = 1 + (100 - liveMatch.stamina) / 80; // up to ~2.25× when exhausted
-                liveMatch.pressure += (liveMatch.pressureBaseRate * fatigue) * (dt / 1000);
+                liveMatch.pressure += (liveMatch.pressureBaseRate * fatigue * act.pressureMult) * (dt / 1000);
                 if (liveMatch.pressure >= 100) {
                     liveMatch.pressure = 100;
                     liveSpawnDefenseAlert();
                 }
             }
 
-            // Stamina drains slowly
-            liveMatch.stamina -= 0.55 * (dt / 1000);
+            // Stamina drains slowly; later acts burn it down faster
+            liveMatch.stamina -= 0.55 * act.staminaMult * (dt / 1000);
             if (liveMatch.stamina < 0) liveMatch.stamina = 0;
 
             // Defense alert countdown
@@ -2243,8 +2308,10 @@
             const defN  = gains.defense || 0;
             const stamN = gains.stamina || 0;
 
-            const atkPts  = atkN  * 14 * mult.attack;
-            const passPts = passN * 6  * mult.pass;
+            // Act shotMult inflates attack/pass output in late acts → more shoot alerts when it matters
+            const actShot = (m.currentActObj && m.currentActObj.shotMult) || 1;
+            const atkPts  = atkN  * 14 * mult.attack * actShot;
+            const passPts = passN * 6  * mult.pass   * actShot;
             const defRel  = defN  * 18 * mult.defense;
             const stamRec = stamN * 5;
 
@@ -2356,10 +2423,21 @@
             // Clock
             const secLeft = Math.ceil(m.remainingMs / 1000);
             const minute = 90 - secLeft;
-            document.getElementById('live-clock').innerText = `${minute}'`;
+            const clockEl = document.getElementById('live-clock');
+            const tagEl   = document.getElementById('live-act-tag');
+            const act     = m.currentActObj || liveGetAct(minute);
+            if (clockEl) {
+                clockEl.innerText = `${minute}'`;
+                clockEl.style.color = act.color;
+                clockEl.classList.toggle('stoppage', act.id === 4);
+            }
+            if (tagEl) { tagEl.innerText = act.name; tagEl.style.color = act.color; }
             const fillPct = (m.remainingMs / LIVE_MATCH_DURATION_MS) * 100;
             const cf = document.getElementById('live-clock-fill');
-            if (cf) cf.style.width = fillPct + '%';
+            if (cf) {
+                cf.style.width = fillPct + '%';
+                cf.style.background = act.color;
+            }
             // Shot
             const sPct = Math.min(100, (m.shotMeter / m.shotThreshold) * 100);
             document.getElementById('live-shot-pct').innerText  = Math.round(sPct) + '%';
@@ -2378,9 +2456,16 @@
             if (!liveMatch) return;
             liveMatch.gameOver = true;
             if (liveRafId) { cancelAnimationFrame(liveRafId); liveRafId = null; }
-            // Hide any pending defense alert
+            // Hide any pending alerts (defense + shoot + act banner)
             const da = document.getElementById('live-defense-alert');
             if (da) da.classList.remove('active');
+            const sa = document.getElementById('live-shoot-alert');
+            if (sa) sa.classList.remove('active');
+            const ab = document.getElementById('live-act-banner');
+            if (ab) ab.classList.remove('active');
+            clearTimeout(liveShowActTransition._t);
+            const clockEl = document.getElementById('live-clock');
+            if (clockEl) clockEl.classList.remove('stoppage');
 
             const ft = document.getElementById('live-fulltime');
             const scoreEl = document.getElementById('live-fulltime-score');
