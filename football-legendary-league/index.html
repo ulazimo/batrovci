@@ -325,17 +325,24 @@
             animation: floatUp 0.9s ease-out forwards;
         }
 
-        #live-narration {
-            opacity: 0;
-            transition: opacity 0.25s;
+        #live-turn-card.active { opacity: 1; }
+        @keyframes turnCardPop {
+            0%   { transform: translateY(8px) scale(0.94); }
+            55%  { transform: translateY(0)   scale(1.04); }
+            100% { transform: translateY(0)   scale(1);    }
         }
-        #live-narration.active { opacity: 1; }
-        @keyframes narrationPop {
-            0%   { transform: translateY(6px) scale(0.92); opacity: 0; }
-            40%  { transform: translateY(0)   scale(1.05); opacity: 1; }
-            100% { transform: translateY(0)   scale(1);    opacity: 1; }
+        #live-turn-card.active #live-turn-card-inner { animation: turnCardPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        #live-turn-card.you  #live-turn-card-inner { background: rgba(8, 47, 73, 0.92);  border-color: rgba(56, 189, 248, 0.55); }
+        #live-turn-card.opp  #live-turn-card-inner { background: rgba(76, 5, 25, 0.92);  border-color: rgba(248, 113, 113, 0.55); }
+        #live-turn-card.you  #live-turn-card-side  { color: #67e8f9; }
+        #live-turn-card.opp  #live-turn-card-side  { color: #fca5a5; }
+        .turn-chip {
+            padding: 1px 6px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            white-space: nowrap;
         }
-        #live-narration.active > div { animation: narrationPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
         /* ── LIVE FIELD ─────────────────────────────────────────────── */
         #live-field {
@@ -825,10 +832,12 @@
             </div>
         </div>
 
-        <!-- Post-move micro-narration: 1-line color commentary that fires on big moves -->
-        <div id="live-narration" class="absolute left-0 right-0 pointer-events-none flex justify-center px-4" style="top:112px;z-index:117">
-            <div class="bg-slate-950/85 px-3 py-1 rounded-lg shadow-xl border border-white/10 backdrop-blur-sm">
-                <div id="live-narration-text" class="text-[11px] font-bold italic tracking-tight text-slate-200 leading-none">&nbsp;</div>
+        <!-- Turn summary card: YOU on player phase, OPP on opponent phase -->
+        <div id="live-turn-card" class="absolute left-0 right-0 pointer-events-none px-3" style="top:108px;z-index:117;opacity:0;transition:opacity 0.22s">
+            <div id="live-turn-card-inner" class="px-3 py-1.5 rounded-lg shadow-xl border-2 backdrop-blur-sm flex justify-between items-center gap-2">
+                <div id="live-turn-card-side" class="text-[10px] font-black uppercase tracking-widest shrink-0">YOU</div>
+                <div id="live-turn-card-chips" class="flex gap-1.5 text-[11px] font-black italic flex-1 justify-center"></div>
+                <div id="live-turn-card-tag" class="text-[9px] font-bold italic text-slate-300 truncate shrink-0 max-w-[40%] text-right"></div>
             </div>
         </div>
 
@@ -1372,6 +1381,7 @@
         function initTilePointer(el) {
             el.addEventListener('pointerdown', (e) => {
                 if (isAnimating) return;
+                if (gameMode === 'live' && liveMatch && liveMatch.phase !== 'player') return;
                 // Suppress accidental rapid re-taps on the same tile (≤220ms) that double-fired swap attempts.
                 const now = performance.now();
                 if (el._lastTapAt && now - el._lastTapAt < 220) return;
@@ -1512,8 +1522,8 @@
         async function performSwap(r1, c1, r2, c2) {
             if (isAnimating) return;
             if (gameMode === 'live') {
-                // LIVE: no moves counter, no combo collect mode — immediate breaks
                 if (!liveMatch || liveMatch.gameOver) return;
+                if (liveMatch.phase !== 'player') return; // not your turn — opp is acting
                 try {
                     isAnimating = true;
                     await swapTiles(r1, c1, r2, c2);
@@ -1523,7 +1533,7 @@
                         await swapTiles(r1, c1, r2, c2); // revert
                     }
                 } finally { isAnimating = false; }
-                liveOnPlayerSwap();
+                liveOnPlayerTurnEnd();
                 return;
             }
             // CLASSIC
@@ -1668,8 +1678,9 @@
             if (hasBomb) SFX.bomb(); else if (hasRocket) SFX.rocket(); else SFX.match(initialMatchCount);
             // Spawn floats before pop so numbers render against full tiles, not gaps
             spawnGroupFloats(matches);
-            if (gameMode === 'live' && (initialMatchCount >= 4 || hasRocket || hasBomb)) {
-                liveNarrate(gains, { initialCount: initialMatchCount, hasRocket, hasBomb });
+            if (gameMode === 'live' && liveMatch) {
+                if (hasBomb)        liveMatch.lastBooster = 'bomb';
+                else if (hasRocket) liveMatch.lastBooster = 'rocket';
             }
             // Pop animation + particles
             matches.forEach(m => {
@@ -2121,6 +2132,9 @@
 
             liveMatch = {
                 currentMinute: 0,
+                phase: 'player', // 'player' | 'opp' — strict E&P-style alternating turns
+                turnGains: { attack:0, pass:0, defense:0, stamina:0, atkPts:0, passPts:0, defRel:0, stamRec:0 },
+                lastBooster: null, // 'rocket' | 'bomb' if a booster fired this turn
                 hG: 0, aG: 0,
                 homeIsPlayer,
                 opponent,
@@ -2179,42 +2193,64 @@
             liveUpdateBars();
         }
 
-        function liveOnPlayerSwap() {
+        function liveOnPlayerTurnEnd() {
             if (!liveMatch || liveMatch.gameOver) return;
+            liveMatch.phase = 'opp';
+            showTurnCard('YOU', liveMatch.turnGains);
+            // 650ms = beat to read the YOU card before opp animation steals attention
+            clearTimeout(liveOnPlayerTurnEnd._t);
+            liveOnPlayerTurnEnd._t = setTimeout(liveOpponentTurn, 650);
+        }
 
-            liveMatch.currentMinute += MINUTES_PER_MOVE;
+
+        function liveOpponentTurn() {
+            if (!liveMatch || liveMatch.gameOver) return;
+            const m = liveMatch;
+
+            m.currentMinute += MINUTES_PER_MOVE;
             liveSpawnMinuteAdvance(MINUTES_PER_MOVE);
-            if (liveMatch.currentMinute >= TOTAL_MATCH_MINUTES) {
-                liveMatch.currentMinute = TOTAL_MATCH_MINUTES;
+            if (m.currentMinute >= TOTAL_MATCH_MINUTES) {
+                m.currentMinute = TOTAL_MATCH_MINUTES;
                 liveUpdateBars();
                 liveEndMatch();
                 return;
             }
 
-            const act = liveGetAct(liveMatch.currentMinute);
-            if (liveMatch.currentActObj.id !== act.id) {
-                liveMatch.currentActObj = act;
+            const act = liveGetAct(m.currentMinute);
+            if (m.currentActObj.id !== act.id) {
+                m.currentActObj = act;
                 liveShowActTransition(act);
             }
 
-            liveMatch.stamina = Math.max(0, liveMatch.stamina - 1.7 * act.staminaMult);
+            m.stamina = Math.max(0, m.stamina - 1.7 * act.staminaMult);
 
+            const pressureBefore = m.pressure;
             const tickAlert = (alert, resolve) => {
                 if (!alert) return false;
                 if (--alert.movesLeft <= 0) resolve(false);
                 return true;
             };
-            if (!tickAlert(liveMatch.defenseAlert, liveResolveDefenseAlert)
-             && !tickAlert(liveMatch.shootAlert,   liveResolveShootAlert)) {
-                const fatigue = Math.min(1.6, 1 + (100 - liveMatch.stamina) / 100);
-                liveMatch.pressure += liveMatch.pressurePerMoveBase * fatigue * act.pressureMult;
-                if (liveMatch.pressure >= 100) {
-                    liveMatch.pressure = 100;
+            if (!tickAlert(m.defenseAlert, liveResolveDefenseAlert)
+             && !tickAlert(m.shootAlert,   liveResolveShootAlert)) {
+                const fatigue = Math.min(1.6, 1 + (100 - m.stamina) / 100);
+                m.pressure += m.pressurePerMoveBase * fatigue * act.pressureMult;
+                if (m.pressure >= 100) {
+                    m.pressure = 100;
                     liveSpawnDefenseAlert();
                 }
             }
-
+            liveAnimateOpponentKick();
             liveUpdateBars();
+            showTurnCard('OPP', { pressureDelta: m.pressure - pressureBefore, label: pickLine('oppAction') });
+
+            clearTimeout(liveOpponentTurn._t);
+            liveOpponentTurn._t = setTimeout(() => {
+                if (!liveMatch || liveMatch.gameOver) return;
+                liveMatch.turnGains = { attack:0, pass:0, defense:0, stamina:0, atkPts:0, passPts:0, defRel:0, stamRec:0 };
+                liveMatch.lastBooster = null;
+                liveMatch.phase = 'player';
+                hideTurnCard();
+            }, 700);
         }
 
         function liveSpawnMinuteAdvance(amount) {
@@ -2312,21 +2348,23 @@
         }
 
         // ─── FIELD VISUAL HELPERS ───────────────────────────────────────
-        function liveAnimateAttacker() {
-            const dots = document.querySelectorAll('#live-field .player-dot.lfc');
+        // Pick the dot at the requested extremum of dataset.base and replay an animation class.
+        // 'max' = rightmost on the field, 'min' = leftmost. LFC attacks rightward, OPP leftward,
+        // so each side's "most-forward" dot is at the opposite extremum.
+        function animateDot(side, extremum, className) {
+            const dots = document.querySelectorAll('#live-field .player-dot.' + side);
             if (!dots.length) return;
-            let pick = dots[0], maxBase = -1;
-            dots.forEach(d => { const b = parseFloat(d.dataset.base); if (b > maxBase) { maxBase = b; pick = d; } });
-            pick.classList.remove('kick'); void pick.offsetWidth; pick.classList.add('kick');
+            const wantMax = extremum === 'max';
+            let pick = dots[0], best = wantMax ? -Infinity : Infinity;
+            dots.forEach(d => {
+                const b = parseFloat(d.dataset.base);
+                if (wantMax ? b > best : b < best) { best = b; pick = d; }
+            });
+            pick.classList.remove(className); void pick.offsetWidth; pick.classList.add(className);
         }
-
-        function liveAnimateDefender() {
-            const dots = document.querySelectorAll('#live-field .player-dot.lfc');
-            if (!dots.length) return;
-            let pick = dots[0], minBase = 999;
-            dots.forEach(d => { const b = parseFloat(d.dataset.base); if (b < minBase) { minBase = b; pick = d; } });
-            pick.classList.remove('block'); void pick.offsetWidth; pick.classList.add('block');
-        }
+        const liveAnimateAttacker     = () => animateDot('lfc', 'max', 'kick');
+        const liveAnimateDefender     = () => animateDot('lfc', 'min', 'block');
+        const liveAnimateOpponentKick = () => animateDot('opp', 'min', 'kick');
 
         function liveAdvanceStriker(side) {
             const sel = side === 'lfc' ? '#live-field .player-dot.lfc' : '#live-field .player-dot.opp';
@@ -2390,6 +2428,11 @@
             m.pressure  = Math.max(0, m.pressure - defRel);
             m.stamina   = Math.min(100, m.stamina + stamRec);
 
+            // Cascades fold into one YOU card per swap, so accumulate across all gain events.
+            const tg = m.turnGains;
+            tg.attack += atkN; tg.pass += passN; tg.defense += defN; tg.stamina += stamN;
+            tg.atkPts += atkPts; tg.passPts += passPts; tg.defRel += defRel; tg.stamRec += stamRec;
+
             // Player animations on the field
             if (atkN > 0)  liveAnimateAttacker();
             if (defN > 0)  liveAnimateDefender();
@@ -2407,11 +2450,6 @@
                 m.shotMeter = m.shotThreshold; // visually pinned at 100% during alert
                 liveSpawnShootAlert();
             }
-
-            // Floating gain feedback (with labels so player learns the system)
-            if (atkPts > 0)  liveSpawnFloatText(`+${Math.round(atkPts)} SHOT`,   '#ff6b6b');
-            if (passPts > 0) liveSpawnFloatText(`+${Math.round(passPts)} SHOT`,  '#55efc4', 22);
-            if (defRel > 0)  liveSpawnFloatText(`-${Math.round(defRel)} PRESS`,  '#74b9ff', 44);
 
             liveUpdateBars();
         }
@@ -2563,41 +2601,65 @@
             stamina: ['Players regroup.', 'Catching breath.', 'Squad rotates.', 'Pacing the half.', 'Resetting shape.'],
             rocket:  ['Counter-attack springs!', 'Cuts through the lines!', 'Long ball pays off!'],
             bomb:    ['MASSIVE chance!', 'Defence carved open!', 'Stadium ERUPTS!'],
+            oppAction: ['Counter-attack!', 'Switches flanks.', 'Cross into the box.', 'Wins a header.', 'Builds from the back.', 'Probing run.', 'Long ball forward.', 'Quick free-kick.'],
         };
-        let _lastNarrationAt = 0;
-        function liveNarrate(gains, ctx) {
-            if (!liveMatch || liveMatch.gameOver) return;
-            const now = performance.now();
-            if (now - _lastNarrationAt < 900) return;
-            let bucket;
-            if (ctx?.hasBomb) bucket = 'bomb';
-            else if (ctx?.hasRocket) bucket = 'rocket';
-            else {
-                // Tiebreak preference attack > pass > defense > stamina (differs from TYPES order)
-                const order = ['attack', 'pass', 'defense', 'stamina'];
-                let best = order[0], bestN = gains[best] || 0;
-                for (const t of order) { const n = gains[t] || 0; if (n > bestN) { best = t; bestN = n; } }
-                if (bestN < 1) return;
-                bucket = best;
+        const pickLine = bucket => {
+            const arr = NARRATION_LINES[bucket];
+            return arr && arr.length ? arr[Math.floor(Math.random() * arr.length)] : '';
+        };
+
+        function pickPlayerTagline(turnGains, booster) {
+            if (booster) return pickLine(booster);
+            // Tiebreak preference attack > pass > defense > stamina (intentional, not TYPES order)
+            const order = ['attack', 'pass', 'defense', 'stamina'];
+            let best = order[0], bestN = turnGains[best] || 0;
+            for (const t of order) { const n = turnGains[t] || 0; if (n > bestN) { best = t; bestN = n; } }
+            return bestN < 1 ? '' : pickLine(best);
+        }
+
+        function showTurnCard(side, content) {
+            const root   = document.getElementById('live-turn-card');
+            const sideEl = document.getElementById('live-turn-card-side');
+            const chipsEl= document.getElementById('live-turn-card-chips');
+            const tagEl  = document.getElementById('live-turn-card-tag');
+            if (!root || !sideEl || !chipsEl || !tagEl) return;
+            const chip  = (text, color) => `<span class="turn-chip" style="color:${color}">${text}</span>`;
+            const empty = text          => `<span class="text-slate-500 font-bold not-italic text-[10px]">${text}</span>`;
+            root.classList.remove('you', 'opp');
+            const parts = [];
+            if (side === 'YOU') {
+                root.classList.add('you');
+                sideEl.innerText = 'YOU';
+                const tg = content;
+                const shot = Math.round((tg.atkPts || 0) + (tg.passPts || 0));
+                if (shot > 0)       parts.push(chip(`+${shot} SHOT`, '#67e8f9'));
+                if (tg.defRel > 0)  parts.push(chip(`-${Math.round(tg.defRel)} PRESS`, '#fca5a5'));
+                if (tg.stamRec > 0) parts.push(chip(`+${Math.round(tg.stamRec)} STAM`, '#fbbf24'));
+                chipsEl.innerHTML = parts.length ? parts.join('') : empty('no match');
+                tagEl.innerText = pickPlayerTagline(tg, liveMatch?.lastBooster);
+            } else {
+                root.classList.add('opp');
+                sideEl.innerText = (liveMatch?.opponent?.name || 'OPP').toUpperCase();
+                const pd = content.pressureDelta || 0;
+                if (pd > 0)      chipsEl.innerHTML = chip(`+${Math.round(pd)} PRESS`, '#fca5a5');
+                else if (pd < 0) chipsEl.innerHTML = chip(`${Math.round(pd)} PRESS`, '#67e8f9');
+                else             chipsEl.innerHTML = empty('held off');
+                tagEl.innerText = content.label || '';
             }
-            const lines = NARRATION_LINES[bucket] || [];
-            if (!lines.length) return;
-            const line = lines[Math.floor(Math.random() * lines.length)];
-            const banner = document.getElementById('live-narration');
-            const text   = document.getElementById('live-narration-text');
-            if (!banner || !text) return;
-            text.innerText = line;
-            text.style.color = BALL_COLORS[bucket] ?? '#e2e8f0';
-            banner.classList.remove('active'); void banner.offsetWidth;
-            banner.classList.add('active');
-            _lastNarrationAt = now;
-            clearTimeout(liveNarrate._t);
-            liveNarrate._t = setTimeout(() => banner.classList.remove('active'), 1600);
+            root.classList.add('active');
+        }
+
+        function hideTurnCard() {
+            const root = document.getElementById('live-turn-card');
+            if (root) root.classList.remove('active');
         }
 
         function liveEndMatch() {
             if (!liveMatch) return;
             liveMatch.gameOver = true;
+            clearTimeout(liveOnPlayerTurnEnd._t);
+            clearTimeout(liveOpponentTurn._t);
+            hideTurnCard();
             // Hide any pending alerts (defense + shoot + act banner)
             const da = document.getElementById('live-defense-alert');
             if (da) da.classList.remove('active');
