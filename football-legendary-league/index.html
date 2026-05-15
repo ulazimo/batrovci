@@ -291,7 +291,6 @@
             animation: floatUp 1s ease-out forwards;
         }
 
-        /* Per-match-group floating "+N" anchored at the cluster centroid */
         .group-float {
             position: absolute;
             transform: translate(-50%, -50%);
@@ -309,7 +308,6 @@
             100% { transform: translate(-50%, -240%) scale(0.85); opacity: 0; }
         }
 
-        /* Bar flash when shot/pressure meter ticks */
         @keyframes barPulse {
             0%   { filter: brightness(1) saturate(1); }
             35%  { filter: brightness(2.2) saturate(1.7); box-shadow: 0 0 14px currentColor; }
@@ -327,7 +325,6 @@
             animation: floatUp 0.9s ease-out forwards;
         }
 
-        /* Post-move micro-narration */
         #live-narration {
             opacity: 0;
             transition: opacity 0.25s;
@@ -982,7 +979,7 @@
         })();
 
         // ── PARTICLES ────────────────────────────────────────────────────
-        const BALL_COLORS = { attack:'#ff6b6b', defense:'#74b9ff', pass:'#55efc4', stamina:'#ffeaa7' };
+        const BALL_COLORS = { attack:'#ff6b6b', defense:'#74b9ff', pass:'#55efc4', stamina:'#ffeaa7', rocket:'#67e8f9', bomb:'#fbbf24' };
         function spawnParticles(r, c, color) {
             const step = 100 / GRID_SIZE;
             const cx = (c + 0.5) * step, cy = (r + 0.5) * step;
@@ -1001,9 +998,6 @@
             }
         }
 
-        // ── Per-group "+N" floats: one number per type, anchored at the cluster centroid.
-        // Tells the player WHICH tiles produced WHICH count, in the type's own color.
-        const TYPE_DISPLAY_COLORS = { attack:'#ff6b6b', defense:'#74b9ff', pass:'#55efc4', stamina:'#ffeaa7' };
         function spawnGroupFloats(matchedKeys) {
             if (!boardEl || !matchedKeys || !matchedKeys.size) return;
             const byType = {};
@@ -1018,7 +1012,7 @@
                 if (g.count < 3) return;
                 const xPct = ((g.cSum / g.count) + 0.5) * step;
                 const yPct = ((g.rSum / g.count) + 0.5) * step;
-                const color = TYPE_DISPLAY_COLORS[type] || '#fff';
+                const color = BALL_COLORS[type] || '#fff';
                 const el = document.createElement('div');
                 el.className = 'group-float';
                 el.style.left = xPct + '%';
@@ -1378,9 +1372,7 @@
         function initTilePointer(el) {
             el.addEventListener('pointerdown', (e) => {
                 if (isAnimating) return;
-                // Suppress accidental rapid double-taps on the same tile (≤220ms).
-                // Lets normal play-rhythm through; kills the "double-click on booster"
-                // pattern that caused two cascading swap attempts in quick succession.
+                // Suppress accidental rapid re-taps on the same tile (≤220ms) that double-fired swap attempts.
                 const now = performance.now();
                 if (el._lastTapAt && now - el._lastTapAt < 220) return;
                 el._lastTapAt = now;
@@ -1674,9 +1666,8 @@
             let hasRocket = false, hasBomb = false;
             matches.forEach(m => { const [r,c]=m.split(',').map(Number); const tile=board[r][c]; if(tile?.booster==='rocket') hasRocket=true; if(tile?.booster==='bomb') hasBomb=true; });
             if (hasBomb) SFX.bomb(); else if (hasRocket) SFX.rocket(); else SFX.match(initialMatchCount);
-            // Per-group floating "+N" at cluster centroid (before pop, so the number is visible against full tiles)
+            // Spawn floats before pop so numbers render against full tiles, not gaps
             spawnGroupFloats(matches);
-            // Trigger Live-mode narration for notable moves (group ≥ 4 or any booster firing)
             if (gameMode === 'live' && (initialMatchCount >= 4 || hasRocket || hasBomb)) {
                 liveNarrate(gains, { initialCount: initialMatchCount, hasRocket, hasBomb });
             }
@@ -1755,7 +1746,6 @@
             }
             // Big combo indicator if mult > 1
             if (mult >= 2) spawnComboIndicator();
-            // Per-group "+N" floats at each color cluster's centroid
             spawnGroupFloats(pendingKeys);
             // Pop animation + particles on all pending tiles
             pendingKeys.forEach(m => {
@@ -2525,26 +2515,8 @@
                 const sf = document.getElementById('live-shoot-fill');
                 if (sf) sf.style.width = Math.max(0, (m.shootAlert.movesLeft / SHOOT_ALERT_MOVES) * 100) + '%';
             }
-            // Shot — pulse bar + show delta when value changes meaningfully
-            const sPct = Math.min(100, (m.shotMeter / m.shotThreshold) * 100);
-            const prevShot = (liveUpdateBars._prevShot ?? 0);
-            document.getElementById('live-shot-pct').innerText  = Math.round(sPct) + '%';
-            document.getElementById('live-shot-fill').style.width = sPct + '%';
-            if (Math.abs(sPct - prevShot) >= 1) {
-                pulseBar('live-shot-fill');
-                spawnBarDelta('live-shot-card', sPct - prevShot, '#67e8f9');
-            }
-            liveUpdateBars._prevShot = sPct;
-            // Pressure — same treatment, red palette
-            const pPct = m.pressure;
-            const prevPress = (liveUpdateBars._prevPress ?? 0);
-            document.getElementById('live-pressure-pct').innerText  = Math.round(pPct) + '%';
-            document.getElementById('live-pressure-fill').style.width = pPct + '%';
-            if (Math.abs(pPct - prevPress) >= 1) {
-                pulseBar('live-pressure-fill');
-                spawnBarDelta('live-pressure-card', pPct - prevPress, '#fb923c');
-            }
-            liveUpdateBars._prevPress = pPct;
+            updateMeter(Math.min(100, (m.shotMeter / m.shotThreshold) * 100), 'live-shot-fill', 'live-shot-pct', 'live-shot-card', '_prevShot', '#67e8f9');
+            updateMeter(m.pressure, 'live-pressure-fill', 'live-pressure-pct', 'live-pressure-card', '_prevPress', '#fb923c');
             // Stamina
             document.getElementById('live-stamina-pct').innerText  = Math.round(m.stamina) + '%';
             document.getElementById('live-stamina-fill').style.width = m.stamina + '%';
@@ -2573,7 +2545,17 @@
             setTimeout(() => el.remove(), 950);
         }
 
-        // Post-move color commentary — picks a line based on dominant tile type or booster.
+        function updateMeter(value, fillId, pctId, cardId, prevKey, deltaColor) {
+            const prev = liveUpdateBars[prevKey] ?? 0;
+            document.getElementById(pctId).innerText = Math.round(value) + '%';
+            document.getElementById(fillId).style.width = value + '%';
+            if (Math.abs(value - prev) >= 1) {
+                pulseBar(fillId);
+                spawnBarDelta(cardId, value - prev, deltaColor);
+            }
+            liveUpdateBars[prevKey] = value;
+        }
+
         const NARRATION_LINES = {
             attack:  ['Sharp finish!', 'Through on goal!', 'Salah finds space.', 'Shot strikes home!', 'Cutting inside.'],
             pass:    ['Slick build-up.', 'Quick combination!', 'One-touch passing.', 'Tiki-taka rhythm.', 'Threading the lines.'],
@@ -2586,12 +2568,12 @@
         function liveNarrate(gains, ctx) {
             if (!liveMatch || liveMatch.gameOver) return;
             const now = performance.now();
-            if (now - _lastNarrationAt < 900) return; // anti-spam: at most ~1 per second
+            if (now - _lastNarrationAt < 900) return;
             let bucket;
             if (ctx?.hasBomb) bucket = 'bomb';
             else if (ctx?.hasRocket) bucket = 'rocket';
             else {
-                // Dominant gain wins; in a tie, prefer attack > pass > defense > stamina
+                // Tiebreak preference attack > pass > defense > stamina (differs from TYPES order)
                 const order = ['attack', 'pass', 'defense', 'stamina'];
                 let best = order[0], bestN = gains[best] || 0;
                 for (const t of order) { const n = gains[t] || 0; if (n > bestN) { best = t; bestN = n; } }
@@ -2605,7 +2587,7 @@
             const text   = document.getElementById('live-narration-text');
             if (!banner || !text) return;
             text.innerText = line;
-            text.style.color = TYPE_DISPLAY_COLORS[bucket] || (bucket === 'bomb' ? '#fbbf24' : bucket === 'rocket' ? '#67e8f9' : '#e2e8f0');
+            text.style.color = BALL_COLORS[bucket] ?? '#e2e8f0';
             banner.classList.remove('active'); void banner.offsetWidth;
             banner.classList.add('active');
             _lastNarrationAt = now;
@@ -2671,36 +2653,32 @@
             switchView('view-live-standings');
         }
 
-        // Forfeit: 2-step confirm. First tap arms the button, second tap (within 2.5s) actually forfeits.
-        // Prevents accidental match-end from a stray click near the board, which sits right above this button.
+        function setForfeitButtonState(armed) {
+            const btn = document.getElementById('live-forfeit-btn');
+            if (!btn) return;
+            btn.innerText = armed ? 'Tap again to confirm forfeit' : 'Forfeit Match';
+            btn.classList.toggle('text-slate-500',     !armed);
+            btn.classList.toggle('hover:text-slate-300', !armed);
+            btn.classList.toggle('text-red-400',         armed);
+            btn.classList.toggle('hover:text-red-300',   armed);
+        }
+
+        // 2-step confirm: stray clicks right under the board (where the button sits) used to end matches.
         function liveQuitMatch() {
             if (!liveMatch) return;
-            const btn = document.getElementById('live-forfeit-btn');
             if (!liveQuitMatch._armed) {
                 liveQuitMatch._armed = true;
-                if (btn) {
-                    btn.innerText = 'Tap again to confirm forfeit';
-                    btn.classList.remove('text-slate-500', 'hover:text-slate-300');
-                    btn.classList.add('text-red-400', 'hover:text-red-300');
-                }
+                setForfeitButtonState(true);
                 clearTimeout(liveQuitMatch._t);
                 liveQuitMatch._t = setTimeout(() => {
                     liveQuitMatch._armed = false;
-                    if (btn) {
-                        btn.innerText = 'Forfeit Match';
-                        btn.classList.add('text-slate-500', 'hover:text-slate-300');
-                        btn.classList.remove('text-red-400', 'hover:text-red-300');
-                    }
+                    setForfeitButtonState(false);
                 }, 2500);
                 return;
             }
             liveQuitMatch._armed = false;
             clearTimeout(liveQuitMatch._t);
-            if (btn) {
-                btn.innerText = 'Forfeit Match';
-                btn.classList.add('text-slate-500', 'hover:text-slate-300');
-                btn.classList.remove('text-red-400', 'hover:text-red-300');
-            }
+            setForfeitButtonState(false);
             // Forfeit: opponent gets 3-0 by default
             liveMatch.gameOver = true;
             if (liveMatch.homeIsPlayer) { liveMatch.hG = 0; liveMatch.aG = Math.max(liveMatch.aG, 3); }
