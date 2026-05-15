@@ -59,14 +59,15 @@
         .booster-rocket .tile-inner { background-image: url('assets/tile-booster-rocket.png'); }
         .booster-bomb   .tile-inner { background-image: url('assets/tile-booster-bomb.png');   }
 
-        /* Boosters retain a thick colored ring in their type's color so players can see which color they chain with. */
+        /* Boosters: shrink ball sprite and back it with a solid type-color disc so chain color is unmistakable. */
         .booster-rocket .tile-inner,
         .booster-bomb   .tile-inner {
+            background-size: 68% 68%;
+            background-color: var(--type-color);
             box-shadow:
                 0 4px 10px rgba(0,0,0,0.55),
                 inset 0 0 0 1px rgba(255,255,255,0.55),
-                inset 0 0 0 6px var(--type-color),
-                inset 0 0 0 7px rgba(0,0,0,0.35),
+                inset 0 0 0 3px rgba(0,0,0,0.32),
                 0 0 14px 1px var(--type-color);
         }
 
