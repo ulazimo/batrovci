@@ -465,15 +465,54 @@
         /* meter color-dots */
         .meter-tile {
             display: inline-block;
-            width: 8px; height: 8px;
+            width: 11px; height: 11px;
             border-radius: 50%;
-            margin-right: 3px;
+            margin-right: 4px;
             vertical-align: middle;
+            border: 1px solid rgba(255,255,255,0.18);
         }
-        .meter-tile.attack  { background: #ff6b6b; box-shadow: 0 0 4px #ff6b6b; }
-        .meter-tile.pass    { background: #55efc4; box-shadow: 0 0 4px #55efc4; }
-        .meter-tile.defense { background: #74b9ff; box-shadow: 0 0 4px #74b9ff; }
-        .meter-tile.stamina { background: #ffeaa7; box-shadow: 0 0 4px #ffeaa7; }
+        .meter-tile.attack  { background: #ff6b6b; box-shadow: 0 0 6px #ff6b6b; }
+        .meter-tile.pass    { background: #55efc4; box-shadow: 0 0 6px #55efc4; }
+        .meter-tile.defense { background: #74b9ff; box-shadow: 0 0 6px #74b9ff; }
+        .meter-tile.stamina { background: #ffeaa7; box-shadow: 0 0 6px #ffeaa7; }
+
+        /* Phase glow — active card has a soft pulsing halo so player always knows whose bar is moving */
+        @keyframes phasePulse {
+            0%, 100% { filter: brightness(1); }
+            50%      { filter: brightness(1.18); }
+        }
+        .phase-active-shot {
+            border-color: rgba(34, 211, 238, 0.85) !important;
+            box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.45), 0 0 14px rgba(34, 211, 238, 0.35);
+            animation: phasePulse 1.8s ease-in-out infinite;
+        }
+        .phase-active-pressure {
+            border-color: rgba(248, 113, 113, 0.85) !important;
+            box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.45), 0 0 14px rgba(248, 113, 113, 0.35);
+            animation: phasePulse 1.8s ease-in-out infinite;
+        }
+
+        /* Connection burst — a colored dot streaks from matched cluster to the bar it feeds */
+        .connection-burst {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 200;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Bar header explainer (sub-line under each bar): tiny, low-contrast tile-to-effect hint */
+        .bar-hint {
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgb(100, 116, 139);
+            margin-top: 3px;
+            line-height: 1.1;
+        }
 
         /* ── SAFE AREA + MOBILE OPTIMIZATIONS ─────────────────────────── */
 
@@ -789,20 +828,24 @@
         <!-- Shot meter (LFC) + Pressure (OPP) — color dots show which tiles feed each -->
         <div id="live-meters-grid" class="grid grid-cols-2 gap-2 mb-3 shrink-0">
             <div id="live-shot-card" class="relative bg-slate-900 border border-blue-500/20 rounded-xl p-2">
-                <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
-                    <span class="text-blue-400"><span class="meter-tile attack"></span><span class="meter-tile pass"></span>Shot</span><span id="live-shot-pct" class="text-slate-500">0%</span>
+                <div class="flex justify-between items-center mb-1 gap-1">
+                    <span class="flex items-center min-w-0 text-cyan-300 text-[10px] uppercase font-black tracking-widest"><span class="meter-tile attack"></span><span class="meter-tile pass"></span><span class="truncate">YOUR&nbsp;SHOT</span></span>
+                    <span id="live-shot-pct" class="text-slate-400 text-[10px] uppercase font-black shrink-0">0%</span>
                 </div>
                 <div class="h-2 rounded-full overflow-hidden bg-slate-800">
                     <div id="live-shot-fill" class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-150" style="width:0%"></div>
                 </div>
+                <div class="bar-hint">Red + Green fill</div>
             </div>
             <div id="live-pressure-card" class="relative bg-slate-900 border border-red-500/20 rounded-xl p-2">
-                <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
-                    <span class="text-red-400"><span class="meter-tile defense"></span>Pressure</span><span id="live-pressure-pct" class="text-slate-500">0%</span>
+                <div class="flex justify-between items-center mb-1 gap-1">
+                    <span class="flex items-center min-w-0 text-red-300 text-[10px] uppercase font-black tracking-widest"><span class="meter-tile defense"></span><span class="truncate">OPP&nbsp;PRESSURE</span></span>
+                    <span id="live-pressure-pct" class="text-slate-400 text-[10px] uppercase font-black shrink-0">0%</span>
                 </div>
                 <div class="h-2 rounded-full overflow-hidden bg-slate-800">
                     <div id="live-pressure-fill" class="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-150" style="width:0%"></div>
                 </div>
+                <div class="bar-hint">Blue clears · Opp builds</div>
             </div>
         </div>
 
@@ -811,12 +854,14 @@
 
         <!-- Stamina -->
         <div id="live-stamina-box" class="bg-slate-900 border border-yellow-500/20 rounded-xl p-2 mb-3 shrink-0">
-            <div class="flex justify-between text-[8px] uppercase font-black tracking-widest mb-1">
-                <span class="text-yellow-400"><span class="meter-tile stamina"></span>Stamina</span><span id="live-stamina-pct" class="text-slate-500">100%</span>
+            <div class="flex justify-between items-center mb-1 gap-1">
+                <span class="flex items-center min-w-0 text-yellow-300 text-[10px] uppercase font-black tracking-widest"><span class="meter-tile stamina"></span><span class="truncate">STAMINA</span></span>
+                <span id="live-stamina-pct" class="text-slate-400 text-[10px] uppercase font-black shrink-0">100%</span>
             </div>
             <div class="h-1.5 rounded-full overflow-hidden bg-slate-800">
                 <div id="live-stamina-fill" class="h-full bg-yellow-500 transition-all duration-150" style="width:100%"></div>
             </div>
+            <div class="bar-hint">Yellow refills · Time drains</div>
         </div>
 
         <!-- Quit (2-step confirm to prevent accidental forfeit) -->
@@ -1007,8 +1052,8 @@
             }
         }
 
-        function spawnGroupFloats(matchedKeys) {
-            if (!boardEl || !matchedKeys || !matchedKeys.size) return;
+        // Compute per-type cluster centroids from a Set of "r,c" keys
+        function groupCentroidsByType(matchedKeys) {
             const byType = {};
             matchedKeys.forEach(k => {
                 const [r, c] = k.split(',').map(Number);
@@ -1016,6 +1061,12 @@
                 const g = byType[tile.type] || (byType[tile.type] = { count: 0, rSum: 0, cSum: 0 });
                 g.count++; g.rSum += r; g.cSum += c;
             });
+            return byType;
+        }
+
+        function spawnGroupFloats(matchedKeys) {
+            if (!boardEl || !matchedKeys || !matchedKeys.size) return;
+            const byType = groupCentroidsByType(matchedKeys);
             const step = 100 / GRID_SIZE;
             Object.entries(byType).forEach(([type, g]) => {
                 if (g.count < 3) return;
@@ -1031,6 +1082,36 @@
                 el.innerText = '+' + g.count;
                 boardEl.appendChild(el);
                 setTimeout(() => el.remove(), 950);
+            });
+        }
+
+        const TYPE_TO_BAR = { attack: 'live-shot-fill', pass: 'live-shot-fill', defense: 'live-pressure-fill', stamina: 'live-stamina-fill' };
+        function spawnConnectionBursts(matchedKeys) {
+            if (!boardEl || !matchedKeys || !matchedKeys.size) return;
+            const byType = groupCentroidsByType(matchedKeys);
+            const boardRect = boardEl.getBoundingClientRect();
+            const tilePx = boardRect.width / GRID_SIZE;
+            Object.entries(byType).forEach(([type, g]) => {
+                const targetEl = document.getElementById(TYPE_TO_BAR[type]);
+                if (!targetEl) return;
+                const tRect = targetEl.getBoundingClientRect();
+                const fromX = boardRect.left + ((g.cSum / g.count) + 0.5) * tilePx;
+                const fromY = boardRect.top  + ((g.rSum / g.count) + 0.5) * tilePx;
+                const toX = tRect.left + tRect.width  / 2;
+                const toY = tRect.top  + tRect.height / 2;
+                const color = BALL_COLORS[type] || '#fff';
+                const burst = document.createElement('div');
+                burst.className = 'connection-burst';
+                burst.style.left = fromX + 'px';
+                burst.style.top  = fromY + 'px';
+                burst.style.background = color;
+                burst.style.boxShadow  = `0 0 12px ${color}, 0 0 18px ${color}`;
+                document.body.appendChild(burst);
+                burst.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)',   opacity: 1, offset: 0 },
+                    { transform: `translate(calc(${toX-fromX}px - 50%), calc(${toY-fromY}px - 50%)) scale(0.45)`, opacity: 0, offset: 1 }
+                ], { duration: 480, easing: 'cubic-bezier(0.5, 0, 0.45, 1)', fill: 'forwards' });
+                setTimeout(() => burst.remove(), 520);
             });
         }
 
@@ -1681,6 +1762,7 @@
             if (gameMode === 'live' && liveMatch) {
                 if (hasBomb)        liveMatch.lastBooster = 'bomb';
                 else if (hasRocket) liveMatch.lastBooster = 'rocket';
+                spawnConnectionBursts(matches);
             }
             // Pop animation + particles
             matches.forEach(m => {
@@ -2191,11 +2273,20 @@
             liveMatch.currentActObj = openAct;
             liveShowActTransition(openAct);
             liveUpdateBars();
+            setPhaseGlow('player');
+        }
+
+        function setPhaseGlow(phase) {
+            const shotCard = document.getElementById('live-shot-card');
+            const pressCard = document.getElementById('live-pressure-card');
+            if (shotCard)  shotCard.classList.toggle('phase-active-shot',     phase === 'player');
+            if (pressCard) pressCard.classList.toggle('phase-active-pressure', phase === 'opp');
         }
 
         function liveOnPlayerTurnEnd() {
             if (!liveMatch || liveMatch.gameOver) return;
             liveMatch.phase = 'opp';
+            setPhaseGlow('opp');
             showTurnCard('YOU', liveMatch.turnGains);
             // 650ms = beat to read the YOU card before opp animation steals attention
             clearTimeout(liveOnPlayerTurnEnd._t);
@@ -2249,6 +2340,7 @@
                 liveMatch.turnGains = { attack:0, pass:0, defense:0, stamina:0, atkPts:0, passPts:0, defRel:0, stamRec:0 };
                 liveMatch.lastBooster = null;
                 liveMatch.phase = 'player';
+                setPhaseGlow('player');
                 hideTurnCard();
             }, 700);
         }
@@ -2660,6 +2752,7 @@
             clearTimeout(liveOnPlayerTurnEnd._t);
             clearTimeout(liveOpponentTurn._t);
             hideTurnCard();
+            setPhaseGlow(null);
             // Hide any pending alerts (defense + shoot + act banner)
             const da = document.getElementById('live-defense-alert');
             if (da) da.classList.remove('active');
