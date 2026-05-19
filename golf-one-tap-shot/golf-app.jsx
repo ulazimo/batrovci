@@ -1457,7 +1457,7 @@ function GolfApp() {
             min={1.4} max={3.5} step={0.1} unit="x"
             onChange={v => setTweak('zoomFactor', v)} />
           <TweakSlider label="Breath seconds" value={t.breathSeconds}
-            min={1.0} max={5.0} step={0.2} unit="s"
+            min={0} max={5.0} step={0.2} unit="s"
             onChange={v => setTweak('breathSeconds', v)} />
           <TweakSlider label="Scope sensitivity" value={t.scopeSensitivity}
             min={0.1} max={1.0} step={0.05} unit="x"
