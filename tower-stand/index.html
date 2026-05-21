@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tower Stand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #060812;
+            --bg-2: #0d1224;
+            --panel: #121732;
+            --panel-2: #1a2042;
+            --border: #2a3460;
+            --primary: #00f0ff;
+            --primary-dim: #0090a6;
+            --secondary: #7b5cff;
+            --accent: #ffd54a;
+            --danger: #ff4a6e;
+            --heal: #4aff8c;
+            --shield: #5ec1ff;
+            --thorns: #b66bff;
+            --text: #e6ecff;
+            --muted: #8a93b4;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Rajdhani', system-ui, sans-serif;
+            touch-action: none; user-select: none; -webkit-user-select: none;
+            overscroll-behavior: contain;
+        }
+
+        a.all-games {
+            position: fixed; top: 10px; left: 10px; z-index: 9999;
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; color: rgba(255,255,255,0.55);
+            font-size: 11px; text-decoration: none; backdrop-filter: blur(6px);
+            transition: opacity 0.2s, background 0.2s;
+            opacity: 0.35;
+        }
+        a.all-games:hover { opacity: 1; background: rgba(0,0,0,0.8); }
+        /* keep STAGE label clear of the back link */
+        .hud-row:first-child { padding-left: 84px; }
+
+        #game-root {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            background:
+                radial-gradient(ellipse at top, #14193a 0%, transparent 60%),
+                radial-gradient(ellipse at bottom, #0a1530 0%, transparent 60%),
+                var(--bg);
+        }
+
+        /* ===== TOP HUD ===== */
+        #hud {
+            position: relative; z-index: 5;
+            padding: max(10px, env(safe-area-inset-top, 0px)) 10px 8px;
+            display: flex; flex-direction: column; gap: 6px;
+            background: linear-gradient(180deg, rgba(8,12,30,0.92) 0%, rgba(8,12,30,0.6) 70%, transparent 100%);
+        }
+        .hud-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .hud-stage { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 14px; letter-spacing: 0.08em; color: var(--primary); text-shadow: 0 0 12px rgba(0,240,255,0.35); }
+        .hud-stage span.wave { color: var(--text); opacity: 0.7; font-weight: 700; font-size: 12px; margin-left: 6px; }
+        .hud-money { display: flex; align-items: center; gap: 4px; font-weight: 700; color: var(--accent); font-size: 16px; text-shadow: 0 0 8px rgba(255,213,74,0.4); }
+        .hud-money::before { content: '◆'; font-size: 12px; }
+        .hud-bars { display: flex; flex-direction: column; gap: 4px; }
+        .bar { position: relative; height: 14px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; transition: width 0.15s linear; border-radius: 4px; }
+        .bar-fill.hp { background: linear-gradient(90deg, #ff4a6e 0%, #ff7c4a 100%); box-shadow: 0 0 8px rgba(255,74,110,0.4) inset; }
+        .bar-fill.shield { background: linear-gradient(90deg, #5ec1ff 0%, #00f0ff 100%); box-shadow: 0 0 8px rgba(94,193,255,0.4) inset; }
+        .bar-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.7); letter-spacing: 0.04em; }
+        .wave-track { position: relative; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-top: 2px; }
+        .wave-track-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--primary); box-shadow: 0 0 6px var(--primary); transition: width 0.3s ease; }
+
+        /* ===== CANVAS ===== */
+        #arena-wrap {
+            flex: 1; position: relative; overflow: hidden;
+            min-height: 0;
+        }
+        #canvas {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            display: block;
+        }
+        .center-msg {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 28px;
+            color: var(--primary); text-shadow: 0 0 20px var(--primary);
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.3s ease;
+            letter-spacing: 0.1em; text-align: center;
+            white-space: nowrap;
+        }
+        .center-msg.show { opacity: 1; }
+
+        /* ===== UPGRADE PANEL ===== */
+        #panel {
+            position: relative; z-index: 5;
+            background: linear-gradient(180deg, rgba(8,12,30,0.4) 0%, rgba(8,12,30,0.95) 30%);
+            padding: 4px 6px max(6px, env(safe-area-inset-bottom, 0px));
+            display: flex; flex-direction: column; gap: 4px;
+            height: 36%; max-height: 320px; min-height: 200px;
+        }
+        .tabs { display: flex; gap: 6px; }
+        .tab {
+            flex: 1; padding: 8px 4px; border: 1px solid var(--border); background: var(--panel);
+            color: var(--muted); border-radius: 8px; font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;
+            cursor: pointer; transition: all 0.15s ease;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .tab.active { background: var(--panel-2); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(0,240,255,0.15); }
+        .tab .tab-ico { font-size: 14px; }
+
+        .list-wrap {
+            flex: 1; position: relative; overflow: hidden;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+        }
+        .list {
+            position: absolute; inset: 0;
+            overflow-y: auto;
+            padding: 6px 6px 24px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-dim) transparent;
+        }
+        .list::-webkit-scrollbar { width: 4px; }
+        .list::-webkit-scrollbar-thumb { background: var(--primary-dim); border-radius: 2px; }
+        /* gradient hint at bottom to show more items below */
+        .list-wrap::after {
+            content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+            background: linear-gradient(180deg, transparent 0%, rgba(8,12,30,0.95) 100%);
+            pointer-events: none;
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+        }
+
+        .upgrade {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; margin-bottom: 6px;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+            transition: all 0.12s ease;
+            cursor: pointer;
+        }
+        .upgrade:active { transform: scale(0.985); }
+        .upgrade.affordable { border-color: var(--primary-dim); }
+        .upgrade.affordable:hover { background: var(--panel-2); border-color: var(--primary); box-shadow: 0 0 12px rgba(0,240,255,0.15); }
+        .upgrade.locked { opacity: 0.55; cursor: not-allowed; }
+        .upgrade.maxed { opacity: 0.6; cursor: default; }
+
+        .up-info { flex: 1; min-width: 0; }
+        .up-name { font-weight: 700; font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+        .up-name .ico { font-size: 14px; }
+        .up-desc { font-size: 11px; color: var(--muted); margin-top: 1px; line-height: 1.25; }
+        .up-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 70px; }
+        .up-level { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+        .up-level b { color: var(--primary); }
+        .up-cost { font-weight: 700; font-size: 13px; color: var(--accent); display: flex; align-items: center; gap: 3px; }
+        .up-cost::before { content: '◆'; font-size: 10px; }
+        .up-cost.cant { color: var(--danger); }
+        .up-cost.free { color: var(--heal); }
+
+        /* ===== OVERLAYS ===== */
+        .overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .overlay.show { opacity: 1; pointer-events: auto; }
+        .overlay-card {
+            width: 100%; max-width: 480px;
+            background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .overlay-title {
+            font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 22px;
+            color: var(--primary); text-align: center; margin: 0 0 4px;
+            letter-spacing: 0.08em; text-shadow: 0 0 16px rgba(0,240,255,0.4);
+        }
+        .overlay-sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 12px 18px;
+            background: var(--primary); color: #001620;
+            border: none; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 15px;
+            letter-spacing: 0.06em; text-transform: uppercase;
+            cursor: pointer; transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0,240,255,0.3);
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,240,255,0.5); }
+        .btn:active { transform: translateY(0); }
+        .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+        .btn.ghost:hover { background: var(--panel); border-color: var(--primary); color: var(--primary); }
+        .btn.full { width: 100%; }
+
+        /* Boon picker */
+        .boons { display: flex; flex-direction: column; gap: 10px; }
+        .boon {
+            display: flex; gap: 12px; align-items: flex-start;
+            padding: 14px;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+            cursor: pointer; transition: all 0.15s ease;
+            text-align: left;
+        }
+        .boon:hover {
+            background: var(--panel-2);
+            border-color: var(--secondary);
+            box-shadow: 0 0 18px rgba(123,92,255,0.25);
+            transform: translateY(-2px);
+        }
+        .boon-ico {
+            flex-shrink: 0;
+            width: 36px; height: 36px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--secondary) 0%, #4a2bff 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; box-shadow: 0 0 12px rgba(123,92,255,0.4);
+        }
+        .boon-text { flex: 1; }
+        .boon-name { font-weight: 700; font-size: 15px; color: var(--text); }
+        .boon-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+
+        /* Active boons display */
+        #active-boons {
+            position: absolute; left: 8px; bottom: 8px;
+            display: flex; gap: 4px; flex-wrap: wrap;
+            max-width: calc(100% - 16px);
+            pointer-events: none;
+        }
+        .active-boon {
+            background: rgba(123,92,255,0.25);
+            border: 1px solid rgba(123,92,255,0.6);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px; font-weight: 700;
+            color: #d6c8ff;
+        }
+
+        /* Leaderboard */
+        .lb-list { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+        .lb-row {
+            display: grid; grid-template-columns: 28px 1fr auto auto;
+            gap: 10px; padding: 8px 10px;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; align-items: center;
+        }
+        .lb-row.you { background: rgba(0,240,255,0.1); border-color: var(--primary); }
+        .lb-rank { font-weight: 900; color: var(--accent); font-family: 'Orbitron'; }
+        .lb-row.you .lb-rank { color: var(--primary); }
+        .lb-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .lb-stage { font-size: 11px; color: var(--muted); }
+        .lb-score { font-weight: 700; color: var(--primary); font-family: 'Orbitron'; font-size: 12px; }
+        .lb-loading, .lb-empty { text-align: center; color: var(--muted); padding: 20px; font-size: 13px; }
+
+        .name-input {
+            width: 100%; padding: 10px 12px;
+            background: var(--panel); color: var(--text);
+            border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'Rajdhani'; font-size: 16px; font-weight: 700;
+            text-align: center; letter-spacing: 0.1em; text-transform: uppercase;
+            margin-bottom: 10px;
+            outline: none;
+        }
+        .name-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,240,255,0.18); }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .stat-cell {
+            padding: 8px 10px; background: var(--panel); border-radius: 6px; border: 1px solid var(--border);
+        }
+        .stat-cell .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .stat-cell .val { font-weight: 700; font-size: 16px; color: var(--text); font-family: 'Orbitron'; }
+        .stat-cell.big { grid-column: span 2; text-align: center; }
+        .stat-cell.big .val { color: var(--primary); font-size: 22px; }
+
+        .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-row .btn { flex: 1; }
+
+        /* Compact on small / short portrait screens */
+        @media (max-width: 420px), (max-height: 720px) {
+            #hud { padding-top: max(6px, env(safe-area-inset-top, 0px)); padding-bottom: 4px; gap: 4px; }
+            .hud-stage { font-size: 12px; }
+            .hud-money { font-size: 14px; }
+            .bar { height: 11px; }
+            .bar-label { font-size: 9px; }
+            .tab { font-size: 11px; padding: 6px 2px; }
+            .tab .tab-ico { display: none; }
+            #panel { height: 34%; min-height: 180px; max-height: 280px; gap: 4px; }
+            .upgrade { padding: 6px 8px; margin-bottom: 4px; }
+            .up-name { font-size: 12px; gap: 4px; }
+            .up-name .ico { font-size: 12px; }
+            .up-desc { font-size: 10px; line-height: 1.2; }
+            .up-level { font-size: 10px; }
+            .up-cost { font-size: 12px; }
+            .up-right { min-width: 56px; }
+            .active-boon { font-size: 10px; padding: 1px 5px; }
+        }
+        @media (max-height: 600px) {
+            #panel { height: 38%; min-height: 160px; max-height: 240px; }
+            .center-msg { font-size: 22px; }
+        }
+        @media (min-width: 720px) and (min-height: 800px) {
+            #panel { height: 32%; max-height: 360px; }
+            .upgrade { padding: 10px 12px; }
+            .up-name { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <a class="all-games" href="../index.html">← All Games</a>
+
+    <div id="game-root">
+        <!-- TOP HUD -->
+        <div id="hud">
+            <div class="hud-row">
+                <div class="hud-stage">STAGE <span id="ui-stage">1</span><span class="wave">WAVE <span id="ui-wave">0</span>/<span id="ui-wave-max">5</span></span></div>
+                <div class="hud-money" id="ui-money">0</div>
+            </div>
+            <div class="hud-bars">
+                <div class="bar">
+                    <div class="bar-fill hp" id="bar-hp" style="width:100%"></div>
+                    <div class="bar-label" id="ui-hp">100 / 100</div>
+                </div>
+                <div class="bar" id="bar-shield-wrap" style="display:none">
+                    <div class="bar-fill shield" id="bar-shield" style="width:0%"></div>
+                    <div class="bar-label" id="ui-shield">0 / 0</div>
+                </div>
+                <div class="wave-track"><div class="wave-track-fill" id="wave-track-fill" style="width:0%"></div></div>
+            </div>
+        </div>
+
+        <!-- ARENA -->
+        <div id="arena-wrap">
+            <canvas id="canvas"></canvas>
+            <div class="center-msg" id="center-msg"></div>
+            <div id="active-boons"></div>
+        </div>
+
+        <!-- UPGRADE PANEL -->
+        <div id="panel">
+            <div class="tabs">
+                <div class="tab active" data-cat="attack"><span class="tab-ico">⚔</span><span>Attack</span></div>
+                <div class="tab" data-cat="defense"><span class="tab-ico">🛡</span><span>Defense</span></div>
+                <div class="tab" data-cat="economy"><span class="tab-ico">◆</span><span>Economy</span></div>
+            </div>
+            <div class="list-wrap">
+                <div class="list" id="upgrade-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== OVERLAY: START ===== -->
+    <div class="overlay show" id="overlay-start">
+        <div class="overlay-card">
+            <h1 class="overlay-title">TOWER STAND</h1>
+            <div class="overlay-sub">Defend the core. Survive endless waves.</div>
+            <div class="stat-grid">
+                <div class="stat-cell"><div class="lbl">Enemies</div><div class="val">4 Types</div></div>
+                <div class="stat-cell"><div class="lbl">Stages</div><div class="val">∞</div></div>
+                <div class="stat-cell big"><div class="lbl">Pick boons between stages</div><div class="val">15 boons</div></div>
+            </div>
+            <button class="btn full" id="btn-start">Begin Defense</button>
+            <button class="btn ghost full" id="btn-show-lb" style="margin-top:8px">View Leaderboard</button>
+        </div>
+    </div>
+
+    <!-- ===== OVERLAY: BOONS ===== -->
+    <div class="overlay" id="overlay-boons">
+        <div class="overlay-card">
+            <h2 class="overlay-title">STAGE CLEAR</h2>
+            <div class="overlay-sub">Choose a boon. They stack forever.</div>
+            <div class="boons" id="boon-list"></div>
+        </div>
+    </div>
+
+    <!-- ===== OVERLAY: GAME OVER ===== -->
+    <div class="overlay" id="overlay-gameover">
+        <div class="overlay-card">
+            <h2 class="overlay-title" style="color: var(--danger); text-shadow: 0 0 16px rgba(255,74,110,0.4)">TOWER FALLEN</h2>
+            <div class="overlay-sub" id="go-sub">You held for X waves.</div>
+            <div class="stat-grid">
+                <div class="stat-cell"><div class="lbl">Stage Reached</div><div class="val" id="go-stage">1</div></div>
+                <div class="stat-cell"><div class="lbl">Total Damage</div><div class="val" id="go-damage">0</div></div>
+                <div class="stat-cell big"><div class="lbl">Final Score</div><div class="val" id="go-score">0</div></div>
+            </div>
+            <div id="go-submit-block">
+                <input class="name-input" id="go-name" maxlength="12" placeholder="ENTER NAME" autocomplete="off">
+                <button class="btn full" id="go-submit">Submit Score</button>
+            </div>
+            <div id="go-lb-block" style="display:none">
+                <div class="lb-list" id="lb-list"></div>
+            </div>
+            <div class="btn-row">
+                <button class="btn ghost" id="go-restart">Play Again</button>
+                <button class="btn" id="go-lb-toggle">Leaderboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== OVERLAY: LEADERBOARD (from menu) ===== -->
+    <div class="overlay" id="overlay-lb">
+        <div class="overlay-card">
+            <h2 class="overlay-title">LEADERBOARD</h2>
+            <div class="overlay-sub">Top 10 defenders</div>
+            <div class="lb-list" id="lb-list-menu"></div>
+            <button class="btn ghost full" id="lb-close">Close</button>
+        </div>
+    </div>
+
+    <script>
+    'use strict';
+
+    // ════════════════════════════════════════════════════════
+    //  CONSTANTS & DATA
+    // ════════════════════════════════════════════════════════
+
+    const WAVE_COUNTS = [5, 10, 15, 25]; // cycles per stage
+    const SPAWN_PAD = 40; // distance past edge to spawn
+
+    // Range is expressed as fraction of min(viewW,viewH) so it scales with screen.
+    // Enemy speeds/radii in the arch table are calibrated to a 600px baseline and
+    // get multiplied by scaleFactor() at spawn time.
+    const BASE_STATS = {
+        damage: 7,
+        attackSpeed: 1.2, // shots/sec
+        range: 0.32,   // fraction of min(viewW,viewH)
+        critChance: 0,
+        critDamage: 1.5,
+        maxHp: 150,
+        shieldMax: 0,
+        shieldRegen: 0, // per sec
+        thorns: 0,
+        regen: 0, // hp per sec
+        moneyMult: 1.0,
+        discount: 0
+    };
+
+    // Viewport scale factor for speeds, radii, tower size.
+    function scaleFactor() { return Math.max(0.65, Math.min(viewW, viewH) / 620); }
+    function towerRadius() { return Math.max(22, Math.min(32, 26 * scaleFactor())); }
+    function rangePx() { return Math.min(viewW, viewH) * statValue('range'); }
+
+    // Upgrades — perLevel is the per-level increment in the stat space.
+    // baseCost/scale define cost curve; cost grows faster past lvl 5.
+    const UPGRADES = {
+        attack: [
+            { key: 'damage',      name: 'Damage',       ico: '⚔', baseCost: 10, scale: 1.18, perLevel: 0.15, type: 'pct',  desc: '+15% bullet damage' },
+            { key: 'attackSpeed', name: 'Attack Speed', ico: '⚡', baseCost: 12, scale: 1.20, perLevel: 0.10, type: 'pct',  desc: '+10% fire rate' },
+            { key: 'critChance',  name: 'Crit Chance',  ico: '✦', baseCost: 20, scale: 1.22, perLevel: 0.02, type: 'flat', max: 0.5, desc: '+2% chance to crit' },
+            { key: 'critDamage',  name: 'Crit Damage',  ico: '※', baseCost: 25, scale: 1.20, perLevel: 0.15, type: 'flat', desc: '+15% crit multiplier' },
+            { key: 'range',       name: 'Range',        ico: '◎', baseCost: 18, scale: 1.22, perLevel: 0.06, type: 'pct',  desc: '+6% tower range' }
+        ],
+        defense: [
+            { key: 'maxHp',       name: 'Max HP',       ico: '♥', baseCost: 10, scale: 1.18, perLevel: 0.20, type: 'pct',  desc: '+20% max HP (heals)' },
+            { key: 'shieldMax',   name: 'Shield',       ico: '◈', baseCost: 30, scale: 1.24, perLevel: 25,   type: 'flat', desc: '+25 shield (absorbs first)' },
+            { key: 'shieldRegen', name: 'Shield Regen', ico: '◇', baseCost: 22, scale: 1.22, perLevel: 2,    type: 'flat', desc: '+2 shield / sec' },
+            { key: 'thorns',      name: 'Thorns',       ico: '✺', baseCost: 25, scale: 1.22, perLevel: 0.08, type: 'flat', max: 1.5, desc: '+8% damage reflected' },
+            { key: 'regen',       name: 'HP Regen',     ico: '✚', baseCost: 18, scale: 1.20, perLevel: 0.5,  type: 'flat', desc: '+0.5 HP / sec' }
+        ],
+        economy: [
+            { key: 'moneyMult', name: 'Money Bonus', ico: '◆', baseCost: 25, scale: 1.30, perLevel: 0.05, type: 'flat', max: 5.0, desc: '+5% money per kill' },
+            { key: 'discount',  name: 'Discount',    ico: '%',  baseCost: 40, scale: 1.32, perLevel: 0.05, type: 'flat', max: 0.50, desc: '−5% upgrade cost' }
+        ]
+    };
+
+    const BOONS = [
+        { id: 'double_shot',   name: 'Double Shot',     ico: '⫶', desc: 'Fire two bullets per shot' },
+        { id: 'chain',         name: 'Chain Lightning', ico: '⚡', desc: 'Bullets arc to 1 nearby enemy (60% dmg)' },
+        { id: 'splash',        name: 'Splash Damage',   ico: '✺', desc: 'Bullets deal 35% AoE damage in a small radius' },
+        { id: 'pierce',        name: 'Piercing Shots',  ico: '➤', desc: 'Bullets pierce through 1 additional enemy' },
+        { id: 'slow',          name: 'Slowing Shots',   ico: '❄', desc: 'Hits slow enemies 25% for 1.5s' },
+        { id: 'vampiric',      name: 'Vampiric',        ico: '✚', desc: 'Heal for 1.5% of damage dealt' },
+        { id: 'berserk',       name: 'Berserker',       ico: '☠', desc: '+50% attack speed below 50% HP' },
+        { id: 'last_stand',    name: 'Last Stand',      ico: '⚔', desc: '+80% damage below 30% HP' },
+        { id: 'glass_cannon',  name: 'Glass Cannon',    ico: '✦', desc: '+50% damage but −20% max HP' },
+        { id: 'greed',         name: 'Greed',           ico: '◆', desc: '+30% money, −10% damage' },
+        { id: 'shield_surge',  name: 'Shield Surge',    ico: '◈', desc: 'Crits restore 8% of max shield' },
+        { id: 'reinforced',    name: 'Reinforced Plates', ico: '▣', desc: 'Shield regen +100%' },
+        { id: 'boss_hunter',   name: 'Boss Hunter',     ico: '☼', desc: '+100% damage vs bosses' },
+        { id: 'armor_pierce',  name: 'Armor Pierce',    ico: '◆', desc: '+60% damage vs armored' },
+        { id: 'steady_flow',   name: 'Steady Flow',     ico: '◍', desc: '+1 money per second passively' }
+    ];
+
+    // Enemy archetypes
+    const ENEMY_TYPES = {
+        melee: {
+            base: { hp: 14, speed: 62, dmg: 3, attackInterval: 1.2, money: 4, radius: 11 },
+            color: '#ff6b6b', stroke: '#7a1818',
+            shape: 'triangle'
+        },
+        ranged: {
+            base: { hp: 10, speed: 48, dmg: 6, attackInterval: 1.6, money: 6, radius: 10, projSpeed: 240 },
+            color: '#ffd54a', stroke: '#7a5a18',
+            shape: 'diamond'
+        },
+        armored: {
+            base: { hp: 42, speed: 36, dmg: 2, attackInterval: 1.5, money: 8, radius: 13 },
+            color: '#8a99b0', stroke: '#2a3040',
+            shape: 'pentagon'
+        },
+        boss: {
+            base: { hp: 240, speed: 30, dmg: 14, attackInterval: 1.0, money: 70, radius: 22 },
+            color: '#b66bff', stroke: '#3a1860',
+            shape: 'hexagon'
+        }
+    };
+
+    // ════════════════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════════════════
+
+    const state = {
+        scene: 'menu',
+        stage: 1,
+        wave: 0,
+        waveActive: false,
+        waveSpawnQueue: [],
+        waveBetweenTimer: 0,
+        money: 0,
+        moneyAccumulator: 0,
+        totalDamage: 0,
+        upgradeLevels: {},
+        boons: new Set(),
+        enemies: [],
+        bullets: [],
+        particles: [],
+        damageNumbers: [],
+        tower: null,
+        currentCat: 'attack',
+        scoreSubmitted: false,
+        lastEntryId: null
+    };
+
+    // ════════════════════════════════════════════════════════
+    //  CANVAS / RESIZE
+    // ════════════════════════════════════════════════════════
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let viewW = 0, viewH = 0, dpr = 1;
+
+    let gridCanvas = null;
+    function rebuildGrid() {
+        gridCanvas = document.createElement('canvas');
+        gridCanvas.width = Math.floor(viewW * dpr);
+        gridCanvas.height = Math.floor(viewH * dpr);
+        const g = gridCanvas.getContext('2d');
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.strokeStyle = 'rgba(0,240,255,0.03)';
+        g.lineWidth = 1;
+        const gs = 40;
+        for (let x = 0; x < viewW; x += gs) {
+            g.beginPath(); g.moveTo(x, 0); g.lineTo(x, viewH); g.stroke();
+        }
+        for (let y = 0; y < viewH; y += gs) {
+            g.beginPath(); g.moveTo(0, y); g.lineTo(viewW, y); g.stroke();
+        }
+    }
+
+    function resize() {
+        const rect = canvas.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        viewW = rect.width;
+        viewH = rect.height;
+        canvas.width = Math.floor(viewW * dpr);
+        canvas.height = Math.floor(viewH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        rebuildGrid();
+    }
+    window.addEventListener('resize', resize);
+
+    // ════════════════════════════════════════════════════════
+    //  DERIVED STATS
+    // ════════════════════════════════════════════════════════
+
+    const DEFS_BY_KEY = (() => {
+        const m = {};
+        for (const cat of Object.values(UPGRADES)) for (const u of cat) m[u.key] = u;
+        return m;
+    })();
+
+    function getLvl(key) { return state.upgradeLevels[key] || 0; }
+    function getDef(key) { return DEFS_BY_KEY[key] || null; }
+
+    function statValue(key) {
+        const lvl = getLvl(key);
+        const def = getDef(key);
+        const base = BASE_STATS[key];
+        if (!def) return base;
+        if (def.type === 'pct') return base * (1 + def.perLevel * lvl);
+        // flat
+        let v = base + def.perLevel * lvl;
+        if (def.max != null) v = Math.min(v, def.max + base);
+        return v;
+    }
+
+    function upgradeCost(key) {
+        const lvl = getLvl(key);
+        const def = getDef(key);
+        if (!def) return Infinity;
+        // accelerated scaling past level 5
+        let raw;
+        if (lvl < 5) {
+            raw = def.baseCost * Math.pow(def.scale, lvl);
+        } else {
+            const accelScale = def.scale * 1.18;
+            raw = def.baseCost * Math.pow(def.scale, 5) * Math.pow(accelScale, lvl - 5);
+        }
+        const disc = statValue('discount') - BASE_STATS.discount; // flat amount
+        return Math.max(1, Math.ceil(raw * (1 - disc)));
+    }
+
+    function isMaxed(def) {
+        if (!def.max) return false;
+        const cur = (statValue(def.key) - BASE_STATS[def.key]);
+        return cur >= def.max - 1e-6;
+    }
+
+    function effectiveDamage(targetType) {
+        let dmg = statValue('damage');
+        if (state.boons.has('glass_cannon')) dmg *= 1.5;
+        if (state.boons.has('greed')) dmg *= 0.9;
+        if (state.boons.has('last_stand') && state.tower.hp / state.tower.maxHp < 0.30) dmg *= 1.8;
+        if (state.boons.has('boss_hunter') && targetType === 'boss') dmg *= 2.0;
+        if (state.boons.has('armor_pierce') && targetType === 'armored') dmg *= 1.6;
+        return dmg;
+    }
+
+    function effectiveAttackSpeed() {
+        let s = statValue('attackSpeed');
+        if (state.boons.has('berserk') && state.tower.hp / state.tower.maxHp < 0.5) s *= 1.5;
+        return s;
+    }
+
+    function effectiveMoneyMult() {
+        let m = statValue('moneyMult');
+        if (state.boons.has('greed')) m *= 1.3;
+        return m;
+    }
+
+    function effectiveShieldRegen() {
+        let r = statValue('shieldRegen');
+        if (state.boons.has('reinforced')) r *= 2.0;
+        return r;
+    }
+
+    function effectiveMaxHp() {
+        let m = statValue('maxHp');
+        if (state.boons.has('glass_cannon')) m *= 0.8;
+        return m;
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  ENEMIES / SPAWNING / WAVES
+    // ════════════════════════════════════════════════════════
+
+    function towerCenter() {
+        return { x: viewW / 2, y: viewH / 2 };
+    }
+
+    function spawnPosition() {
+        // Pick a random edge then a random offset along it (relative to tower)
+        const c = towerCenter();
+        const side = Math.floor(Math.random() * 4);
+        let x, y;
+        // distance from center to nearest wall
+        const wW = viewW / 2 + SPAWN_PAD;
+        const wH = viewH / 2 + SPAWN_PAD;
+        if (side === 0) { x = c.x + (Math.random() - 0.5) * viewW; y = c.y - wH; }
+        else if (side === 1) { x = c.x + (Math.random() - 0.5) * viewW; y = c.y + wH; }
+        else if (side === 2) { x = c.x - wW; y = c.y + (Math.random() - 0.5) * viewH; }
+        else { x = c.x + wW; y = c.y + (Math.random() - 0.5) * viewH; }
+        return { x, y };
+    }
+
+    function enemyLevel() {
+        // Power scales with stage. Wave inside stage adds small bumps.
+        return state.stage + state.wave * 0.10;
+    }
+
+    function scaleHp(base, lvl, type) {
+        // Aggressive scaling, more aggressive past stage 3
+        let mult;
+        if (state.stage <= 2) mult = 1 + 0.18 * (lvl - 1);
+        else if (state.stage <= 4) mult = Math.pow(1.22, lvl - 1);
+        else mult = Math.pow(1.28, lvl - 1) * (1 + 0.05 * (state.stage - 4));
+        if (type === 'boss') mult *= (1 + 0.35 * (state.stage - 1));
+        if (type === 'armored') mult *= (1 + 0.10 * (state.stage - 1));
+        return Math.ceil(base * mult);
+    }
+
+    function scaleDmg(base, lvl, type) {
+        let mult = 1 + 0.10 * (lvl - 1);
+        if (state.stage > 4) mult *= 1 + 0.06 * (state.stage - 4);
+        if (type === 'boss') mult *= 1.5 + 0.10 * (state.stage - 1);
+        if (type === 'ranged') mult *= 1.4;
+        return base * mult;
+    }
+
+    function scaleSpeed(base, lvl) {
+        return base * (1 + 0.025 * (lvl - 1));
+    }
+
+    function scaleMoney(base, lvl, type) {
+        let mult = 1 + 0.12 * (lvl - 1);
+        return Math.max(1, Math.round(base * mult));
+    }
+
+    function spawnEnemy(type) {
+        const arch = ENEMY_TYPES[type];
+        const lvl = enemyLevel();
+        const pos = spawnPosition();
+        const sf = scaleFactor();
+        const spd = scaleSpeed(arch.base.speed, lvl) * sf;
+        const e = {
+            type, x: pos.x, y: pos.y,
+            radius: arch.base.radius * sf,
+            maxHp: scaleHp(arch.base.hp, lvl, type),
+            hp: 0,
+            speed: spd,
+            baseSpeed: spd,
+            slowUntil: 0,
+            dmg: scaleDmg(arch.base.dmg, lvl, type),
+            attackInterval: arch.base.attackInterval,
+            money: scaleMoney(arch.base.money, lvl, type),
+            nextAttack: 0,
+            inRangeOfTower: false,
+            projSpeed: arch.base.projSpeed ? arch.base.projSpeed * sf : null,
+            shape: arch.shape,
+            color: arch.color,
+            stroke: arch.stroke,
+            id: Math.random()
+        };
+        e.hp = e.maxHp;
+        state.enemies.push(e);
+    }
+
+    function buildWave() {
+        const stage = state.stage;
+        const wave = state.wave; // 1-indexed
+        const wavesThisStage = WAVE_COUNTS[(stage - 1) % WAVE_COUNTS.length];
+        const isLast = wave === wavesThisStage;
+
+        // baseline counts that grow per wave
+        const w = wave;
+        let armoredCount = Math.floor(w * 0.45 + (stage - 1) * 0.8);
+        let meleeCount   = Math.floor(3 + w * 1.0 + (stage - 1) * 1.4);
+        let rangedCount  = Math.floor(w * 0.35 + (stage - 1) * 0.6);
+        // Stage 1 is the tutorial slope — let the engine spin up before pressure
+        if (stage === 1) {
+            if (wave === 1) { armoredCount = 0; meleeCount = 3; rangedCount = 0; }
+            else if (wave === 2) { armoredCount = 0; meleeCount = 5; rangedCount = 0; }
+            else if (wave === 3) { armoredCount = 0; meleeCount = 6; rangedCount = 1; }
+            else if (wave === 4) { armoredCount = 1; meleeCount = 7; rangedCount = 1; }
+        }
+
+        // Spawn ORDER: armored first, then melee, then ranged; boss on last wave
+        const queue = [];
+        // Spawn pace tightens past stage 1
+        const spawnPace = stage === 1 ? 1.0 : 0.8;
+        const armDelay = 0.55 * spawnPace;
+        const meleeDelay = 0.35 * spawnPace;
+        const rangedDelay = 0.4 * spawnPace;
+        let t = 0;
+        for (let i = 0; i < armoredCount; i++) { queue.push({ type: 'armored', at: t }); t += armDelay; }
+        // small pause before melee
+        t += 0.5;
+        for (let i = 0; i < meleeCount; i++) { queue.push({ type: 'melee', at: t }); t += meleeDelay; }
+        t += 0.6;
+        for (let i = 0; i < rangedCount; i++) { queue.push({ type: 'ranged', at: t }); t += rangedDelay; }
+
+        if (isLast) {
+            const bossCount = 1 + Math.floor((stage - 1) / 3);
+            t += 1.2;
+            for (let i = 0; i < bossCount; i++) { queue.push({ type: 'boss', at: t }); t += 1.4; }
+        }
+        return queue;
+    }
+
+    function startWave() {
+        state.wave += 1;
+        const wavesThisStage = WAVE_COUNTS[(state.stage - 1) % WAVE_COUNTS.length];
+        state.waveSpawnQueue = buildWave();
+        state.waveActive = true;
+        state.waveBetweenTimer = 0;
+        showCenterMsg(`WAVE ${state.wave} / ${wavesThisStage}`);
+        document.getElementById('ui-wave').textContent = state.wave;
+        document.getElementById('ui-wave-max').textContent = wavesThisStage;
+        updateWaveTrack();
+    }
+
+    function checkWaveComplete() {
+        if (!state.waveActive) return;
+        if (state.waveSpawnQueue.length === 0 && state.enemies.length === 0) {
+            state.waveActive = false;
+            const wavesThisStage = WAVE_COUNTS[(state.stage - 1) % WAVE_COUNTS.length];
+            if (state.wave >= wavesThisStage) {
+                // stage clear -> boons
+                openBoonPicker();
+            } else {
+                // small break, then next wave
+                state.waveBetweenTimer = 1.2;
+            }
+        }
+    }
+
+    function nextStage() {
+        state.stage += 1;
+        state.wave = 0;
+        document.getElementById('ui-stage').textContent = state.stage;
+        startWave();
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  COMBAT
+    // ════════════════════════════════════════════════════════
+
+    function findTarget() {
+        const c = towerCenter();
+        const range = rangePx();
+        let best = null, bestDist = Infinity;
+        for (const e of state.enemies) {
+            const dx = e.x - c.x, dy = e.y - c.y;
+            const d = Math.hypot(dx, dy) - e.radius;
+            if (d <= range && d < bestDist) { bestDist = d; best = e; }
+        }
+        return best;
+    }
+
+    function fireAt(target, dt) {
+        const c = towerCenter();
+        const dx = target.x - c.x, dy = target.y - c.y;
+        const ang = Math.atan2(dy, dx);
+        const offsets = state.boons.has('double_shot') ? [-0.05, 0.05] : [0];
+        for (const off of offsets) {
+            createBullet(c.x, c.y, ang + off, target);
+        }
+    }
+
+    function createBullet(x, y, ang, target) {
+        const speed = 520;
+        const isCrit = Math.random() < statValue('critChance');
+        const baseDmg = effectiveDamage(target.type) * (isCrit ? statValue('critDamage') : 1);
+        const pierceLeft = state.boons.has('pierce') ? 1 : 0;
+        state.bullets.push({
+            x, y,
+            vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
+            dmg: baseDmg, isCrit,
+            life: 1.6,
+            hitIds: new Set(),
+            pierceLeft,
+            chainLeft: state.boons.has('chain') ? 1 : 0
+        });
+    }
+
+    function spawnHitEffect(x, y, color, n = 5) {
+        for (let i = 0; i < n; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const s = 60 + Math.random() * 80;
+            state.particles.push({
+                x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+                life: 0.45, maxLife: 0.45, color, size: 2 + Math.random() * 2
+            });
+        }
+    }
+
+    function damageEnemy(e, dmg, isCrit, bullet) {
+        e.hp -= dmg;
+        state.totalDamage += dmg;
+        // Vampiric
+        if (state.boons.has('vampiric')) {
+            state.tower.hp = Math.min(state.tower.maxHp, state.tower.hp + dmg * 0.015);
+        }
+        // Shield surge on crit
+        if (isCrit && state.boons.has('shield_surge') && state.tower.shieldMax > 0) {
+            state.tower.shield = Math.min(state.tower.shieldMax, state.tower.shield + state.tower.shieldMax * 0.08);
+        }
+        // slow
+        if (state.boons.has('slow')) {
+            e.slowUntil = performance.now() / 1000 + 1.5;
+            e.speed = e.baseSpeed * 0.75;
+        }
+        // damage number
+        state.damageNumbers.push({
+            x: e.x, y: e.y - e.radius - 4, vy: -40, life: 0.7, maxLife: 0.7,
+            text: Math.ceil(dmg).toString(), crit: isCrit
+        });
+        spawnHitEffect(e.x, e.y, isCrit ? '#fff7a0' : e.color, isCrit ? 8 : 4);
+        // splash
+        if (state.boons.has('splash')) {
+            const r = 50;
+            for (const o of state.enemies) {
+                if (o === e || o.hp <= 0) continue;
+                if (Math.hypot(o.x - e.x, o.y - e.y) <= r) {
+                    o.hp -= dmg * 0.35;
+                    state.totalDamage += dmg * 0.35;
+                    state.damageNumbers.push({
+                        x: o.x, y: o.y - o.radius - 4, vy: -40, life: 0.6, maxLife: 0.6,
+                        text: Math.ceil(dmg * 0.35).toString(), crit: false, splash: true
+                    });
+                }
+            }
+        }
+        // chain
+        if (bullet && bullet.chainLeft > 0) {
+            const r = 130;
+            let best = null, bestDist = Infinity;
+            for (const o of state.enemies) {
+                if (o === e || o.hp <= 0 || bullet.hitIds.has(o.id)) continue;
+                const d = Math.hypot(o.x - e.x, o.y - e.y);
+                if (d <= r && d < bestDist) { bestDist = d; best = o; }
+            }
+            if (best) {
+                bullet.chainLeft -= 1;
+                bullet.hitIds.add(best.id);
+                const cDmg = dmg * 0.6;
+                state.particles.push({
+                    x: e.x, y: e.y, tx: best.x, ty: best.y, life: 0.18, maxLife: 0.18,
+                    isArc: true, color: '#aef0ff'
+                });
+                damageEnemy(best, cDmg, false, bullet);
+            }
+        }
+        if (e.hp <= 0) killEnemy(e);
+    }
+
+    function killEnemy(e) {
+        const idx = state.enemies.indexOf(e);
+        if (idx >= 0) state.enemies.splice(idx, 1);
+        const gain = Math.ceil(e.money * effectiveMoneyMult());
+        state.money += gain;
+        state.damageNumbers.push({
+            x: e.x, y: e.y, vy: -60, life: 0.8, maxLife: 0.8,
+            text: `+${gain}`, money: true
+        });
+        spawnHitEffect(e.x, e.y, e.color, 10);
+        // clear target lock if this was the target
+        if (state.tower.targetId === e.id) state.tower.targetId = null;
+    }
+
+    function damageTower(amount, fromEnemy) {
+        // Thorns: reflect a fraction back
+        const thornsFrac = statValue('thorns');
+        if (thornsFrac > 0 && fromEnemy) {
+            const reflect = amount * thornsFrac;
+            damageEnemy(fromEnemy, reflect, false, null);
+        }
+        // shield first
+        if (state.tower.shield > 0) {
+            const absorbed = Math.min(state.tower.shield, amount);
+            state.tower.shield -= absorbed;
+            amount -= absorbed;
+        }
+        if (amount > 0) {
+            state.tower.hp -= amount;
+            // hit shake
+            state.tower.shakeMag = Math.max(state.tower.shakeMag, Math.min(8, amount * 0.7));
+            state.damageNumbers.push({
+                x: viewW / 2, y: viewH / 2 - towerRadius() - 6, vy: -50, life: 0.7, maxLife: 0.7,
+                text: `-${Math.ceil(amount)}`, danger: true
+            });
+        }
+        if (state.tower.hp <= 0) {
+            state.tower.hp = 0;
+            gameOver();
+        }
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  UPDATE / RENDER
+    // ════════════════════════════════════════════════════════
+
+    let lastTime = 0;
+
+    function update(dt) {
+        if (state.scene !== 'playing') return;
+
+        const c = towerCenter();
+        const now = performance.now() / 1000;
+
+        // wave / spawn ticking
+        if (state.waveActive) {
+            if (state.waveStartedAt == null) state.waveStartedAt = now;
+            const elapsed = now - state.waveStartedAt;
+            while (state.waveSpawnQueue.length && state.waveSpawnQueue[0].at <= elapsed) {
+                const sd = state.waveSpawnQueue.shift();
+                spawnEnemy(sd.type);
+            }
+            checkWaveComplete();
+        } else {
+            state.waveStartedAt = null;
+            if (state.waveBetweenTimer > 0) {
+                state.waveBetweenTimer -= dt;
+                if (state.waveBetweenTimer <= 0) startWave();
+            }
+        }
+
+        // passive income (boon)
+        if (state.boons.has('steady_flow')) {
+            state.moneyAccumulator += dt;
+            const whole = Math.floor(state.moneyAccumulator);
+            if (whole > 0) {
+                state.money += whole;
+                state.moneyAccumulator -= whole;
+            }
+        }
+
+        // tower regen
+        if (state.tower.hp > 0 && state.tower.hp < state.tower.maxHp) {
+            state.tower.hp = Math.min(state.tower.maxHp, state.tower.hp + statValue('regen') * dt);
+        }
+        // shield regen
+        if (state.tower.shieldMax > 0 && state.tower.shield < state.tower.shieldMax) {
+            state.tower.shield = Math.min(state.tower.shieldMax, state.tower.shield + effectiveShieldRegen() * dt);
+        }
+        // hit shake decay
+        if (state.tower.shakeMag > 0) state.tower.shakeMag = Math.max(0, state.tower.shakeMag - dt * 14);
+
+        // sync max stats live (upgrade purchased)
+        const maxHp = effectiveMaxHp();
+        const oldMax = state.tower.maxHp;
+        if (Math.abs(maxHp - oldMax) > 0.1) {
+            state.tower.hp += (maxHp - oldMax); // heal/lose the diff so percentages stay consistent
+            state.tower.hp = Math.min(state.tower.hp, maxHp);
+            state.tower.maxHp = maxHp;
+        }
+        const shieldMax = statValue('shieldMax');
+        if (Math.abs(shieldMax - state.tower.shieldMax) > 0.1) {
+            state.tower.shieldMax = shieldMax;
+            state.tower.shield = Math.min(state.tower.shield, shieldMax);
+        }
+
+        // update enemies (move + attack)
+        const tR = towerRadius();
+        const towerRangePx = rangePx();
+        for (const e of state.enemies) {
+            // restore speed if slow expired
+            if (e.slowUntil && now > e.slowUntil) {
+                e.slowUntil = 0;
+                e.speed = e.baseSpeed;
+            }
+
+            const dx = c.x - e.x, dy = c.y - e.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (e.type === 'ranged') {
+                // Park just outside tower's CURRENT range so range upgrades push them back.
+                const stopDist = towerRangePx + e.radius + 18;
+                if (dist > stopDist) {
+                    const nx = dx / dist, ny = dy / dist;
+                    e.x += nx * e.speed * dt; e.y += ny * e.speed * dt;
+                } else {
+                    // shoot once stopped (or near stop)
+                    if (now >= e.nextAttack) {
+                        e.nextAttack = now + e.attackInterval;
+                        const ang = Math.atan2(dy, dx);
+                        state.bullets.push({
+                            x: e.x, y: e.y,
+                            vx: Math.cos(ang) * e.projSpeed, vy: Math.sin(ang) * e.projSpeed,
+                            dmg: e.dmg, life: 4, enemyShot: true, fromEnemy: e
+                        });
+                    }
+                }
+            } else {
+                // melee/armored/boss: walk to tower, attack on contact
+                const stopDist = tR + e.radius - 2;
+                if (dist > stopDist) {
+                    const nx = dx / dist, ny = dy / dist;
+                    e.x += nx * e.speed * dt; e.y += ny * e.speed * dt;
+                    e.inRangeOfTower = false;
+                } else {
+                    e.inRangeOfTower = true;
+                    if (now >= e.nextAttack) {
+                        e.nextAttack = now + e.attackInterval;
+                        damageTower(e.dmg, e);
+                    }
+                }
+            }
+        }
+
+        // Lock-on: keep target until it dies or out of range. Cache resolved ref for drawTower.
+        let target = null;
+        if (state.tower.targetId != null) {
+            target = state.enemies.find(e => e.id === state.tower.targetId);
+            if (target) {
+                const d = Math.hypot(target.x - c.x, target.y - c.y) - target.radius;
+                if (d > towerRangePx) target = null;
+            }
+            if (!target) state.tower.targetId = null;
+        }
+        if (!target) {
+            target = findTarget();
+            if (target) state.tower.targetId = target.id;
+        }
+        state.tower.target = target;
+
+        if (target) {
+            const fireRate = effectiveAttackSpeed();
+            const interval = 1 / fireRate;
+            state.tower.fireTimer += dt;
+            while (state.tower.fireTimer >= interval) {
+                state.tower.fireTimer -= interval;
+                fireAt(target, dt);
+            }
+        } else {
+            state.tower.fireTimer = Math.min(state.tower.fireTimer, 1 / effectiveAttackSpeed());
+        }
+
+        // bullets
+        for (let i = state.bullets.length - 1; i >= 0; i--) {
+            const b = state.bullets[i];
+            b.x += b.vx * dt; b.y += b.vy * dt;
+            b.life -= dt;
+            if (b.life <= 0 || b.x < -50 || b.x > viewW + 50 || b.y < -50 || b.y > viewH + 50) {
+                state.bullets.splice(i, 1);
+                continue;
+            }
+            if (b.enemyShot) {
+                // hit tower?
+                const tdx = b.x - c.x, tdy = b.y - c.y;
+                if (Math.hypot(tdx, tdy) < tR) {
+                    damageTower(b.dmg, b.fromEnemy);
+                    state.bullets.splice(i, 1);
+                }
+                continue;
+            }
+            // tower bullet collision with enemies
+            for (const e of state.enemies) {
+                if (e.hp <= 0) continue;
+                if (b.hitIds.has(e.id)) continue;
+                const d = Math.hypot(b.x - e.x, b.y - e.y);
+                if (d < e.radius + 3) {
+                    b.hitIds.add(e.id);
+                    damageEnemy(e, b.dmg, b.isCrit, b);
+                    if (b.pierceLeft > 0) {
+                        b.pierceLeft -= 1;
+                    } else {
+                        state.bullets.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // particles
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+            const p = state.particles[i];
+            p.life -= dt;
+            if (!p.isArc) {
+                p.x += p.vx * dt; p.y += p.vy * dt;
+                p.vx *= 0.92; p.vy *= 0.92;
+            }
+            if (p.life <= 0) state.particles.splice(i, 1);
+        }
+
+        // damage numbers float up
+        for (let i = state.damageNumbers.length - 1; i >= 0; i--) {
+            const n = state.damageNumbers[i];
+            n.y += n.vy * dt;
+            n.life -= dt;
+            if (n.life <= 0) state.damageNumbers.splice(i, 1);
+        }
+
+        // HUD refresh
+        refreshHud();
+        checkWaveComplete();
+    }
+
+    function drawTower(c) {
+        ctx.save();
+        const tR = towerRadius();
+        const shake = state.tower.shakeMag;
+        let ox = 0, oy = 0;
+        if (shake > 0) {
+            ox = (Math.random() - 0.5) * shake;
+            oy = (Math.random() - 0.5) * shake;
+        }
+        ctx.translate(c.x + ox, c.y + oy);
+
+        // range circle (subtle)
+        const range = rangePx();
+        ctx.beginPath();
+        ctx.arc(0, 0, range, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,240,255,0.07)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // dashed inner indicator
+        ctx.beginPath();
+        ctx.setLineDash([4, 6]);
+        ctx.arc(0, 0, range, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,240,255,0.18)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // base ring (foundation)
+        ctx.beginPath();
+        ctx.arc(0, 0, tR + 8, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,30,50,0.7)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,240,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // shield ring
+        if (state.tower.shieldMax > 0) {
+            const sFrac = state.tower.shield / state.tower.shieldMax;
+            ctx.beginPath();
+            ctx.arc(0, 0, tR + 5, -Math.PI / 2, -Math.PI / 2 + sFrac * Math.PI * 2);
+            ctx.strokeStyle = '#5ec1ff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#5ec1ff';
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // body
+        ctx.beginPath();
+        ctx.arc(0, 0, tR, 0, Math.PI * 2);
+        const grad = ctx.createRadialGradient(-4, -6, 4, 0, 0, tR);
+        grad.addColorStop(0, '#a5f5ff');
+        grad.addColorStop(0.5, '#00f0ff');
+        grad.addColorStop(1, '#005566');
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#003e4d';
+        ctx.stroke();
+
+        // inner core dot
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // aim line toward cached target
+        const target = state.tower.target;
+        if (target) {
+            const ang = Math.atan2(target.y - c.y, target.x - c.x);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(ang) * (tR + 4), Math.sin(ang) * (tR + 4));
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    function drawEnemy(e) {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+        // hp bar
+        if (e.hp < e.maxHp) {
+            const w = e.radius * 2.4;
+            const h = 3;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(-w / 2, -e.radius - 7, w, h);
+            ctx.fillStyle = e.type === 'boss' ? '#ff7a4a' : '#ff4a6e';
+            ctx.fillRect(-w / 2, -e.radius - 7, w * (e.hp / e.maxHp), h);
+        }
+        ctx.fillStyle = e.color;
+        ctx.strokeStyle = e.stroke;
+        ctx.lineWidth = 2;
+        const r = e.radius;
+        ctx.beginPath();
+        if (e.shape === 'triangle') {
+            ctx.moveTo(0, -r);
+            ctx.lineTo(r * 0.9, r * 0.7);
+            ctx.lineTo(-r * 0.9, r * 0.7);
+            ctx.closePath();
+        } else if (e.shape === 'diamond') {
+            ctx.moveTo(0, -r);
+            ctx.lineTo(r * 0.9, 0);
+            ctx.lineTo(0, r);
+            ctx.lineTo(-r * 0.9, 0);
+            ctx.closePath();
+        } else if (e.shape === 'pentagon') {
+            for (let i = 0; i < 5; i++) {
+                const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
+                const x = Math.cos(a) * r, y = Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        } else if (e.shape === 'hexagon') {
+            for (let i = 0; i < 6; i++) {
+                const a = i * Math.PI / 3;
+                const x = Math.cos(a) * r, y = Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        }
+        ctx.fill();
+        ctx.stroke();
+        // slowed indicator
+        if (e.slowUntil) {
+            ctx.strokeStyle = 'rgba(170,220,255,0.7)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawBullet(b) {
+        ctx.save();
+        if (b.enemyShot) {
+            ctx.fillStyle = '#ff9a4a';
+            ctx.shadowColor = '#ff9a4a';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // bullet trail line
+            const tx = b.x - b.vx * 0.02;
+            const ty = b.y - b.vy * 0.02;
+            ctx.strokeStyle = b.isCrit ? '#fff7a0' : '#aef0ff';
+            ctx.shadowColor = b.isCrit ? '#fff7a0' : '#aef0ff';
+            ctx.shadowBlur = b.isCrit ? 12 : 6;
+            ctx.lineWidth = b.isCrit ? 3 : 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawParticle(p) {
+        ctx.save();
+        const a = p.life / p.maxLife;
+        ctx.globalAlpha = Math.max(0, a);
+        if (p.isArc) {
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = p.color; ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.tx, p.ty);
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    function drawDamageNumber(n) {
+        ctx.save();
+        const a = Math.min(1, n.life / n.maxLife * 1.3);
+        ctx.globalAlpha = a;
+        let color = '#ffffff';
+        let size = 14;
+        let weight = '700';
+        if (n.crit) { color = '#fff7a0'; size = 18; weight = '900'; }
+        if (n.money) { color = '#ffd54a'; }
+        if (n.danger) { color = '#ff4a6e'; size = 16; weight = '900'; }
+        if (n.splash) { color = '#aef0ff'; size = 11; }
+        ctx.fillStyle = color;
+        ctx.font = `${weight} ${size}px Orbitron, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(n.text, n.x, n.y);
+        ctx.restore();
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, viewW, viewH);
+        if (gridCanvas) ctx.drawImage(gridCanvas, 0, 0, viewW, viewH);
+
+        if (state.tower) drawTower(towerCenter());
+        for (const p of state.particles) drawParticle(p);
+        for (const e of state.enemies) drawEnemy(e);
+        for (const b of state.bullets) drawBullet(b);
+        for (const n of state.damageNumbers) drawDamageNumber(n);
+    }
+
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+        lastTime = timestamp;
+        update(dt);
+        render();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  UI: HUD / UPGRADES / OVERLAYS
+    // ════════════════════════════════════════════════════════
+
+    const HUD = {};
+    function cacheHud() {
+        HUD.barHp = document.getElementById('bar-hp');
+        HUD.uiHp = document.getElementById('ui-hp');
+        HUD.shieldWrap = document.getElementById('bar-shield-wrap');
+        HUD.barShield = document.getElementById('bar-shield');
+        HUD.uiShield = document.getElementById('ui-shield');
+        HUD.uiMoney = document.getElementById('ui-money');
+        HUD.last = {};
+    }
+    function refreshHud() {
+        if (!state.tower) return;
+        const last = HUD.last;
+        const hpInt = Math.ceil(state.tower.hp);
+        const maxHpInt = Math.ceil(state.tower.maxHp);
+        if (last.hp !== hpInt || last.maxHp !== maxHpInt) {
+            HUD.barHp.style.width = ((state.tower.hp / state.tower.maxHp) * 100) + '%';
+            HUD.uiHp.textContent = `${hpInt} / ${maxHpInt}`;
+            last.hp = hpInt; last.maxHp = maxHpInt;
+        }
+        const hasShield = state.tower.shieldMax > 0;
+        if (last.hasShield !== hasShield) {
+            HUD.shieldWrap.style.display = hasShield ? '' : 'none';
+            last.hasShield = hasShield;
+        }
+        if (hasShield) {
+            const sInt = Math.ceil(state.tower.shield);
+            const sMaxInt = Math.ceil(state.tower.shieldMax);
+            if (last.shield !== sInt || last.shieldMax !== sMaxInt) {
+                HUD.barShield.style.width = ((state.tower.shield / state.tower.shieldMax) * 100) + '%';
+                HUD.uiShield.textContent = `${sInt} / ${sMaxInt}`;
+                last.shield = sInt; last.shieldMax = sMaxInt;
+            }
+        }
+        const moneyInt = Math.floor(state.money);
+        if (last.money !== moneyInt) {
+            HUD.uiMoney.textContent = moneyInt.toLocaleString();
+            last.money = moneyInt;
+        }
+    }
+
+    function updateWaveTrack() {
+        const total = WAVE_COUNTS[(state.stage - 1) % WAVE_COUNTS.length];
+        const pct = (state.wave / total) * 100;
+        document.getElementById('wave-track-fill').style.width = pct + '%';
+    }
+
+    function showCenterMsg(text) {
+        const el = document.getElementById('center-msg');
+        el.textContent = text;
+        el.classList.add('show');
+        clearTimeout(showCenterMsg._t);
+        showCenterMsg._t = setTimeout(() => el.classList.remove('show'), 1100);
+    }
+
+    let lastUpgradeRender = { cat: null, money: -1, levels: '', boons: -1 };
+    function renderUpgrades(force) {
+        const cat = state.currentCat;
+        const moneyInt = Math.floor(state.money);
+        const levels = UPGRADES[cat].map(d => getLvl(d.key)).join(',');
+        if (!force
+            && lastUpgradeRender.cat === cat
+            && lastUpgradeRender.levels === levels
+            && lastUpgradeRender.boons === state.boons.size
+            && lastUpgradeRender.money === moneyInt) return;
+        lastUpgradeRender = { cat, money: moneyInt, levels, boons: state.boons.size };
+
+        const list = document.getElementById('upgrade-list');
+        list.innerHTML = '';
+        for (const def of UPGRADES[cat]) {
+            const lvl = getLvl(def.key);
+            const maxed = isMaxed(def);
+            const cost = upgradeCost(def.key);
+            const canAfford = moneyInt >= cost;
+
+            const row = document.createElement('div');
+            row.className = 'upgrade' + (maxed ? ' maxed' : (canAfford ? ' affordable' : ' locked'));
+            row.innerHTML = `
+                <div class="up-info">
+                    <div class="up-name"><span class="ico">${def.ico}</span>${def.name}</div>
+                    <div class="up-desc">${def.desc}</div>
+                </div>
+                <div class="up-right">
+                    <div class="up-level">Lv <b>${lvl}</b></div>
+                    <div class="up-cost ${maxed ? 'free' : (canAfford ? '' : 'cant')}">${maxed ? 'MAX' : cost.toLocaleString()}</div>
+                </div>
+            `;
+            if (!maxed) row.addEventListener('click', () => tryBuy(def.key));
+            list.appendChild(row);
+        }
+    }
+
+    function tryBuy(key) {
+        const def = getDef(key);
+        if (!def || isMaxed(def)) return;
+        const cost = upgradeCost(key);
+        if (state.money < cost) return;
+        state.money -= cost;
+        state.upgradeLevels[key] = getLvl(key) + 1;
+        renderUpgrades();
+        refreshHud();
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+            t.classList.add('active');
+            state.currentCat = t.dataset.cat;
+            renderUpgrades();
+        });
+    });
+
+    // Refresh upgrade affordability periodically
+    setInterval(() => {
+        if (state.scene === 'playing') renderUpgrades();
+    }, 250);
+
+    // ════════════════════════════════════════════════════════
+    //  BOON PICKER
+    // ════════════════════════════════════════════════════════
+
+    function openBoonPicker() {
+        state.scene = 'boons';
+        const available = BOONS.filter(b => !state.boons.has(b.id));
+        const choices = [];
+        const pool = [...available];
+        for (let i = 0; i < 3 && pool.length; i++) {
+            const idx = Math.floor(Math.random() * pool.length);
+            choices.push(pool[idx]);
+            pool.splice(idx, 1);
+        }
+        const list = document.getElementById('boon-list');
+        list.innerHTML = '';
+        if (choices.length === 0) {
+            // All boons taken -> award money instead
+            const reward = 100 * state.stage;
+            state.money += reward;
+            list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px">All boons claimed.<br><b style="color:var(--accent)">+${reward} ◆</b></div>`;
+            const btn = document.createElement('button');
+            btn.className = 'btn full';
+            btn.textContent = 'Continue';
+            btn.style.marginTop = '10px';
+            btn.addEventListener('click', () => { hideOverlay('overlay-boons'); state.scene = 'playing'; nextStage(); });
+            list.appendChild(btn);
+        } else {
+            for (const b of choices) {
+                const el = document.createElement('div');
+                el.className = 'boon';
+                el.innerHTML = `
+                    <div class="boon-ico">${b.ico}</div>
+                    <div class="boon-text">
+                        <div class="boon-name">${b.name}</div>
+                        <div class="boon-desc">${b.desc}</div>
+                    </div>
+                `;
+                el.addEventListener('click', () => pickBoon(b.id));
+                list.appendChild(el);
+            }
+        }
+        showOverlay('overlay-boons');
+    }
+
+    function pickBoon(id) {
+        state.boons.add(id);
+        renderActiveBoons();
+        hideOverlay('overlay-boons');
+        state.scene = 'playing';
+        nextStage();
+    }
+
+    function renderActiveBoons() {
+        const wrap = document.getElementById('active-boons');
+        wrap.innerHTML = '';
+        for (const id of state.boons) {
+            const b = BOONS.find(x => x.id === id);
+            if (!b) continue;
+            const chip = document.createElement('div');
+            chip.className = 'active-boon';
+            chip.textContent = `${b.ico} ${b.name}`;
+            chip.title = b.desc;
+            wrap.appendChild(chip);
+        }
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  OVERLAYS
+    // ════════════════════════════════════════════════════════
+
+    function showOverlay(id) { document.getElementById(id).classList.add('show'); }
+    function hideOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+    // ════════════════════════════════════════════════════════
+    //  GAME OVER
+    // ════════════════════════════════════════════════════════
+
+    function gameOver() {
+        if (state.scene === 'gameover') return;
+        state.scene = 'gameover';
+        const score = state.stage * 1000 + Math.floor(state.totalDamage);
+        document.getElementById('go-sub').textContent = `You held to wave ${state.wave} of stage ${state.stage}.`;
+        document.getElementById('go-stage').textContent = state.stage;
+        document.getElementById('go-damage').textContent = Math.floor(state.totalDamage).toLocaleString();
+        document.getElementById('go-score').textContent = score.toLocaleString();
+        document.getElementById('go-submit-block').style.display = '';
+        document.getElementById('go-lb-block').style.display = 'none';
+        state.scoreSubmitted = false;
+        document.getElementById('go-name').value = localStorage.getItem('ts-name') || '';
+        showOverlay('overlay-gameover');
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  GAME START / RESET
+    // ════════════════════════════════════════════════════════
+
+    function newGame() {
+        state.stage = 1;
+        state.wave = 0;
+        state.money = 0;
+        state.moneyAccumulator = 0;
+        state.totalDamage = 0;
+        state.upgradeLevels = {};
+        state.boons = new Set();
+        state.enemies = [];
+        state.bullets = [];
+        state.particles = [];
+        state.damageNumbers = [];
+        state.waveSpawnQueue = [];
+        state.waveActive = false;
+        state.waveBetweenTimer = 0;
+        state.waveStartedAt = null;
+        state.scoreSubmitted = false;
+        state.tower = {
+            hp: BASE_STATS.maxHp,
+            maxHp: BASE_STATS.maxHp,
+            shield: 0,
+            shieldMax: 0,
+            targetId: null,
+            fireTimer: 0,
+            shakeMag: 0
+        };
+        document.getElementById('ui-stage').textContent = 1;
+        document.getElementById('ui-wave').textContent = 0;
+        document.getElementById('ui-wave-max').textContent = WAVE_COUNTS[0];
+        renderActiveBoons();
+        renderUpgrades();
+        refreshHud();
+        updateWaveTrack();
+        state.scene = 'playing';
+        state.gameStartTime = Date.now();
+        // start first wave after a short prep delay
+        setTimeout(startWave, 600);
+    }
+
+    // ════════════════════════════════════════════════════════
+    //  BUTTONS
+    // ════════════════════════════════════════════════════════
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        hideOverlay('overlay-start');
+        newGame();
+    });
+    document.getElementById('btn-show-lb').addEventListener('click', async () => {
+        await openLeaderboardMenu();
+    });
+    document.getElementById('lb-close').addEventListener('click', () => hideOverlay('overlay-lb'));
+
+    document.getElementById('go-submit').addEventListener('click', submitScore);
+    document.getElementById('go-restart').addEventListener('click', () => {
+        hideOverlay('overlay-gameover');
+        newGame();
+    });
+    document.getElementById('go-lb-toggle').addEventListener('click', async () => {
+        const block = document.getElementById('go-lb-block');
+        const sub = document.getElementById('go-submit-block');
+        const showingLb = block.style.display === 'none';
+        block.style.display = showingLb ? '' : 'none';
+        sub.style.display = (showingLb || state.scoreSubmitted) ? 'none' : '';
+        if (showingLb) await renderLeaderboard('lb-list', state.lastEntryId);
+    });
+
+    // ════════════════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════════════════
+
+    function init() {
+        resize();
+        cacheHud();
+        renderUpgrades();
+        requestAnimationFrame(gameLoop);
+    }
+
+    window.addEventListener('load', init);
+
+    // Bridge from the inline script to the module-scoped Firebase leaderboard block below.
+    window.__towerStand = {
+        getScoreData: () => ({
+            score: state.stage * 1000 + Math.floor(state.totalDamage),
+            stage: state.stage,
+            damage: Math.floor(state.totalDamage)
+        }),
+        markSubmitted: (entryId) => { state.scoreSubmitted = true; state.lastEntryId = entryId; }
+    };
+
+    async function submitScore() {
+        const nameEl = document.getElementById('go-name');
+        let name = (nameEl.value || '').trim().toUpperCase().slice(0, 12);
+        if (!name) { nameEl.focus(); nameEl.style.borderColor = 'var(--danger)'; return; }
+        nameEl.style.borderColor = '';
+        localStorage.setItem('ts-name', name);
+        const data = window.__towerStand.getScoreData();
+        try {
+            const entryId = await window.__lb.submit(name, data.score, data.stage, data.damage);
+            window.__towerStand.markSubmitted(entryId);
+            // hide submit block, show leaderboard
+            document.getElementById('go-submit-block').style.display = 'none';
+            document.getElementById('go-lb-block').style.display = '';
+            await renderLeaderboard('lb-list', entryId);
+        } catch (e) {
+            console.error('Submit failed', e);
+            nameEl.style.borderColor = 'var(--danger)';
+            alert('Leaderboard submission failed. Score saved locally.');
+        }
+    }
+
+    async function openLeaderboardMenu() {
+        showOverlay('overlay-lb');
+        await renderLeaderboard('lb-list-menu', null);
+    }
+
+    async function renderLeaderboard(containerId, highlightId) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '<div class="lb-loading">Loading…</div>';
+        try {
+            const rows = await window.__lb.top(10);
+            if (!rows || rows.length === 0) {
+                el.innerHTML = '<div class="lb-empty">No scores yet — be the first.</div>';
+                return;
+            }
+            el.innerHTML = rows.map((r, i) => `
+                <div class="lb-row ${r.id === highlightId ? 'you' : ''}">
+                    <div class="lb-rank">${i + 1}</div>
+                    <div>
+                        <div class="lb-name">${escapeHtml(r.name || '???')}</div>
+                        <div class="lb-stage">Stage ${r.stage || 1} · ${(r.damage || 0).toLocaleString()} dmg</div>
+                    </div>
+                    <div></div>
+                    <div class="lb-score">${(r.score || 0).toLocaleString()}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error('Leaderboard load failed', e);
+            el.innerHTML = '<div class="lb-empty">Leaderboard unavailable.<br><small>Check Firestore rules.</small></div>';
+        }
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    </script>
+
+    <!-- ===== FIREBASE TRACKING ===== -->
+    <script type="module">
+        import { initTracking } from '../firebase-tracker.js';
+        initTracking('tower-stand');
+    </script>
+
+    <!-- ===== ANALYTICS (GA4) ===== -->
+    <script type="module">
+        import { initAnalytics } from '../analytics.js';
+        initAnalytics('tower-stand');
+    </script>
+
+    <!-- ===== FIREBASE LEADERBOARD =====
+         Requires Firestore rule:
+           match /leaderboards/{game}/entries/{entry} {
+               allow read: if true;
+               allow create: if request.auth != null;
+           }
+    -->
+    <script type="module">
+        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC2RSC711FagoP5XsODIFfLMMZUX6Up-xM",
+            authDomain: "prototypes-7691b.firebaseapp.com",
+            projectId: "prototypes-7691b",
+            storageBucket: "prototypes-7691b.firebasestorage.app",
+            messagingSenderId: "263652926534",
+            appId: "1:263652926534:web:9af3c4ce63aab78f0f9647",
+            measurementId: "G-1X91H99N2G"
+        };
+
+        const APP_NAME = 'tower-stand-lb';
+        const GAME = 'tower-stand';
+        let db = null, auth = null, user = null;
+
+        async function ready() {
+            if (db && user) return;
+            const existing = getApps().find(a => a.name === APP_NAME);
+            const app = existing || initializeApp(firebaseConfig, APP_NAME);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            try { await setPersistence(auth, inMemoryPersistence); } catch (e) {}
+            const cred = await signInAnonymously(auth);
+            user = cred.user;
+        }
+
+        window.__lb = {
+            async submit(name, score, stage, damage) {
+                await ready();
+                const ref = await addDoc(collection(db, 'leaderboards', GAME, 'entries'), {
+                    name, score, stage, damage,
+                    timestamp: serverTimestamp()
+                });
+                return ref.id;
+            },
+            async top(n = 10) {
+                await ready();
+                const q = query(collection(db, 'leaderboards', GAME, 'entries'), orderBy('score', 'desc'), limit(n));
+                const snap = await getDocs(q);
+                return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+        };
+    </script>
+</body>
+</html>
