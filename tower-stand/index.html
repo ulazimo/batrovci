@@ -199,6 +199,7 @@
             box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
             max-height: 90vh; overflow-y: auto;
         }
+        .boon-overlay-card { max-width: 720px; }
         .overlay-title {
             font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 22px;
             color: var(--primary); text-align: center; margin: 0 0 4px;
@@ -222,31 +223,79 @@
         .btn.ghost:hover { background: var(--panel); border-color: var(--primary); color: var(--primary); }
         .btn.full { width: 100%; }
 
-        /* Boon picker */
-        .boons { display: flex; flex-direction: column; gap: 10px; }
-        .boon {
-            display: flex; gap: 12px; align-items: flex-start;
-            padding: 14px;
-            background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-            cursor: pointer; transition: all 0.15s ease;
+        /* Boon picker — rarity-tiered cards */
+        .boons {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+        }
+        .boon-card {
+            position: relative; padding: 0;
+            background: var(--panel);
+            border: 2px solid var(--r-color, var(--border));
+            border-radius: 12px;
+            cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;
             text-align: left;
+            font: inherit; color: inherit;
+            display: flex; flex-direction: column;
+            min-height: 220px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 4px 12px rgba(0,0,0,0.3);
+            overflow: hidden;
         }
-        .boon:hover {
-            background: var(--panel-2);
-            border-color: var(--secondary);
-            box-shadow: 0 0 18px rgba(123,92,255,0.25);
-            transform: translateY(-2px);
+        .boon-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 24px var(--r-glow, rgba(0,240,255,0.3)), 0 0 0 1px rgba(255,255,255,0.06) inset;
         }
-        .boon-ico {
-            flex-shrink: 0;
-            width: 36px; height: 36px; border-radius: 8px;
-            background: linear-gradient(135deg, var(--secondary) 0%, #4a2bff 100%);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; box-shadow: 0 0 12px rgba(123,92,255,0.4);
+        .boon-ribbon {
+            background: var(--r-color, var(--border));
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900; font-size: 10px;
+            letter-spacing: 0.14em;
+            text-align: center;
+            padding: 4px 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
-        .boon-text { flex: 1; }
-        .boon-name { font-weight: 700; font-size: 15px; color: var(--text); }
-        .boon-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+        .boon-body {
+            flex: 1;
+            padding: 14px 10px 8px;
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center;
+            gap: 6px;
+        }
+        .boon-ico-big {
+            font-size: 30px;
+            line-height: 1;
+            margin-bottom: 4px;
+            filter: drop-shadow(0 0 8px var(--r-glow, rgba(0,240,255,0.5)));
+        }
+        .boon-name {
+            font-weight: 700; font-size: 15px;
+            color: var(--text);
+            line-height: 1.15;
+        }
+        .boon-desc {
+            font-size: 11px; color: var(--muted);
+            line-height: 1.3;
+        }
+        .boon-foot {
+            padding: 6px 10px;
+            font-size: 10px;
+            color: var(--r-color, var(--muted));
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-align: center;
+            background: rgba(0,0,0,0.25);
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        @media (max-width: 480px) {
+            .boons { gap: 6px; }
+            .boon-card { min-height: 180px; border-radius: 10px; }
+            .boon-body { padding: 10px 6px 6px; gap: 4px; }
+            .boon-ico-big { font-size: 24px; }
+            .boon-name { font-size: 12px; }
+            .boon-desc { font-size: 10px; }
+            .boon-ribbon { font-size: 8px; padding: 3px 0; }
+            .boon-foot { font-size: 9px; padding: 4px; }
+        }
 
         /* Active boons display */
         #active-boons {
@@ -393,9 +442,9 @@
 
     <!-- ===== OVERLAY: BOONS ===== -->
     <div class="overlay" id="overlay-boons">
-        <div class="overlay-card">
-            <h2 class="overlay-title">STAGE CLEAR</h2>
-            <div class="overlay-sub">Choose a boon. They stack forever.</div>
+        <div class="overlay-card boon-overlay-card">
+            <h2 class="overlay-title">CHOOSE A BOON</h2>
+            <div class="overlay-sub">Pick one power — it lasts the entire run</div>
             <div class="boons" id="boon-list"></div>
         </div>
     </div>
@@ -465,7 +514,10 @@
     // Viewport scale factor for speeds, radii, tower size.
     function scaleFactor() { return Math.max(0.65, Math.min(viewW, viewH) / 620); }
     function towerRadius() { return Math.max(22, Math.min(32, 26 * scaleFactor())); }
-    function rangePx() { return Math.min(viewW, viewH) * statValue('range'); }
+    function rangePx() {
+        const boonMult = 1 + 0.08 * stacks('long_barrel');
+        return Math.min(viewW, viewH) * statValue('range') * boonMult;
+    }
 
     // Upgrades — perLevel is the per-level increment in the stat space.
     // baseCost/scale define cost curve; cost grows faster past lvl 5.
@@ -490,23 +542,46 @@
         ]
     };
 
+    // Boons stack up to maxStacks. Each effect scales linearly with stack count.
+    // Rarities: common (most frequent), rare, epic, legendary (1 stack max, rarest).
     const BOONS = [
-        { id: 'double_shot',   name: 'Double Shot',     ico: '⫶', desc: 'Fire two bullets per shot' },
-        { id: 'chain',         name: 'Chain Lightning', ico: '⚡', desc: 'Bullets arc to 1 nearby enemy (60% dmg)' },
-        { id: 'splash',        name: 'Splash Damage',   ico: '✺', desc: 'Bullets deal 35% AoE damage in a small radius' },
-        { id: 'pierce',        name: 'Piercing Shots',  ico: '➤', desc: 'Bullets pierce through 1 additional enemy' },
-        { id: 'slow',          name: 'Slowing Shots',   ico: '❄', desc: 'Hits slow enemies 25% for 1.5s' },
-        { id: 'vampiric',      name: 'Vampiric',        ico: '✚', desc: 'Heal for 1.5% of damage dealt' },
-        { id: 'berserk',       name: 'Berserker',       ico: '☠', desc: '+50% attack speed below 50% HP' },
-        { id: 'last_stand',    name: 'Last Stand',      ico: '⚔', desc: '+80% damage below 30% HP' },
-        { id: 'glass_cannon',  name: 'Glass Cannon',    ico: '✦', desc: '+50% damage but −20% max HP' },
-        { id: 'greed',         name: 'Greed',           ico: '◆', desc: '+30% money, −10% damage' },
-        { id: 'shield_surge',  name: 'Shield Surge',    ico: '◈', desc: 'Crits restore 8% of max shield' },
-        { id: 'reinforced',    name: 'Reinforced Plates', ico: '▣', desc: 'Shield regen +100%' },
-        { id: 'boss_hunter',   name: 'Boss Hunter',     ico: '☼', desc: '+100% damage vs bosses' },
-        { id: 'armor_pierce',  name: 'Armor Pierce',    ico: '◆', desc: '+60% damage vs armored' },
-        { id: 'steady_flow',   name: 'Steady Flow',     ico: '◍', desc: '+1 money per second passively' }
+        // ===== COMMON (5 stacks) — fundamental stat boosts =====
+        { id: 'power_core',   name: 'Power Core',     ico: '⚔',  desc: '+12% damage',           rarity: 'common', maxStacks: 5 },
+        { id: 'rapid_fire',   name: 'Rapid Fire',     ico: '⚡', desc: '+10% attack speed',     rarity: 'common', maxStacks: 5 },
+        { id: 'reinforced',   name: 'Reinforced Hull',ico: '♥',  desc: '+15% max HP (heals)',   rarity: 'common', maxStacks: 5 },
+        { id: 'sharpshot',    name: 'Sharpshot',      ico: '✦',  desc: '+3% crit chance',       rarity: 'common', maxStacks: 5 },
+        { id: 'profit',       name: 'Profit Module',  ico: '◆',  desc: '+10% money per kill',   rarity: 'common', maxStacks: 5 },
+        { id: 'long_barrel',  name: 'Long Barrel',    ico: '◎',  desc: '+8% tower range',       rarity: 'common', maxStacks: 5 },
+
+        // ===== RARE (3 stacks) — directed effects =====
+        { id: 'fortified',    name: 'Fortified Core', ico: '◈',  desc: '−10% incoming damage',  rarity: 'rare', maxStacks: 3 },
+        { id: 'heavy_slug',   name: 'Heavy Slug',     ico: '※',  desc: '+25% crit damage',      rarity: 'rare', maxStacks: 3 },
+        { id: 'vampiric',     name: 'Vampiric Rounds',ico: '✚',  desc: 'Heal 1.5% of damage dealt', rarity: 'rare', maxStacks: 3 },
+        { id: 'chain',        name: 'Chain Lightning',ico: '⚡', desc: 'Bullets arc to +1 foe (60% dmg)', rarity: 'rare', maxStacks: 3 },
+        { id: 'thorns',       name: 'Thorns',         ico: '✺',  desc: 'Reflect +10% of taken damage', rarity: 'rare', maxStacks: 3 },
+        { id: 'recovery',     name: 'Recovery Field', ico: '✚',  desc: '+1.0 HP regen / sec',   rarity: 'rare', maxStacks: 3 },
+        { id: 'slow_shots',   name: 'Cryo Bullets',   ico: '❄',  desc: 'Hits slow enemies 25% for 1.5s', rarity: 'rare', maxStacks: 3 },
+
+        // ===== EPIC (2 stacks) — game-changers =====
+        { id: 'arcane_surge', name: 'Arcane Surge',   ico: '✨', desc: 'Every 10 kills, fire a burst of 8 bullets in all directions', rarity: 'epic', maxStacks: 2 },
+        { id: 'pierce',       name: 'Piercing Shots', ico: '➤',  desc: 'Bullets pierce +1 enemy',rarity: 'epic', maxStacks: 2 },
+        { id: 'splash',       name: 'Splash Rounds',  ico: '✺',  desc: 'Bullets explode for 35% AoE damage', rarity: 'epic', maxStacks: 2 },
+        { id: 'berserk',      name: 'Berserker',      ico: '☠',  desc: '+30% attack speed below 50% HP', rarity: 'epic', maxStacks: 2 },
+        { id: 'glass_cannon', name: 'Glass Cannon',   ico: '✦',  desc: '+50% damage, −15% max HP', rarity: 'epic', maxStacks: 2 },
+
+        // ===== LEGENDARY (1 stack) — rarest =====
+        { id: 'time_warp',    name: 'Time Warp',      ico: '⌛', desc: 'All enemies permanently slowed by 25%', rarity: 'legendary', maxStacks: 1 },
+        { id: 'twin_cannons', name: 'Twin Cannons',   ico: '⫶',  desc: 'Fire 2 bullets per shot',  rarity: 'legendary', maxStacks: 1 }
     ];
+    const BOONS_BY_ID = Object.fromEntries(BOONS.map(b => [b.id, b]));
+
+    const RARITY = {
+        common:    { label: 'COMMON',    color: '#5e7aa8', glow: 'rgba(94,122,168,0.35)' },
+        rare:      { label: 'RARE',      color: '#3a8de0', glow: 'rgba(58,141,224,0.45)' },
+        epic:      { label: 'EPIC',      color: '#a04ddc', glow: 'rgba(160,77,220,0.55)' },
+        legendary: { label: 'LEGENDARY', color: '#f5a523', glow: 'rgba(245,165,35,0.65)' }
+    };
+    const RARITY_WEIGHTS_BASE = { common: 60, rare: 28, epic: 10, legendary: 2 };
 
     // Enemy archetypes
     const ENEMY_TYPES = {
@@ -544,10 +619,10 @@
         waveSpawnQueue: [],
         waveBetweenTimer: 0,
         money: 0,
-        moneyAccumulator: 0,
         totalDamage: 0,
         upgradeLevels: {},
-        boons: new Set(),
+        boons: new Map(),
+        surgeKillCount: 0,
         enemies: [],
         bullets: [],
         particles: [],
@@ -643,38 +718,61 @@
         return cur >= def.max - 1e-6;
     }
 
-    function effectiveDamage(targetType) {
+    function stacks(id) { return state.boons.get(id) || 0; }
+
+    function effectiveDamage() {
         let dmg = statValue('damage');
-        if (state.boons.has('glass_cannon')) dmg *= 1.5;
-        if (state.boons.has('greed')) dmg *= 0.9;
-        if (state.boons.has('last_stand') && state.tower.hp / state.tower.maxHp < 0.30) dmg *= 1.8;
-        if (state.boons.has('boss_hunter') && targetType === 'boss') dmg *= 2.0;
-        if (state.boons.has('armor_pierce') && targetType === 'armored') dmg *= 1.6;
+        dmg *= 1 + 0.12 * stacks('power_core');
+        dmg *= 1 + 0.50 * stacks('glass_cannon');
+        const hpFrac = state.tower.hp / state.tower.maxHp;
         return dmg;
     }
 
     function effectiveAttackSpeed() {
         let s = statValue('attackSpeed');
-        if (state.boons.has('berserk') && state.tower.hp / state.tower.maxHp < 0.5) s *= 1.5;
+        s *= 1 + 0.10 * stacks('rapid_fire');
+        if (state.tower.hp / state.tower.maxHp < 0.5) s *= 1 + 0.30 * stacks('berserk');
         return s;
     }
 
+    function effectiveCritChance() {
+        return Math.min(0.85, statValue('critChance') + 0.03 * stacks('sharpshot'));
+    }
+
+    function effectiveCritDamage() {
+        return statValue('critDamage') + 0.25 * stacks('heavy_slug');
+    }
+
     function effectiveMoneyMult() {
-        let m = statValue('moneyMult');
-        if (state.boons.has('greed')) m *= 1.3;
-        return m;
+        return statValue('moneyMult') * (1 + 0.10 * stacks('profit'));
     }
 
     function effectiveShieldRegen() {
-        let r = statValue('shieldRegen');
-        if (state.boons.has('reinforced')) r *= 2.0;
-        return r;
+        return statValue('shieldRegen');
     }
 
     function effectiveMaxHp() {
-        let m = statValue('maxHp');
-        if (state.boons.has('glass_cannon')) m *= 0.8;
+        let m = statValue('maxHp') * (1 + 0.15 * stacks('reinforced'));
+        m *= 1 - 0.15 * stacks('glass_cannon');
         return m;
+    }
+
+    function effectiveRegen() {
+        return statValue('regen') + 1.0 * stacks('recovery');
+    }
+
+    function effectiveThorns() {
+        return statValue('thorns') + 0.10 * stacks('thorns');
+    }
+
+    function effectiveDamageReduction() {
+        // capped at 50% so multi-stack Fortified can't trivialize the game
+        return Math.min(0.5, 0.10 * stacks('fortified'));
+    }
+
+    // global slow multiplier applied to all enemies as long as Time Warp is held
+    function effectiveEnemySpeedMult() {
+        return stacks('time_warp') > 0 ? 0.75 : 1.0;
     }
 
     // ════════════════════════════════════════════════════════
@@ -822,20 +920,11 @@
             state.waveActive = false;
             const wavesThisStage = WAVE_COUNTS[(state.stage - 1) % WAVE_COUNTS.length];
             if (state.wave >= wavesThisStage) {
-                // stage clear -> boons
-                openBoonPicker();
+                openBoonPicker();   // pick a boon before the next stage begins
             } else {
-                // small break, then next wave
                 state.waveBetweenTimer = 1.2;
             }
         }
-    }
-
-    function nextStage() {
-        state.stage += 1;
-        state.wave = 0;
-        document.getElementById('ui-stage').textContent = state.stage;
-        startWave();
     }
 
     // ════════════════════════════════════════════════════════
@@ -858,7 +947,7 @@
         const c = towerCenter();
         const dx = target.x - c.x, dy = target.y - c.y;
         const ang = Math.atan2(dy, dx);
-        const offsets = state.boons.has('double_shot') ? [-0.05, 0.05] : [0];
+        const offsets = stacks('twin_cannons') > 0 ? [-0.05, 0.05] : [0];
         for (const off of offsets) {
             createBullet(c.x, c.y, ang + off, target);
         }
@@ -866,17 +955,16 @@
 
     function createBullet(x, y, ang, target) {
         const speed = 520;
-        const isCrit = Math.random() < statValue('critChance');
-        const baseDmg = effectiveDamage(target.type) * (isCrit ? statValue('critDamage') : 1);
-        const pierceLeft = state.boons.has('pierce') ? 1 : 0;
+        const isCrit = Math.random() < effectiveCritChance();
+        const baseDmg = effectiveDamage() * (isCrit ? effectiveCritDamage() : 1);
         state.bullets.push({
             x, y,
             vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
             dmg: baseDmg, isCrit,
             life: 1.6,
             hitIds: new Set(),
-            pierceLeft,
-            chainLeft: state.boons.has('chain') ? 1 : 0
+            pierceLeft: stacks('pierce'),
+            chainLeft: stacks('chain')
         });
     }
 
@@ -894,18 +982,16 @@
     function damageEnemy(e, dmg, isCrit, bullet) {
         e.hp -= dmg;
         state.totalDamage += dmg;
-        // Vampiric
-        if (state.boons.has('vampiric')) {
-            state.tower.hp = Math.min(state.tower.maxHp, state.tower.hp + dmg * 0.015);
+        // Vampiric — heals scale with stacks
+        const vampStacks = stacks('vampiric');
+        if (vampStacks > 0) {
+            state.tower.hp = Math.min(state.tower.maxHp, state.tower.hp + dmg * 0.015 * vampStacks);
         }
-        // Shield surge on crit
-        if (isCrit && state.boons.has('shield_surge') && state.tower.shieldMax > 0) {
-            state.tower.shield = Math.min(state.tower.shieldMax, state.tower.shield + state.tower.shieldMax * 0.08);
-        }
-        // slow
-        if (state.boons.has('slow')) {
+        // Cryo Bullets — chill on hit
+        const slowStacks = stacks('slow_shots');
+        if (slowStacks > 0) {
             e.slowUntil = performance.now() / 1000 + 1.5;
-            e.speed = e.baseSpeed * 0.75;
+            e.speed = e.baseSpeed * (1 - 0.25 * slowStacks);
         }
         // damage number
         state.damageNumbers.push({
@@ -913,18 +999,21 @@
             text: Math.ceil(dmg).toString(), crit: isCrit
         });
         spawnHitEffect(e.x, e.y, isCrit ? '#fff7a0' : e.color, isCrit ? 8 : 4);
-        // splash
-        if (state.boons.has('splash')) {
-            const r = 50;
+        // Splash Rounds
+        const splashStacks = stacks('splash');
+        if (splashStacks > 0) {
+            const r = 50 + 15 * (splashStacks - 1);
+            const splashDmg = dmg * (0.35 + 0.20 * (splashStacks - 1));
             for (const o of state.enemies) {
                 if (o === e || o.hp <= 0) continue;
                 if (Math.hypot(o.x - e.x, o.y - e.y) <= r) {
-                    o.hp -= dmg * 0.35;
-                    state.totalDamage += dmg * 0.35;
+                    o.hp -= splashDmg;
+                    state.totalDamage += splashDmg;
                     state.damageNumbers.push({
                         x: o.x, y: o.y - o.radius - 4, vy: -40, life: 0.6, maxLife: 0.6,
-                        text: Math.ceil(dmg * 0.35).toString(), crit: false, splash: true
+                        text: Math.ceil(splashDmg).toString(), crit: false, splash: true
                     });
+                    if (o.hp <= 0) killEnemy(o);
                 }
             }
         }
@@ -961,13 +1050,43 @@
             text: `+${gain}`, money: true
         });
         spawnHitEffect(e.x, e.y, e.color, 10);
-        // clear target lock if this was the target
         if (state.tower.targetId === e.id) state.tower.targetId = null;
+
+        // Arcane Surge — every Nth kill, fire a burst. N halves with each extra stack.
+        const surgeStacks = stacks('arcane_surge');
+        if (surgeStacks > 0) {
+            state.surgeKillCount = (state.surgeKillCount || 0) + 1;
+            const threshold = Math.max(2, Math.floor(10 / surgeStacks));
+            if (state.surgeKillCount >= threshold) {
+                state.surgeKillCount = 0;
+                triggerArcaneSurge();
+            }
+        }
+    }
+
+    function triggerArcaneSurge() {
+        const c = towerCenter();
+        const count = 8;
+        for (let i = 0; i < count; i++) {
+            const ang = (i / count) * Math.PI * 2;
+            createBullet(c.x, c.y, ang, null);
+        }
+        // visual burst
+        for (let i = 0; i < 20; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const s = 90 + Math.random() * 120;
+            state.particles.push({
+                x: c.x, y: c.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+                life: 0.6, maxLife: 0.6, color: '#d4a8ff', size: 2.5
+            });
+        }
     }
 
     function damageTower(amount, fromEnemy) {
+        // Fortified Core — flat % reduction before anything else
+        amount *= 1 - effectiveDamageReduction();
         // Thorns: reflect a fraction back
-        const thornsFrac = statValue('thorns');
+        const thornsFrac = effectiveThorns();
         if (thornsFrac > 0 && fromEnemy) {
             const reflect = amount * thornsFrac;
             damageEnemy(fromEnemy, reflect, false, null);
@@ -1022,19 +1141,9 @@
             }
         }
 
-        // passive income (boon)
-        if (state.boons.has('steady_flow')) {
-            state.moneyAccumulator += dt;
-            const whole = Math.floor(state.moneyAccumulator);
-            if (whole > 0) {
-                state.money += whole;
-                state.moneyAccumulator -= whole;
-            }
-        }
-
-        // tower regen
+        // tower regen (base + Recovery Field stacks)
         if (state.tower.hp > 0 && state.tower.hp < state.tower.maxHp) {
-            state.tower.hp = Math.min(state.tower.maxHp, state.tower.hp + statValue('regen') * dt);
+            state.tower.hp = Math.min(state.tower.maxHp, state.tower.hp + effectiveRegen() * dt);
         }
         // shield regen
         if (state.tower.shieldMax > 0 && state.tower.shield < state.tower.shieldMax) {
@@ -1060,6 +1169,7 @@
         // update enemies (move + attack)
         const tR = towerRadius();
         const towerRangePx = rangePx();
+        const tw = effectiveEnemySpeedMult();
         for (const e of state.enemies) {
             // restore speed if slow expired
             if (e.slowUntil && now > e.slowUntil) {
@@ -1075,7 +1185,7 @@
                 const stopDist = Math.max(tR + e.radius + 40, towerRangePx * 0.82);
                 if (dist > stopDist) {
                     const nx = dx / dist, ny = dy / dist;
-                    e.x += nx * e.speed * dt; e.y += ny * e.speed * dt;
+                    e.x += nx * e.speed * dt * tw; e.y += ny * e.speed * dt * tw;
                 } else if (now >= e.nextAttack) {
                     e.nextAttack = now + e.attackInterval;
                     const ang = Math.atan2(dy, dx);
@@ -1090,7 +1200,7 @@
                 const stopDist = tR + e.radius - 2;
                 if (dist > stopDist) {
                     const nx = dx / dist, ny = dy / dist;
-                    e.x += nx * e.speed * dt; e.y += ny * e.speed * dt;
+                    e.x += nx * e.speed * dt * tw; e.y += ny * e.speed * dt * tw;
                     e.inRangeOfTower = false;
                 } else {
                     e.inRangeOfTower = true;
@@ -1543,39 +1653,85 @@
     //  BOON PICKER
     // ════════════════════════════════════════════════════════
 
+    function rollRarity(stageNum) {
+        // Epic/legendary chances ramp slightly with stage; commons stay frequent for early game flow.
+        const w = { ...RARITY_WEIGHTS_BASE };
+        w.epic += Math.min(8, (stageNum - 1) * 0.7);
+        w.legendary += Math.min(3, (stageNum - 1) * 0.25);
+        w.common -= Math.min(15, (stageNum - 1) * 0.9);
+        const total = w.common + w.rare + w.epic + w.legendary;
+        let r = Math.random() * total;
+        if ((r -= w.legendary) < 0) return 'legendary';
+        if ((r -= w.epic) < 0) return 'epic';
+        if ((r -= w.rare) < 0) return 'rare';
+        return 'common';
+    }
+
+    function pickRandomBoonOfRarity(rarity, exclude) {
+        const pool = BOONS.filter(b => b.rarity === rarity
+            && !exclude.has(b.id)
+            && stacks(b.id) < b.maxStacks);
+        if (!pool.length) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function rollBoonChoice(stageNum, exclude) {
+        // Try the rolled rarity first; if exhausted, fall through to lower rarities.
+        const order = [rollRarity(stageNum), 'epic', 'rare', 'common', 'legendary'];
+        const seen = new Set();
+        for (const r of order) {
+            if (seen.has(r)) continue;
+            seen.add(r);
+            const b = pickRandomBoonOfRarity(r, exclude);
+            if (b) return b;
+        }
+        return null;
+    }
+
     function openBoonPicker() {
         state.scene = 'boons';
-        const available = BOONS.filter(b => !state.boons.has(b.id));
+        document.getElementById('ui-stage').textContent = state.stage + 1; // preview of stage about to begin
+        const wavesNext = WAVE_COUNTS[state.stage % WAVE_COUNTS.length];
+        document.getElementById('ui-wave').textContent = '0';
+        document.getElementById('ui-wave-max').textContent = wavesNext;
+
+        const exclude = new Set();
         const choices = [];
-        const pool = [...available];
-        for (let i = 0; i < 3 && pool.length; i++) {
-            const idx = Math.floor(Math.random() * pool.length);
-            choices.push(pool[idx]);
-            pool.splice(idx, 1);
+        for (let i = 0; i < 3; i++) {
+            const b = rollBoonChoice(state.stage + 1, exclude);
+            if (!b) break;
+            exclude.add(b.id);
+            choices.push(b);
         }
+
         const list = document.getElementById('boon-list');
         list.innerHTML = '';
         if (choices.length === 0) {
-            // All boons taken -> award money instead
-            const reward = 100 * state.stage;
+            const reward = 100 * (state.stage + 1);
             state.money += reward;
-            list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px">All boons claimed.<br><b style="color:var(--accent)">+${reward} ◆</b></div>`;
+            list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:20px">All boons maxed.<br><b style="color:var(--accent)">+${reward} ◆</b></div>`;
             const btn = document.createElement('button');
             btn.className = 'btn full';
             btn.textContent = 'Continue';
             btn.style.marginTop = '10px';
-            btn.addEventListener('click', () => { hideOverlay('overlay-boons'); state.scene = 'playing'; nextStage(); });
+            btn.addEventListener('click', () => { hideOverlay('overlay-boons'); beginNextStage(); });
             list.appendChild(btn);
         } else {
             for (const b of choices) {
-                const el = document.createElement('div');
-                el.className = 'boon';
+                const r = RARITY[b.rarity];
+                const cur = stacks(b.id);
+                const el = document.createElement('button');
+                el.className = `boon-card rarity-${b.rarity}`;
+                el.style.setProperty('--r-color', r.color);
+                el.style.setProperty('--r-glow', r.glow);
                 el.innerHTML = `
-                    <div class="boon-ico">${b.ico}</div>
-                    <div class="boon-text">
+                    <div class="boon-ribbon">${r.label}</div>
+                    <div class="boon-body">
+                        <div class="boon-ico-big">${b.ico}</div>
                         <div class="boon-name">${b.name}</div>
                         <div class="boon-desc">${b.desc}</div>
                     </div>
+                    <div class="boon-foot">${cur > 0 ? `Stack ${cur}/${b.maxStacks}` : `Max stacks: ${b.maxStacks}`}</div>
                 `;
                 el.addEventListener('click', () => pickBoon(b.id));
                 list.appendChild(el);
@@ -1585,23 +1741,37 @@
     }
 
     function pickBoon(id) {
-        state.boons.add(id);
+        const def = BOONS_BY_ID[id];
+        if (!def) return;
+        const cur = stacks(id);
+        if (cur >= def.maxStacks) return;
+        state.boons.set(id, cur + 1);
         renderActiveBoons();
         hideOverlay('overlay-boons');
+        beginNextStage();
+    }
+
+    function beginNextStage() {
+        state.stage += 1;
+        state.wave = 0;
+        document.getElementById('ui-stage').textContent = state.stage;
         state.scene = 'playing';
-        nextStage();
+        startWave();
     }
 
     function renderActiveBoons() {
         const wrap = document.getElementById('active-boons');
         wrap.innerHTML = '';
-        for (const id of state.boons) {
-            const b = BOONS.find(x => x.id === id);
+        for (const [id, count] of state.boons) {
+            const b = BOONS_BY_ID[id];
             if (!b) continue;
+            const r = RARITY[b.rarity];
             const chip = document.createElement('div');
             chip.className = 'active-boon';
-            chip.textContent = `${b.ico} ${b.name}`;
-            chip.title = b.desc;
+            chip.style.background = r.glow;
+            chip.style.borderColor = r.color;
+            chip.innerHTML = `${b.ico} ${b.name}${count > 1 ? ` <b>×${count}</b>` : ''}`;
+            chip.title = `${b.desc} (${count}/${b.maxStacks})`;
             wrap.appendChild(chip);
         }
     }
@@ -1637,13 +1807,14 @@
     // ════════════════════════════════════════════════════════
 
     function newGame() {
-        state.stage = 1;
+        // stage starts at 0 — the opening boon picker advances it to 1.
+        state.stage = 0;
         state.wave = 0;
         state.money = 0;
-        state.moneyAccumulator = 0;
         state.totalDamage = 0;
         state.upgradeLevels = {};
-        state.boons = new Set();
+        state.boons = new Map();
+        state.surgeKillCount = 0;
         state.enemies = [];
         state.bullets = [];
         state.particles = [];
@@ -1666,13 +1837,10 @@
         document.getElementById('ui-wave').textContent = 0;
         document.getElementById('ui-wave-max').textContent = WAVE_COUNTS[0];
         renderActiveBoons();
-        renderUpgrades();
+        renderUpgrades(true);
         refreshHud();
         updateWaveTrack();
-        state.scene = 'playing';
-        state.gameStartTime = Date.now();
-        // start first wave after a short prep delay
-        setTimeout(startWave, 600);
+        openBoonPicker();
     }
 
     // ════════════════════════════════════════════════════════
