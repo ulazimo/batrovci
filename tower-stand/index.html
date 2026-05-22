@@ -804,20 +804,27 @@
     }
 
     function scaleHp(base, lvl, type) {
-        // Aggressive scaling, more aggressive past stage 3
+        // Tower buffs compound multiplicatively (boon stacks × upgrades), so enemy HP
+        // needs to grow faster than linear to keep up. Curve breakpoints:
+        //   1-2: gentle learning slope
+        //   3-4: exponential at 1.22 base
+        //   5-7: 1.32 base, holds the line
+        //   8+:  1.40 base — late-game challenge ramp
         let mult;
         if (state.stage <= 2) mult = 1 + 0.18 * (lvl - 1);
         else if (state.stage <= 4) mult = Math.pow(1.22, lvl - 1);
-        else mult = Math.pow(1.28, lvl - 1) * (1 + 0.05 * (state.stage - 4));
-        if (type === 'boss') mult *= (1 + 0.35 * (state.stage - 1));
-        if (type === 'armored') mult *= (1 + 0.10 * (state.stage - 1));
+        else if (state.stage <= 7) mult = Math.pow(1.32, lvl - 1) * (1 + 0.08 * (state.stage - 4));
+        else mult = Math.pow(1.40, lvl - 1) * (1 + 0.12 * (state.stage - 4));
+        if (type === 'boss') mult *= (1 + 0.45 * (state.stage - 1));
+        if (type === 'armored') mult *= (1 + 0.14 * (state.stage - 1));
         return Math.ceil(base * mult);
     }
 
     function scaleDmg(base, lvl, type) {
         let mult = 1 + 0.10 * (lvl - 1);
-        if (state.stage > 4) mult *= 1 + 0.06 * (state.stage - 4);
-        if (type === 'boss') mult *= 1.5 + 0.10 * (state.stage - 1);
+        if (state.stage > 4) mult *= 1 + 0.08 * (state.stage - 4);
+        if (state.stage > 7) mult *= 1 + 0.06 * (state.stage - 7);
+        if (type === 'boss') mult *= 1.5 + 0.12 * (state.stage - 1);
         if (type === 'ranged') mult *= 1.4;
         return base * mult;
     }
@@ -866,11 +873,13 @@
         const wavesThisStage = WAVE_COUNTS[(stage - 1) % WAVE_COUNTS.length];
         const isLast = wave === wavesThisStage;
 
-        // baseline counts that grow per wave
+        // Baseline counts grow per wave and per stage. Late-game waves get an extra bump
+        // to force the player to lean on AoE / chain / pierce boons instead of single-target.
         const w = wave;
-        let armoredCount = Math.floor(w * 0.45 + (stage - 1) * 0.8);
-        let meleeCount   = Math.floor(3 + w * 1.0 + (stage - 1) * 1.4);
-        let rangedCount  = Math.floor(w * 0.35 + (stage - 1) * 0.6);
+        const lateBump = Math.max(0, stage - 7);
+        let armoredCount = Math.floor(w * 0.45 + (stage - 1) * 0.8 + lateBump * 0.6);
+        let meleeCount   = Math.floor(3 + w * 1.0 + (stage - 1) * 1.4 + lateBump * 1.2);
+        let rangedCount  = Math.floor(w * 0.35 + (stage - 1) * 0.6 + lateBump * 0.5);
         // Stage 1 is the tutorial slope — let the engine spin up before pressure
         if (stage === 1) {
             if (wave === 1) { armoredCount = 0; meleeCount = 3; rangedCount = 0; }
@@ -879,10 +888,14 @@
             else if (wave === 4) { armoredCount = 1; meleeCount = 7; rangedCount = 1; }
         }
 
-        // Spawn ORDER: armored first, then melee, then ranged; boss on last wave
+        // Spawn ORDER: armored first, then melee, then ranged; boss on last wave.
+        // Spawn pace tightens with stage so late-game waves are denser, not just bigger.
         const queue = [];
-        // Spawn pace tightens past stage 1
-        const spawnPace = stage === 1 ? 1.0 : 0.8;
+        let spawnPace;
+        if (stage === 1) spawnPace = 1.0;
+        else if (stage <= 4) spawnPace = 0.85;
+        else if (stage <= 7) spawnPace = 0.7;
+        else spawnPace = 0.55;
         const armDelay = 0.55 * spawnPace;
         const meleeDelay = 0.35 * spawnPace;
         const rangedDelay = 0.4 * spawnPace;
