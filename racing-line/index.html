@@ -1112,5 +1112,17 @@ window.closeShop = closeShop;
 window.buyCar = buyCar;
 window.equipCar = equipCar;
 </script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('racing-line');
+</script>
+
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('racing-line');
+</script>
 </body>
 </html>

@@ -60,5 +60,5 @@ export function initTracking(gameId) {
             startTime = Date.now(); // restart counting from now
         }
     });
-    window.addEventListener("beforeunload", flushTime);
+    window.addEventListener("beforeunload", () => { if (!paused) flushTime(); });
 }
