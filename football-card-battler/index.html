@@ -49,11 +49,13 @@
         .edot.on{background:var(--cyan); box-shadow:0 0 6px var(--cyan);}
 
         /* ---------- BOARD ---------- */
-        #board{flex:1; display:flex; gap:6px; padding:8px 6px; overflow:hidden; min-height:0;}
+        #board{flex:1; display:flex; gap:6px; padding:8px 6px; overflow:hidden; min-height:0;
+            background:linear-gradient(rgba(8,11,18,.62), rgba(8,11,18,.62)), url('art/pitch.jpg') center/cover no-repeat;}
         .zone{
             flex:1; display:flex; flex-direction:column; min-width:0;
-            background:linear-gradient(180deg, rgba(255,77,109,.05), transparent 18%, transparent 82%, rgba(0,240,255,.05));
+            background:linear-gradient(180deg, rgba(255,77,109,.08), rgba(13,18,28,.32) 18%, rgba(13,18,28,.32) 82%, rgba(0,240,255,.08));
             border:1px solid var(--border); border-radius:10px; overflow:hidden;
+            backdrop-filter:blur(1px);
         }
         .zone.lead-you{border-color:rgba(0,240,255,.55); box-shadow:0 0 14px rgba(0,240,255,.12) inset;}
         .zone.lead-ai{border-color:rgba(255,77,109,.5); box-shadow:0 0 14px rgba(255,77,109,.12) inset;}
@@ -76,7 +78,7 @@
             border-radius:9px; flex-shrink:0; overflow:hidden;
             background:linear-gradient(165deg,#1e2738,#0f141d);
             border:1px solid var(--border); border-left-width:3px;
-            display:flex; flex-direction:column; align-items:stretch; padding:5px 5px 6px;
+            display:flex; flex-direction:column; align-items:stretch; padding:0;
             transition:transform .15s, box-shadow .15s, opacity .25s;
             animation:dealIn .25s ease;
         }
@@ -86,16 +88,23 @@
         .card::before{content:''; position:absolute; top:0; left:0; right:0; height:3px;}
         .card.gk::before{background:var(--gk);}  .card.def::before{background:var(--def);}
         .card.mid::before{background:var(--mid);} .card.fwd::before{background:var(--fwd);}
-        .card .chead{display:flex; align-items:center; justify-content:space-between; gap:2px;}
-        .card .cost{width:clamp(16px,2.4vw,21px); height:clamp(16px,2.4vw,21px); border-radius:50%;
+        .card .photo{position:relative; width:100%; height:clamp(44px,6.8vw,70px); flex-shrink:0;
+            background:#0c1119 center 16% / cover no-repeat;}
+        .card .photo::after{content:''; position:absolute; inset:0;
+            background:linear-gradient(180deg, transparent 48%, #11161f 100%);}
+        .card .cost{position:absolute; top:3px; left:3px; z-index:2;
+            width:clamp(16px,2.4vw,21px); height:clamp(16px,2.4vw,21px); border-radius:50%;
             background:var(--cyan); color:#04141a; font-weight:700; font-family:'Orbitron';
-            font-size:clamp(9px,1.4vw,12px); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-        .card .pwr{min-width:clamp(18px,2.8vw,24px); height:clamp(18px,2.8vw,24px); padding:0 4px; border-radius:6px;
+            font-size:clamp(9px,1.4vw,12px); display:flex; align-items:center; justify-content:center;
+            box-shadow:0 1px 3px rgba(0,0,0,.6);}
+        .card .pwr{position:absolute; top:3px; right:3px; z-index:2;
+            min-width:clamp(18px,2.8vw,24px); height:clamp(18px,2.8vw,24px); padding:0 4px; border-radius:6px;
             background:var(--amber); color:#1a1100; font-weight:700; font-family:'Orbitron';
-            font-size:clamp(11px,1.8vw,16px); display:flex; align-items:center; justify-content:center;}
-        .card .pwr.buffed{background:var(--green); color:#03130c; box-shadow:0 0 9px rgba(57,217,138,.6);}
-        .card .pwr.nerfed{background:var(--red); color:#fff; box-shadow:0 0 9px rgba(255,77,109,.6);}
-        .card .role{font-size:clamp(17px,2.8vw,26px); line-height:1; text-align:center; margin:2px 0 1px;}
+            font-size:clamp(11px,1.8vw,16px); display:flex; align-items:center; justify-content:center;
+            box-shadow:0 1px 3px rgba(0,0,0,.6);}
+        .card .pwr.buffed{background:var(--green); color:#03130c; box-shadow:0 0 9px rgba(57,217,138,.7);}
+        .card .pwr.nerfed{background:var(--red); color:#fff; box-shadow:0 0 9px rgba(255,77,109,.7);}
+        .card .info{flex:1; min-height:0; display:flex; flex-direction:column; padding:1px 4px 5px;}
         .card .nm{font-size:clamp(8px,1.1vw,11px); font-weight:700; color:#eaf1f9; text-align:center; line-height:1.04;
             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
         .card .abil{margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:2px; padding-top:3px;}
@@ -114,8 +123,9 @@
         .card.reveal-pop{animation:pop .4s ease;}
         @keyframes pop{0%{transform:scale(.55) rotateY(75deg); opacity:.1;} 60%{transform:scale(1.1);} 100%{transform:none; opacity:1;}}
         /* larger variant for the hand */
-        .card.lg{width:clamp(80px,22vw,104px); height:clamp(116px,32vw,150px); padding:7px 7px 8px;}
-        .card.lg .role{font-size:clamp(24px,4.5vw,32px);}
+        .card.lg{width:clamp(80px,22vw,104px); height:clamp(116px,32vw,150px); padding:0;}
+        .card.lg .photo{height:clamp(58px,11.5vw,88px);}
+        .card.lg .info{padding:2px 6px 7px;}
         .card.lg .nm{font-size:clamp(10px,2.4vw,12.5px);}
         .card.lg .atxt{-webkit-line-clamp:4; font-size:clamp(8px,2vw,10px);}
         .card.lg .kind{font-size:clamp(7px,1.7vw,8.5px);}
@@ -461,10 +471,13 @@ function cardHTML(c, opts){
     if(opts.played) cls += ' reveal-pop';
     const tip = `${c.name} — Cost ${c.cost}, Power ${c.power}\n${k?k.label+': ':''}${c.abil}`;
     return `<div class="${cls}" ${opts.click||''} title="${tip}">
-        <div class="chead"><span class="cost">${c.cost}</span><span class="pwr${pcls}">${p}</span></div>
-        <div class="role">${c.role}</div>
-        <div class="nm">${c.name}</div>
-        <div class="abil">${k?`<span class="kind ${k.cls}">${k.label}</span>`:''}<span class="atxt">${c.abil}</span></div>
+        <div class="photo" style="background-image:url('art/${c.key}.jpg')">
+            <span class="cost">${c.cost}</span><span class="pwr${pcls}">${p}</span>
+        </div>
+        <div class="info">
+            <div class="nm">${c.name}</div>
+            <div class="abil">${k?`<span class="kind ${k.cls}">${k.label}</span>`:''}<span class="atxt">${c.abil}</span></div>
+        </div>
     </div>`;
 }
 function render(revealed){
