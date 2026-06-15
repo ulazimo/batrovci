@@ -898,7 +898,7 @@ function cellAt(x,y){
   const c = Math.floor(x / TILE);
   // invert rowToY: y = (visTop - r -1)*TILE -> r = visTop -1 - y/TILE
   const visTop = G.camRow + G.visRows;
-  const r = Math.floor(visTop - 1 - y/TILE);
+  const r = visTop - 1 - Math.floor(y / TILE);
   if (!inBounds(r,c)) return null;
   return {r,c};
 }
