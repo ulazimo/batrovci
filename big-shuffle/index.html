@@ -33,7 +33,8 @@
   .res{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; padding-left:84px;}
   .pill{display:flex; align-items:center; gap:5px; background:rgba(7,14,19,.88); border:1px solid #1d3340;
     border-radius:13px; padding:3px 10px 3px 7px; font-size:13px; font-weight:700; color:var(--cream); pointer-events:auto;}
-  .pill .ic{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .pill .ic{font-size:13px;line-height:1;display:inline-block}
+  .pill .nm{font-size:9px;letter-spacing:.5px;color:var(--dim);text-transform:uppercase;font-weight:700}
   .pill .delta{font-size:10px;color:var(--green);font-weight:600;margin-left:1px}
 
   #shuffle-banner{margin:6px auto 0; max-width:520px; border-radius:13px; position:relative; overflow:hidden;
@@ -127,10 +128,10 @@
 <!-- HUD -->
 <div id="hud" class="hidden">
   <div class="res">
-    <span class="pill" id="p-food"><span class="ic" style="background:var(--green)"></span><span class="v">0</span><span class="delta">+0</span></span>
-    <span class="pill" id="p-scrap"><span class="ic" style="background:var(--orange)"></span><span class="v">0</span><span class="delta">+0</span></span>
-    <span class="pill" id="p-fuel"><span class="ic" style="background:var(--aqua)"></span><span class="v">0</span><span class="delta">+0</span></span>
-    <span class="pill" id="p-hp"><span class="ic" style="background:var(--red)"></span><span class="v">0</span></span>
+    <span class="pill" id="p-food"><span class="ic">🌾</span><span class="nm">Food</span><span class="v">0</span><span class="delta">+0</span></span>
+    <span class="pill" id="p-scrap"><span class="ic">⚙️</span><span class="nm">Scrap</span><span class="v">0</span><span class="delta">+0</span></span>
+    <span class="pill" id="p-fuel"><span class="ic">🛢️</span><span class="nm">Fuel</span><span class="v">0</span><span class="delta">+0</span></span>
+    <span class="pill" id="p-hp"><span class="ic">🛡️</span><span class="nm">HQ</span><span class="v">0</span></span>
   </div>
   <div id="shuffle-banner">
     <svg width="26" height="26" viewBox="0 0 30 30"><polygon points="15,3 25.4,9 25.4,21 15,27 4.6,21 4.6,9" fill="none" stroke="#f08c33" stroke-width="2.4"/><polygon points="15,9 19.6,11.7 19.6,18.3 15,21 10.4,18.3 10.4,11.7" fill="#f08c33" opacity=".7"/></svg>
@@ -214,6 +215,7 @@ const KIND = {
 
 // ── Resource colours for HUD ──
 const RES_COL = {food:'var(--green)',scrap:'var(--orange)',fuel:'var(--aqua)'};
+const RES_ICON = {food:'🌾',scrap:'⚙️',fuel:'🛢️'};
 
 // ── Game state ──
 let G = null;            // current game
@@ -705,7 +707,7 @@ function setPill(id,val,delta){
   if(d){ d.textContent= delta>0?('+'+delta):''; }
 }
 
-function costStr(c){ return Object.entries(c).map(([k,v])=>v+' '+k).join(' · '); }
+function costStr(c){ return Object.entries(c).map(([k,v])=>v+' '+(RES_ICON[k]||'')+' '+k).join(' · '); }
 
 function renderActions(){
   const info=document.getElementById('sel-info');
@@ -719,20 +721,20 @@ function renderActions(){
   const end = btn('END TURN ▸','btn-end',endTurn);
 
   if(!t){
-    info.innerHTML='Tap a tile to inspect it. Next raid hits for <b>'+dmg+'</b> HQ damage.';
+    info.innerHTML='Tap a tile to inspect it. Next raid hits for <b>'+dmg+' 🛡️</b> HQ damage.';
     acts.appendChild(council); acts.appendChild(end);
     return;
   }
   const def=KIND[t.kind];
   if(t.kind==='hq'){
-    info.innerHTML='<b>Shelter 07</b> — your bunker. Integrity <b>'+Math.round(G.hqHP)+'/'+G.hqMax+'</b>. '+
+    info.innerHTML='<b>Shelter 07</b> — your bunker. 🛡️ Integrity <b>'+Math.round(G.hqHP)+'/'+G.hqMax+'</b>. '+
       'It survives every Shuffle. Next raid: <b>'+dmg+'</b> dmg'+(G.upg.turret?(' (−'+(G.upg.turret*3)+' from turrets)'):'')+'.';
   } else if(t.controlled){
     const y=yieldOf(t);
     if(y){
       const got=G.gatheredThisTurn[key(t.q,t.r)];
-      info.innerHTML='<b>'+def.name+'</b> (yours). Yields <b>+'+y.amt+' '+y.res+'</b>/turn.'+(got?' Already gathered this turn.':' Tap GATHER to collect now.');
-      acts.appendChild(btn('GATHER +'+y.amt+' '+y.res,'btn-or',()=>gatherTile(t), got));
+      info.innerHTML='<b>'+def.name+'</b> (yours). Yields <b>+'+y.amt+' '+RES_ICON[y.res]+' '+y.res+'</b>/turn.'+(got?' Already gathered this turn.':' Tap GATHER to collect now.');
+      acts.appendChild(btn('GATHER +'+y.amt+' '+RES_ICON[y.res]+' '+y.res,'btn-or',()=>gatherTile(t), got));
     } else {
       info.innerHTML='<b>Open Ground</b> (yours). Claimed territory — buffers raids and lets you expand further.';
     }
@@ -740,13 +742,13 @@ function renderActions(){
     // unclaimed
     const adj=adjacentToControlled(t);
     if(t.kind==='raider'){
-      info.innerHTML='<b>Raider Camp</b> · HP <b>'+t.hp+'</b>. '+(adj?'Costs <b>8 scrap</b> to assault.':'Must be next to your land to attack.');
-      acts.appendChild(btn('ASSAULT  −8 scrap','btn-or',()=>attackRaider(t), !adj||G.scrap<8));
+      info.innerHTML='<b>Raider Camp</b> · HP <b>'+t.hp+'</b>. '+(adj?'Costs <b>8 ⚙️ scrap</b> to assault.':'Must be next to your land to attack.');
+      acts.appendChild(btn('ASSAULT  −8 ⚙️ scrap','btn-or',()=>attackRaider(t), !adj||G.scrap<8));
     } else {
       const claimCost=Math.max(0,12-G.upg.scout*5);
       const isHaz=t.kind==='hazard';
-      info.innerHTML='<b>'+def.name+'</b>. '+(adj?('Claim for <b>'+claimCost+' fuel</b>'+(isHaz?' (−4 HQ: rad exposure)':'')+'.'):'Must be next to your land to claim.');
-      acts.appendChild(btn('CLAIM  −'+claimCost+' fuel','btn-or',()=>claimTile(t), !adj||G.fuel<claimCost));
+      info.innerHTML='<b>'+def.name+'</b>. '+(adj?('Claim for <b>'+claimCost+' 🛢️ fuel</b>'+(isHaz?' (−4 🛡️ HQ: rad exposure)':'')+'.'):'Must be next to your land to claim.');
+      acts.appendChild(btn('CLAIM  −'+claimCost+' 🛢️ fuel','btn-or',()=>claimTile(t), !adj||G.fuel<claimCost));
     }
   }
   acts.appendChild(council);

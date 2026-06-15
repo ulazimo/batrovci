@@ -120,7 +120,8 @@
   /* tap / control zone */
   #ctrlZone{position:absolute;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom,0px));height:158px;z-index:30;
     border-radius:22px;border:3px dashed rgba(255,243,220,.85);background:rgba(36,23,18,.30);
-    display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;}
+    display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;
+    touch-action:none;transition:background .06s ease;}
   #ctrlZone .ring{position:absolute;width:110px;height:110px;border:4px solid rgba(255,243,220,.75);border-radius:50%;animation:tapRing 1s ease-out infinite;}
   #ctrlZone .ring.b{animation-delay:.5s;border-color:rgba(255,233,174,.65);}
   @keyframes tapRing{0%{transform:scale(.6);opacity:.9;}100%{transform:scale(1.5);opacity:0;}}
@@ -1058,32 +1059,58 @@ startRace=function(ev){ ghostTrace=[]; _start(ev); };
 //  INPUT
 // ════════════════════════════════════════════════════════════════
 const zone=$('ctrlZone');
-function down(e){
+let activePointer=null;          // owning pointer for a hold; null = no hold in progress
+
+// ── Pointer Events: exactly one event per physical press (no mouse+touch double-fire) ──
+function pointerDown(e){
   if(G.state!=='run' && G.state!=='countdown') return;
   e.preventDefault();
   if(G.state!=='run') return;
   const t=G.ev.type;
-  if(t==='hurdles' || t==='charge'){ holdStart(); }
-  else { registerTap(); pulseZone(); }
+  if(t==='hurdles' || t==='charge'){
+    if(activePointer!==null) return;                 // hold actions: ignore extra fingers
+    activePointer=e.pointerId;
+    try{ zone.setPointerCapture(e.pointerId); }catch(_){}  // catch release even off-zone
+    holdStart(); pressZone(true); haptic(12);
+  } else {
+    registerTap(); pulseZone(); haptic(7);           // tap actions: every finger counts
+  }
 }
-function up(e){
+function pointerEnd(e){
+  const t=G.ev.type;
+  if(t!=='hurdles' && t!=='charge') return;          // tap events have no release action
+  if(e.pointerId!==activePointer) return;            // only the owning finger ends the hold
+  activePointer=null;
+  try{ zone.releasePointerCapture(e.pointerId); }catch(_){}
+  pressZone(false);
   if(G.state!=='run') return;
   e.preventDefault();
-  const t=G.ev.type;
-  if(t==='hurdles'){ holdEnd(); /* releasing also counts as a step tap */ registerTap(); }
-  else if(t==='charge'){ holdEnd(); }
+  if(t==='hurdles'){ holdEnd(); registerTap(); /* release is also a step */ haptic(16); }
+  else { holdEnd(); haptic(16); }
 }
-function tapMove(e){ e.preventDefault(); }
-zone.addEventListener('mousedown', down);
-zone.addEventListener('mouseup', up);
-zone.addEventListener('touchstart', down, {passive:false});
-zone.addEventListener('touchend', up, {passive:false});
-// keyboard: space / tap
-window.addEventListener('keydown', e=>{ if(e.code==='Space' && !e.repeat){ if(G.state==='run'){ const t=G.ev.type; if(t==='hurdles'||t==='charge') holdStart(); else { registerTap(); pulseZone(); } } e.preventDefault(); } });
-window.addEventListener('keyup', e=>{ if(e.code==='Space' && G.state==='run'){ const t=G.ev.type; if(t==='hurdles'){holdEnd(); registerTap();} else if(t==='charge') holdEnd(); } });
+zone.addEventListener('pointerdown', pointerDown);
+zone.addEventListener('pointerup', pointerEnd);
+zone.addEventListener('pointercancel', pointerEnd);
 
-let zonePulse=0;
-function pulseZone(){ zone.style.background='rgba(232,84,58,0.35)'; clearTimeout(pulseZone._t); pulseZone._t=setTimeout(()=>zone.style.background='rgba(36,23,18,0.30)',70); }
+// keyboard: space mirrors a single finger
+window.addEventListener('keydown', e=>{
+  if(e.code!=='Space') return;
+  e.preventDefault();
+  if(e.repeat || G.state!=='run') return;
+  const t=G.ev.type;
+  if(t==='hurdles'||t==='charge'){ holdStart(); pressZone(true); } else { registerTap(); pulseZone(); }
+});
+window.addEventListener('keyup', e=>{
+  if(e.code!=='Space') return;
+  pressZone(false);
+  if(G.state!=='run') return;
+  const t=G.ev.type;
+  if(t==='hurdles'){ holdEnd(); registerTap(); } else if(t==='charge'){ holdEnd(); }
+});
+
+function haptic(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){} }
+function pulseZone(){ if(zone._held) return; zone.style.background='rgba(232,84,58,0.35)'; clearTimeout(pulseZone._t); pulseZone._t=setTimeout(()=>{ if(!zone._held) zone.style.background='rgba(36,23,18,0.30)'; },70); }
+function pressZone(on){ zone._held=on; clearTimeout(pulseZone._t); zone.style.background= on ? 'rgba(232,84,58,0.30)' : 'rgba(36,23,18,0.30)'; }
 
 // ════════════════════════════════════════════════════════════════
 //  RESULT BUTTONS
