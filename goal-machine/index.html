@@ -212,7 +212,7 @@ const ATTR = [
   {id:'gold',   cat:'cash', ic:'✨', nm:'Golden Ball',    desc:'chance for a ×10 cash ball',
     cost:l=>210*Math.pow(1.26,l),     val:l=>Math.min(0.3,0.01*l), show:v=>(v*100).toFixed(0)+'%'},
   {id:'sponsor',cat:'cash', ic:'🤝', nm:'Sponsor Deal',   desc:'passive cash every second',
-    cost:l=>120*Math.pow(1.19,l),     val:l=>0.6*l*Math.pow(1.04,l), show:v=>fmt(v)+'/s'},
+    cost:l=>120*Math.pow(1.19,l),     val:l=>0.8*l, show:v=>fmt(v)+'/s'},
   {id:'offline',cat:'cash', ic:'😴', nm:'Offline Training',desc:'earnings while away',
     cost:l=>400*Math.pow(1.38,l),     val:l=>Math.min(0.9,0.10+0.035*l), show:v=>(v*100).toFixed(0)+'%'},
   {id:'over',   cat:'cash', ic:'⌛', nm:'Overtime Bonus',  desc:'extra reward for fast clears',
@@ -241,11 +241,11 @@ function attr(id){return AMAP[id].val(lv(id));}
 // ---- Derived stats ----
 function prestigeMult(){return 1+0.10*S.legacy;}
 function keeperMaxHP(stage){
-  const base = 50*Math.pow(1.205,stage-1);
+  const base = 30*Math.pow(1.33,stage-1);
   return base*(1-attr('scout'));
 }
 function stageReward(stage){
-  const base = 12*Math.pow(1.15,stage-1);
+  const base = 10*Math.pow(1.18,stage-1);
   return base*attr('cashG')*prestigeMult();
 }
 function comboCap(){return 1+attr('combo');}
