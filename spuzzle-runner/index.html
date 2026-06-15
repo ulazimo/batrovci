@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spuzzle Runner</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#2b0d52; --deep2:#1a0b33; --purple:#5b2a9d; --purple2:#7a45c4;
+    --teal:#3fe0c8; --teal-d:#149c9e; --orange:#ff8a3d;
+    --pink:#ff5fa8; --pink-d:#c92e7c; --gold:#ffd34d; --cream:#fff6e8; --ink:#2a1a4a;
+    --red:#ff5a6e; --green:#5fe07a; --blue:#54b6ff; --yellow:#ffd24d; --violet:#b06bff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{
+    width:100%;height:100%;overflow:hidden;background:var(--deep2);
+    touch-action:none;user-select:none;-webkit-user-select:none;
+    font-family:'Nunito',sans-serif;color:#fff;
+  }
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#3b1466 0%,#5b2a9d 40%,#7a2a9d 70%,#d04a8a 100%);}
+
+  /* back link */
+  .back-link{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));
+    left:calc(10px + env(safe-area-inset-left,0px));z-index:200;color:#e7d6ff;
+    text-decoration:none;font-size:13px;font-weight:700;opacity:.85;
+    background:rgba(20,6,46,.5);padding:5px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.2);}
+  .back-link:hover{opacity:1;}
+
+  /* generic button */
+  .cta{display:inline-block;border:0;cursor:pointer;font-family:'Baloo 2',sans-serif;
+    font-weight:800;letter-spacing:.5px;color:#fff;text-shadow:0 2px 0 rgba(122,16,80,.5);
+    background:linear-gradient(180deg,#ffcb52,var(--orange) 55%,#f0408a);
+    border-radius:999px;padding:13px 30px;font-size:18px;
+    box-shadow:0 5px 0 #a8175e,0 9px 16px rgba(160,20,90,.4),0 2px 0 rgba(255,255,255,.5) inset;
+    transition:transform .1s;}
+  .cta:active{transform:translateY(4px);box-shadow:0 1px 0 #a8175e;}
+  .cta.teal{background:linear-gradient(180deg,#9ff5e8,var(--teal) 55%,#15889c);
+    box-shadow:0 5px 0 #0c5f73,0 9px 16px rgba(20,130,150,.4),0 2px 0 rgba(255,255,255,.5) inset;text-shadow:0 2px 0 rgba(8,60,70,.5);}
+  .cta.ghostbtn{background:rgba(255,255,255,.14);box-shadow:none;
+    border:2px solid rgba(255,255,255,.4);text-shadow:none;font-size:14px;padding:9px 20px;}
+  .cta.small{font-size:14px;padding:9px 20px;}
+  .cta[disabled]{opacity:.45;cursor:default;}
+  .pulse{animation:ctaPulse 1.5s ease-in-out infinite;}
+  @keyframes ctaPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+  /* screens */
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;}
+  .screen.on{display:flex;}
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+  .scroll::-webkit-scrollbar{display:none;}
+
+  /* ===== TITLE ===== */
+  #scr-title{align-items:center;justify-content:center;text-align:center;padding:24px;}
+  #scr-title .logo{font-family:'Baloo 2',sans-serif;font-weight:800;line-height:.95;
+    font-size:clamp(44px,15vw,84px);color:#fff;letter-spacing:1px;
+    text-shadow:0 3px 0 var(--pink-d),0 6px 0 #6a0e44,0 12px 30px rgba(255,95,168,.5);}
+  #scr-title .logo span{color:var(--gold);text-shadow:0 3px 0 #9a6210,0 12px 26px rgba(255,211,77,.5);}
+  #scr-title .tag{margin:14px 0 30px;color:#ffd9ec;font-size:clamp(13px,3.6vw,17px);font-weight:700;max-width:340px;}
+  #scr-title .hero{margin-bottom:6px;filter:drop-shadow(0 10px 18px rgba(20,6,46,.5));}
+
+  /* ===== top bar (map/roster/race) ===== */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:calc(12px + env(safe-area-inset-top,0px)) 12px 8px;padding-left:96px;}
+  .pill{display:flex;align-items:center;gap:5px;background:rgba(20,6,46,.55);
+    border:2px solid rgba(255,255,255,.22);border-radius:999px;padding:4px 12px 4px 9px;
+    color:#fff;font-weight:800;font-size:13px;}
+  .pill svg{width:18px;height:18px;}
+
+  /* ===== MAP ===== */
+  #scr-map h2{text-align:center;font-family:'Baloo 2';font-weight:800;font-size:22px;
+    color:var(--gold);text-shadow:0 2px 0 #6a0e44;margin:2px 0 2px;}
+  #scr-map .worldsub{text-align:center;font-size:12px;color:#e7d6ff;margin-bottom:8px;}
+  .worldtabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:0 12px 8px;}
+  .worldtab{border:0;cursor:pointer;font-family:inherit;font-weight:800;font-size:12px;
+    padding:6px 13px;border-radius:999px;color:#e7d6ff;background:rgba(20,6,46,.5);
+    border:2px solid rgba(255,255,255,.16);}
+  .worldtab.active{background:var(--gold);color:var(--deep);border-color:#fff;}
+  .worldtab.locked{opacity:.45;}
+  .nodelist{display:flex;flex-direction:column;align-items:center;gap:14px;padding:10px 16px 30px;}
+  .lvlnode{position:relative;width:88%;max-width:380px;display:flex;align-items:center;gap:12px;
+    background:rgba(20,6,46,.45);border:3px solid rgba(255,255,255,.18);border-radius:18px;
+    padding:11px 14px;cursor:pointer;transition:transform .12s;}
+  .lvlnode:active{transform:scale(.98);}
+  .lvlnode.locked{opacity:.5;cursor:default;}
+  .lvlnode.boss{border-color:var(--pink);box-shadow:0 0 16px rgba(255,95,168,.35);}
+  .lvlnode .ndot{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;
+    align-items:center;justify-content:center;font-family:'Baloo 2';font-weight:800;font-size:20px;
+    background:linear-gradient(180deg,#ffcb52,#f0408a);color:#fff;}
+  .lvlnode.done .ndot{background:linear-gradient(180deg,#5fe8d6,#149c9e);}
+  .lvlnode.locked .ndot{background:linear-gradient(180deg,#8d7fb0,#5a4d80);}
+  .lvlnode.boss .ndot{background:linear-gradient(180deg,#ff8a3d,#c92e7c);}
+  .lvlnode .ninfo{flex:1;min-width:0;}
+  .lvlnode .nname{font-family:'Baloo 2';font-weight:700;font-size:16px;}
+  .lvlnode .nmeta{font-size:11px;color:#cdb4f7;}
+  .lvlnode .nstars{font-size:14px;letter-spacing:1px;color:var(--gold);min-width:54px;text-align:right;}
+  .bosstag{font-size:9px;background:var(--pink);color:#fff;border-radius:6px;padding:1px 7px;font-weight:900;margin-left:6px;vertical-align:middle;}
+
+  /* ===== ROSTER ===== */
+  #scr-roster h2{text-align:center;font-family:'Baloo 2';font-weight:800;font-size:22px;color:var(--gold);text-shadow:0 2px 0 #6a0e44;margin:2px 0;}
+  #scr-roster .rsub{text-align:center;font-size:12px;color:#e7d6ff;margin-bottom:6px;}
+  .chargrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 14px 30px;max-width:520px;margin:0 auto;width:100%;}
+  .ccard{border-radius:16px;padding:8px 8px 10px;text-align:center;cursor:pointer;
+    position:relative;border:3px solid;background:rgba(20,6,46,.42);transition:transform .12s;}
+  .ccard:active{transform:scale(.97);}
+  .ccard svg.portrait{width:74px;height:86px;}
+  .ccard b{display:block;font-family:'Baloo 2';font-size:14px;}
+  .ccard .rar{font-size:9px;font-weight:900;letter-spacing:1px;border-radius:6px;padding:1px 8px;display:inline-block;margin:2px 0;}
+  .ccard.common{border-color:#9fc0d8;} .ccard.common .rar{background:#9fc0d8;color:#1e3346;}
+  .ccard.rare{border-color:var(--teal);} .ccard.rare .rar{background:var(--teal);color:#0c3c3c;}
+  .ccard.epic{border-color:#c77dff;box-shadow:0 0 12px rgba(199,125,255,.4);} .ccard.epic .rar{background:#c77dff;color:#3a1060;}
+  .ccard.legendary{border-color:var(--gold);box-shadow:0 0 14px rgba(255,211,77,.5);} .ccard.legendary .rar{background:var(--gold);color:#5a3c00;}
+  .ccard.locked{filter:grayscale(.7) brightness(.62);}
+  .ccard.equipped{outline:3px solid #fff;outline-offset:1px;}
+  .ccard .pass{font-size:10px;color:#ffeec2;line-height:1.25;margin-top:3px;min-height:26px;}
+  .ccard .sig{font-size:10px;color:var(--teal);font-weight:800;margin-top:2px;}
+  .ccard .lockmsg{font-size:9px;color:#ffd9ec;margin-top:3px;}
+  .ccard .eqbadge{position:absolute;top:6px;right:6px;background:var(--gold);color:var(--deep);
+    font-size:9px;font-weight:900;border-radius:6px;padding:1px 6px;}
+
+  /* ===== GAME ===== */
+  #scr-game{display:none;flex-direction:column;}
+  #scr-game.on{display:flex;}
+  .gametop{display:flex;align-items:center;gap:8px;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 10px 6px;padding-left:96px;z-index:6;}
+  .fuel{flex:1;background:rgba(20,6,46,.6);border:2px solid rgba(255,255,255,.28);
+    border-radius:999px;padding:4px 8px 4px 6px;display:flex;align-items:center;gap:7px;min-width:0;}
+  .fuel .lbl{color:#9ff5e8;font-size:9px;font-weight:900;letter-spacing:.5px;flex-shrink:0;}
+  .fuel .cells{flex:1;display:flex;gap:2px;height:13px;min-width:0;}
+  .fuel .cell{flex:1;border-radius:3px;background:linear-gradient(180deg,#9ff5e8,#15b8a8);min-width:2px;}
+  .fuel .cell.spent{background:rgba(255,255,255,.13);}
+  .fuel b{color:#fff;font-size:15px;min-width:24px;text-align:center;flex-shrink:0;}
+  .gametop .iconbtn{width:38px;height:38px;border-radius:11px;background:rgba(20,6,46,.6);
+    border:2px solid rgba(255,255,255,.28);color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;}
+
+  .progressrow{display:flex;align-items:center;gap:10px;padding:2px 12px 4px;padding-left:96px;z-index:6;}
+  .progbar{flex:1;height:10px;background:rgba(20,6,46,.55);border-radius:999px;position:relative;overflow:visible;border:1px solid rgba(255,255,255,.18);}
+  .progfill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--teal),var(--gold));border-radius:999px;transition:width .25s;}
+  .progmark{position:absolute;top:-4px;width:18px;height:18px;border-radius:50%;transform:translateX(-50%);
+    border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;transition:left .25s;}
+  .progmark.you{background:var(--gold);z-index:3;top:-5px;width:20px;height:20px;}
+  .progmark.rival{background:var(--pink-d);z-index:2;}
+  .progflag{position:absolute;right:-2px;top:-7px;font-size:14px;}
+
+  .boardwrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:0;padding:2px 0;}
+  #board-canvas{display:block;touch-action:none;border-radius:14px;}
+  #fx-layer{position:absolute;inset:0;pointer-events:none;}
+
+  .abilrow{display:flex;justify-content:center;gap:12px;padding:6px 10px calc(12px + env(safe-area-inset-bottom,0px));z-index:6;flex-wrap:wrap;}
+  .ab{width:62px;border-radius:14px;background:rgba(20,6,46,.5);border:2px solid rgba(255,255,255,.22);
+    padding:5px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;position:relative;transition:transform .1s;}
+  .ab:active{transform:scale(.95);}
+  .ab .abicon{width:30px;height:30px;}
+  .ab .abname{font-size:8.5px;font-weight:900;letter-spacing:.3px;color:#e7d6ff;}
+  .ab .meter{width:100%;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;}
+  .ab .mfill{height:100%;width:0%;border-radius:3px;transition:width .2s;}
+  .ab.ready{border-color:var(--gold);box-shadow:0 0 14px rgba(255,211,77,.7);animation:abGlow 1.2s infinite;}
+  @keyframes abGlow{0%,100%{box-shadow:0 0 8px rgba(255,211,77,.5)}50%{box-shadow:0 0 20px rgba(255,211,77,1)}}
+  .ab.dim{opacity:.5;}
+  .ab .stock{position:absolute;top:-7px;right:-5px;background:var(--gold);color:var(--deep);
+    font-size:9px;font-weight:900;border-radius:999px;min-width:16px;height:16px;display:flex;
+    align-items:center;justify-content:center;padding:0 3px;}
+
+  .hint{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:11px;color:#ffd9ec;
+    z-index:5;pointer-events:none;font-weight:700;}
+
+  /* floating combat text */
+  .floater{position:absolute;font-family:'Baloo 2';font-weight:800;font-size:16px;
+    pointer-events:none;z-index:8;text-shadow:0 2px 4px rgba(0,0,0,.5);
+    animation:floatUp 1s ease-out forwards;white-space:nowrap;}
+  @keyframes floatUp{0%{opacity:0;transform:translate(-50%,4px) scale(.7);}
+    18%{opacity:1;transform:translate(-50%,-6px) scale(1.1);}
+    100%{opacity:0;transform:translate(-50%,-46px) scale(1);}}
+
+  /* ===== OVERLAYS ===== */
+  .overlay{position:fixed;inset:0;z-index:120;display:none;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:24px;
+    background:rgba(20,6,46,.9);}
+  .overlay.on{display:flex;}
+  .overlay .otitle{font-family:'Baloo 2';font-weight:800;font-size:36px;margin-bottom:6px;letter-spacing:1px;}
+  .overlay .ostars{font-size:42px;letter-spacing:6px;color:var(--gold);margin-bottom:8px;}
+  .overlay .ostats{font-size:15px;color:#e7d6ff;margin-bottom:22px;line-height:1.7;}
+  .overlay .ostats b{color:#fff;}
+  .overlay .cta{margin:6px;min-width:200px;}
+  .win .otitle{color:var(--gold);text-shadow:0 3px 0 #6a0e44;}
+  .lose .otitle{color:var(--red);text-shadow:0 3px 0 #5a0e1a;}
+  .unlockbanner{background:linear-gradient(110deg,var(--purple2),var(--pink));border:2px solid var(--gold);
+    border-radius:16px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;}
+  .unlockbanner svg{width:54px;height:62px;}
+  .unlockbanner .ut{text-align:left;}
+  .unlockbanner .ut b{font-family:'Baloo 2';font-size:17px;color:var(--gold);}
+  .unlockbanner .ut div{font-size:12px;color:#fff;}
+
+  /* pause */
+  #pause-overlay .otitle{color:#fff;}
+</style>
+</head>
+<body>
+<a href="../" class="back-link">← All Games</a>
+
+<!-- shared SVG library -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#ffd34d" stroke="#b97f10" stroke-width="2"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#b97f10" stroke-width="1.6"/><path d="M9 12h6M12 9v6" stroke="#b97f10" stroke-width="1.8"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 1.8l3 6.4 7 .9-5.1 4.8 1.3 6.9-6.2-3.4-6.2 3.4 1.3-6.9L2 9.1l7-.9z" fill="#ffd34d" stroke="#9a6210" stroke-width="1.4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5.4-3.4 9.2-8 11-4.6-1.8-8-5.6-8-11V5z" fill="#ffd24d" stroke="#9a6210" stroke-width="1.7"/><path d="M8.4 11.6l2.6 2.8 4.8-5.4" fill="none" stroke="#9a6210" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-bomb" viewBox="0 0 24 24"><circle cx="11" cy="14" r="8" fill="#ff5a6e" stroke="#7a0e1a" stroke-width="1.6"/><path d="M14 7l3-3" stroke="#7a0e1a" stroke-width="2.4"/><path d="M18 2.6l1.6 1.6M20.6 1.4l.4 2.6" stroke="#ffd34d" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="8.4" cy="11.4" rx="2.4" ry="1.6" fill="#fff" opacity=".4"/></symbol>
+  <symbol id="i-jump" viewBox="0 0 24 24"><path d="M12 2.5L18 9h-3.6v6h-4.8V9H6z" fill="#5fe07a" stroke="#0c6a2a" stroke-width="1.4"/><path d="M7 20h10" stroke="#5fe07a" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-boost" viewBox="0 0 24 24"><path d="M13 2L5 14h5l-1 8 8-12h-5z" fill="#54b6ff" stroke="#0c4a7a" stroke-width="1.4"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 2v20" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M5 3h13l-3.4 4.5L18 12H5z" fill="#ff5fa8" stroke="#a8175e" stroke-width="1.4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="#cdb4f7" stroke="#4d1d8a" stroke-width="1.6"/><path d="M8 10V7.6a4 4 0 0 1 8 0V10" fill="none" stroke="#4d1d8a" stroke-width="1.8"/></symbol>
+  <!-- runners -->
+  <symbol id="ch-pig" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="26" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="49" cy="70" rx="20" ry="17" fill="#ffa6c9" stroke="#b13d72" stroke-width="3"/>
+    <circle cx="50" cy="34" r="27" fill="#ffb3d1" stroke="#b13d72" stroke-width="3"/>
+    <path d="M30,14 q-5,-12 2,-17 q8,3 9,14 Z" fill="#ffb3d1" stroke="#b13d72" stroke-width="2.5"/>
+    <path d="M64,12 q2,-13 10,-15 q6,6 0,17 Z" fill="#ffb3d1" stroke="#b13d72" stroke-width="2.5"/>
+    <circle cx="40" cy="29" r="9" fill="#bff3ff" stroke="#5b2a9d" stroke-width="3"/>
+    <circle cx="63" cy="31" r="9" fill="#bff3ff" stroke="#5b2a9d" stroke-width="3"/>
+    <circle cx="41" cy="30" r="3.4" fill="#2a3550"/><circle cx="64" cy="32" r="3.4" fill="#2a3550"/>
+    <ellipse cx="52" cy="47" rx="11" ry="7.5" fill="#ff8fbb" stroke="#b13d72" stroke-width="2.5"/>
+    <ellipse cx="48.5" cy="46.5" rx="2" ry="3" fill="#a8336a"/><ellipse cx="56" cy="47" rx="2" ry="3" fill="#a8336a"/>
+  </symbol>
+  <symbol id="ch-cheetah" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="26" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="49" cy="71" rx="19" ry="16" fill="#f5b942" stroke="#9a6210" stroke-width="3"/>
+    <circle cx="50" cy="33" r="27" fill="#ffce63" stroke="#9a6210" stroke-width="3"/>
+    <circle cx="30" cy="11" r="8" fill="#ffce63" stroke="#9a6210" stroke-width="2.5"/>
+    <circle cx="70" cy="11" r="8" fill="#ffce63" stroke="#9a6210" stroke-width="2.5"/>
+    <circle cx="41" cy="31" r="4.5" fill="#2a3550"/><circle cx="62" cy="31" r="4.5" fill="#2a3550"/>
+    <ellipse cx="51" cy="42" rx="4.5" ry="3.4" fill="#7a4a12"/>
+    <path d="M42,48 q9,7 19,1" stroke="#2a3550" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="ch-golem" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="28" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="50" cy="74" rx="23" ry="19" fill="#8d9bb5" stroke="#5d6a85" stroke-width="3"/>
+    <path d="M22,34 a28,26 0 1 1 56,0 q0,12 -10,14 l-36,0 q-10,-2 -10,-14 Z" fill="#a7b4cc" stroke="#5d6a85" stroke-width="3"/>
+    <circle cx="38" cy="34" r="5" fill="#3fe0c8"/><circle cx="62" cy="34" r="5" fill="#3fe0c8"/>
+    <circle cx="38" cy="34" r="2" fill="#eafffa"/><circle cx="62" cy="34" r="2" fill="#eafffa"/>
+    <path d="M40,48 l20,0" stroke="#5d6a85" stroke-width="3" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="ch-fox" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="26" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="49" cy="71" rx="19" ry="16" fill="#cdeaff" stroke="#3a6c9e" stroke-width="3"/>
+    <path d="M26,16 l-4,-14 14,8 Z" fill="#cdeaff" stroke="#3a6c9e" stroke-width="2.5"/>
+    <path d="M74,16 l4,-14 -14,8 Z" fill="#cdeaff" stroke="#3a6c9e" stroke-width="2.5"/>
+    <circle cx="50" cy="34" r="27" fill="#e8f4ff" stroke="#3a6c9e" stroke-width="3"/>
+    <path d="M36,28 q4,-5 9,0" stroke="#2a3550" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M56,28 q4,-5 9,0" stroke="#2a3550" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="42" rx="4" ry="3" fill="#3a6c9e"/>
+  </symbol>
+  <symbol id="ch-pirate" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="26" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="49" cy="71" rx="19" ry="16" fill="#ffe9b0" stroke="#b1741f" stroke-width="3"/>
+    <rect x="30" y="20" width="40" height="34" rx="16" fill="#fff3d6" stroke="#b1741f" stroke-width="3"/>
+    <path d="M44,8 q6,-8 12,0 q4,8 -6,12 q-10,-4 -6,-12" fill="#ff8a3d" stroke="#d65f12" stroke-width="2.5"/>
+    <circle cx="42" cy="34" r="4" fill="#2a3550"/>
+    <path d="M54,30 l12,0 M60,26 l0,8" stroke="#2a3550" stroke-width="3" stroke-linecap="round"/>
+    <path d="M40,45 q10,6 20,0" stroke="#2a3550" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="ch-mole" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="26" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="50" cy="74" rx="22" ry="18" fill="#9a7ab8" stroke="#5d3a85" stroke-width="3"/>
+    <circle cx="50" cy="34" r="27" fill="#b394d4" stroke="#5d3a85" stroke-width="3"/>
+    <rect x="34" y="2" width="32" height="14" rx="4" fill="#3a2a60" stroke="#1c1238" stroke-width="2.5"/>
+    <rect x="28" y="13" width="44" height="6" rx="3" fill="#3a2a60" stroke="#1c1238" stroke-width="2.5"/>
+    <circle cx="40" cy="32" r="9" fill="#fff" stroke="#3a2a60" stroke-width="3"/>
+    <circle cx="62" cy="32" r="9" fill="#fff" stroke="#3a2a60" stroke-width="3"/>
+    <circle cx="41" cy="33" r="3.4" fill="#2a3550"/><circle cx="61" cy="33" r="3.4" fill="#2a3550"/>
+  </symbol>
+  <symbol id="ch-boar" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="28" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="50" cy="74" rx="23" ry="19" fill="#8a5a3c" stroke="#4d2c14" stroke-width="3"/>
+    <circle cx="50" cy="33" r="27" fill="#a3704d" stroke="#4d2c14" stroke-width="3"/>
+    <path d="M28,12 q-6,-10 2,-14 q8,4 8,14 Z" fill="#a3704d" stroke="#4d2c14" stroke-width="2.5"/>
+    <path d="M66,12 q2,-12 10,-13 q6,6 -2,15 Z" fill="#a3704d" stroke="#4d2c14" stroke-width="2.5"/>
+    <circle cx="41" cy="33" r="4" fill="#2a1505"/><circle cx="61" cy="33" r="4" fill="#2a1505"/>
+    <ellipse cx="51" cy="46" rx="12" ry="8" fill="#c9926a" stroke="#4d2c14" stroke-width="2.5"/>
+    <ellipse cx="47" cy="45.6" rx="2.2" ry="3.2" fill="#4d2c14"/><ellipse cx="55.5" cy="46" rx="2.2" ry="3.2" fill="#4d2c14"/>
+    <path d="M38,52 l-6,6 M64,52 l6,6" stroke="#fff3d6" stroke-width="4" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="ch-cat" viewBox="0 0 100 120">
+    <ellipse cx="50" cy="112" rx="26" ry="6" fill="rgba(20,6,46,.35)"/>
+    <ellipse cx="49" cy="72" rx="19" ry="16" fill="#7a45c4" stroke="#3a1060" stroke-width="3"/>
+    <path d="M26,16 l-3,-13 13,7 Z" fill="#7a45c4" stroke="#3a1060" stroke-width="2.5"/>
+    <path d="M74,16 l3,-13 -13,7 Z" fill="#7a45c4" stroke="#3a1060" stroke-width="2.5"/>
+    <circle cx="50" cy="34" r="27" fill="#9468d8" stroke="#3a1060" stroke-width="3"/>
+    <circle cx="40" cy="31" r="6" fill="#cffff5"/><circle cx="62" cy="31" r="6" fill="#cffff5"/>
+    <circle cx="41" cy="32" r="2.6" fill="#1c1238"/><circle cx="61" cy="32" r="2.6" fill="#1c1238"/>
+    <path d="M46,42 l4,4 4,-4" fill="none" stroke="#1c1238" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</defs>
+</svg>
+
+<div id="app">
+
+  <!-- ===== TITLE ===== -->
+  <section class="screen on" id="scr-title">
+    <svg class="hero" width="120" height="142" viewBox="0 0 100 120"><use href="#ch-pig"/></svg>
+    <div class="logo">SPUZZLE<br><span>RUNNER</span></div>
+    <div class="tag">Match-3 IS the race. Match <b>forward</b> to run · match <b>sideways</b> to bank power. Beat the rival to the line.</div>
+    <button class="cta pulse" onclick="Game.goMap()">PLAY</button>
+    <button class="cta ghostbtn" style="margin-top:14px" onclick="Game.showRoster()">RUNNERS</button>
+  </section>
+
+  <!-- ===== MAP ===== -->
+  <section class="screen" id="scr-map">
+    <div class="topbar">
+      <div class="pill"><svg><use href="#i-coin"/></svg><span id="map-coins">0</span></div>
+      <div class="pill" style="cursor:pointer" onclick="Game.showRoster()"><svg width="20" height="20" viewBox="0 0 100 120"><use href="#ch-pig" id="map-runner-ref"/></svg><span id="map-runner-name">Pip</span></div>
+    </div>
+    <h2 id="map-world-name">Meadow Run</h2>
+    <div class="worldsub" id="map-world-sub"></div>
+    <div class="worldtabs" id="world-tabs"></div>
+    <div class="scroll"><div class="nodelist" id="node-list"></div></div>
+  </section>
+
+  <!-- ===== ROSTER ===== -->
+  <section class="screen" id="scr-roster">
+    <div class="topbar">
+      <button class="cta ghostbtn" onclick="Game.backFromRoster()">← Back</button>
+      <div class="pill"><svg><use href="#i-coin"/></svg><span id="roster-coins">0</span></div>
+    </div>
+    <h2>RUNNERS</h2>
+    <div class="rsub">Tap an unlocked runner to equip · each has a passive + signature ability</div>
+    <div class="scroll"><div class="chargrid" id="char-grid"></div></div>
+  </section>
+
+  <!-- ===== GAME ===== -->
+  <section class="screen" id="scr-game">
+    <div class="gametop">
+      <div class="fuel">
+        <span class="lbl">MOVES</span>
+        <div class="cells" id="fuel-cells"></div>
+        <b id="fuel-num">0</b>
+      </div>
+      <button class="iconbtn" onclick="Game.pause()">⏸</button>
+    </div>
+    <div class="progressrow">
+      <span style="font-size:11px;color:#9ff5e8;font-weight:900">START</span>
+      <div class="progbar">
+        <div class="progfill" id="prog-fill"></div>
+        <div class="progmark rival" id="prog-rival">👻</div>
+        <div class="progmark you" id="prog-you"></div>
+        <span class="progflag">🏁</span>
+      </div>
+      <span style="font-size:13px">🏁</span>
+    </div>
+    <div class="boardwrap">
+      <canvas id="board-canvas"></canvas>
+      <div id="fx-layer"></div>
+      <div class="hint" id="game-hint">Swap toward 🏁 = run forward · sideways = charge abilities</div>
+    </div>
+    <div class="abilrow" id="abil-row"></div>
+  </section>
+
+</div>
+
+<!-- ===== OVERLAYS ===== -->
+<div class="overlay" id="pause-overlay">
+  <div class="otitle">PAUSED</div>
+  <button class="cta" onclick="Game.resume()">RESUME</button>
+  <button class="cta ghostbtn" onclick="Game.restart()">RESTART</button>
+  <button class="cta ghostbtn" onclick="Game.quitToMap()">QUIT TO MAP</button>
+</div>
+
+<div class="overlay win" id="win-overlay">
+  <div class="otitle">FINISH!</div>
+  <div class="ostars" id="win-stars">★★★</div>
+  <div id="win-unlock"></div>
+  <div class="ostats" id="win-stats"></div>
+  <button class="cta" id="win-next" onclick="Game.nextLevel()">NEXT RACE</button>
+  <button class="cta ghostbtn" onclick="Game.restart()">RACE AGAIN</button>
+  <button class="cta ghostbtn" onclick="Game.quitToMap()">MAP</button>
+</div>
+
+<div class="overlay lose" id="lose-overlay">
+  <div class="otitle" id="lose-title">OUT OF MOVES</div>
+  <div class="ostats" id="lose-stats"></div>
+  <button class="cta" onclick="Game.restart()">RETRY</button>
+  <button class="cta ghostbtn" onclick="Game.quitToMap()">MAP</button>
+</div>
+
+<script>
+"use strict";
+// ════════════════════════════════════════════════════════════════
+//  SPUZZLE RUNNER — match-3 IS the race
+//  Forward matches advance the runner; sideways matches bank power.
+//  Moves are fuel. Obstacles force you to bank abilities.
+// ════════════════════════════════════════════════════════════════
+const track = (name, params) => { if (typeof window.trackEvent === 'function') window.trackEvent(name, params||{}); };
+
+// ── Gem colors (index 0..4) ──
+const GEM = [
+  { key:'red',    c1:'#ff8a9c', c2:'#ff3b54', c3:'#a8122a', ability:'bomb'  },
+  { key:'green',  c1:'#9cf2ab', c2:'#3bd45f', c3:'#127a2a', ability:null    },
+  { key:'blue',   c1:'#a8d8ff', c2:'#3b9cff', c3:'#0c5aa8', ability:'boost' },
+  { key:'yellow', c1:'#ffe79c', c2:'#ffc83b', c3:'#a87a0c', ability:'shield'},
+  { key:'violet', c1:'#d8b0ff', c2:'#a85bff', c3:'#5a1ca8', ability:'jump'  },
+];
+// ability meta keyed by ability id
+const ABILITY = {
+  shield:{ name:'SHIELD', icon:'#i-shield', color:'#ffd24d', need:8,  desc:'negate next mud / obstacle cost' },
+  bomb:  { name:'BOMB',   icon:'#i-bomb',   color:'#ff5a6e', need:8,  desc:'smash a wall ahead' },
+  jump:  { name:'JUMP',   icon:'#i-jump',   color:'#5fe07a', need:7,  desc:'leap over a chasm' },
+  boost: { name:'BOOST',  icon:'#i-boost',  color:'#54b6ff', need:10, desc:'+3 rows slipstream' },
+};
+const ABIL_ORDER = ['jump','bomb','shield','boost'];
+
+// ── Runners (collectible characters) ──
+const RUNNERS = [
+  { id:'pig',     name:'Pip',      svg:'ch-pig',     rarity:'common',
+    pass:'+2 starting moves each race', sig:'Truffle Dash — first chasm is free',
+    unlock:{type:'start'},
+    mods:{ moveBonus:2, freeJump:1 } },
+  { id:'cheetah', name:'Zella',    svg:'ch-cheetah', rarity:'common',
+    pass:'Forward matches +20% progress', sig:'Burst — starts with Boost charged',
+    unlock:{type:'world', world:0, label:'Clear Meadow Run'},
+    mods:{ fwdMul:1.2, startCharge:{boost:1} } },
+  { id:'golem',   name:'Brikk',    svg:'ch-golem',   rarity:'rare',
+    pass:'Sideways matches +25% charge', sig:'Smash — starts with a free Bomb',
+    unlock:{type:'world', world:1, label:'Clear Candy Canyon'},
+    mods:{ sideMul:1.25, startStock:{bomb:1} } },
+  { id:'fox',     name:'Frostine', svg:'ch-fox',     rarity:'rare',
+    pass:'Shield meter fills 35% faster', sig:'Chill — rival starts 1 row back',
+    unlock:{type:'coins', cost:300},
+    mods:{ meterMul:{shield:1.35}, rivalHandicap:1 } },
+  { id:'pirate',  name:'Wick',     svg:'ch-pirate',  rarity:'epic',
+    pass:'+3 starting moves each race', sig:'Powder — starts with a free Bomb + Jump',
+    unlock:{type:'coins', cost:600},
+    mods:{ moveBonus:3, startStock:{bomb:1, jump:1} } },
+  { id:'mole',    name:'Mayor',    svg:'ch-mole',    rarity:'epic',
+    pass:'Jumps cost no move (free clears)', sig:'Tunnel — all chasms cheaper',
+    unlock:{type:'world', world:2, label:'Clear Frost Pass'},
+    mods:{ freeAbilityMove:true } },
+  { id:'cat',     name:'Comet',    svg:'ch-cat',     rarity:'legendary',
+    pass:'+30% to every ability meter', sig:'Starfall — starts fully boosted',
+    unlock:{type:'coins', cost:1200},
+    mods:{ allMeterMul:1.3, startCharge:{boost:1, jump:1} } },
+  { id:'boar',    name:'Baron Hog', svg:'ch-boar',   rarity:'legendary',
+    pass:'+3 moves & forward matches +15%', sig:'Mudlord — immune to mud cost',
+    unlock:{type:'boss', label:'Beat the Baron (W2 boss)'},
+    mods:{ moveBonus:3, fwdMul:1.15, mudImmune:true } },
+];
+const runnerById = id => RUNNERS.find(r => r.id === id) || RUNNERS[0];
+
+// ── Worlds & levels ──
+// obstacles placed by {row,col,type}. type: wall | chasm | mud
+// A level: cols, rows(track length), moves, colors(#used), rival speed (rows/move avg), obstacles, boss?
+const WORLDS = [
+  { name:'Meadow Run', sub:'World 1 · learn the road', colors:4,
+    levels:[
+      { name:'First Steps', cols:6, rows:14, moves:22, rival:0.55, obstacles:[] },
+      { name:'Open Field',  cols:6, rows:16, moves:22, rival:0.62, obstacles:[{row:8,type:'mud',span:'all'}] },
+      { name:'The Gap',     cols:6, rows:18, moves:22, rival:0.66, obstacles:[{row:9,type:'chasm',cols:[2,3]}] },
+      { name:'Stone Wall',  cols:6, rows:18, moves:21, rival:0.70, obstacles:[{row:10,type:'wall',cols:[1,2,3,4]}] },
+      { name:'Meadow Dash', cols:6, rows:20, moves:22, rival:0.78, boss:true,
+        obstacles:[{row:7,type:'mud',span:'all'},{row:12,type:'chasm',cols:[1,2,3]}] },
+    ]},
+  { name:'Candy Canyon', sub:'World 2 · walls & gaps', colors:4,
+    levels:[
+      { name:'Sugar Rush',  cols:7, rows:20, moves:21, rival:0.78, obstacles:[{row:10,type:'wall',cols:[2,3,4]}] },
+      { name:'Twin Chasms', cols:7, rows:22, moves:22, rival:0.82,
+        obstacles:[{row:8,type:'chasm',cols:[1,2]},{row:14,type:'chasm',cols:[4,5]}] },
+      { name:'Sticky Path', cols:7, rows:22, moves:21, rival:0.85,
+        obstacles:[{row:7,type:'mud',span:'all'},{row:15,type:'wall',cols:[2,3,4,5]}] },
+      { name:'Gauntlet',    cols:7, rows:24, moves:22, rival:0.90,
+        obstacles:[{row:8,type:'wall',cols:[1,2,3]},{row:13,type:'chasm',cols:[3,4,5]},{row:18,type:'mud',span:'all'}] },
+      { name:'Baron Hog',   cols:7, rows:24, moves:22, rival:1.0, boss:true,
+        obstacles:[{row:6,type:'mud',span:'all'},{row:11,type:'wall',cols:[2,3,4]},{row:17,type:'chasm',cols:[2,3,4]}] },
+    ]},
+  { name:'Frost Pass', sub:'World 3 · five colors, rising heat', colors:5,
+    levels:[
+      { name:'Icy Start',   cols:7, rows:24, moves:21, rival:0.92,
+        obstacles:[{row:9,type:'chasm',cols:[2,3,4]},{row:16,type:'wall',cols:[1,2,3]}] },
+      { name:'Glacier',     cols:7, rows:26, moves:22, rival:0.96,
+        obstacles:[{row:8,type:'mud',span:'all'},{row:14,type:'chasm',cols:[3,4]},{row:20,type:'wall',cols:[2,3,4,5]}] },
+      { name:'Whiteout',    cols:8, rows:26, moves:22, rival:1.02,
+        obstacles:[{row:7,type:'wall',cols:[2,3,4,5]},{row:13,type:'mud',span:'all'},{row:19,type:'chasm',cols:[3,4,5]}] },
+      { name:'Avalanche',   cols:8, rows:28, moves:22, rival:1.08,
+        obstacles:[{row:8,type:'chasm',cols:[1,2,3]},{row:14,type:'wall',cols:[3,4,5,6]},{row:20,type:'mud',span:'all'},{row:24,type:'chasm',cols:[4,5,6]}] },
+      { name:'Summit Rival',cols:8, rows:30, moves:23, rival:1.18, boss:true,
+        obstacles:[{row:7,type:'mud',span:'all'},{row:12,type:'wall',cols:[2,3,4,5]},{row:18,type:'chasm',cols:[3,4,5]},{row:24,type:'wall',cols:[1,2,5,6]}] },
+    ]},
+];
+
+// ════════════════════════════════════════════════════════════════
+//  PERSISTENCE
+// ════════════════════════════════════════════════════════════════
+const SAVE_KEY = 'spuzzleRunner_v1';
+function loadSave(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (d && d.v === 1) return d;
+  }catch(e){}
+  return { v:1, coins:0, equipped:'pig', owned:['pig'],
+    stars:{}, // "w-l" -> stars
+    bestRows:{} };
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
+let save = loadSave();
+function levelKey(w,l){ return w+'-'+l; }
+function isLevelUnlocked(w,l){
+  if (w===0 && l===0) return true;
+  if (l>0) return (save.stars[levelKey(w,l-1)]||0) > 0;
+  // first level of a world: prior world fully cleared (all 5 levels have a star)
+  const prev = WORLDS[w-1];
+  return prev.levels.every((_,i)=> (save.stars[levelKey(w-1,i)]||0) > 0);
+}
+function isWorldUnlocked(w){ return isLevelUnlocked(w,0) || w===0; }
+function worldCleared(w){ return WORLDS[w].levels.every((_,i)=> (save.stars[levelKey(w,i)]||0)>0); }
+function isRunnerUnlocked(r){
+  if (save.owned.includes(r.id)) return true;
+  const u = r.unlock;
+  if (u.type==='start') return true;
+  if (u.type==='world') return worldCleared(u.world);
+  if (u.type==='boss')  return (save.stars[levelKey(1,4)]||0) > 0; // W2 boss
+  return false; // coins: must buy
+}
+function autoUnlockRunners(){
+  // grant world/boss-gated runners automatically when criteria met
+  for (const r of RUNNERS){
+    if (save.owned.includes(r.id)) continue;
+    if ((r.unlock.type==='world' && worldCleared(r.unlock.world)) ||
+        (r.unlock.type==='boss' && (save.stars[levelKey(1,4)]||0)>0) ||
+        (r.unlock.type==='start'))
+      { save.owned.push(r.id); }
+  }
+  persist();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CANVAS + BOARD STATE
+// ════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('board-canvas');
+const ctx = canvas.getContext('2d');
+const fxLayer = document.getElementById('fx-layer');
+
+let G = null; // active game state
+
+// tile pixel geometry computed at layout
+let TILE = 48, OX = 0, OY = 0, dpr = 1;
+
+function resizeCanvas(){
+  if (!G) return;
+  dpr = window.devicePixelRatio || 1;
+  const wrap = canvas.parentElement;
+  const availW = wrap.clientWidth - 8;
+  const availH = wrap.clientHeight - 8;
+  // board shows a window of VIS rows
+  const cols = G.cols, visRows = G.visRows;
+  const t = Math.min(availW / cols, availH / visRows);
+  TILE = Math.floor(t);
+  const w = TILE * cols, h = TILE * visRows;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  OX = 0; OY = 0;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ resizeCanvas(); });
+
+// ════════════════════════════════════════════════════════════════
+//  LEVEL SETUP
+// ════════════════════════════════════════════════════════════════
+function buildLevel(w, l){
+  const def = WORLDS[w].levels[l];
+  const runner = runnerById(save.equipped);
+  const m = runner.mods;
+  const cols = def.cols, rows = def.rows;
+  const colors = WORLDS[w].colors;
+
+  // grid: grid[r][c] = {color} or null (chasm) or {wall:true}; row 0 = bottom (where runner starts), increasing = forward toward finish
+  const grid = [];
+  // obstacle lookup
+  const obMap = {}; // "r-c" -> type
+  for (const ob of def.obstacles){
+    let cset;
+    if (ob.span === 'all') cset = Array.from({length:cols},(_,i)=>i);
+    else cset = ob.cols;
+    for (const c of cset) obMap[ob.row+'-'+c] = ob.type;
+  }
+  function colorAt(r,c, avoid){
+    // pick a color avoiding immediate 3-in-a-row at spawn
+    let tries=0, col;
+    do { col = Math.floor(Math.random()*colors); tries++; } while(tries<12 && avoid && avoid.includes(col));
+    return col;
+  }
+  for (let r=0;r<rows;r++){
+    grid[r] = [];
+    for (let c=0;c<cols;c++){
+      const o = obMap[r+'-'+c];
+      if (o==='chasm'){ grid[r][c] = { chasm:true }; continue; }
+      if (o==='wall'){ grid[r][c] = { wall:true }; continue; }
+      // avoid horizontal/vertical triples on spawn
+      const avoid=[];
+      if (c>=2 && grid[r][c-1] && grid[r][c-2] && grid[r][c-1].color===grid[r][c-2].color && grid[r][c-1].color!=null)
+        avoid.push(grid[r][c-1].color);
+      if (r>=2 && grid[r-1] && grid[r-2] && grid[r-1][c] && grid[r-2][c] && grid[r-1][c].color===grid[r-2][c].color && grid[r-1][c].color!=null)
+        avoid.push(grid[r-1][c].color);
+      const col = colorAt(r,c,avoid);
+      grid[r][c] = { color: col, mud:(o==='mud') };
+    }
+  }
+
+  // ability meters & stock
+  const meters = { shield:0, bomb:0, jump:0, boost:0 };
+  const stock  = { shield:0, bomb:0, jump:0, boost:0 };
+  if (m.startCharge) for (const k in m.startCharge) stock[k] += m.startCharge[k];
+  if (m.startStock)  for (const k in m.startStock)  stock[k] += m.startStock[k];
+
+  let moves = def.moves + (m.moveBonus||0);
+
+  G = {
+    w, l, def, runner, cols, rows, colors,
+    visRows: Math.min(rows, 9),
+    grid,
+    moves, maxMoves: moves,
+    youRow: 0,          // runner position (row index, fractional during anim)
+    youRowTarget: 0,
+    rivalRow: 0 - (m.rivalHandicap||0),
+    rivalSpeed: def.rival * (1 + Math.random()*0.06 - 0.03),
+    meters, stock,
+    finished:false, lost:false, busy:false,
+    freeJumpLeft: (m.freeJump||0),
+    sel:null,           // {r,c} selected tile
+    anims:[],
+    camRow:0,           // bottom visible row (fractional)
+    abilityMode:null,   // when an ability is armed needing a target
+    score:0,
+  };
+  // free starting jump from Pip = a stocked jump that costs no obstacle clear? Represent as freeJumpLeft used during chasm.
+  resizeCanvas();
+  layoutCamera(true);
+}
+
+function layoutCamera(snap){
+  // keep runner ~2 rows from bottom of window when possible
+  const target = Math.max(0, Math.min(G.rows - G.visRows, G.youRowTarget - 2));
+  if (snap) G.camRow = target;
+  G.camTarget = target;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════════
+function rowToY(r){
+  // row r (0 = bottom) -> canvas y. higher rows draw higher (smaller y).
+  const visTop = G.camRow + G.visRows;
+  return (visTop - r - 1) * TILE;
+}
+function colToX(c){ return c * TILE; }
+
+function roundRectPath(p,x,y,w,h,r){
+  p.beginPath();
+  p.moveTo(x+r,y); p.arcTo(x+w,y,x+w,y+h,r); p.arcTo(x+w,y+h,x,y+h,r);
+  p.arcTo(x,y+h,x,y,r); p.arcTo(x,y,x+w,y,r); p.closePath();
+}
+
+function drawGem(c, x, y, size, colorIdx, mud, lift, selected){
+  const g = GEM[colorIdx];
+  const pad = size*0.10;
+  const s = size - pad*2;
+  const cx = x + size/2, cy = y + size/2 - (lift||0);
+  // gem hex shape
+  const r = s/2;
+  ctx.save();
+  if (selected){ ctx.shadowColor='#fff'; ctx.shadowBlur=14; }
+  const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
+  grad.addColorStop(0, g.c1); grad.addColorStop(.5, g.c2); grad.addColorStop(1, g.c3);
+  ctx.beginPath();
+  // rounded hexagon-ish
+  const pts = [[0,-1],[.87,-.5],[.87,.5],[0,1],[-.87,.5],[-.87,-.5]];
+  for (let i=0;i<pts.length;i++){
+    const px=cx+pts[i][0]*r, py=cy+pts[i][1]*r;
+    if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = Math.max(1.5, size*0.035); ctx.strokeStyle='rgba(20,6,46,.5)'; ctx.stroke();
+  // top facet highlight
+  ctx.beginPath();
+  ctx.moveTo(cx, cy-r); ctx.lineTo(cx+r*.87, cy-r*.5); ctx.lineTo(cx, cy); ctx.lineTo(cx-r*.87, cy-r*.5); ctx.closePath();
+  ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fill();
+  ctx.restore();
+  if (mud){
+    ctx.fillStyle='rgba(90,50,20,.55)';
+    ctx.beginPath(); ctx.arc(cx, cy, r*0.95, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#caa06a'; ctx.font=`bold ${size*0.3}px Baloo 2`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🟤', cx, cy);
+  }
+}
+
+function render(){
+  if (!G) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const cols=G.cols;
+
+  // board backdrop (the road)
+  const boardH = G.visRows*TILE, boardW = cols*TILE;
+  const bg = ctx.createLinearGradient(0,0,0,boardH);
+  bg.addColorStop(0,'#3a1466'); bg.addColorStop(1,'#7a2a6a');
+  roundRectPath(ctx,0,0,boardW,boardH,14); ctx.fillStyle=bg; ctx.fill();
+
+  // clip to board
+  ctx.save();
+  roundRectPath(ctx,0,0,boardW,boardH,14); ctx.clip();
+
+  // row stripes (road feel) + finish band
+  for (let r=Math.floor(G.camRow); r<G.camRow+G.visRows+1; r++){
+    if (r<0||r>=G.rows) continue;
+    const y = rowToY(r);
+    ctx.fillStyle = (r%2===0)?'rgba(255,255,255,0.035)':'rgba(0,0,0,0.05)';
+    ctx.fillRect(0, y, boardW, TILE);
+  }
+  // finish line: checker strip at top edge of the final row
+  if (G.rows-1 < G.camRow+G.visRows){
+    const fy = rowToY(G.rows-1);
+    for (let c=0;c<cols*2;c++){
+      ctx.fillStyle = (c%2===0)?'#ffffff':'#2a1a4a';
+      ctx.fillRect(c*(TILE/2), fy - TILE*0.10, TILE/2, TILE*0.16);
+    }
+  }
+
+  // tiles
+  for (let r=Math.floor(G.camRow); r<G.camRow+G.visRows+1; r++){
+    if (r<0||r>=G.rows) continue;
+    for (let c=0;c<cols;c++){
+      const cell = G.grid[r][c];
+      const x = colToX(c), y = rowToY(r);
+      if (!cell) continue;
+      if (cell.chasm){
+        // dark gap
+        ctx.fillStyle='rgba(8,3,18,0.86)';
+        roundRectPath(ctx, x+TILE*0.06, y+TILE*0.06, TILE*0.88, TILE*0.88, 6); ctx.fill();
+        ctx.strokeStyle='rgba(84,182,255,0.5)'; ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle='rgba(120,200,255,.6)'; ctx.font=`${TILE*0.4}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('⬇', x+TILE/2, y+TILE/2);
+        continue;
+      }
+      if (cell.wall){
+        ctx.fillStyle='#6b5a44';
+        roundRectPath(ctx, x+TILE*0.06, y+TILE*0.06, TILE*0.88, TILE*0.88, 6); ctx.fill();
+        ctx.strokeStyle='#3a2c18'; ctx.lineWidth=2.5; ctx.stroke();
+        // bricks
+        ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(x+6,y+TILE/2); ctx.lineTo(x+TILE-6,y+TILE/2); ctx.stroke();
+        continue;
+      }
+      if (cell.removing) continue; // drawn via anim
+      const selected = G.sel && G.sel.r===r && G.sel.c===c;
+      const lift = cell.lift||0;
+      drawGem(ctx, x, y, TILE, cell.color, cell.mud, lift, selected);
+    }
+  }
+
+  // animated removing gems (pop)
+  for (const a of G.anims){
+    if (a.type==='pop'){
+      const x=colToX(a.c), y=rowToY(a.r);
+      ctx.save(); ctx.globalAlpha = Math.max(0, 1-a.t);
+      const scale = 1 + a.t*0.6;
+      ctx.translate(x+TILE/2, y+TILE/2); ctx.scale(scale,scale); ctx.translate(-(x+TILE/2),-(y+TILE/2));
+      drawGem(ctx, x, y, TILE, a.color, false, 0, false);
+      ctx.restore();
+    }
+  }
+
+  // runner sprite + rival lane marker on the board
+  drawRunnerOnBoard();
+
+  ctx.restore(); // unclip
+}
+
+let runnerImg = {};
+function drawRunnerOnBoard(){
+  // draw the runner standing on its current row, in a central-ish column path
+  const r = G.youRow;
+  if (r > G.camRow + G.visRows || r < G.camRow-1) return;
+  const y = rowToY(Math.floor(r)) - (r-Math.floor(r))*TILE;
+  const x = (G.runnerCol!=null?G.runnerCol:Math.floor(G.cols/2))*TILE;
+  // glow disc under runner
+  ctx.save();
+  ctx.fillStyle='rgba(255,211,77,.35)';
+  ctx.beginPath(); ctx.ellipse(x+TILE/2, y+TILE*0.92, TILE*0.4, TILE*0.16, 0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  // sprite via cached image
+  const sym = G.runner.svg;
+  if (!runnerImg[sym]){
+    const svgStr = makeRunnerSVG(sym);
+    const img = new Image();
+    img.onload = ()=>{ runnerImg[sym]=img; };
+    img.src = 'data:image/svg+xml;base64,'+btoa(svgStr);
+    runnerImg[sym] = 'loading';
+  }
+  const im = runnerImg[sym];
+  if (im && im!=='loading'){
+    const sw = TILE*1.0, sh = sw*1.2;
+    ctx.drawImage(im, x+TILE/2 - sw/2, y+TILE - sh*0.92, sw, sh);
+  } else {
+    ctx.fillStyle='#ffd34d'; ctx.beginPath(); ctx.arc(x+TILE/2,y+TILE/2,TILE*0.3,0,Math.PI*2); ctx.fill();
+  }
+}
+function makeRunnerSVG(symId){
+  // pull the symbol's inner markup from the DOM
+  const sym = document.getElementById(symId);
+  const vb = sym.getAttribute('viewBox');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="100" height="120">${sym.innerHTML}</svg>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MATCH-3 CORE
+// ════════════════════════════════════════════════════════════════
+function inBounds(r,c){ return r>=0&&r<G.rows&&c>=0&&c<G.cols; }
+function swappable(cell){ return cell && cell.color!=null && !cell.wall && !cell.chasm; }
+
+// find all matches (3+) of same color in rows and cols; returns array of cell-sets w/ orientation
+function findMatches(){
+  const matches = [];
+  const cols=G.cols, rows=G.rows;
+  // horizontal
+  for (let r=0;r<rows;r++){
+    let run=[];
+    for (let c=0;c<=cols;c++){
+      const cell = c<cols?G.grid[r][c]:null;
+      const col = (cell && cell.color!=null && !cell.wall && !cell.chasm)?cell.color:null;
+      if (run.length && col===run[0].color){ run.push({r,c,color:col}); }
+      else {
+        if (run.length>=3) matches.push({cells:run.slice(), dir:'h', color:run[0].color});
+        run = (col!=null)?[{r,c,color:col}]:[];
+      }
+    }
+  }
+  // vertical
+  for (let c=0;c<cols;c++){
+    let run=[];
+    for (let r=0;r<=rows;r++){
+      const cell = r<rows?G.grid[r][c]:null;
+      const col = (cell && cell.color!=null && !cell.wall && !cell.chasm)?cell.color:null;
+      if (run.length && col===run[0].color){ run.push({r,c,color:col}); }
+      else {
+        if (run.length>=3) matches.push({cells:run.slice(), dir:'v', color:run[0].color});
+        run = (col!=null)?[{r,c,color:col}]:[];
+      }
+    }
+  }
+  return matches;
+}
+
+// gravity: gems fall toward row 0 (downhill toward runner). Empty (null) slots get filled from above.
+// Walls and chasms are fixed; gravity flows around chasms? Simpler: chasms/walls are fixed obstacles
+// that gems do NOT fall through — column gravity stops at an obstacle.
+function applyGravity(){
+  for (let c=0;c<G.cols;c++){
+    // process column in segments split by fixed obstacles
+    let r=0;
+    while (r<G.rows){
+      // find segment [segStart, segEnd) of non-obstacle cells
+      if (G.grid[r][c] && (G.grid[r][c].wall||G.grid[r][c].chasm)){ r++; continue; }
+      let segStart=r;
+      let segEnd=r;
+      while (segEnd<G.rows && !(G.grid[segEnd][c] && (G.grid[segEnd][c].wall||G.grid[segEnd][c].chasm))) segEnd++;
+      // collect existing gems in segment (color cells), compact toward segStart (down)
+      const gems=[];
+      for (let rr=segStart; rr<segEnd; rr++){
+        const cell=G.grid[rr][c];
+        if (cell && cell.color!=null && !cell.removing){ gems.push(cell); }
+      }
+      // refill top with new gems
+      const slots = segEnd-segStart;
+      while (gems.length<slots) gems.push({ color: Math.floor(Math.random()*G.colors), mud:false, _new:true });
+      // place: bottom of segment gets gems[0]
+      for (let i=0;i<slots;i++){
+        const rr=segStart+i;
+        G.grid[rr][c]=gems[i];
+      }
+      r=segEnd;
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  INPUT — swap two adjacent tiles via swipe/drag
+// ════════════════════════════════════════════════════════════════
+let drag = null;
+function canvasPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches?e.touches[0].clientX:e.clientX) - rect.left;
+  const y = (e.touches?e.touches[0].clientY:e.clientY) - rect.top;
+  return {x,y};
+}
+function cellAt(x,y){
+  const c = Math.floor(x / TILE);
+  // invert rowToY: y = (visTop - r -1)*TILE -> r = visTop -1 - y/TILE
+  const visTop = G.camRow + G.visRows;
+  const r = Math.floor(visTop - 1 - y/TILE);
+  if (!inBounds(r,c)) return null;
+  return {r,c};
+}
+function onDown(e){
+  if (!G || G.busy || G.finished || G.lost) return;
+  const p = canvasPos(e);
+  const cell = cellAt(p.x,p.y);
+  if (!cell) return;
+  // ability targeting mode
+  if (G.abilityMode){ tryAbilityTarget(cell); return; }
+  if (!swappable(G.grid[cell.r][cell.c])) return;
+  e.preventDefault();
+  drag = { start:cell, sx:p.x, sy:p.y };
+  G.sel = cell;
+  render();
+}
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('touchstart', onDown, {passive:false});
+window.addEventListener('mousemove', handleDragMove);
+window.addEventListener('touchmove', handleDragMove, {passive:false});
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('touchend', endDrag);
+
+function handleDragMove(e){
+  if (!drag || !G || G.busy) return;
+  const p = canvasPos(e);
+  const dx = p.x - drag.sx, dy = p.y - drag.sy;
+  if (Math.hypot(dx,dy) < TILE*0.4) return;
+  e.preventDefault();
+  let dr=0,dc=0;
+  if (Math.abs(dx) > Math.abs(dy)) dc = dx>0?1:-1;
+  else dr = dy<0?1:-1; // up swipe (negative dy) -> +row (forward)
+  const from = drag.start;
+  const to = {r:from.r+dr, c:from.c+dc};
+  drag = null; G.sel=null;
+  doSwap(from, to);
+}
+function endDrag(){ drag=null; if(G){G.sel=null; render();} }
+
+function doSwap(from, to){
+  if (!inBounds(to.r,to.c)) { render(); return; }
+  const a=G.grid[from.r][from.c], b=G.grid[to.r][to.c];
+  if (!swappable(a) || !swappable(b)){ render(); return; }
+  // swap
+  G.grid[from.r][from.c]=b; G.grid[to.r][to.c]=a;
+  const matches = findMatches();
+  if (matches.length===0){
+    // invalid: swap back
+    G.grid[from.r][from.c]=a; G.grid[to.r][to.c]=b;
+    flashInvalid(to);
+    render();
+    return;
+  }
+  // valid move — spend a move (unless free), determine forward vs sideways
+  G.busy = true;
+  resolveMatches(from, to);
+}
+
+function flashInvalid(cell){
+  const x=colToX(cell.c), y=rowToY(cell.r);
+  ctx.strokeStyle='rgba(255,90,110,.9)'; ctx.lineWidth=3;
+  roundRectPath(ctx,x+3,y+3,TILE-6,TILE-6,6); ctx.stroke();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MATCH RESOLUTION → progress vs power
+// ════════════════════════════════════════════════════════════════
+function resolveMatches(from, to){
+  // spend a move
+  const m = G.runner.mods;
+  G.moves--;
+  // mud cost: if either swapped cell is mud, +1 move (unless immune/shield)
+  // handled after match detection below
+  cascade(true, from, to);
+}
+
+function cascade(firstPass, from, to){
+  const matches = findMatches();
+  if (matches.length===0){
+    // settle
+    finishTurn(from, to);
+    return;
+  }
+  const m = G.runner.mods;
+  // classify each match: forward (vertical, advances) vs sideways (horizontal, banks power)
+  // determine "ahead of runner": vertical match whose lowest row >= runner row -> progress
+  let forwardRows = 0;
+  let sideCharge = {}; // ability -> amount
+  const cellsToClear = new Set();
+  let totalGems = 0, mudHit=false;
+
+  for (const mt of matches){
+    for (const cc of mt.cells){
+      const key=cc.r+'-'+cc.c;
+      if (G.grid[cc.r][cc.c] && G.grid[cc.r][cc.c].mud) mudHit=true;
+      cellsToClear.add(key);
+    }
+    const len = mt.cells.length;
+    totalGems += len;
+    if (mt.dir==='v'){
+      // vertical = forward progress (running up the track)
+      let rows = len; // each gem in vertical run ~ rows of progress
+      forwardRows += rows;
+    } else {
+      // horizontal = sideways = bank power into this color's ability
+      const ability = GEM[mt.color].ability;
+      if (ability){ sideCharge[ability] = (sideCharge[ability]||0) + len; }
+      else {
+        // green has no ability -> small score + tiny universal? give 1 progress per gem as consolation
+        forwardRows += Math.floor(len*0.34);
+      }
+    }
+  }
+
+  // apply runner mods
+  let progressGain = forwardRows * (m.fwdMul||1);
+  progressGain = progressGain * 0.62; // tuning: rows of board progress per gem
+  progressGain = Math.round(progressGain*10)/10;
+
+  // pop animation
+  G.anims = [];
+  for (const key of cellsToClear){
+    const [r,c]=key.split('-').map(Number);
+    const cell=G.grid[r][c];
+    if (cell){ G.anims.push({type:'pop', r, c, color:cell.color, t:0}); cell.removing=true; }
+  }
+
+  // floating combat text near runner
+  if (progressGain>0) spawnFloater(`+${progressGain.toFixed(1)} rows ▲`, '#9ff5e8');
+  for (const ab in sideCharge){
+    addMeter(ab, sideCharge[ab]);
+    spawnFloater(`+${ABILITY[ab].name} ◀▶`, ABILITY[ab].color, 18);
+  }
+
+  // mud penalty (first pass only)
+  if (firstPass && mudHit && !m.mudImmune){
+    if (G.stock.shield>0){ G.stock.shield--; spawnFloater('SHIELD!', '#ffd24d', -18); }
+    else { G.moves--; spawnFloater('MUD −1', '#caa06a', -18); }
+  }
+
+  // advance runner target — but obstacles ahead BLOCK progress until cleared with an ability
+  G.youRowTarget = Math.min(G.rows-1, G.youRowTarget + progressGain);
+  G.youRowTarget = Math.min(G.youRowTarget, barrierRowAhead());
+  G.score += totalGems*10;
+
+  // run pop anim then clear+gravity, then cascade again
+  animatePops(()=>{
+    // remove cleared
+    for (const key of cellsToClear){
+      const [r,c]=key.split('-').map(Number);
+      if (G.grid[r][c]) G.grid[r][c] = null; // empty for gravity
+    }
+    applyGravity();
+    G.anims=[];
+    render();
+    setTimeout(()=>cascade(false), 60);
+  });
+}
+
+function animatePops(done){
+  const start=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-start)/180);
+    for (const a of G.anims) a.t=t;
+    render();
+    if (t<1) requestAnimationFrame(step); else done();
+  }
+  requestAnimationFrame(step);
+}
+
+function addMeter(ability, gems){
+  const m = G.runner.mods;
+  let mul = m.sideMul || 1;
+  if (m.allMeterMul) mul *= m.allMeterMul;
+  if (m.meterMul && m.meterMul[ability]) mul *= m.meterMul[ability];
+  G.meters[ability] += gems * 4 * mul;
+  const need = ABILITY[ability].need * 4; // need is in "gem-units"; scale
+  while (G.meters[ability] >= need){
+    G.meters[ability] -= need;
+    G.stock[ability] = (G.stock[ability]||0)+1;
+    spawnFloater(`${ABILITY[ability].name} READY!`, ABILITY[ability].color, -34);
+  }
+}
+
+function finishTurn(from, to){
+  // animate runner moving to target, then advance rival, check win/lose
+  animateRunner(()=>{
+    advanceRival();
+    updateHUD();
+    render();
+    // win?
+    if (G.youRowTarget >= G.rows-1){ winRace(); return; }
+    // rival reached finish first?
+    if (G.rivalRow >= G.rows-1){ loseRace('rival'); return; }
+    // out of moves?
+    if (G.moves <= 0){
+      // last chance: if exactly at finish handled above; else lose
+      loseRace('moves'); return;
+    }
+    G.busy=false;
+    updateHint();
+  });
+}
+
+function animateRunner(done){
+  const start=performance.now();
+  const from=G.youRow, target=G.youRowTarget;
+  const camFrom=G.camRow;
+  layoutCamera(false);
+  const camTo=G.camTarget;
+  const dur = 280 + Math.abs(target-from)*40;
+  function step(now){
+    const t=Math.min(1,(now-start)/dur);
+    const e = 1-Math.pow(1-t,3);
+    G.youRow = from + (target-from)*e;
+    G.camRow = camFrom + (camTo-camFrom)*e;
+    updateProgress();
+    render();
+    if (t<1) requestAnimationFrame(step); else { G.youRow=target; G.camRow=camTo; done(); }
+  }
+  requestAnimationFrame(step);
+}
+
+function advanceRival(){
+  G.rivalRow = Math.min(G.rows-1, G.rivalRow + G.rivalSpeed);
+}
+
+// Lowest row at/above the runner that still holds an uncleared chasm/wall.
+// The runner may stand just below it (row-0.9) until the obstacle is cleared.
+function rowHasBarrier(r){
+  if (r<0||r>=G.rows||!G.grid[r]) return false;
+  return G.grid[r].some(x=> x && (x.chasm||x.wall));
+}
+function barrierRowAhead(){
+  const start = Math.floor(G.youRowTarget);
+  for (let r=Math.max(0,start); r<G.rows; r++){
+    if (rowHasBarrier(r)) return r - 0.9; // cap just before the barrier
+  }
+  return G.rows-1;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ABILITIES (use banked power on obstacles)
+// ════════════════════════════════════════════════════════════════
+function useAbility(ability){
+  if (!G || G.busy || G.finished || G.lost) return;
+  // Pip can arm a jump with no stock if a free jump remains
+  const freeJumpOK = (ability==='jump' && G.freeJumpLeft>0);
+  if ((G.stock[ability]||0) <= 0 && !freeJumpOK) return;
+  const m = G.runner.mods;
+  // boost: instant slipstream forward, no target
+  if (ability==='boost'){
+    G.stock.boost--;
+    G.busy=true;
+    G.youRowTarget = Math.min(G.rows-1, G.youRowTarget+3);
+    G.youRowTarget = Math.min(G.youRowTarget, barrierRowAhead());
+    track('ability_used',{type:'boost', level:G.l+1});
+    spawnFloater('SLIPSTREAM +3 ▲▲','#54b6ff',-34);
+    finishTurn();
+    return;
+  }
+  // jump/bomb/shield need a target obstacle ahead
+  G.abilityMode = ability;
+  updateHint(`Tap a ${ability==='jump'?'CHASM':ability==='bomb'?'WALL':'MUD tile'} ahead to use ${ABILITY[ability].name}`);
+  updateAbilButtons();
+}
+
+function tryAbilityTarget(cell){
+  const ab = G.abilityMode;
+  const target = G.grid[cell.r][cell.c];
+  let ok=false;
+  if (ab==='jump' && target && target.chasm) ok=true;
+  if (ab==='bomb' && target && target.wall)  ok=true;
+  if (ab==='shield' && target && target.mud) ok=true;
+  if (!ok){ G.abilityMode=null; updateHint(); updateAbilButtons(); flashInvalid(cell); return; }
+
+  G.busy=true; G.abilityMode=null;
+  track('ability_used',{type:ab, level:G.l+1});
+
+  if (ab==='jump'){
+    // Pip's free jump spends no stock
+    if (G.freeJumpLeft>0) G.freeJumpLeft--;
+    else G.stock.jump--;
+    G.grid[cell.r][cell.c] = { color: Math.floor(Math.random()*G.colors), mud:false };
+    spawnFloater('JUMP!','#5fe07a',-34);
+  } else if (ab==='bomb'){
+    G.stock.bomb--;
+    // clear a 3-wide around the wall
+    for (let dc=-1;dc<=1;dc++){ const c=cell.c+dc; if(c>=0&&c<G.cols){ const t=G.grid[cell.r][c]; if(t&&t.wall){ G.grid[cell.r][c]={color:Math.floor(Math.random()*G.colors),mud:false}; } } }
+    G.grid[cell.r][cell.c]={color:Math.floor(Math.random()*G.colors),mud:false};
+    spawnFloater('BOOM!','#ff5a6e',-34);
+  } else if (ab==='shield'){
+    G.stock.shield--;
+    G.grid[cell.r][cell.c]={color:Math.floor(Math.random()*G.colors),mud:false};
+    spawnFloater('CLEANSED','#ffd24d',-34);
+  }
+  applyGravity();
+  render();
+  updateHUD(); updateAbilButtons();
+  G.busy=false;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  WIN / LOSE
+// ════════════════════════════════════════════════════════════════
+function starsForResult(){
+  // 3 stars if finished with >=40% moves left, 2 if >0 left, else 1
+  const pct = G.moves / G.maxMoves;
+  if (pct >= 0.40) return 3;
+  if (pct >= 0.18) return 2;
+  return 1;
+}
+function winRace(){
+  G.finished=true; G.busy=false;
+  const beat = G.youRowTarget >= G.rivalRow;
+  const st = starsForResult();
+  const key = levelKey(G.w, G.l);
+  const prevStars = save.stars[key]||0;
+  const firstClear = prevStars===0;
+  save.stars[key] = Math.max(prevStars, st);
+  // best rows-remaining? track best stars only; record best moves
+  if (!save.bestRows[key] || G.moves > save.bestRows[key]) save.bestRows[key]=G.moves;
+
+  let coins = 20 + st*15 + (G.def.boss?40:0);
+  if (firstClear) coins += 30;
+  if (beat) coins += 15;
+  save.coins += coins;
+
+  // unlock next level (implicit via stars) + auto-unlock runners
+  autoUnlockRunners();
+  persist();
+
+  track('level_complete',{ level:G.l+1, world:G.w+1, won:true, stars:st, beatRival:beat });
+
+  document.getElementById('win-stars').textContent = '★'.repeat(st)+'☆'.repeat(3-st);
+  document.getElementById('win-stats').innerHTML =
+    `${beat?'You beat the rival! 🏆':'Rival edged ahead, but you finished!'}<br>`+
+    `Moves left: <b>${G.moves}</b> / ${G.maxMoves}<br>`+
+    `Score: <b>${G.score}</b><br>`+
+    `<span style="color:#ffd34d">+ ${coins} coins</span>`;
+
+  // newly unlocked runner banner
+  const ub = document.getElementById('win-unlock'); ub.innerHTML='';
+  const newRunner = checkNewRunnerUnlock();
+  if (newRunner){
+    ub.innerHTML = `<div class="unlockbanner"><svg viewBox="0 0 100 120"><use href="#${newRunner.svg}"/></svg>
+      <div class="ut"><b>${newRunner.name} unlocked!</b><div>${newRunner.sig}</div></div></div>`;
+  }
+  // next button
+  const hasNext = nextLevelExists();
+  document.getElementById('win-next').style.display = hasNext?'':'none';
+  showOverlay('win-overlay');
+}
+let lastUnlockedSet = null;
+function checkNewRunnerUnlock(){
+  const cur = save.owned.slice();
+  if (lastUnlockedSet===null){ lastUnlockedSet=cur; return null; }
+  const fresh = cur.find(id=> !lastUnlockedSet.includes(id));
+  lastUnlockedSet = cur;
+  return fresh? runnerById(fresh): null;
+}
+function loseRace(reason){
+  G.lost=true; G.busy=false;
+  track('level_complete',{ level:G.l+1, world:G.w+1, won:false, reason });
+  document.getElementById('lose-title').textContent = reason==='rival'?'RIVAL WON!':'OUT OF MOVES';
+  const rowsLeft = Math.max(0, (G.rows-1) - Math.floor(G.youRowTarget));
+  document.getElementById('lose-stats').innerHTML =
+    reason==='rival'
+      ? `The ghost crossed first.<br>You were <b>${rowsLeft}</b> rows from the line.`
+      : `You ran out of moves <b>${rowsLeft}</b> rows from the finish.<br><span style="font-size:13px;color:#cdb4f7">Tip: bank fewer abilities, match more forward — or use Boost.</span>`;
+  showOverlay('lose-overlay');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  HUD
+// ════════════════════════════════════════════════════════════════
+function buildFuelCells(){
+  const wrap=document.getElementById('fuel-cells');
+  wrap.innerHTML='';
+  for (let i=0;i<G.maxMoves;i++){
+    const d=document.createElement('div'); d.className='cell'; wrap.appendChild(d);
+  }
+}
+function updateHUD(){
+  document.getElementById('fuel-num').textContent = Math.max(0,G.moves);
+  const cells=document.getElementById('fuel-cells').children;
+  for (let i=0;i<cells.length;i++) cells[i].className = 'cell'+(i>=G.moves?' spent':'');
+  updateProgress();
+  updateAbilButtons();
+}
+function updateProgress(){
+  const fin=G.rows-1;
+  const youPct = Math.min(1, G.youRow/fin);
+  const rivPct = Math.min(1, Math.max(0,G.rivalRow)/fin);
+  document.getElementById('prog-fill').style.width=(youPct*100)+'%';
+  document.getElementById('prog-you').style.left=(youPct*100)+'%';
+  document.getElementById('prog-rival').style.left=(rivPct*100)+'%';
+}
+function updateAbilButtons(){
+  const row=document.getElementById('abil-row');
+  if (!row.dataset.built){
+    row.innerHTML='';
+    for (const ab of ABIL_ORDER){
+      const meta=ABILITY[ab];
+      const el=document.createElement('div');
+      el.className='ab'; el.dataset.ab=ab;
+      el.innerHTML=`<svg class="abicon"><use href="${meta.icon}"/></svg>
+        <div class="abname">${meta.name}</div>
+        <div class="meter"><div class="mfill" style="background:${meta.color}"></div></div>
+        <div class="stock" style="display:none">0</div>`;
+      el.onclick=()=>useAbility(ab);
+      row.appendChild(el);
+    }
+    row.dataset.built='1';
+  }
+  for (const el of row.children){
+    const ab=el.dataset.ab, meta=ABILITY[ab];
+    const stock=G.stock[ab]||0;
+    const need=meta.need*4;
+    const fillPct=Math.min(100,(G.meters[ab]/need)*100);
+    el.querySelector('.mfill').style.width=fillPct+'%';
+    const sEl=el.querySelector('.stock');
+    if (stock>0){ sEl.style.display='flex'; sEl.textContent=stock; el.classList.add('ready'); el.classList.remove('dim'); }
+    else { sEl.style.display='none'; el.classList.remove('ready'); el.classList.add('dim'); }
+    if (G.abilityMode===ab) el.style.outline='2px solid #fff'; else el.style.outline='';
+  }
+}
+function updateHint(custom){
+  const h=document.getElementById('game-hint');
+  if (custom){ h.textContent=custom; h.style.color='#ffd34d'; return; }
+  h.style.color='#ffd9ec';
+  // contextual: obstacle ahead?
+  const aheadRow = Math.ceil(G.youRowTarget)+1;
+  let msg = 'Swipe ↑ toward 🏁 = run · sideways = charge';
+  for (let r=Math.ceil(G.youRowTarget); r<Math.min(G.rows, aheadRow+3); r++){
+    if (!G.grid[r]) continue;
+    if (G.grid[r].some(x=>x&&x.chasm)){ msg='⬇ Chasm ahead — bank JUMP'; break; }
+    if (G.grid[r].some(x=>x&&x.wall)){ msg='🧱 Wall ahead — bank BOMB'; break; }
+  }
+  h.textContent=msg;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FLOATERS
+// ════════════════════════════════════════════════════════════════
+function spawnFloater(text, color, dx){
+  const wrap=fxLayer;
+  const el=document.createElement('div');
+  el.className='floater'; el.textContent=text; el.style.color=color||'#fff';
+  // position near runner
+  const rect=canvas.getBoundingClientRect();
+  const wrapRect=wrap.getBoundingClientRect();
+  const yRow=G.youRow;
+  const y = rowToY(Math.floor(yRow));
+  const px = rect.left - wrapRect.left + (G.runnerCol||Math.floor(G.cols/2))*TILE + TILE/2 + (dx||0);
+  const py = rect.top - wrapRect.top + y - 10 + (Math.random()*16-8);
+  el.style.left=px+'px'; el.style.top=py+'px';
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SCREENS / FLOW
+// ════════════════════════════════════════════════════════════════
+const Game = {};
+let curWorldTab = 0;
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function showOverlay(id){ document.getElementById(id).classList.add('on'); }
+function hideOverlay(id){ document.getElementById(id).classList.remove('on'); }
+function hideAllOverlays(){ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('on')); }
+
+Game.goMap = function(){
+  autoUnlockRunners();
+  // figure default world tab = highest unlocked
+  curWorldTab = 0;
+  for (let w=0;w<WORLDS.length;w++) if (isWorldUnlocked(w)) curWorldTab=w;
+  renderMap();
+  showScreen('scr-map');
+};
+function renderMap(){
+  document.getElementById('map-coins').textContent = save.coins;
+  const runner=runnerById(save.equipped);
+  document.getElementById('map-runner-name').textContent=runner.name;
+  document.getElementById('map-runner-ref').setAttribute('href','#'+runner.svg);
+  // world tabs
+  const tabs=document.getElementById('world-tabs'); tabs.innerHTML='';
+  WORLDS.forEach((wd,w)=>{
+    const unlocked=isWorldUnlocked(w);
+    const b=document.createElement('button');
+    b.className='worldtab'+(w===curWorldTab?' active':'')+(unlocked?'':' locked');
+    b.textContent=(w+1)+'. '+wd.name.split(' ')[0];
+    if (unlocked) b.onclick=()=>{ curWorldTab=w; renderMap(); };
+    tabs.appendChild(b);
+  });
+  const wd=WORLDS[curWorldTab];
+  document.getElementById('map-world-name').textContent=wd.name;
+  document.getElementById('map-world-sub').textContent=wd.sub;
+  const list=document.getElementById('node-list'); list.innerHTML='';
+  wd.levels.forEach((lv,l)=>{
+    const unlocked=isLevelUnlocked(curWorldTab,l);
+    const st=save.stars[levelKey(curWorldTab,l)]||0;
+    const done=st>0;
+    const node=document.createElement('div');
+    node.className='lvlnode'+(done?' done':'')+(unlocked?'':' locked')+(lv.boss?' boss':'');
+    node.innerHTML=`<div class="ndot">${unlocked?(lv.boss?'★':(l+1)):'<svg width=22 height=22><use href=#i-lock /></svg>'}</div>
+      <div class="ninfo"><div class="nname">${lv.name}${lv.boss?'<span class="bosstag">RIVAL</span>':''}</div>
+        <div class="nmeta">${lv.rows} rows · ${lv.moves} moves · ${lv.obstacles.length} hazard${lv.obstacles.length!==1?'s':''}</div></div>
+      <div class="nstars">${unlocked?('★'.repeat(st)+'☆'.repeat(3-st)):''}</div>`;
+    if (unlocked) node.onclick=()=>Game.startLevel(curWorldTab,l);
+    list.appendChild(node);
+  });
+}
+
+Game.startLevel = function(w,l){
+  lastUnlockedSet = save.owned.slice();
+  hideAllOverlays();
+  buildLevel(w,l);
+  buildFuelCells();
+  document.getElementById('abil-row').dataset.built='';
+  updateAbilButtons();
+  updateHUD();
+  updateHint();
+  showScreen('scr-game');
+  resizeCanvas();
+  render();
+  track('level_start',{ level:l+1, world:w+1, runner:save.equipped });
+};
+
+Game.restart = function(){
+  hideAllOverlays();
+  Game.startLevel(G.w, G.l);
+};
+function nextLevelExists(){
+  if (!G) return false;
+  if (G.l+1 < WORLDS[G.w].levels.length) return true;
+  if (G.w+1 < WORLDS.length) return true;
+  return false;
+}
+Game.nextLevel = function(){
+  hideAllOverlays();
+  let w=G.w, l=G.l+1;
+  if (l>=WORLDS[w].levels.length){ w++; l=0; }
+  if (w>=WORLDS.length){ Game.quitToMap(); return; }
+  if (!isLevelUnlocked(w,l)){ Game.quitToMap(); return; }
+  Game.startLevel(w,l);
+};
+Game.quitToMap = function(){ hideAllOverlays(); Game.goMap(); };
+Game.pause = function(){ if(G && !G.finished && !G.lost) showOverlay('pause-overlay'); };
+Game.resume = function(){ hideOverlay('pause-overlay'); };
+
+// roster
+Game.showRoster = function(){ renderRoster(); showScreen('scr-roster'); };
+Game.backFromRoster = function(){
+  // back to map if map was visited else title
+  if (save.owned.length && document.getElementById('scr-map')) Game.goMap();
+  else showScreen('scr-title');
+};
+function renderRoster(){
+  document.getElementById('roster-coins').textContent=save.coins;
+  const grid=document.getElementById('char-grid'); grid.innerHTML='';
+  RUNNERS.forEach(r=>{
+    const unlocked=isRunnerUnlocked(r);
+    const owned=save.owned.includes(r.id);
+    const equipped=save.equipped===r.id;
+    const card=document.createElement('div');
+    card.className='ccard '+r.rarity+(unlocked&&owned?'':' locked')+(equipped?' equipped':'');
+    card.innerHTML=`${equipped?'<div class="eqbadge">EQUIPPED</div>':''}
+      <svg class="portrait" viewBox="0 0 100 120"><use href="#${r.svg}"/></svg>
+      <b>${r.name}</b><span class="rar">${r.rarity.toUpperCase()}</span>
+      <div class="pass">${r.pass}</div>
+      <div class="sig">${r.sig.split('—')[0]}</div>
+      ${(!owned)?(r.unlock.type==='coins'
+          ? `<button class="cta small" ${save.coins>=r.unlock.cost?'':'disabled'} style="margin-top:6px;font-size:11px;padding:6px 14px" onclick="event.stopPropagation();Game.buyRunner('${r.id}')">🪙 ${r.unlock.cost}</button>`
+          : `<div class="lockmsg">🔒 ${r.unlock.label||'Locked'}</div>`)
+        : ''}`;
+    if (owned) card.onclick=()=>{ save.equipped=r.id; persist(); renderRoster(); runnerImg={}; };
+    grid.appendChild(card);
+  });
+}
+Game.buyRunner = function(id){
+  const r=runnerById(id);
+  if (r.unlock.type!=='coins') return;
+  if (save.coins < r.unlock.cost) return;
+  save.coins -= r.unlock.cost;
+  save.owned.push(id);
+  save.equipped=id; runnerImg={};
+  persist(); renderRoster();
+  track('runner_unlocked',{ runner:id, via:'coins' });
+};
+
+window.Game = Game;
+
+// ════════════════════════════════════════════════════════════════
+//  RAF render loop (for smooth meter glints / runner idle)
+// ════════════════════════════════════════════════════════════════
+function loop(){
+  if (G && document.getElementById('scr-game').classList.contains('on') && !G.busy){
+    render();
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// initial autounlock
+autoUnlockRunners();
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('spuzzle-runner');
+</script>
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('spuzzle-runner');
+</script>
+</body>
+</html>

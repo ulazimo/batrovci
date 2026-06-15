@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hat Trick — Football Card Battler</title>
+<!-- GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06090f; --navy:#0a1428; --navy2:#0f1d3a; --panel:#13234a; --panel2:#182c5a;
+    --pitch:#0f6b42; --pitch-d:#0a4a2d; --emerald:#19a06b;
+    --gold:#e9b33c; --gold2:#f6d878; --gold-d:#9a6a12;
+    --text:#e9effc; --mut:#8fa3c4; --mut2:#5e7297;
+    --red:#e0394f; --blue:#3a7bd5; --green:#27b06a;
+    --steel:#6b7a92; --silver:#aebdd4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:radial-gradient(1000px 700px at 50% -10%, #122448 0%, var(--bg) 60%);
+    font-family:'Rajdhani',"Segoe UI",Arial,sans-serif;color:var(--text);
+    min-height:100dvh;overflow:hidden;user-select:none}
+  .display{font-family:'Orbitron',sans-serif}
+  button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+  .back-link{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:calc(10px + env(safe-area-inset-left,0px));
+    z-index:300;color:var(--mut);text-decoration:none;font-size:13px;font-weight:700;opacity:.8;transition:.2s}
+  .back-link:hover{opacity:1;color:var(--gold2)}
+
+  /* ---- app shell ---- */
+  #app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#0c1830 0%,var(--navy) 45%,#081020 100%);overflow:hidden}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;padding-top:38px}
+  .screen.active{display:flex}
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 80px;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 8px;flex-shrink:0}
+  .avatar{display:flex;align-items:center;gap:8px;margin-left:60px}
+  .avatar .pic{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#1b3a74);
+    display:flex;align-items:center;justify-content:center;border:2px solid var(--gold)}
+  .avatar .nm{font-size:12px;font-weight:700;line-height:1.1}
+  .avatar .lv{font-size:10px;color:var(--mut)}
+  .wallet{display:flex;gap:8px}
+  .pill{display:flex;align-items:center;gap:5px;background:#0a1530;border:1px solid #233d75;
+    border-radius:14px;padding:3px 10px 3px 6px;font-size:11px;font-weight:700}
+  .dot-c{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a0,var(--gold) 60%,var(--gold-d))}
+
+  h1.brand{font-family:'Orbitron';font-size:22px;letter-spacing:3px;font-weight:900;font-style:italic;text-align:center;
+    background:linear-gradient(180deg,#fff3c8,var(--gold) 55%,var(--gold-d));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .h-section{font-size:11px;letter-spacing:2.5px;color:var(--mut);font-weight:700;margin:16px 2px 8px;text-transform:uppercase}
+  .cta{display:block;width:100%;text-align:center;padding:13px;border-radius:14px;border:none;cursor:pointer;
+    font-weight:800;font-size:14px;letter-spacing:1.2px;color:#231803;font-family:'Orbitron';
+    background:linear-gradient(180deg,var(--gold2),var(--gold) 55%,#c98f1f);
+    box-shadow:0 4px 18px rgba(233,179,60,.35);text-transform:uppercase;transition:transform .12s}
+  .cta:active{transform:scale(.97)}
+  .cta.sec{background:linear-gradient(180deg,#234a8d,#16315f);color:var(--text);box-shadow:none;border:1px solid #2d57a4;font-family:'Rajdhani'}
+  .cta:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ---- cards ---- */
+  .card{position:relative;border-radius:9px;background:linear-gradient(180deg,#10204a,#0a142e 70%,#0e2433);
+    padding:5px 5px 4px;display:flex;flex-direction:column;align-items:center;overflow:hidden;cursor:pointer}
+  .card .rt{position:absolute;top:4px;left:6px;font-weight:900;font-size:14px;line-height:1;font-family:'Orbitron'}
+  .card .ps{position:absolute;top:19px;left:6px;font-size:8px;font-weight:700;color:var(--mut)}
+  .card svg.face{width:62%;margin-top:11px}
+  .card .nm{font-size:8.5px;font-weight:800;letter-spacing:.4px;margin-top:3px;white-space:nowrap;text-align:center}
+  .card .club{font-size:7px;color:var(--mut);letter-spacing:.4px;white-space:nowrap}
+  .card .stats{display:flex;gap:5px;font-size:7.5px;font-weight:800;margin-top:2px}
+  .card .stats .a{color:#ff9aa8}.card .stats .d{color:#9ec5ff}.card .stats .c{color:#8ef0c0}
+  .card.common{border:2px solid var(--steel)}
+  .card.rare{border:2px solid transparent;background-image:linear-gradient(180deg,#10204a,#0a142e 70%,#0e2433),linear-gradient(180deg,#e8eef8,#76879f);background-origin:border-box;background-clip:padding-box,border-box}
+  .card.epic{border:2px solid transparent;background-image:linear-gradient(180deg,#10204a,#0a142e 70%,#0e2433),linear-gradient(180deg,var(--gold2),var(--gold-d));background-origin:border-box;background-clip:padding-box,border-box}
+  .card.legend{border:2px solid transparent;background-image:linear-gradient(180deg,#191029,#0c0918 70%,#1c1430),linear-gradient(160deg,#fff3c8,var(--gold) 35%,#3d2c08 60%,var(--gold2));background-origin:border-box;background-clip:padding-box,border-box;box-shadow:0 0 12px rgba(233,179,60,.4)}
+  .card.legend .rt{color:var(--gold2)}
+  .card .form{position:absolute;top:5px;right:5px;display:flex;gap:2px}
+  .card .form i{width:5px;height:5px;border-radius:50%;background:#2a3c63}
+  .card .form i.on{background:var(--gold2);box-shadow:0 0 4px var(--gold2)}
+  .card.onfire{box-shadow:0 0 16px rgba(246,216,120,.8)}
+  .card.onfire::after{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;
+    background:radial-gradient(circle at 50% 120%,rgba(255,140,0,.35),transparent 60%)}
+  .card .cost{position:absolute;top:-7px;right:-7px;width:21px;height:21px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#bfe0ff,var(--blue) 65%,#16315f);display:flex;align-items:center;
+    justify-content:center;font-size:11px;font-weight:900;border:2px solid #0a1530;z-index:5;font-family:'Orbitron'}
+  .card.tac{background-image:none;background:linear-gradient(180deg,#2a1f3f,#181028)}
+  .card.tac.set{border:2px solid #a05fd0}.card.tac.man{border:2px solid var(--gold)}
+
+  /* ---- HOME ---- */
+  .hero{position:relative;border-radius:16px;overflow:hidden;border:1px solid #24407c;
+    background:linear-gradient(180deg,#0e2150,#0a1631);padding:16px;display:flex;gap:14px;align-items:center;margin-top:6px}
+  .hero::before{content:"";position:absolute;inset:0;
+    background:linear-gradient(115deg,transparent 30%,rgba(220,240,255,.12) 45%,rgba(255,240,200,.18) 50%,rgba(220,240,255,.12) 55%,transparent 70%);
+    animation:shimmer 4.5s ease-in-out infinite}
+  @keyframes shimmer{0%{transform:translateX(-70%)}55%,100%{transform:translateX(70%)}}
+  .hero .card{width:104px;height:150px;flex-shrink:0;z-index:2;animation:floaty 5s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(-2deg)}}
+  .hero .fx{z-index:2}
+  .hero .fx h3{font-size:15px;font-weight:900;font-style:italic;letter-spacing:.5px}
+  .hero .fx .tag{display:inline-block;background:linear-gradient(90deg,#7a1220,var(--red));font-size:9px;font-weight:800;
+    letter-spacing:2px;padding:3px 8px;border-radius:3px;margin:6px 0 8px}
+  .hero .fx p{font-size:11px;color:var(--mut);line-height:1.4}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .tile{background:var(--navy2);border:1px solid #223a6e;border-radius:14px;padding:12px;cursor:pointer;transition:.15s}
+  .tile:active{transform:scale(.97)}
+  .tile h5{font-size:11.5px;font-weight:800;letter-spacing:.5px;margin-top:6px;font-family:'Orbitron'}
+  .tile p{font-size:10px;color:var(--mut);margin-top:2px}
+  .tile svg{width:26px;height:26px}
+
+  /* ---- COLLECTION / picker ---- */
+  .chips{display:flex;gap:7px;overflow-x:auto;padding:2px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex-shrink:0;background:var(--navy2);border:1px solid #223a6e;border-radius:16px;
+    padding:6px 13px;font-size:11px;color:var(--mut);font-weight:700;cursor:pointer;white-space:nowrap}
+  .chip.on{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#231803;border-color:var(--gold2)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+  .grid .card{height:148px}
+  .grid .card.dim{opacity:.32;filter:grayscale(.5)}
+  .grid .card .owned{position:absolute;bottom:3px;right:5px;font-size:8px;font-weight:800;color:var(--gold2)}
+  .grid .card.indeck{outline:2px solid var(--green);outline-offset:-2px}
+
+  /* ---- SQUAD / deck builder ---- */
+  .pitchwrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid #1d9a64}
+  .slot{position:absolute;width:58px;height:80px;transform:translate(-50%,-50%);cursor:pointer}
+  .slot .card{width:100%;height:100%}
+  .slot .card .rt{font-size:11px}.slot .card svg.face{width:56%;margin-top:7px}.slot .card .nm{font-size:6.5px}
+  .slot.empty .card{border:2px dashed #2f4d8a;background:rgba(10,21,48,.55);align-items:center;justify-content:center}
+  .slot.empty .plus{font-size:20px;color:#2f4d8a;font-weight:300;margin:auto}
+  .slot.empty .pslab{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:7px;color:var(--mut);font-weight:800}
+  .slot.bad .card{outline:2px solid var(--red);outline-offset:-2px}
+  .chemtag{position:absolute;right:8px;top:8px;background:rgba(8,16,36,.85);border:1px solid var(--gold);
+    border-radius:10px;padding:4px 9px;font-size:10px;font-weight:800;color:var(--gold2);letter-spacing:1px}
+  .benchrow{display:flex;gap:7px;margin-top:8px}
+  .benchrow .slot2{flex:1;height:84px;cursor:pointer}
+  .benchrow .card{width:100%;height:100%}
+  .benchrow .slot2.empty .card{border:2px dashed #2f4d8a;background:rgba(10,21,48,.55);display:flex;align-items:center;justify-content:center;border-radius:9px}
+  .benchrow .slot2.empty .plus{font-size:18px;color:#2f4d8a;margin:auto}
+  .sq-foot{display:flex;gap:10px;margin-top:14px}
+  .sq-foot .cta{flex:1;padding:11px;font-size:12px}
+  .formrow{display:flex;gap:7px;margin-top:4px}
+  .formrow .chip{flex:1;text-align:center}
+
+  /* ---- LADDER ---- */
+  .oppcard{display:flex;align-items:center;gap:12px;background:var(--navy2);border:1px solid #223a6e;
+    border-radius:14px;padding:12px 14px;margin-bottom:10px;transition:.15s}
+  .oppcard.locked{opacity:.45}
+  .oppcard svg{width:40px;height:40px;flex-shrink:0}
+  .oppcard h4{font-size:13px;font-weight:800;font-family:'Orbitron';letter-spacing:.5px}
+  .oppcard p{font-size:10.5px;color:var(--mut);margin-top:2px;line-height:1.35}
+  .oppcard .play{margin-left:auto;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#231803;
+    font-weight:900;font-size:11px;border:none;border-radius:11px;padding:9px 14px;cursor:pointer;flex-shrink:0;font-family:'Orbitron'}
+  .oppcard .play:disabled{background:#1b2a4d;color:var(--mut)}
+  .oppcard .beat{margin-left:auto;color:var(--green);font-size:18px;flex-shrink:0}
+
+  /* ---- MATCH ---- */
+  #scr-match{padding-top:34px}
+  .matchhead{display:flex;align-items:center;justify-content:center;gap:10px;padding:4px 12px 6px;flex-shrink:0}
+  .mh-team{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;font-family:'Orbitron'}
+  .mh-badge{width:24px;height:24px}
+  .mh-score{background:#081024;border:1px solid var(--gold);border-radius:10px;padding:4px 14px;text-align:center}
+  .mh-score b{font-size:18px;letter-spacing:2px;color:var(--gold2);font-family:'Orbitron'}
+  .mh-score span{display:block;font-size:9px;color:var(--mut);letter-spacing:1px}
+  .board{flex:1;display:flex;flex-direction:column;padding:0 10px;min-height:0;gap:5px}
+  .lane{flex:1;border-radius:11px;position:relative;display:flex;flex-direction:column;justify-content:center;
+    padding:14px 6px 4px;min-height:0;transition:.2s}
+  .lane .lbl{position:absolute;left:8px;top:3px;font-size:8px;letter-spacing:1.5px;color:rgba(233,239,252,.55);font-weight:800}
+  .lane .strength{position:absolute;right:8px;top:3px;font-size:8.5px;font-weight:900;font-family:'Orbitron';color:var(--gold2)}
+  .lane.opp{background:linear-gradient(180deg,rgba(122,18,32,.30),rgba(122,18,32,.10));border:1px solid rgba(224,57,79,.3)}
+  .lane.mid{background:linear-gradient(180deg,rgba(14,107,66,.32),rgba(14,107,66,.12));border:1px solid rgba(39,176,106,.35)}
+  .lane.you{background:linear-gradient(180deg,rgba(58,123,213,.26),rgba(58,123,213,.08));border:1px solid rgba(58,123,213,.4)}
+  .lane.you.target{border-color:var(--gold2);box-shadow:0 0 14px rgba(246,216,120,.45) inset;cursor:pointer}
+  .lane.you.target .lbl{color:var(--gold2)}
+  .lanerow{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+  .mini{width:46px;height:64px;flex-shrink:0}
+  .mini .rt{font-size:9px;top:3px;left:4px}.mini .ps{display:none}
+  .mini svg.face{width:56%;margin-top:9px}.mini .nm{font-size:6px}.mini .club,.mini .stats{display:none}
+  .mini .lstat{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:7px;font-weight:800;color:var(--gold2)}
+  .ghost{width:46px;height:64px;border:2px dashed var(--gold);border-radius:8px;flex-shrink:0;
+    background:rgba(233,179,60,.10);display:flex;align-items:center;justify-content:center;
+    animation:pulseslot 1.2s ease-in-out infinite}
+  @keyframes pulseslot{0%,100%{box-shadow:0 0 0 rgba(233,179,60,0)}50%{box-shadow:0 0 14px rgba(233,179,60,.55)}}
+  .ghost span{font-size:7px;color:var(--gold2);font-weight:800;text-align:center;letter-spacing:.5px}
+  /* momentum */
+  .momentum{display:flex;align-items:center;gap:8px;padding:1px 4px;flex-shrink:0}
+  .momentum .mlab{font-size:8px;letter-spacing:1px;color:var(--mut);font-weight:800;width:50px}
+  .mbar{flex:1;height:11px;border-radius:6px;position:relative;overflow:hidden;
+    background:linear-gradient(90deg,#7a1220 0%,#3a2433 50%,#0e6b42 100%);border:1px solid #2a3c63}
+  .mbar .needle{position:absolute;top:-2px;bottom:-2px;width:4px;background:var(--gold2);border-radius:2px;
+    box-shadow:0 0 8px var(--gold2);transition:left .4s;transform:translateX(-50%)}
+  .mbar .tick{position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(233,239,252,.4)}
+  /* hand */
+  .hand{height:118px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:0 6px 4px;overflow-x:auto}
+  .hand::-webkit-scrollbar{display:none}
+  .hand .card{width:74px;height:102px;flex-shrink:0;transition:transform .15s}
+  .hand .card.sel{transform:translateY(-12px);box-shadow:0 8px 22px rgba(246,216,120,.6),0 0 0 2px var(--gold2)}
+  .hand .card.cant{opacity:.45}
+  .matchfoot{display:flex;align-items:center;gap:8px;padding:4px 12px;flex-shrink:0}
+  .stam{display:flex;gap:3px;align-items:center;flex-wrap:wrap;max-width:120px}
+  .stam i{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfe0ff,var(--blue))}
+  .stam i.used{background:#1b2a4d}
+  .acts{font-size:10px;color:var(--mut);font-weight:700}
+  .endturn{margin-left:auto;background:linear-gradient(180deg,var(--gold2),var(--gold));border:none;color:#231803;
+    font-weight:900;font-size:11px;letter-spacing:1px;padding:10px 16px;border-radius:12px;cursor:pointer;font-family:'Orbitron'}
+  .endturn:active{transform:scale(.96)}
+
+  /* ---- toast / log ---- */
+  #toast{position:absolute;left:50%;top:84px;transform:translateX(-50%);z-index:200;
+    background:rgba(8,16,36,.95);border:1px solid var(--gold);border-radius:12px;padding:9px 16px;
+    font-size:12px;font-weight:700;color:var(--gold2);pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;max-width:90%}
+  #toast.show{opacity:1}
+
+  /* ---- overlay (pack / result) ---- */
+  .overlay{position:absolute;inset:0;z-index:250;background:rgba(4,8,16,.92);display:none;
+    flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+  .overlay.active{display:flex}
+  .rays{position:absolute;width:760px;height:760px;
+    background:conic-gradient(from 0deg,rgba(246,216,120,.14) 0 9deg,transparent 9deg 30deg,rgba(246,216,120,.1) 30deg 39deg,transparent 39deg 60deg,rgba(246,216,120,.14) 60deg 69deg,transparent 69deg 90deg,rgba(246,216,120,.1) 90deg 99deg,transparent 99deg 120deg,rgba(246,216,120,.14) 120deg 129deg,transparent 129deg 150deg,rgba(246,216,120,.1) 150deg 159deg,transparent 159deg 180deg,rgba(246,216,120,.14) 180deg 189deg,transparent 189deg 210deg,rgba(246,216,120,.1) 210deg 219deg,transparent 219deg 240deg,rgba(246,216,120,.14) 240deg 249deg,transparent 249deg 270deg,rgba(246,216,120,.1) 270deg 279deg,transparent 279deg 300deg,rgba(246,216,120,.14) 300deg 309deg,transparent 309deg 330deg,rgba(246,216,120,.1) 330deg 339deg,transparent 339deg 360deg);
+    border-radius:50%;animation:rayspin 26s linear infinite;opacity:.5}
+  @keyframes rayspin{to{transform:rotate(360deg)}}
+  .overlay h2{font-family:'Orbitron';font-size:24px;font-weight:900;font-style:italic;z-index:2;
+    background:linear-gradient(180deg,#fff3c8,var(--gold) 55%,var(--gold-d));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .overlay .sub{color:var(--mut);font-size:12px;margin-top:4px;z-index:2}
+  .packcards{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:18px 0;z-index:2;max-width:340px}
+  .packcards .card{width:78px;height:112px;animation:popin .4s backwards}
+  @keyframes popin{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:scale(1)}}
+  .result-score{font-family:'Orbitron';font-size:40px;font-weight:900;letter-spacing:4px;z-index:2;margin:10px 0}
+  .result-score .w{color:var(--green)}.result-score .l{color:var(--red)}
+  .reward-line{z-index:2;font-size:14px;font-weight:700;color:var(--gold2);margin-bottom:18px}
+  .overlay .cta{z-index:2;max-width:280px}
+  .overlay .row{display:flex;gap:10px;z-index:2;width:100%;max-width:320px}
+  .overlay .row .cta{flex:1}
+
+  /* ---- tab bar ---- */
+  .tabs{position:absolute;left:0;right:0;bottom:0;height:60px;background:rgba(5,10,22,.96);
+    border-top:1px solid #1c2c52;display:flex;z-index:90;backdrop-filter:blur(6px)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    cursor:pointer;color:var(--mut2);font-size:8.5px;letter-spacing:.5px;font-weight:700}
+  .tab svg{width:20px;height:20px;fill:currentColor}
+  .tab.on{color:var(--gold2)}
+</style>
+</head>
+<body>
+<a href="../" class="back-link">← All Games</a>
+
+<!-- SVG symbol library -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gpitch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#13794b"/><stop offset="1" stop-color="#0a4a2d"/></linearGradient>
+  <linearGradient id="ggold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6d878"/><stop offset=".55" stop-color="#e9b33c"/><stop offset="1" stop-color="#9a6a12"/></linearGradient>
+  <radialGradient id="gball" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#9aa6ba"/></radialGradient>
+  <symbol id="bust-ST" viewBox="0 0 100 100"><circle cx="50" cy="30" r="16" fill="#16223f"/><path d="M22,96 Q24,62 50,54 Q76,62 78,96 Z" fill="#c11f2e"/><path d="M40,58 L50,72 L60,58" fill="none" stroke="#f3f5f9" stroke-width="4"/></symbol>
+  <symbol id="bust-GK" viewBox="0 0 100 100"><circle cx="50" cy="30" r="16" fill="#101a33"/><path d="M22,96 Q24,62 50,54 Q76,62 78,96 Z" fill="#2e7bd8"/><circle cx="24" cy="60" r="8" fill="#5ea1ec"/><circle cx="76" cy="60" r="8" fill="#5ea1ec"/></symbol>
+  <symbol id="bust-MID" viewBox="0 0 100 100"><circle cx="50" cy="30" r="16" fill="#101a26"/><path d="M22,96 Q24,62 50,54 Q76,62 78,96 Z" fill="#27b06a"/><path d="M50,56 L50,96" stroke="#0d4d2e" stroke-width="5"/></symbol>
+  <symbol id="bust-DEF" viewBox="0 0 100 100"><circle cx="50" cy="30" r="16" fill="#141d33"/><path d="M22,96 Q24,62 50,54 Q76,62 78,96 Z" fill="#e8edf5"/><path d="M30,62 L70,62" stroke="#b03048" stroke-width="6"/><path d="M30,76 L70,76" stroke="#b03048" stroke-width="6"/></symbol>
+  <symbol id="bust-LEG" viewBox="0 0 100 100"><circle cx="50" cy="29" r="16" fill="#1d1530"/><path d="M22,96 Q24,62 50,54 Q76,62 78,96 Z" fill="url(#ggold)"/><path d="M40,58 L50,72 L60,58" fill="none" stroke="#241803" stroke-width="4"/></symbol>
+  <symbol id="ic-ball" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="url(#gball)"/><polygon points="50,32 64,42 59,59 41,59 36,42" fill="#1c2740"/><path d="M50,6 L50,32 M64,42 L88,34 M59,59 L72,82 M41,59 L28,82 M36,42 L12,34" stroke="#1c2740" stroke-width="5" fill="none"/><circle cx="50" cy="50" r="44" fill="none" stroke="#dfe6f0" stroke-width="3"/></symbol>
+  <symbol id="ic-whistle" viewBox="0 0 100 100"><path d="M14,38 L58,38 L58,30 L70,30 L70,38 L86,38 A8,8 0 0 1 86,54 L66,54 A26,26 0 1 1 14,46 Z" fill="#e9b33c"/><circle cx="40" cy="62" r="10" fill="#0a1428"/></symbol>
+  <symbol id="ic-trophy" viewBox="0 0 100 100"><path d="M30,14 L70,14 L70,44 A20,20 0 0 1 30,44 Z" fill="url(#ggold)"/><path d="M30,20 L14,20 A16,16 0 0 0 32,44 M70,20 L86,20 A16,16 0 0 1 68,44" fill="none" stroke="url(#ggold)" stroke-width="7"/><rect x="44" y="58" width="12" height="14" fill="#c98f1f"/><rect x="32" y="72" width="36" height="12" rx="3" fill="url(#ggold)"/></symbol>
+  <symbol id="ic-pack" viewBox="0 0 100 130"><rect x="10" y="8" width="80" height="114" rx="9" fill="#241a06" stroke="url(#ggold)" stroke-width="5"/><path d="M10,40 L90,28 L90,40 L10,52 Z" fill="#e9b33c" opacity=".55"/><circle cx="50" cy="78" r="22" fill="none" stroke="#f6d878" stroke-width="4"/><polygon points="50,68 59,75 55,86 45,86 41,75" fill="#f6d878"/></symbol>
+  <symbol id="ic-badge-you" viewBox="0 0 100 100"><path d="M50,6 L88,20 L82,66 L50,94 L18,66 L12,20 Z" fill="#16315f" stroke="#3a7bd5" stroke-width="4"/><path d="M50,22 L70,30 L66,58 L50,72 L34,58 L30,30 Z" fill="#3a7bd5"/></symbol>
+  <symbol id="ic-badge-opp" viewBox="0 0 100 100"><path d="M50,6 L88,20 L82,66 L50,94 L18,66 L12,20 Z" fill="#4a0e18" stroke="#e0394f" stroke-width="4"/><circle cx="50" cy="44" r="18" fill="#e0394f"/></symbol>
+  <symbol id="ic-bolt" viewBox="0 0 100 100"><polygon points="56,6 24,56 46,56 40,94 76,40 54,40" fill="#f6d878"/></symbol>
+  <symbol id="ic-board" viewBox="0 0 100 100"><rect x="18" y="10" width="64" height="80" rx="6" fill="#0e6b42" stroke="#27b06a" stroke-width="4"/><line x1="18" y1="50" x2="82" y2="50" stroke="#bfe8d2" stroke-width="3"/><circle cx="50" cy="50" r="12" fill="none" stroke="#bfe8d2" stroke-width="3"/></symbol>
+  <symbol id="tb-home" viewBox="0 0 24 24"><path d="M12,3 L21,10 L19,10 L19,20 L14,20 L14,14 L10,14 L10,20 L5,20 L5,10 L3,10 Z"/></symbol>
+  <symbol id="tb-cards" viewBox="0 0 24 24"><rect x="3" y="5" width="10" height="15" rx="2" transform="rotate(-8 8 12)"/><rect x="11" y="4" width="10" height="15" rx="2" transform="rotate(8 16 12)"/></symbol>
+  <symbol id="tb-squad" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3,12 L8,12 M16,12 L21,12" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="tb-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="12,8 16,11 14.5,15.5 9.5,15.5 8,11"/></symbol>
+  <symbol id="tb-shop" viewBox="0 0 24 24"><path d="M5,8 L19,8 L18,21 L6,21 Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9,11 L9,6 a3,3 0 0 1 6,0 L15,11" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+</defs></svg>
+
+<div id="app">
+  <div id="toast"></div>
+
+  <!-- ===== HOME ===== -->
+  <section class="screen active" id="scr-home">
+    <div class="topbar">
+      <div class="avatar">
+        <div class="pic"><svg width="18" height="18"><use href="#ic-whistle"/></svg></div>
+        <div><div class="nm">Manager</div><div class="lv" id="homeLv">Level 1</div></div>
+      </div>
+      <div class="wallet"><div class="pill"><span class="dot-c"></span><span id="homeCoins">0</span></div></div>
+    </div>
+    <div class="scroll">
+      <h1 class="brand">HAT TRICK</h1>
+      <div class="h-section">On Fire this week</div>
+      <div class="hero" id="heroCard"></div>
+      <div class="h-section">Quick play</div>
+      <div class="tiles">
+        <div class="tile" onclick="go('scr-ladder')"><svg viewBox="0 0 100 100"><use href="#ic-ball"/></svg><h5>PLAY MATCH</h5><p>Beat the AI ladder</p></div>
+        <div class="tile" onclick="go('scr-squad')"><svg viewBox="0 0 100 100"><use href="#ic-badge-you"/></svg><h5>MY SQUAD</h5><p id="tileSquad">Build your XI</p></div>
+        <div class="tile" onclick="go('scr-collection')"><svg viewBox="0 0 100 100"><use href="#tb-cards" fill="#8fa3c4"/></svg><h5>COLLECTION</h5><p id="tileColl">0 / 0 cards</p></div>
+        <div class="tile" onclick="go('scr-shop')"><svg viewBox="0 0 100 130"><use href="#ic-pack"/></svg><h5>OPEN PACKS</h5><p>Grow your roster</p></div>
+      </div>
+      <div style="margin-top:16px"><button class="cta" onclick="go('scr-ladder')">KICK OFF</button></div>
+      <p style="font-size:10px;color:var(--mut2);text-align:center;margin-top:14px;line-height:1.5">
+        The Hearthstone of football. Collect cards, build a 16-card squad-deck,<br>and outwit the AI manager across 5 rounds and 3 lanes.</p>
+    </div>
+    <nav class="tabs"></nav>
+  </section>
+
+  <!-- ===== COLLECTION ===== -->
+  <section class="screen" id="scr-collection">
+    <div class="topbar"><div class="avatar"><div><div class="nm">Collection</div><div class="lv" id="collCount">0 / 0</div></div></div>
+      <div class="wallet"><div class="pill"><span class="dot-c"></span><span class="coinsView">0</span></div></div></div>
+    <div class="scroll">
+      <div class="chips" id="collFilters"></div>
+      <div class="grid" id="collGrid"></div>
+    </div>
+    <nav class="tabs"></nav>
+  </section>
+
+  <!-- ===== SQUAD / DECK BUILDER ===== -->
+  <section class="screen" id="scr-squad">
+    <div class="topbar"><div class="avatar"><div><div class="nm">Squad Builder</div><div class="lv" id="squadSub">4-4-2</div></div></div>
+      <div class="wallet"><div class="pill">OVR <b style="margin-left:4px;color:var(--gold2)" id="squadOvr">—</b></div></div></div>
+    <div class="scroll">
+      <div class="formrow" id="formRow"></div>
+      <div class="pitchwrap" id="pitchWrap" style="margin-top:8px"></div>
+      <div class="h-section">Bench &amp; specials (3)</div>
+      <div class="benchrow" id="benchRow"></div>
+      <p id="deckHint" style="font-size:10.5px;color:var(--mut);margin-top:10px;line-height:1.5"></p>
+      <div class="sq-foot">
+        <button class="cta sec" onclick="autoFill()">AUTO-FILL</button>
+        <button class="cta" id="squadPlayBtn" onclick="go('scr-ladder')">DONE</button>
+      </div>
+    </div>
+    <nav class="tabs"></nav>
+  </section>
+
+  <!-- ===== LADDER ===== -->
+  <section class="screen" id="scr-ladder">
+    <div class="topbar"><div class="avatar"><div><div class="nm">The Ladder</div><div class="lv">Climb the AI managers</div></div></div>
+      <div class="wallet"><div class="pill"><span class="dot-c"></span><span class="coinsView">0</span></div></div></div>
+    <div class="scroll" id="ladderList"></div>
+    <nav class="tabs"></nav>
+  </section>
+
+  <!-- ===== SHOP ===== -->
+  <section class="screen" id="scr-shop">
+    <div class="topbar"><div class="avatar"><div><div class="nm">Pack Shop</div><div class="lv">Spend coins on cards</div></div></div>
+      <div class="wallet"><div class="pill"><span class="dot-c"></span><span class="coinsView">0</span></div></div></div>
+    <div class="scroll" id="shopList"></div>
+    <nav class="tabs"></nav>
+  </section>
+
+  <!-- ===== MATCH ===== -->
+  <section class="screen" id="scr-match">
+    <div class="matchhead">
+      <div class="mh-team"><svg class="mh-badge"><use href="#ic-badge-you"/></svg>YOU</div>
+      <div class="mh-score"><b id="mhScore">0 — 0</b><span id="mhRound">ROUND 1 OF 5</span></div>
+      <div class="mh-team" id="mhOpp">RIVAL<svg class="mh-badge"><use href="#ic-badge-opp"/></svg></div>
+    </div>
+    <div class="board" id="board">
+      <div class="lane opp" data-lane="att"><span class="lbl">THEIR ATTACK</span><span class="strength" data-st="oatt"></span><div class="lanerow" data-row="oatt"></div></div>
+      <div class="momentum"><span class="mlab">MOMENTUM</span><div class="mbar"><span class="tick"></span><span class="needle" id="needle"></span></div><span class="mlab" id="momLab" style="text-align:right">0</span></div>
+      <div class="lane mid you target" data-lane="mid"><span class="lbl">MIDFIELD · tap to place</span><span class="strength" data-st="mid"></span><div class="lanerow" data-row="omid"></div><div class="lanerow" data-row="mid" style="margin-top:4px"></div></div>
+      <div class="lane opp" data-lane="def"><span class="lbl">THEIR DEFENCE</span><span class="strength" data-st="odef"></span><div class="lanerow" data-row="odef"></div></div>
+      <div class="lane you target" data-lane="att"><span class="lbl">YOUR ATTACK · tap to place</span><span class="strength" data-st="att"></span><div class="lanerow" data-row="att"></div></div>
+      <div class="lane you target" data-lane="def"><span class="lbl">YOUR DEFENCE · tap to place</span><span class="strength" data-st="def"></span><div class="lanerow" data-row="def"></div></div>
+    </div>
+    <div class="hand" id="hand"></div>
+    <div class="matchfoot">
+      <div class="stam" id="stamDots"></div>
+      <span class="acts" id="actsLab">2 actions</span>
+      <button class="endturn" id="endTurnBtn" onclick="endTurn()">END TURN</button>
+    </div>
+  </section>
+
+  <!-- ===== OVERLAYS ===== -->
+  <div class="overlay" id="packOverlay">
+    <div class="rays"></div>
+    <h2 id="packTitle">PACK OPENED</h2>
+    <div class="sub" id="packSub"></div>
+    <div class="packcards" id="packCards"></div>
+    <button class="cta" onclick="closePack()">COLLECT</button>
+  </div>
+
+  <div class="overlay" id="resultOverlay">
+    <div class="rays"></div>
+    <h2 id="resultTitle">FULL TIME</h2>
+    <div class="result-score" id="resultScore"></div>
+    <div class="reward-line" id="resultReward"></div>
+    <div class="row">
+      <button class="cta sec" onclick="leaveMatch()">LADDER</button>
+      <button class="cta" onclick="rematch()">REMATCH</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   HAT TRICK — single-file football card battler
+   ============================================================ */
+const LS='hattrick.save.v1';
+const RARITY={common:0,rare:1,epic:2,legend:3};
+const POS_LANE={GK:'def',DEF:'def',MID:'mid',ATT:'att'};
+const fmt=n=>n.toLocaleString();
+
+/* ---------- roster (invented, plausible archetypes) ---------- */
+// id, name, pos, rarity, ovr, atk, def, ctl, cost, ability, club, nation
+const ABILITIES={
+  none:{name:'',desc:''},
+  poacher:{name:'Poacher',desc:'+2 ATK if alone in your Attack lane'},
+  captain:{name:'Captain',desc:'+1/+1 to allies in the same lane'},
+  engine:{name:'Engine',desc:'Refunds 1 Stamina when played to Midfield'},
+  clutch:{name:'Clutch',desc:'+2 ATK & +2 DEF in round 5'},
+  playmaker:{name:'Playmaker',desc:'+2 CTL boosts your Attack lane'},
+  wall:{name:'Wall',desc:'+2 DEF, opponents fear the press'}
+};
+const ROSTER=[
+  // Legends
+  {id:'l1',name:'O. RIVALDINHO',pos:'ATT',r:'legend',ovr:95,atk:11,def:1,ctl:5,cost:4,ab:'clutch',club:'Crimson FC',nat:'Brazila'},
+  {id:'l2',name:'THE KAISER',pos:'DEF',r:'legend',ovr:93,atk:3,def:11,ctl:5,cost:4,ab:'wall',club:'Bavaria 04',nat:'Germania'},
+  {id:'l3',name:'EL DIRECTOR',pos:'MID',r:'legend',ovr:92,atk:6,def:6,ctl:11,cost:4,ab:'playmaker',club:'Verde CF',nat:'Argenta'},
+  {id:'l4',name:'IRON GLOVES',pos:'GK',r:'legend',ovr:91,atk:0,def:9,ctl:0,cost:3,ab:'wall',club:'Azul Utd',nat:'Italica'},
+  // Epics
+  {id:'e1',name:'EL MAGO',pos:'MID',r:'epic',ovr:88,atk:5,def:4,ctl:9,cost:3,ab:'playmaker',club:'Verde CF',nat:'Argenta'},
+  {id:'e2',name:'THE CAT',pos:'GK',r:'epic',ovr:86,atk:0,def:7,ctl:0,cost:2,ab:'none',club:'Azul Utd',nat:'Italica'},
+  {id:'e3',name:'CRIMSON NINE',pos:'ATT',r:'epic',ovr:87,atk:9,def:1,ctl:4,cost:3,ab:'poacher',club:'Crimson FC',nat:'Brazila'},
+  {id:'e4',name:'CAPITANO',pos:'DEF',r:'epic',ovr:85,atk:3,def:8,ctl:5,cost:3,ab:'captain',club:'Crimson FC',nat:'Italica'},
+  {id:'e5',name:'THE GENERAL',pos:'MID',r:'epic',ovr:84,atk:4,def:6,ctl:8,cost:3,ab:'captain',club:'Bavaria 04',nat:'Germania'},
+  // Rares
+  {id:'r1',name:'JET BOY',pos:'ATT',r:'rare',ovr:81,atk:8,def:1,ctl:3,cost:2,ab:'poacher',club:'Verde CF',nat:'Argenta'},
+  {id:'r2',name:'ANCHOR',pos:'MID',r:'rare',ovr:80,atk:3,def:5,ctl:7,cost:2,ab:'engine',club:'Azul Utd',nat:'Italica'},
+  {id:'r3',name:'IRONSIDE',pos:'DEF',r:'rare',ovr:82,atk:2,def:8,ctl:3,cost:2,ab:'wall',club:'Bavaria 04',nat:'Germania'},
+  {id:'r4',name:'WIDE LEFT',pos:'MID',r:'rare',ovr:79,atk:5,def:3,ctl:6,cost:2,ab:'none',club:'Crimson FC',nat:'Brazila'},
+  {id:'r5',name:'STOPPER',pos:'DEF',r:'rare',ovr:78,atk:2,def:7,ctl:3,cost:2,ab:'none',club:'Verde CF',nat:'Argenta'},
+  {id:'r6',name:'SUPER SUB',pos:'ATT',r:'rare',ovr:77,atk:7,def:1,ctl:3,cost:2,ab:'clutch',club:'Azul Utd',nat:'Italica'},
+  {id:'r7',name:'SWEEPER',pos:'GK',r:'rare',ovr:78,atk:0,def:6,ctl:0,cost:2,ab:'none',club:'Bavaria 04',nat:'Germania'},
+  {id:'r8',name:'BOX-TO-BOX',pos:'MID',r:'rare',ovr:79,atk:5,def:5,ctl:6,cost:2,ab:'none',club:'Crimson FC',nat:'Brazila'},
+  // Commons
+  {id:'c1',name:'TARGETMAN',pos:'ATT',r:'common',ovr:72,atk:6,def:1,ctl:2,cost:1,ab:'none',club:'Porto Norte',nat:'Lusita'},
+  {id:'c2',name:'OVERLAP',pos:'DEF',r:'common',ovr:73,atk:3,def:5,ctl:3,cost:1,ab:'none',club:'Porto Norte',nat:'Lusita'},
+  {id:'c3',name:'GRAFTER',pos:'MID',r:'common',ovr:71,atk:3,def:4,ctl:5,cost:1,ab:'none',club:'Porto Norte',nat:'Lusita'},
+  {id:'c4',name:'LOW BLOCK',pos:'DEF',r:'common',ovr:70,atk:1,def:6,ctl:2,cost:1,ab:'none',club:'Azul Utd',nat:'Italica'},
+  {id:'c5',name:'POACHER JR',pos:'ATT',r:'common',ovr:70,atk:5,def:1,ctl:2,cost:1,ab:'none',club:'Verde CF',nat:'Argenta'},
+  {id:'c6',name:'KEEPER ONE',pos:'GK',r:'common',ovr:70,atk:0,def:5,ctl:0,cost:1,ab:'none',club:'Porto Norte',nat:'Lusita'},
+  {id:'c7',name:'WORKHORSE',pos:'MID',r:'common',ovr:71,atk:4,def:4,ctl:4,cost:1,ab:'none',club:'Crimson FC',nat:'Brazila'},
+  {id:'c8',name:'YOUNG CB',pos:'DEF',r:'common',ovr:69,atk:1,def:5,ctl:3,cost:1,ab:'none',club:'Verde CF',nat:'Argenta'}
+];
+const ROSTER_MAP={}; ROSTER.forEach(c=>ROSTER_MAP[c.id]=c);
+
+const FORMATIONS={
+  '4-4-2':{def:4,mid:4,att:2,pass:'Midfield ties count as wins'},
+  '4-3-3':{def:4,mid:3,att:3,pass:'+1 ATK to your Attack lane'},
+  '5-3-2':{def:5,mid:3,att:2,pass:'+1 DEF to your Defence lane'}
+};
+
+const OPPONENTS=[
+  {id:'o1',name:'COACH RUKAVINA',badge:'Sunday League',diff:0,desc:'A friendly local manager. Plays loose, leaves gaps.'},
+  {id:'o2',name:'GAFFER VIDIĆ',badge:'Division Two',diff:1,desc:'Solid, defensive. Will park the bus if you push.'},
+  {id:'o3',name:'EL PROFESOR',badge:'Division One',diff:2,desc:'Possession obsessed. Owns the midfield.'},
+  {id:'o4',name:'THE MAESTRO',badge:'Champions Div',diff:3,desc:'Ruthless. A full Legend squad and no mercy.'}
+];
+
+/* ---------- save state ---------- */
+let S=load();
+function defaultSave(){
+  // starter collection: all commons + a few rares + a starter epic & legend-lite
+  const coll={};
+  const starter=['c1','c2','c3','c4','c5','c6','c7','c8','r1','r2','r3','r5','r8','r7','e3','e2'];
+  starter.forEach(id=>coll[id]=(coll[id]||0)+1);
+  return {coins:600,xp:0,coll,deck:null,formation:'4-4-2',beaten:{},gotStarter:false};
+}
+function load(){try{const v=JSON.parse(localStorage.getItem(LS));return v&&v.coll?v:defaultSave();}catch(e){return defaultSave();}}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}}
+function level(){return Math.floor(S.xp/100)+1;}
+
+/* ---------- live form (the hook): deterministic per week ---------- */
+function weekSeed(){return Math.floor(Date.now()/6.048e8);} // changes weekly
+function formFor(id){
+  // pseudo-random but stable for this week
+  const h=(weekSeed()*73+id.split('').reduce((a,c)=>a+c.charCodeAt(0),0)*131)%100;
+  if(h<8)return 3;        // On Fire (hat-trick)
+  if(h<22)return 2; if(h<42)return 1; return 0;
+}
+function liveCard(id){ // returns card with form applied (for display + lane buff)
+  const b=ROSTER_MAP[id]; const form=formFor(id);
+  const onfire=form===3;
+  return {...b, form, onfire,
+    atk:b.atk+(b.pos==='ATT'||b.pos==='MID'?form:0),
+    def:b.def+(b.pos==='DEF'||b.pos==='GK'?form:0),
+    ctl:b.ctl+(b.pos==='MID'?form:0)};
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1600);}
+
+/* ---------- navigation ---------- */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  syncTabs(id);
+  if(id==='scr-home')renderHome();
+  if(id==='scr-collection')renderCollection();
+  if(id==='scr-squad')renderSquad();
+  if(id==='scr-ladder')renderLadder();
+  if(id==='scr-shop')renderShop();
+}
+const TABS=[['scr-home','tb-home','HOME'],['scr-collection','tb-cards','CARDS'],['scr-ladder','tb-play','PLAY'],['scr-squad','tb-squad','SQUAD'],['scr-shop','tb-shop','SHOP']];
+function syncTabs(active){
+  document.querySelectorAll('#app .tabs').forEach(nav=>{
+    nav.innerHTML=TABS.map(([id,ic,lab])=>`<div class="tab ${id===active?'on':''}" onclick="go('${id}')"><svg><use href="#${ic}"/></svg>${lab}</div>`).join('');
+  });
+}
+function refreshCoins(){document.querySelectorAll('.coinsView').forEach(e=>e.textContent=fmt(S.coins));document.getElementById('homeCoins').textContent=fmt(S.coins);}
+
+/* ---------- card html ---------- */
+function cardHTML(id,opts={}){
+  const lc=liveCard(id);
+  const fire=lc.onfire?' onfire':'';
+  const pips=[0,1,2].map(i=>`<i class="${i<lc.form?'on':''}"></i>`).join('');
+  const extra=opts.extra||'';
+  return `<div class="card ${lc.r}${fire} ${opts.cls||''}" ${opts.attr||''}>
+    <span class="rt">${lc.ovr}</span><span class="ps">${lc.pos}</span>
+    <span class="form">${pips}</span>
+    ${opts.cost?`<span class="cost">${ROSTER_MAP[id].cost}</span>`:''}
+    <svg class="face" viewBox="0 0 100 100"><use href="#bust-${lc.pos==='GK'?'GK':lc.r==='legend'?'LEG':lc.pos}"/></svg>
+    <div class="nm">${lc.name}</div><div class="club">${lc.club}</div>
+    <div class="stats"><span class="a">A${lc.atk}</span><span class="d">D${lc.def}</span>${lc.pos!=='GK'?`<span class="c">C${lc.ctl}</span>`:''}</div>
+    ${extra}</div>`;
+}
+
+/* ============================================================
+   HOME
+   ============================================================ */
+function renderHome(){
+  refreshCoins();
+  document.getElementById('homeLv').textContent='Level '+level();
+  // hero = your best On-Fire card, else best card
+  const owned=Object.keys(S.coll);
+  let pick=owned.filter(id=>liveCard(id).onfire).sort((a,b)=>ROSTER_MAP[b].ovr-ROSTER_MAP[a].ovr)[0]
+    || owned.sort((a,b)=>ROSTER_MAP[b].ovr-ROSTER_MAP[a].ovr)[0];
+  const lc=liveCard(pick);
+  document.getElementById('heroCard').innerHTML=
+    cardHTML(pick)+`<div class="fx"><h3>${lc.onfire?"HE'S ON FIRE":'YOUR TOP CARD'}</h3>
+      <span class="tag">${lc.onfire?'REAL HAT-TRICK · SAT':lc.r.toUpperCase()}</span>
+      <p>${lc.onfire?`<b style="color:var(--gold2)">${lc.name}</b> scored 3 IRL — carrying <b style="color:var(--gold2)">+3 Form</b> this week. Field him while he burns.`:
+        `Open packs and chase the season's On-Fire stars. Your collection grows your squad.`}</p></div>`;
+  document.getElementById('tileColl').textContent=`${owned.length} / ${ROSTER.length} cards`;
+  document.getElementById('tileSquad').textContent=S.deck?`${S.formation} · ready`:'Build your XI';
+}
+
+/* ============================================================
+   COLLECTION
+   ============================================================ */
+let collFilter='All';
+function renderCollection(){
+  refreshCoins();
+  const owned=Object.keys(S.coll);
+  document.getElementById('collCount').textContent=`${owned.length} / ${ROSTER.length} cards`;
+  const filters=['All','Legend','Epic','Rare','Common','On Fire'];
+  document.getElementById('collFilters').innerHTML=filters.map(f=>`<span class="chip ${f===collFilter?'on':''}" onclick="setCollFilter('${f}')">${f}</span>`).join('');
+  const grid=document.getElementById('collGrid');
+  let list=ROSTER.slice().sort((a,b)=>b.ovr-a.ovr);
+  if(collFilter!=='All'&&collFilter!=='On Fire')list=list.filter(c=>c.r===collFilter.toLowerCase());
+  if(collFilter==='On Fire')list=list.filter(c=>liveCard(c.id).onfire);
+  grid.innerHTML=list.map(c=>{
+    const have=S.coll[c.id]||0;
+    if(!have)return `<div class="card ${c.r} dim"><span class="rt">${c.ovr}</span><span class="ps">${c.pos}</span>
+      <svg class="face" viewBox="0 0 100 100"><use href="#bust-${c.pos==='GK'?'GK':c.r==='legend'?'LEG':c.pos}"/></svg>
+      <div class="nm">${c.name}</div><div class="club">LOCKED</div></div>`;
+    return cardHTML(c.id,{extra:have>1?`<span class="owned">x${have}</span>`:''});
+  }).join('');
+}
+function setCollFilter(f){collFilter=f;renderCollection();}
+
+/* ============================================================
+   DECK BUILDER
+   16 cards: 1 GK + (formation def/mid/att) outfield XI slots + 3 bench
+   bench = up to 2 extra players + tactic/setpiece cards
+   ============================================================ */
+function emptyDeck(){return {gk:null,def:[],mid:[],att:[],bench:[]};}
+function ensureDeck(){
+  if(!S.deck){ autoBuild(); }
+  return S.deck;
+}
+function deckCardIds(){const d=S.deck;return [d.gk,...d.def,...d.mid,...d.att,...d.bench].filter(Boolean);}
+function deckCount(){return deckCardIds().length;}
+
+let pickContext=null; // {type:'gk'|'def'|'mid'|'att'|'bench', index}
+function renderSquad(){
+  ensureDeck();
+  const F=FORMATIONS[S.formation];
+  document.getElementById('squadSub').textContent=S.formation+' · '+F.pass;
+  // formation chooser
+  document.getElementById('formRow').innerHTML=Object.keys(FORMATIONS).map(f=>
+    `<span class="chip ${f===S.formation?'on':''}" onclick="setFormation('${f}')">${f}</span>`).join('');
+  // pitch slots: GK bottom, then def row, mid row, att row
+  const wrap=document.getElementById('pitchWrap');
+  const rows=[['att',F.att,16],['mid',F.mid,40],['def',F.def,66],['gk',1,88]];
+  let slotsHTML='';
+  rows.forEach(([type,n,top])=>{
+    for(let i=0;i<n;i++){
+      const x=n===1?50:(100/(n+1))*(i+1);
+      const id=type==='gk'?S.deck.gk:S.deck[type][i];
+      slotsHTML+=`<div class="slot ${id?'':'empty'}" style="left:${x}%;top:${top}%" onclick="openPicker('${type}',${i})">`+
+        (id?cardHTML(id):`<div class="card"><span class="plus">+</span><span class="pslab">${type.toUpperCase()}</span></div>`)+`</div>`;
+    }
+  });
+  // chemistry tag
+  const chem=calcChem();
+  wrap.innerHTML=`<svg viewBox="0 0 350 460" width="100%" style="display:block">
+    <rect width="350" height="460" fill="url(#gpitch)"/>
+    <rect x="0" y="0" width="350" height="115" fill="#0d5c39" opacity=".35"/>
+    <rect x="0" y="230" width="350" height="115" fill="#0d5c39" opacity=".35"/>
+    <rect x="8" y="8" width="334" height="444" fill="none" stroke="#bfe8d2" stroke-width="2" opacity=".5"/>
+    <line x1="8" y1="230" x2="342" y2="230" stroke="#bfe8d2" stroke-width="2" opacity=".5"/>
+    <circle cx="175" cy="230" r="42" fill="none" stroke="#bfe8d2" stroke-width="2" opacity=".5"/>
+  </svg><span class="chemtag">CHEM ${chem}</span>`+slotsHTML;
+  // bench
+  document.getElementById('benchRow').innerHTML=[0,1,2].map(i=>{
+    const id=S.deck.bench[i];
+    return `<div class="slot2 ${id?'':'empty'}" onclick="openPicker('bench',${i})">`+
+      (id?cardHTML(id):`<div class="card"><span class="plus">+</span></div>`)+`</div>`;
+  }).join('');
+  document.getElementById('squadOvr').textContent=squadOvr();
+  // hint / validity — XI = 1 GK + (formation outfield slots)
+  const outfield=F.def+F.mid+F.att;
+  const xiCount=S.deck.def.filter(Boolean).length+S.deck.mid.filter(Boolean).length+S.deck.att.filter(Boolean).length;
+  const ok=!!S.deck.gk&&xiCount===outfield;
+  const need=(S.deck.gk?0:1)+(outfield-xiCount);
+  document.getElementById('deckHint').innerHTML=ok?
+    `Squad ready — ${chem} chemistry. Cards sharing a club or nation in a lane get a resolution buff.`:
+    `<span style="color:var(--gold2)">Fill the ${need} remaining slot${need===1?'':'s'} (incl. a GK) to play.</span> Tap a slot to choose a card.`;
+  document.getElementById('squadPlayBtn').disabled=!ok;
+}
+function setFormation(f){
+  // moving formation: trim/extend rows to new sizes, keep what fits
+  const F=FORMATIONS[f];S.formation=f;
+  ['def','mid','att'].forEach(t=>{S.deck[t]=S.deck[t].slice(0,F[t]);});
+  save();renderSquad();
+}
+function squadOvr(){const ids=deckCardIds();if(!ids.length)return '—';return Math.round(ids.reduce((s,id)=>s+ROSTER_MAP[id].ovr,0)/ids.length);}
+function calcChem(){
+  // count shared club/nation pairs within each lane (best tag), simple sum
+  let c=0;
+  ['def','mid','att'].forEach(t=>{
+    const ids=S.deck[t].filter(Boolean);
+    const tally={};ids.forEach(id=>{const card=ROSTER_MAP[id];tally[card.club]=(tally[card.club]||0)+1;tally[card.nat]=(tally[card.nat]||0)+1;});
+    Object.values(tally).forEach(v=>{if(v>=2)c+=v-1;});
+  });
+  return c;
+}
+
+/* picker overlay reuses collection grid inside a modal-ish screen */
+function openPicker(type,index){
+  pickContext={type,index};
+  // determine allowed positions
+  let allow;
+  if(type==='gk')allow=['GK']; else if(type==='bench')allow=['DEF','MID','ATT']; else allow=[type.toUpperCase()];
+  // build a quick picker overlay
+  let ov=document.getElementById('pickerOverlay');
+  if(!ov){ov=document.createElement('div');ov.id='pickerOverlay';ov.className='overlay';document.getElementById('app').appendChild(ov);}
+  const owned=Object.keys(S.coll).map(id=>ROSTER_MAP[id]).filter(c=>allow.includes(c.pos)).sort((a,b)=>b.ovr-a.ovr);
+  const used=deckCardIds();
+  const cur=type==='gk'?S.deck.gk:S.deck[type][index];
+  ov.innerHTML=`<h2 style="font-size:18px">CHOOSE ${type==='bench'?'BENCH':type.toUpperCase()}</h2>
+    <div class="sub">Tap a card to assign · max 1 of each player</div>
+    <div class="packcards" style="max-width:360px;max-height:62vh;overflow-y:auto">
+    ${cur?`<div onclick="assign(null)">`+cardHTML(cur,{cls:'indeck'})+`<div style="font-size:9px;color:var(--red);text-align:center;margin-top:2px">REMOVE</div></div>`:''}
+    ${owned.map(c=>{const inUse=used.includes(c.id)&&c.id!==cur;
+      return `<div onclick="${inUse?'':`assign('${c.id}')`}" style="${inUse?'opacity:.3':''}">`+cardHTML(c.id)+`</div>`;}).join('')}
+    </div>
+    <button class="cta sec" style="max-width:200px" onclick="closePicker()">CANCEL</button>`;
+  ov.classList.add('active');
+}
+function assign(id){
+  const{type,index}=pickContext;
+  if(type==='gk')S.deck.gk=id;
+  else{ S.deck[type][index]=id; if(id===null)S.deck[type][index]=undefined; }
+  // compact bench/lane arrays of trailing undefined kept by index
+  save();closePicker();renderSquad();
+}
+function closePicker(){const ov=document.getElementById('pickerOverlay');if(ov)ov.classList.remove('active');}
+
+function autoBuild(){
+  S.deck=emptyDeck();
+  const F=FORMATIONS[S.formation];
+  const owned=Object.keys(S.coll).map(id=>ROSTER_MAP[id]);
+  const byPos=p=>owned.filter(c=>c.pos===p).sort((a,b)=>b.ovr-a.ovr).map(c=>c.id);
+  S.deck.gk=byPos('GK')[0]||null;
+  S.deck.def=byPos('DEF').slice(0,F.def);
+  S.deck.mid=byPos('MID').slice(0,F.mid);
+  S.deck.att=byPos('ATT').slice(0,F.att);
+  // bench: next best outfielders not used
+  const used=new Set(deckCardIds());
+  const bench=owned.filter(c=>c.pos!=='GK'&&!used.has(c.id)).sort((a,b)=>b.ovr-a.ovr).slice(0,3).map(c=>c.id);
+  S.deck.bench=bench;
+  save();
+}
+function autoFill(){autoBuild();renderSquad();toast('Auto-filled best available XI');}
+
+/* ============================================================
+   LADDER
+   ============================================================ */
+function deckReady(){const d=S.deck;if(!d||!d.gk)return false;const F=FORMATIONS[S.formation];const xi=d.def.filter(Boolean).length+d.mid.filter(Boolean).length+d.att.filter(Boolean).length;return xi===F.def+F.mid+F.att;}
+function renderLadder(){
+  refreshCoins();
+  if(!S.deck)autoBuild();
+  const ready=deckReady();
+  document.getElementById('ladderList').innerHTML=
+    (ready?'':`<div style="background:rgba(224,57,79,.12);border:1px solid var(--red);border-radius:12px;padding:12px;margin-bottom:12px;font-size:12px;color:#ffb3bd">Your squad isn't complete. <a style="color:var(--gold2);font-weight:800;cursor:pointer" onclick="go('scr-squad')">Open the Squad Builder →</a></div>`)+
+    OPPONENTS.map((o,i)=>{
+      const beaten=S.beaten[o.id];
+      const locked=i>0&&!S.beaten[OPPONENTS[i-1].id];
+      const reward=80+o.diff*60;
+      return `<div class="oppcard ${locked?'locked':''}">
+        <svg><use href="#ic-badge-opp"/></svg>
+        <div><h4>${o.name}</h4><p>${o.badge} · reward ${reward} coins<br>${o.desc}</p></div>
+        ${beaten?'<span class="beat">✔</span>':
+          `<button class="play" ${(locked||!ready)?'disabled':''} onclick="startMatch('${o.id}')">${locked?'LOCKED':'PLAY'}</button>`}
+      </div>`;
+    }).join('');
+}
+
+/* ============================================================
+   SHOP / PACKS
+   ============================================================ */
+const PACKS=[
+  {id:'bronze',name:'BRONZE PACK',cost:120,n:3,guarantee:'rare',desc:'3 cards · 1 Rare+ guaranteed'},
+  {id:'silver',name:'SILVER PACK',cost:280,n:4,guarantee:'epic',desc:'4 cards · 1 Epic+ guaranteed'},
+  {id:'gold',name:'GOLD PACK',cost:600,n:5,guarantee:'legend',desc:'5 cards · 1 Legend guaranteed'}
+];
+function renderShop(){
+  refreshCoins();
+  document.getElementById('shopList').innerHTML=
+    `<div style="font-size:11px;color:var(--mut);margin:4px 0 12px;line-height:1.5">Duplicates are kept (squad depth). Earn coins by climbing the ladder.</div>`+
+    PACKS.map(p=>`<div class="oppcard">
+      <svg><use href="#ic-pack"/></svg>
+      <div><h4>${p.name}</h4><p>${p.desc}</p></div>
+      <button class="play" ${S.coins<p.cost?'disabled':''} onclick="buyPack('${p.id}')">${p.cost} ⛁</button>
+    </div>`).join('')+
+    `<div class="oppcard" style="border-color:#2d57a4">
+      <svg><use href="#ic-ball"/></svg>
+      <div><h4>FREE STARTER</h4><p>Need cards to begin? Grab a free welcome pack.</p></div>
+      <button class="play" ${S.gotStarter?'disabled':''} onclick="freePack()">${S.gotStarter?'CLAIMED':'CLAIM'}</button>
+    </div>`;
+}
+function rollRarity(){const r=Math.random();if(r<.6)return 'common';if(r<.85)return 'rare';if(r<.97)return 'epic';return 'legend';}
+function rndOf(rar){const pool=ROSTER.filter(c=>c.r===rar);return pool[Math.floor(Math.random()*pool.length)].id;}
+function openCards(n,guarantee){
+  const out=[];
+  for(let i=0;i<n;i++)out.push(rndOf(rollRarity()));
+  // ensure guarantee present (at least one card of >= guarantee tier)
+  if(guarantee){const need=RARITY[guarantee];
+    if(!out.some(id=>RARITY[ROSTER_MAP[id].r]>=need)){
+      const tiers=Object.keys(RARITY).filter(t=>RARITY[t]>=need);
+      out[0]=rndOf(tiers[Math.floor(Math.random()*tiers.length)]);
+    }}
+  out.forEach(id=>S.coll[id]=(S.coll[id]||0)+1);
+  save();
+  return out;
+}
+function buyPack(pid){
+  const p=PACKS.find(x=>x.id===pid);if(S.coins<p.cost)return;
+  S.coins-=p.cost;
+  const cards=openCards(p.n,p.guarantee);
+  if(typeof window.trackEvent==='function')window.trackEvent('pack_opened',{pack:pid});
+  showPack(p.name,cards);
+}
+function freePack(){
+  if(S.gotStarter)return;
+  S.gotStarter=true;
+  const cards=openCards(4,'epic');
+  if(typeof window.trackEvent==='function')window.trackEvent('pack_opened',{pack:'free_starter'});
+  showPack('STARTER PACK',cards);
+}
+function showPack(title,cards){
+  document.getElementById('packTitle').textContent=title;
+  document.getElementById('packSub').textContent=cards.length+' cards added to your collection';
+  document.getElementById('packCards').innerHTML=cards.map((id,i)=>
+    `<div style="animation-delay:${i*.12}s">${cardHTML(id)}</div>`).join('');
+  document.getElementById('packOverlay').classList.add('active');
+}
+function closePack(){document.getElementById('packOverlay').classList.remove('active');refreshCoins();renderShop();}
+
+/* ============================================================
+   MATCH ENGINE
+   ============================================================ */
+let M=null;
+function buildDeckList(deckObj){ // returns array of card ids (player cards) for a side
+  return [deckObj.gk,...deckObj.def,...deckObj.mid,...deckObj.att,...deckObj.bench].filter(Boolean);
+}
+function aiDeck(diff){
+  // build an AI squad from roster filtered by difficulty tier
+  const tierMax=[1,2,3,3][diff]; // rarity ceiling rises
+  // higher diff -> stronger; lower diff -> weaker selection
+  const strong=diff>=2;
+  const sel=(p,n)=>{let pool=ROSTER.filter(c=>c.pos===p&&RARITY[c.r]<=tierMax).sort((a,b)=>b.ovr-a.ovr);
+    if(!strong)pool=pool.reverse(); return pool.slice(0,n).map(c=>c.id);};
+  return {gk:sel('GK',1)[0],def:sel('DEF',4),mid:sel('MID',4),att:sel('ATT',2),bench:sel('MID',1).concat(sel('ATT',1)),
+    formation:'4-4-2'};
+}
+function startMatch(oppId){
+  if(!deckReady()){toast('Complete your squad first');go('scr-squad');return;}
+  const opp=OPPONENTS.find(o=>o.id===oppId);
+  M={
+    opp, round:1, score:[0,0], momentum:0, stamina:0, banked:0, actions:2,
+    lanes:{def:[],mid:[],att:[]},      // your placed cards (ids)
+    oppLanes:{def:[],mid:[],att:[]},
+    hand:[], deck:shuffle(buildDeckList(S.deck).filter(id=>ROSTER_MAP[id].pos!=='GK')),
+    gk:S.deck.gk,
+    oppFull:aiDeck(opp.diff),
+    selected:null, over:false
+  };
+  M.oppDeck=shuffle(buildDeckList(M.oppFull).filter(id=>ROSTER_MAP[id].pos!=='GK'));
+  M.oppGk=M.oppFull.gk;
+  document.getElementById('mhOpp').innerHTML=opp.name.split(' ').pop()+'<svg class="mh-badge"><use href="#ic-badge-opp"/></svg>';
+  if(typeof window.trackEvent==='function')window.trackEvent('match_start',{opponent:oppId,diff:opp.diff});
+  go('scr-match');document.querySelector('#scr-match .tabs')?.remove?.();
+  beginRound();
+}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function beginRound(){
+  M.stamina=Math.min(M.round+1+M.banked,8); M.banked=0;
+  M.actions=2; M.selected=null;
+  // draw up to hand of 4
+  while(M.hand.length<4 && M.deck.length){M.hand.push(M.deck.shift());}
+  renderMatch();
+  toast('ROUND '+M.round+' · kick off');
+}
+
+function laneStrength(lanes,gk){
+  // returns {att:{atk}, def:{def}, mid:{ctl}} computed with abilities + chemistry + form
+  const sums={att:0,def:0,mid:0,defLane:lanes.def};
+  // chemistry per lane
+  function chemBonus(ids){
+    const t={};ids.forEach(id=>{const c=ROSTER_MAP[id];t[c.club]=(t[c.club]||0)+1;t[c.nat]=(t[c.nat]||0)+1;});
+    const best=Math.max(0,...Object.values(t).filter(v=>v>=2).map(v=>v));
+    return best>=3?2:best>=2?1:0;
+  }
+  // attack lane -> ATK (off-position cards play at a penalty)
+  let attCards=lanes.att.map(liveCard);
+  let chemA=chemBonus(lanes.att);
+  let atk=0;
+  attCards.forEach(c=>{
+    let v=c.atk+chemA+lanePenalty(c.pos,'att');
+    if(c.ab==='poacher'&&lanes.att.length===1)v+=2;
+    if(c.ab==='clutch'&&M.round===5)v+=2;
+    atk+=Math.max(0,v);
+  });
+  // captain bonus in attack
+  if(attCards.some(c=>c.ab==='captain'))atk+=attCards.length;
+  // midfield -> CTL
+  let midCards=lanes.mid.map(liveCard);let chemM=chemBonus(lanes.mid);
+  let ctl=0; midCards.forEach(c=>{ctl+=Math.max(0,c.ctl+chemM+lanePenalty(c.pos,'mid'));});
+  // playmaker pushes attack
+  if(midCards.some(c=>c.ab==='playmaker'))atk+=2;
+  // defence -> DEF (+gk)
+  let defCards=lanes.def.map(liveCard);let chemD=chemBonus(lanes.def);
+  let def=gk?liveCard(gk).def:0;
+  defCards.forEach(c=>{let v=c.def+chemD+lanePenalty(c.pos,'def');if(c.ab==='wall')v+=2;if(c.ab==='clutch'&&M.round===5)v+=2;def+=Math.max(0,v);});
+  if(defCards.some(c=>c.ab==='captain'))def+=defCards.length;
+  sums.att=atk;sums.def=def;sums.mid=ctl;
+  return sums;
+}
+
+function renderMatch(){
+  if(!M)return;
+  const youS=laneStrength(M.lanes,M.gk);
+  const oppS=laneStrength(M.oppLanes,M.oppGk);
+  document.getElementById('mhScore').textContent=`${M.score[0]} — ${M.score[1]}`;
+  document.getElementById('mhRound').textContent=`ROUND ${M.round} OF 5`;
+  // lane cards
+  const fill=(row,ids,isOpp)=>{
+    const el=document.querySelector(`[data-row="${row}"]`);
+    el.innerHTML=ids.map(id=>{const lc=liveCard(id);const stat=row.includes('att')?'A'+lc.atk:row.includes('def')?'D'+lc.def:'C'+lc.ctl;
+      return cardHTML(id,{cls:'mini',extra:`<span class="lstat">${stat}</span>`});}).join('');
+  };
+  fill('oatt',M.oppLanes.att,1);fill('odef',M.oppLanes.def,1);fill('omid',M.oppLanes.mid,1);
+  fill('att',M.lanes.att,0);fill('def',M.lanes.def,0);fill('mid',M.lanes.mid,0);
+  // strengths shown
+  document.querySelector('[data-st="oatt"]').textContent='ATK '+oppS.att;
+  document.querySelector('[data-st="odef"]').textContent='DEF '+oppS.def;
+  document.querySelector('[data-st="att"]').textContent='ATK '+youS.att;
+  document.querySelector('[data-st="def"]').textContent='DEF '+youS.def;
+  document.querySelector('[data-st="mid"]').textContent=`CTL ${youS.mid} v ${oppS.mid}`;
+  // momentum needle (-5..5 -> 0..100%)
+  const pct=50+Math.max(-5,Math.min(5,M.momentum))*9;
+  document.getElementById('needle').style.left=pct+'%';
+  document.getElementById('momLab').textContent=(M.momentum>0?'+':'')+M.momentum+(M.momentum>0?' YOU':M.momentum<0?' RIVAL':'');
+  document.getElementById('momLab').style.color=M.momentum>0?'var(--gold2)':M.momentum<0?'#ff9aa8':'var(--mut)';
+  // hand
+  const handEl=document.getElementById('hand');
+  handEl.innerHTML=M.hand.map((id,i)=>{
+    const cost=ROSTER_MAP[id].cost;const cant=cost>M.stamina||M.actions<=0;
+    return cardHTML(id,{cost:true,cls:'h'+i+(M.selected===i?' sel':'')+(cant?' cant':''),attr:`onclick="selectCard(${i})"`});
+  }).join('');
+  // stamina dots
+  document.getElementById('stamDots').innerHTML=Array.from({length:Math.max(M.stamina,M.round+1)},(_,i)=>`<i class="${i<M.stamina?'':'used'}"></i>`).join('');
+  document.getElementById('actsLab').textContent=M.actions+' action'+(M.actions===1?'':'s');
+  // lane preview hint while a card is selected
+  const laneName={att:'YOUR ATTACK',def:'YOUR DEFENCE',mid:'MIDFIELD'};
+  document.querySelectorAll('.lane.you').forEach(l=>{
+    const lane=l.dataset.lane;const lbl=l.querySelector('.lbl');
+    if(M.selected!=null){
+      const id=M.hand[M.selected];const c=ROSTER_MAP[id];
+      const pen=lanePenalty(c.pos,lane);
+      lbl.innerHTML=laneName[lane]+(pen?` · <span style="color:#ff9aa8">${pen} off-pos</span>`:' · tap to place');
+    }else lbl.textContent=laneName[lane]+' · tap to place';
+  });
+}
+function lanePenalty(pos,lane){
+  const nat=POS_LANE[pos];if(nat===lane)return 0;
+  // distance def<mid<att
+  const order={def:0,mid:1,att:2};return -2*Math.abs(order[nat]-order[lane]);
+}
+
+function selectCard(i){
+  const id=M.hand[i];const cost=ROSTER_MAP[id].cost;
+  if(cost>M.stamina){toast('Not enough stamina');return;}
+  if(M.actions<=0){toast('No actions left — end turn');return;}
+  M.selected=M.selected===i?null:i;
+  renderMatch();
+}
+// lane click placement
+document.getElementById('board').addEventListener('click',e=>{
+  const lane=e.target.closest('.lane.you');if(!lane||M.selected==null||M.over)return;
+  placeCard(lane.dataset.lane);
+});
+function placeCard(lane){
+  const i=M.selected;const id=M.hand[i];const c=ROSTER_MAP[id];
+  if(M.lanes[lane].length>=3){toast('Lane is full (max 3)');return;}
+  if(c.cost>M.stamina){toast('Not enough stamina');return;}
+  M.stamina-=c.cost;M.actions--;
+  // engine refund
+  if(c.ab==='engine'&&lane==='mid'){M.stamina++;toast('Engine — 1 Stamina refunded');}
+  M.lanes[lane].push(id);
+  M.hand.splice(i,1);M.selected=null;
+  renderMatch();
+  if(M.actions<=0)toast('No actions left — END TURN');
+}
+
+/* AI turn */
+function aiTurn(){
+  let acts=2, stam=Math.min(M.round+1,8);
+  // simple heuristic: opponent tries to stack attack & defence sensibly
+  const play=(laneArr,want)=>{
+    // pick best affordable card of matching position from oppDeck
+    let best=-1,bi=-1;
+    M.oppHand=M.oppHand||[];
+    M.oppHand.forEach((id,idx)=>{
+      const c=ROSTER_MAP[id];if(c.cost>stam)return;
+      const lane=POS_LANE[c.pos];
+      let score = lane===want? c.ovr : c.ovr-8; // prefer natural
+      if(M.oppLanes[want].length>=3)return;
+      if(score>best){best=score;bi=idx;}
+    });
+    if(bi>=0){const id=M.oppHand[bi];const c=ROSTER_MAP[id];
+      M.oppLanes[want].push(id);M.oppHand.splice(bi,1);stam-=c.cost;return true;}
+    return false;
+  };
+  // draw opp hand
+  M.oppHand=M.oppHand||[];
+  while(M.oppHand.length<4&&M.oppDeck.length)M.oppHand.push(M.oppDeck.shift());
+  // decide priorities by difficulty: lower diff plays randomly/passively
+  const diff=M.opp.diff;
+  let wants;
+  if(diff===0)wants=['att','def']; // naive
+  else if(diff===1)wants=['def','def','mid','att'];
+  else wants=['att','mid','def','att','mid'];
+  for(const w of wants){if(acts<=0)break;if(play(M.oppLanes,w))acts--;}
+}
+
+function endTurn(){
+  if(M.over)return;
+  M.banked=Math.min(M.stamina,2);
+  aiTurn();
+  resolveRound();
+}
+
+function resolveRound(){
+  const youS=laneStrength(M.lanes,M.gk);
+  const oppS=laneStrength(M.oppLanes,M.oppGk);
+  let log=[];
+  // your attack vs their defence (4-3-3 passive adds +1 to your attack)
+  let yourChance=youS.att-oppS.def + (S.formation==='4-3-3'?1:0);
+  let oppChance=oppS.att-youS.def;
+  // momentum spend (auto): if you have positive momentum and a chance, add up to 3
+  if(M.momentum>0&&yourChance>0){const add=Math.min(3,M.momentum);yourChance+=add;}
+  let youGoals=chanceToGoals(yourChance);
+  let oppGoals=chanceToGoals(oppChance);
+  M.score[0]+=youGoals;M.score[1]+=oppGoals;
+  // momentum from midfield
+  if(youS.mid>oppS.mid||(youS.mid===oppS.mid&&S.formation==='4-4-2'))M.momentum=Math.min(5,M.momentum+1);
+  else if(oppS.mid>youS.mid)M.momentum=Math.max(-5,M.momentum-1);
+  // heavy defensive stop reward
+  if(yourChance<=-3)M.momentum=Math.max(-5,M.momentum-1);
+  if(oppChance<=-3)M.momentum=Math.min(5,M.momentum+1);
+
+  if(youGoals)log.push(`⚽ You scored ${youGoals}! (chance ${yourChance})`);
+  if(oppGoals)log.push(`${M.opp.name.split(' ').pop()} scored ${oppGoals}`);
+  if(!youGoals&&!oppGoals)log.push('No goals this round');
+  toast(log.join(' · '));
+
+  renderMatch();
+  // clear lanes for next round (cards "tire out" — fresh tactical round), keep it snappy
+  setTimeout(()=>{
+    M.lanes={def:[],mid:[],att:[]};M.oppLanes={def:[],mid:[],att:[]};
+    M.round++;
+    if(M.round>5){endMatch();return;}
+    beginRound();
+  },1400);
+}
+function chanceToGoals(cs){
+  if(cs>=4)return 1 + (cs>=8?1:0);          // big chance can yield a brace
+  if(cs>=1){return Math.random()< (0.25*cs)?1:0;}  // visible small RNG, only upgrades
+  return 0;
+}
+
+function endMatch(){
+  M.over=true;
+  const win=M.score[0]>M.score[1];
+  const draw=M.score[0]===M.score[1];
+  let reward=0;
+  if(win){
+    reward=80+M.opp.diff*60;
+    if(!S.beaten[M.opp.id])reward+=60; // first-clear bonus
+    S.beaten[M.opp.id]=true;
+    S.xp+=40;
+  }else if(draw){reward=30;S.xp+=15;}else{reward=15;S.xp+=8;}
+  S.coins+=reward;save();
+  if(typeof window.trackEvent==='function')window.trackEvent('match_end',{result:win?'win':draw?'draw':'loss',score:M.score[0]+'-'+M.score[1],opponent:M.opp.id});
+  document.getElementById('resultTitle').textContent=win?'YOU WIN!':draw?'DRAW':'DEFEAT';
+  document.getElementById('resultScore').innerHTML=`<span class="${win?'w':draw?'':'l'}">${M.score[0]}</span> — <span class="${!win&&!draw?'w':'l'}">${M.score[1]}</span>`;
+  document.getElementById('resultReward').textContent=`+${reward} coins`+(win&&M.opp.id==='o4'?' · LADDER CLEARED!':'');
+  document.getElementById('resultOverlay').classList.add('active');
+}
+function leaveMatch(){document.getElementById('resultOverlay').classList.remove('active');go('scr-ladder');}
+function rematch(){document.getElementById('resultOverlay').classList.remove('active');startMatch(M.opp.id);}
+
+/* ---------- boot ---------- */
+syncTabs('scr-home');
+renderHome();
+refreshCoins();
+// give a friendly nudge if collection is tiny and starter not claimed handled in shop
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('hat-trick');
+</script>
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('hat-trick');
+</script>
+</body>
+</html>

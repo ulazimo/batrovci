@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Big Shuffle</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg0:#06090d; --panel:#10212c; --panel2:#152a37; --line:#1f3a47;
+    --teal:#1d4a52; --teal2:#2a6b74; --aqua:#5fc4ba; --aqua2:#8fe0d6;
+    --orange:#f08c33; --orange2:#e8702a; --ember:#c14a1f; --amber:#ffc25e; --cream:#f2cf9e;
+    --red:#ff5640; --green:#7ec86a; --text:#e9f0f1; --dim:#8aa3ac; --dim2:#5d7681;
+    --gold:#ffd27a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation;
+    background:radial-gradient(1200px 900px at 50% -10%, #14303c 0%, #081019 55%, #04070b 100%);
+    color:var(--text); font-family:'Rajdhani',system-ui,Arial,sans-serif;}
+  body{display:flex;flex-direction:column;}
+
+  .back-link{position:fixed; top:calc(10px + env(safe-area-inset-top,0px)); left:calc(12px + env(safe-area-inset-left,0px));
+    z-index:200; color:var(--dim); text-decoration:none; font-size:14px; font-weight:600; opacity:.8; letter-spacing:.5px;}
+  .back-link:hover{opacity:1;color:var(--cream)}
+
+  /* ── HUD ── */
+  #hud{position:fixed; top:0; left:0; right:0; z-index:80;
+    padding:calc(8px + env(safe-area-inset-top,0px)) 8px 6px; pointer-events:none;}
+  #hud.hidden{display:none}
+  .res{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; padding-left:84px;}
+  .pill{display:flex; align-items:center; gap:5px; background:rgba(7,14,19,.88); border:1px solid #1d3340;
+    border-radius:13px; padding:3px 10px 3px 7px; font-size:13px; font-weight:700; color:var(--cream); pointer-events:auto;}
+  .pill .ic{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .pill .delta{font-size:10px;color:var(--green);font-weight:600;margin-left:1px}
+
+  #shuffle-banner{margin:6px auto 0; max-width:520px; border-radius:13px; position:relative; overflow:hidden;
+    background:linear-gradient(120deg,#3a1c10,#57250f 50%,#3a1c10); border:1px solid var(--orange2);
+    padding:7px 14px; display:flex; align-items:center; gap:11px; pointer-events:auto;
+    box-shadow:0 4px 18px rgba(232,112,42,.22);}
+  #shuffle-banner.warn{animation:bannerPulse 1.1s ease-in-out infinite}
+  @keyframes bannerPulse{0%,100%{box-shadow:0 4px 18px rgba(232,112,42,.25)}50%{box-shadow:0 4px 32px rgba(240,140,51,.75)}}
+  #shuffle-banner .lbl{font-size:9px;letter-spacing:2px;color:var(--amber);font-weight:700;font-family:'Oswald'}
+  #shuffle-banner .cnt{font-size:18px;font-weight:700;color:#fff;font-family:'Oswald';letter-spacing:1px}
+  #shuffle-banner .turn{margin-left:auto;font-size:11px;color:var(--cream);text-align:right;font-weight:600}
+  #shuffle-banner .turn b{font-family:'Oswald';font-size:15px;color:#fff;display:block}
+
+  /* ── Board ── */
+  #board-wrap{flex:1; display:flex; align-items:center; justify-content:center; position:relative; min-height:0;}
+  #board{display:block; touch-action:none;}
+
+  /* ── Action bar ── */
+  #actionbar{position:fixed; left:0; right:0; bottom:0; z-index:80;
+    background:linear-gradient(180deg,rgba(8,14,20,.4),#060b10 65%);
+    border-top:1px solid #1c3644; padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));}
+  #actionbar.hidden{display:none}
+  #sel-info{text-align:center; font-size:12px; color:var(--dim); min-height:30px; padding:1px 6px 5px; line-height:1.35;}
+  #sel-info b{color:var(--cream)}
+  .actions{display:flex; gap:7px; justify-content:center; flex-wrap:wrap; max-width:560px; margin:0 auto;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;border:none;
+    border-radius:11px;font-weight:700;letter-spacing:.8px;font-family:'Rajdhani',sans-serif;transition:transform .1s,opacity .15s;
+    font-size:13px;padding:10px 14px;}
+  .btn:active{transform:scale(.95)}
+  .btn:disabled{opacity:.38;cursor:default}
+  .btn-or{background:linear-gradient(180deg,var(--orange),var(--ember));color:#1f0d06;
+    box-shadow:0 3px 11px rgba(232,112,42,.35),inset 0 1px 0 rgba(255,255,255,.3)}
+  .btn-tl{background:linear-gradient(180deg,var(--teal2),#16414c);color:var(--aqua2);
+    box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1)}
+  .btn-ghost{background:rgba(255,255,255,.04);border:1px solid #28485a;color:var(--cream)}
+  .btn-end{background:linear-gradient(180deg,#3a5663,#1f3640);color:var(--aqua2);border:1px solid #2a6b74;
+    font-family:'Oswald';letter-spacing:1.5px}
+  .btn .cost{font-size:10px;font-weight:600;opacity:.85}
+
+  /* ── Overlays ── */
+  .overlay{position:fixed; inset:0; z-index:120; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(6,9,13,.93); transition:opacity .3s;}
+  .overlay.hidden{opacity:0;pointer-events:none}
+  .game-title{font-family:'Oswald';font-weight:700; line-height:.92; text-transform:uppercase;}
+  .game-title .small{display:block;font-size:clamp(15px,4vw,22px);letter-spacing:8px;color:var(--amber);margin-bottom:2px}
+  .game-title .big{display:block;font-size:clamp(46px,13vw,88px);letter-spacing:3px;
+    background:linear-gradient(180deg,#fff3cc,#ffc25e 45%,#f57f31 78%,#c14a1f);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 3px 0 #1a0c08);}
+  .tagline{font-style:italic;font-family:'Rajdhani';font-size:clamp(13px,3.4vw,18px);color:var(--cream);margin:14px 0 6px;letter-spacing:.5px}
+  .howto{max-width:430px;color:var(--dim);font-size:13.5px;line-height:1.6;margin:14px 0 26px}
+  .howto b{color:var(--aqua2)}
+  .best{font-family:'Oswald';color:var(--gold);font-size:15px;letter-spacing:1px;margin-bottom:20px}
+  .ov-title{font-family:'Oswald';font-weight:700;font-size:clamp(28px,8vw,46px);letter-spacing:2px;text-transform:uppercase}
+  .ov-title.lose{color:var(--red);text-shadow:0 0 26px rgba(255,86,64,.5)}
+  .ov-stats{font-size:16px;color:var(--cream);line-height:1.8;margin:16px 0 26px}
+  .ov-stats b{color:var(--amber);font-family:'Oswald'}
+  .overlay .btn{font-size:18px;padding:14px 44px;margin:6px;letter-spacing:1.5px}
+
+  /* ── Meta / Upgrade tree ── */
+  #meta .scroll{max-height:64vh;overflow-y:auto;width:100%;max-width:520px;padding:2px 4px}
+  #meta .scroll::-webkit-scrollbar{width:5px} #meta .scroll::-webkit-scrollbar-thumb{background:#234;border-radius:3px}
+  .meta-head{font-family:'Oswald';font-size:13px;letter-spacing:2px;color:var(--amber);text-transform:uppercase;
+    text-align:left;margin:14px 4px 7px;border-bottom:1px solid #1d3a48;padding-bottom:4px}
+  .upg{display:flex;align-items:center;gap:11px;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid #1d3a48;border-radius:13px;padding:10px 12px;margin:7px 0;text-align:left}
+  .upg .ix{width:34px;height:34px;flex:none;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;
+    background:#0d1c26;border:1px solid #234}
+  .upg .ub{flex:1;min-width:0}
+  .upg .un{font-size:14px;font-weight:700;color:var(--cream)}
+  .upg .ud{font-size:11px;color:var(--dim);line-height:1.4;margin-top:1px}
+  .upg .ulvl{font-size:10px;color:var(--aqua);font-family:'Oswald';letter-spacing:1px}
+  .upg .btn{flex:none;font-size:12px;padding:8px 12px;min-width:74px}
+  .upg.maxed .btn{background:#1c2c34;color:var(--dim2);border:1px solid #234;box-shadow:none}
+
+  /* ── Toast / floaters ── */
+  #toast{position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);z-index:140;
+    font-family:'Oswald';font-size:clamp(26px,7vw,42px);font-weight:700;letter-spacing:2px;text-align:center;
+    opacity:0;pointer-events:none;transition:opacity .25s;text-transform:uppercase;}
+  #toast.show{opacity:1}
+  #toast .sub{display:block;font-family:'Rajdhani';font-size:15px;font-weight:600;letter-spacing:1px;margin-top:6px;color:var(--cream)}
+
+  .hint{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
+    z-index:70;font-size:11px;letter-spacing:1px;color:var(--dim2);text-transform:uppercase;text-align:center;pointer-events:none}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<a href="../" class="back-link">← All Games</a>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="res">
+    <span class="pill" id="p-food"><span class="ic" style="background:var(--green)"></span><span class="v">0</span><span class="delta">+0</span></span>
+    <span class="pill" id="p-scrap"><span class="ic" style="background:var(--orange)"></span><span class="v">0</span><span class="delta">+0</span></span>
+    <span class="pill" id="p-fuel"><span class="ic" style="background:var(--aqua)"></span><span class="v">0</span><span class="delta">+0</span></span>
+    <span class="pill" id="p-hp"><span class="ic" style="background:var(--red)"></span><span class="v">0</span></span>
+  </div>
+  <div id="shuffle-banner">
+    <svg width="26" height="26" viewBox="0 0 30 30"><polygon points="15,3 25.4,9 25.4,21 15,27 4.6,21 4.6,9" fill="none" stroke="#f08c33" stroke-width="2.4"/><polygon points="15,9 19.6,11.7 19.6,18.3 15,21 10.4,18.3 10.4,11.7" fill="#f08c33" opacity=".7"/></svg>
+    <div><div class="lbl">THE SHUFFLE IN</div><div class="cnt" id="cnt">3 TURNS</div></div>
+    <div class="turn"><span style="font-size:9px;letter-spacing:2px;color:var(--amber)">TURN</span><b id="turn-n">1</b></div>
+  </div>
+</div>
+
+<div id="board-wrap"><canvas id="board"></canvas></div>
+<div class="hint hidden" id="hint">Tap a tile · gather, build, expand</div>
+
+<!-- Action bar -->
+<div id="actionbar" class="hidden">
+  <div id="sel-info">Tap a tile to inspect it.</div>
+  <div class="actions" id="actions"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Title -->
+<div id="title-screen" class="overlay">
+  <div class="game-title"><span class="small">THE BIG</span><span class="big">SHUFFLE</span></div>
+  <div class="tagline">In a few turns, the world moves. Will you be ready?</div>
+  <div class="howto">
+    Command your <b>bunker</b> at the center of a dying world. Each turn:
+    <b>gather</b> from your land, <b>build &amp; upgrade</b> your HQ, and <b>claim</b>
+    neighbouring hexes. Raiders grow stronger every turn — but the real test is
+    <b>THE SHUFFLE</b>: every few turns the map tears apart and reseeds around you.
+    Hoard and fortify before it hits. Survive as many shuffles as you can.
+  </div>
+  <div class="best" id="title-best"></div>
+  <button class="btn btn-or" onclick="startGame()">ENTER THE WASTELAND</button>
+</div>
+
+<!-- Meta / upgrade tree -->
+<div id="meta" class="overlay hidden">
+  <div class="ov-title" style="color:var(--cream);font-size:28px">War Council</div>
+  <div style="font-size:13px;color:var(--dim);letter-spacing:1px;margin:4px 0 8px">Spend resources between turns — upgrades are permanent for this run</div>
+  <div class="scroll" id="meta-list"></div>
+  <button class="btn btn-tl" onclick="closeMeta()" style="margin-top:14px">CLOSE</button>
+</div>
+
+<!-- Game over -->
+<div id="gameover" class="overlay hidden">
+  <div class="ov-title lose">Bunker Overrun</div>
+  <div class="ov-stats" id="go-stats"></div>
+  <button class="btn btn-or" onclick="startGame()">REBUILD &amp; RETRY</button>
+  <button class="btn btn-ghost" onclick="toTitle()">MAIN MENU</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  THE BIG SHUFFLE — turn-based survival 4X vertical slice
+// ════════════════════════════════════════════════════════════════
+const cv = document.getElementById('board');
+const cx = cv.getContext('2d');
+
+// ── Layout: axial hex (pointy-top), radius-2 board = 19 tiles ──
+const RADIUS = 2;            // rings out from HQ
+let HEX = 46;                // hex circumradius in px (recomputed on resize)
+const SQRT3 = Math.sqrt(3);
+
+// build the list of axial coords within RADIUS
+const COORDS = [];
+for (let q=-RADIUS;q<=RADIUS;q++)
+  for (let r=Math.max(-RADIUS,-q-RADIUS); r<=Math.min(RADIUS,-q+RADIUS); r++)
+    COORDS.push({q,r});
+function key(q,r){return q+','+r;}
+
+// ── Tile kinds ──
+// hq | empty | food | scrap | fuel | raider | hazard
+const KIND = {
+  food:  {name:'Food Node',  res:'food',  col:'#2f5a3a', edge:'#7ec86a', icon:'🌾'},
+  scrap: {name:'Scrapyard',  res:'scrap', col:'#5a3f22', edge:'#f08c33', icon:'⚙️'},
+  fuel:  {name:'Fuel Cache',  res:'fuel',  col:'#1d4a52', edge:'#5fc4ba', icon:'🛢️'},
+  raider:{name:'Raider Camp', col:'#4e2723', edge:'#a8402f', icon:'☠️'},
+  hazard:{name:'Rad Hazard',  col:'#3a2c10', edge:'#b8862e', icon:'☢️'},
+  empty: {name:'Open Ground', col:'#243640', edge:'#3f6b5c', icon:''},
+};
+
+// ── Resource colours for HUD ──
+const RES_COL = {food:'var(--green)',scrap:'var(--orange)',fuel:'var(--aqua)'};
+
+// ── Game state ──
+let G = null;            // current game
+let best = loadBest();
+let anim = {shuffle:0};  // shuffle animation timer (0..1, drives effect)
+
+function loadBest(){ try{ return JSON.parse(localStorage.getItem('bigShuffle_best'))||{shuffles:0,turns:0}; }catch(e){ return {shuffles:0,turns:0}; } }
+function saveBest(){ localStorage.setItem('bigShuffle_best', JSON.stringify(best)); }
+
+// ── Upgrade tree (meta, funded by resources, escalates) ──
+// effect read live from G.upg[id]
+const UPGRADES = [
+  {id:'farm',   cat:'Economy',  icon:'🌾', name:'Hydroponics', desc:'+1 food per controlled food node, per level.',
+   base:{scrap:14,fuel:6},  scale:1.6, max:4},
+  {id:'forge',  cat:'Economy',  icon:'⚙️', name:'Scrap Forge', desc:'+1 scrap per controlled scrapyard, per level.',
+   base:{food:14,fuel:6},   scale:1.6, max:4},
+  {id:'still',  cat:'Economy',  icon:'🛢️', name:'Fuel Still', desc:'+1 fuel per controlled fuel cache, per level.',
+   base:{food:12,scrap:12}, scale:1.6, max:4},
+  {id:'wall',   cat:'Defense',  icon:'🧱', name:'Reinforced Walls', desc:'+8 max HQ integrity & repairs 6 HP each level.',
+   base:{scrap:18},         scale:1.7, max:5},
+  {id:'turret', cat:'Defense',  icon:'🎯', name:'Auto-Turrets', desc:'Blocks 3 raid damage per turn, per level.',
+   base:{scrap:16,fuel:10}, scale:1.7, max:5},
+  {id:'scout',  cat:'Expansion',icon:'📡', name:'Radio Mast', desc:'Claiming a hex costs 5 less fuel, per level.',
+   base:{fuel:16},          scale:1.7, max:3},
+  {id:'core',   cat:'Shuffleology', icon:'🌀', name:'Stabilizer Core', desc:'Keep 1 more claimed ring of land through each Shuffle.',
+   base:{food:20,scrap:20,fuel:20}, scale:2.2, max:2},
+];
+function upgCost(u, lvl){
+  const c={};
+  for(const k in u.base) c[k]=Math.round(u.base[k]*Math.pow(u.scale,lvl));
+  return c;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  NEW GAME
+// ════════════════════════════════════════════════════════════════
+function newGame(){
+  G = {
+    tiles:{},            // key -> {q,r,kind,controlled, hp(raider)}
+    food:30, scrap:30, fuel:30,
+    hqHP:40, hqMax:40,
+    turn:1,
+    shuffleEvery:4,
+    nextShuffle:4,       // turn number of next shuffle
+    shufflesWeathered:0,
+    raidBase:4,          // raid damage scaling
+    upg:{farm:0,forge:0,still:0,wall:0,turret:0,scout:0,core:0},
+    sel:null,
+    over:false,
+    gatheredThisTurn:{}, // keys gathered this turn (one gather per node per turn)
+  };
+  // HQ at center
+  for(const c of COORDS){
+    G.tiles[key(c.q,c.r)] = {q:c.q, r:c.r, kind:(c.q===0&&c.r===0)?'hq':'empty', controlled:(c.q===0&&c.r===0)};
+  }
+  seedNeighbourhood(true);
+}
+
+// (Re)seed every non-HQ tile. preserveControlled keeps claimed land within `keepRings`.
+function seedNeighbourhood(initial){
+  const keepRings = initial ? 0 : (1 + G.upg.core); // core lets you keep claimed rings through a shuffle
+  // distribution scales a touch with progress for variety/threat
+  const diff = G.shufflesWeathered;
+  for(const c of COORDS){
+    const k = key(c.q,c.r);
+    const t = G.tiles[k];
+    if(t.kind==='hq') continue;
+    const dist = hexDist(c.q,c.r,0,0);
+    // keep controlled land near HQ on shuffle (Iron Rule: your plate travels with you)
+    if(!initial && t.controlled && dist<=keepRings) continue;
+    // reset
+    t.controlled = false;
+    t.hp = 0;
+    const roll = Math.random();
+    if(dist===1){
+      // adjacent ring: friendlier, mostly resources, maybe one threat
+      if(roll<0.62) t.kind = pick(['food','scrap','fuel']);
+      else if(roll<0.80) t.kind = 'empty';
+      else if(roll<0.92) t.kind = 'raider';
+      else t.kind = 'hazard';
+    } else {
+      // outer ring: more threats, scales with difficulty
+      const threatChance = 0.30 + Math.min(0.30, diff*0.05);
+      if(roll<0.40) t.kind = pick(['food','scrap','fuel']);
+      else if(roll<0.40+ (0.30-Math.min(0.18,diff*0.03)) ) t.kind='empty';
+      else if(roll<0.40+threatChance+0.10) t.kind='raider';
+      else t.kind='hazard';
+    }
+    if(t.kind==='raider') t.hp = 2 + diff;   // raider camp HP scales
+  }
+}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function hexDist(q1,r1,q2,r2){
+  return (Math.abs(q1-q2)+Math.abs(q1+r1-q2-r2)+Math.abs(r1-r2))/2;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ECONOMY HELPERS
+// ════════════════════════════════════════════════════════════════
+function yieldOf(t){
+  if(t.kind==='food') return {res:'food', amt:2+G.upg.farm};
+  if(t.kind==='scrap')return {res:'scrap',amt:2+G.upg.forge};
+  if(t.kind==='fuel') return {res:'fuel', amt:2+G.upg.still};
+  return null;
+}
+function controlledNodes(){
+  return Object.values(G.tiles).filter(t=>t.controlled && yieldOf(t));
+}
+// projected gather if you gather everything still available this turn
+function projectedIncome(){
+  const inc={food:0,scrap:0,fuel:0};
+  for(const t of controlledNodes()){
+    if(G.gatheredThisTurn[key(t.q,t.r)]) continue;
+    const y=yieldOf(t); inc[y.res]+=y.amt;
+  }
+  return inc;
+}
+function raidDamage(){
+  // raids scale with turns + number of nearby/owned raider camps
+  let dmg = G.raidBase + Math.floor(G.turn*0.6) + G.shufflesWeathered*2;
+  const camps = Object.values(G.tiles).filter(t=>t.kind==='raider').length;
+  dmg += camps*2;
+  dmg = Math.max(0, dmg - G.upg.turret*3);
+  return dmg;
+}
+function hqMax(){ return 40 + G.upg.wall*8; }
+
+// ════════════════════════════════════════════════════════════════
+//  ACTIONS
+// ════════════════════════════════════════════════════════════════
+function neighbours(q,r){
+  const dirs=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+  return dirs.map(d=>G.tiles[key(q+d[0],r+d[1])]).filter(Boolean);
+}
+function adjacentToControlled(t){
+  return neighbours(t.q,t.r).some(n=>n.controlled);
+}
+
+function gatherTile(t){
+  const y=yieldOf(t); if(!y||!t.controlled) return;
+  if(G.gatheredThisTurn[key(t.q,t.r)]) return;
+  G[y.res]+=y.amt;
+  G.gatheredThisTurn[key(t.q,t.r)]=true;
+  floatText(t,'+'+y.amt+' '+y.res, KIND[t.kind].edge);
+  refresh();
+}
+function claimTile(t){
+  const cost = Math.max(0, 12 - G.upg.scout*5);
+  if(t.controlled || t.kind==='hq') return;
+  if(!adjacentToControlled(t)) return;
+  if(G.fuel<cost) return;
+  G.fuel-=cost;
+  if(t.kind==='hazard'){ // claiming a hazard costs HQ HP (rad exposure) but clears it
+    G.hqHP=Math.max(1,G.hqHP-4); t.kind='empty'; floatText(t,'CLEARED','#b8862e');
+  }
+  t.controlled=true;
+  toast('TERRITORY CLAIMED','+1 hex under your influence');
+  refresh();
+}
+function attackRaider(t){
+  if(t.kind!=='raider') return;
+  if(!adjacentToControlled(t)) return;
+  const cost = 8; // scrap to mount an assault
+  if(G.scrap<cost) return;
+  G.scrap-=cost;
+  t.hp -= (2 + G.upg.turret); // turrets help offense too
+  if(t.hp<=0){
+    // destroyed → loot + becomes claimable empty land
+    const loot = 8 + G.shufflesWeathered*3;
+    G.scrap += loot;
+    t.kind='empty';
+    floatText(t,'+'+loot+' scrap loot','#7ec86a');
+    toast('CAMP DESTROYED','Raiders scattered · land secured');
+  } else {
+    floatText(t,'-'+(2+G.upg.turret)+' hp','#ff5640');
+  }
+  refresh();
+}
+
+// ── End turn: collect remaining income, raid hits HQ, advance, maybe shuffle ──
+function endTurn(){
+  if(G.over) return;
+  // auto-collect any ungathered controlled nodes (convenience)
+  for(const t of controlledNodes()){
+    if(!G.gatheredThisTurn[key(t.q,t.r)]){ const y=yieldOf(t); G[y.res]+=y.amt; }
+  }
+  // raid damage
+  const dmg = raidDamage();
+  if(dmg>0){
+    G.hqHP -= dmg;
+    toast('RAID! −'+dmg+' HQ', 'Hold the line');
+  }
+  // wall repair
+  if(G.upg.wall>0){ G.hqHP = Math.min(hqMax(), G.hqHP + G.upg.wall*6); }
+  G.hqMax = hqMax();
+  G.hqHP = Math.min(G.hqHP, G.hqMax);
+
+  if(G.hqHP<=0){ return gameOver(); }
+
+  G.turn++;
+  G.gatheredThisTurn={};
+
+  // SHUFFLE?
+  if(G.turn > G.nextShuffle){
+    triggerShuffle();
+    return; // refresh happens after animation
+  }
+  refresh();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  THE SHUFFLE
+// ════════════════════════════════════════════════════════════════
+function triggerShuffle(){
+  G.shufflesWeathered++;
+  G.shuffleEvery = Math.max(3, 4 - Math.floor(G.shufflesWeathered/3)); // shuffles speed up slightly
+  G.nextShuffle = G.turn - 1 + G.shuffleEvery;
+  G.raidBase += 2; // world gets meaner each shuffle
+
+  if(typeof window.trackEvent==='function')
+    window.trackEvent('shuffle_triggered',{shuffle:G.shufflesWeathered,turn:G.turn});
+
+  toast('THE SHUFFLE','The world tears loose…');
+  // animate the tearing, then reseed mid-animation
+  anim.shuffle = 0.0001;
+  let reseeded=false;
+  const dur=1500, t0=performance.now();
+  function step(now){
+    const p=Math.min(1,(now-t0)/dur);
+    anim.shuffle=p;
+    if(p>0.5 && !reseeded){ reseeded=true; seedNeighbourhood(false); }
+    draw();
+    if(p<1){ requestAnimationFrame(step); }
+    else { anim.shuffle=0; saveBestIfNeeded(); refresh();
+           toast('NEW WORLD','Shuffle '+G.shufflesWeathered+' weathered'); }
+  }
+  requestAnimationFrame(step);
+}
+
+function saveBestIfNeeded(){
+  if(G.shufflesWeathered>best.shuffles || (G.shufflesWeathered===best.shuffles && G.turn>best.turns)){
+    best.shuffles=G.shufflesWeathered; best.turns=G.turn; saveBest();
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  GAME OVER
+// ════════════════════════════════════════════════════════════════
+function gameOver(){
+  G.over=true;
+  saveBestIfNeeded();
+  if(best.turns<G.turn){ best.turns=G.turn; }
+  if(typeof window.trackEvent==='function')
+    window.trackEvent('game_over',{score:G.shufflesWeathered, turns:G.turn, shuffles:G.shufflesWeathered});
+  document.getElementById('go-stats').innerHTML =
+    `You weathered <b>${G.shufflesWeathered}</b> shuffle${G.shufflesWeathered===1?'':'s'}<br>`+
+    `and survived <b>${G.turn}</b> turns.<br>`+
+    `<span style="font-size:13px;color:var(--dim)">Best: ${best.shuffles} shuffles · ${best.turns} turns</span>`;
+  hide('hud'); hide('actionbar'); hide('hint');
+  show('gameover');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER — board (canvas)
+// ════════════════════════════════════════════════════════════════
+let W=0,H=0,dpr=1, ORIGIN={x:0,y:0};
+function resize(){
+  dpr=window.devicePixelRatio||1;
+  const wrap=document.getElementById('board-wrap');
+  W=wrap.clientWidth; H=wrap.clientHeight;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+'px'; cv.style.height=H+'px';
+  // fit board: width spans (2*RADIUS+1) columns, height similar
+  const boardW = SQRT3*HEX*(2*RADIUS+1.4);
+  const boardH = 1.5*HEX*(2*RADIUS+1) + HEX;
+  const s = Math.min(W/boardW, H/boardH, 1.25);
+  HEX = 46*s; // keep pointy-top sizing
+  ORIGIN.x=W/2; ORIGIN.y=H/2;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function hexToPixel(q,r){
+  const x = HEX*SQRT3*(q + r/2);
+  const y = HEX*1.5*r;
+  return {x:ORIGIN.x+x, y:ORIGIN.y+y};
+}
+function hexCorner(cx0,cy0,i){ // pointy-top
+  const a=Math.PI/180*(60*i-90);
+  return {x:cx0+HEX*Math.cos(a), y:cy0+HEX*Math.sin(a)};
+}
+function hexPath(ctx,cx0,cy0,scale){
+  scale=scale||1;
+  ctx.beginPath();
+  for(let i=0;i<6;i++){
+    const a=Math.PI/180*(60*i-90);
+    const px=cx0+HEX*scale*Math.cos(a), py=cy0+HEX*scale*Math.sin(a);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+}
+
+function draw(){
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  cx.clearRect(0,0,W,H);
+  if(!G) return;
+  const sh = anim.shuffle; // 0..1
+  // draw each tile
+  for(const c of COORDS){
+    const t=G.tiles[key(c.q,c.r)];
+    const p=hexToPixel(c.q,c.r);
+    let dx=0,dy=0,rot=0,sc=1,alpha=1;
+    if(sh>0 && t.kind!=='hq'){
+      // tiles fling outward & spin during the shuffle; fade through midpoint
+      const dist=hexDist(c.q,c.r,0,0);
+      const dir=Math.atan2(p.y-ORIGIN.y, p.x-ORIGIN.x)+ (c.q*1.3+c.r*0.7);
+      const burst = Math.sin(sh*Math.PI); // peaks at mid
+      const push = burst* (40+dist*30);
+      dx=Math.cos(dir)*push; dy=Math.sin(dir)*push - burst*20;
+      rot=(sh* (1.2+dist*0.4))*((c.q+c.r)%2?1:-1);
+      sc=1-burst*0.45;
+      alpha=1-burst*0.85;
+    }
+    drawTile(t, p.x+dx, p.y+dy, rot, sc, alpha);
+  }
+  // shuffle aurora overlay
+  if(sh>0){
+    const b=Math.sin(sh*Math.PI);
+    const g=cx.createRadialGradient(ORIGIN.x,ORIGIN.y,10,ORIGIN.x,ORIGIN.y,Math.max(W,H)*0.6);
+    g.addColorStop(0,`rgba(143,224,214,${0.18*b})`);
+    g.addColorStop(0.5,`rgba(240,140,51,${0.14*b})`);
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  }
+  // floaters
+  drawFloaters();
+}
+
+function drawTile(t, x, y, rot, sc, alpha){
+  const sel = G.sel && G.sel.q===t.q && G.sel.r===t.r;
+  const def = KIND[t.kind];
+  cx.save();
+  cx.globalAlpha=alpha;
+  cx.translate(x,y); cx.rotate(rot); cx.scale(sc,sc); cx.translate(-x,-y);
+
+  // body
+  hexPath(cx,x,y,0.96);
+  if(t.kind==='hq'){
+    const g=cx.createLinearGradient(x,y-HEX,x,y+HEX);
+    g.addColorStop(0,'#3d4f5c'); g.addColorStop(1,'#1a2a32');
+    cx.fillStyle=g;
+  } else if(t.controlled){
+    const g=cx.createLinearGradient(x,y-HEX,x,y+HEX);
+    g.addColorStop(0,'#2c4a3e'); g.addColorStop(1,'#16302c');
+    cx.fillStyle=g;
+  } else {
+    cx.fillStyle=def.col;
+  }
+  cx.fill();
+
+  // edge
+  cx.lineWidth = (t.kind==='hq'||t.controlled||sel)?3:1.5;
+  if(sel) cx.strokeStyle='#fff';
+  else if(t.kind==='hq') cx.strokeStyle='#f08c33';
+  else if(t.controlled) cx.strokeStyle='#5fc4ba';
+  else cx.strokeStyle=def.edge;
+  cx.stroke();
+
+  // selection glow
+  if(sel){ cx.save(); cx.shadowColor='#fff'; cx.shadowBlur=14; cx.lineWidth=2.4; cx.stroke(); cx.restore(); }
+
+  // contents
+  cx.globalAlpha=alpha;
+  cx.textAlign='center'; cx.textBaseline='middle';
+  if(t.kind==='hq'){
+    drawBunker(x,y);
+  } else if(def.icon){
+    cx.font=`${HEX*0.7}px serif`;
+    cx.fillText(def.icon, x, y- (t.kind==='raider'?HEX*0.08:HEX*0.05));
+  }
+  // raider hp pips
+  if(t.kind==='raider'){
+    const pips=t.hp;
+    cx.fillStyle='#ff8a7a'; cx.font=`bold ${HEX*0.26}px Oswald`;
+    cx.fillText('HP '+pips, x, y+HEX*0.5);
+  }
+  // gathered marker
+  if(t.controlled && yieldOf(t)){
+    if(G.gatheredThisTurn[key(t.q,t.r)]){
+      cx.fillStyle='rgba(126,200,106,.85)'; cx.font=`bold ${HEX*0.24}px Oswald`;
+      cx.fillText('✓', x, y+HEX*0.52);
+    }
+  }
+  cx.restore();
+}
+
+function drawBunker(x,y){
+  const s=HEX*0.5;
+  cx.save();
+  // vault door circle
+  cx.fillStyle='#101c24'; cx.beginPath(); cx.arc(x,y,s*0.7,0,Math.PI*2); cx.fill();
+  cx.strokeStyle='#5a6e7a'; cx.lineWidth=Math.max(2,HEX*0.06); cx.stroke();
+  cx.beginPath(); cx.arc(x,y,s*0.42,0,Math.PI*2); cx.stroke();
+  cx.strokeStyle='#465864'; cx.lineWidth=Math.max(1.4,HEX*0.04);
+  for(let i=0;i<4;i++){ const a=i*Math.PI/4;
+    cx.beginPath(); cx.moveTo(x+Math.cos(a)*s*0.7,y+Math.sin(a)*s*0.7);
+    cx.lineTo(x-Math.cos(a)*s*0.7,y-Math.sin(a)*s*0.7); cx.stroke(); }
+  cx.fillStyle='#3e4e5c'; cx.beginPath(); cx.arc(x,y,s*0.15,0,Math.PI*2); cx.fill();
+  // HQ label
+  cx.fillStyle='#f2cf9e'; cx.font=`bold ${HEX*0.22}px Oswald`; cx.textAlign='center';
+  cx.fillText('SHELTER 07', x, y+s*1.05);
+  cx.restore();
+}
+
+// ── floating combat/income text ──
+let floaters=[];
+function floatText(t,txt,col){
+  const p=hexToPixel(t.q,t.r);
+  floaters.push({x:p.x,y:p.y,txt,col,life:1});
+}
+function drawFloaters(){
+  for(let i=floaters.length-1;i>=0;i--){
+    const f=floaters[i];
+    cx.globalAlpha=Math.max(0,f.life);
+    cx.fillStyle=f.col; cx.font=`bold ${Math.max(13,HEX*0.34)}px Oswald`;
+    cx.textAlign='center';
+    cx.fillText(f.txt, f.x, f.y - (1-f.life)*38 - 10);
+    cx.globalAlpha=1;
+    f.life-=0.018;
+    if(f.life<=0) floaters.splice(i,1);
+  }
+}
+// keep floaters animating outside the shuffle frame loop
+function floaterLoop(){
+  if(G && anim.shuffle===0 && floaters.length) draw();
+  requestAnimationFrame(floaterLoop);
+}
+requestAnimationFrame(floaterLoop);
+
+// ════════════════════════════════════════════════════════════════
+//  INPUT
+// ════════════════════════════════════════════════════════════════
+function pixelToHex(px,py){
+  const x=(px-ORIGIN.x), y=(py-ORIGIN.y);
+  const q=(SQRT3/3*x - 1/3*y)/HEX;
+  const r=(2/3*y)/HEX;
+  // round axial
+  let xq=q, xr=r, xs=-q-r;
+  let rq=Math.round(xq), rr=Math.round(xr), rs=Math.round(xs);
+  const dq=Math.abs(rq-xq), dr=Math.abs(rr-xr), ds=Math.abs(rs-xs);
+  if(dq>dr&&dq>ds) rq=-rr-rs; else if(dr>ds) rr=-rq-rs;
+  return {q:rq,r:rr};
+}
+cv.addEventListener('click', e=>{
+  if(!G||G.over||anim.shuffle>0) return;
+  const rect=cv.getBoundingClientRect();
+  const hx=pixelToHex(e.clientX-rect.left, e.clientY-rect.top);
+  const t=G.tiles[key(hx.q,hx.r)];
+  if(!t){ G.sel=null; }
+  else { G.sel={q:t.q,r:t.r}; }
+  refresh();
+});
+
+// ════════════════════════════════════════════════════════════════
+//  UI REFRESH
+// ════════════════════════════════════════════════════════════════
+function refresh(){
+  if(!G) return;
+  G.hqMax=hqMax();
+  // HUD
+  const inc=projectedIncome();
+  setPill('p-food', G.food, inc.food);
+  setPill('p-scrap', G.scrap, inc.scrap);
+  setPill('p-fuel', G.fuel, inc.fuel);
+  document.querySelector('#p-hp .v').textContent = Math.max(0,Math.round(G.hqHP))+'/'+G.hqMax;
+  // shuffle banner
+  const turnsLeft = G.nextShuffle - G.turn + 1;
+  const cnt=document.getElementById('cnt');
+  cnt.textContent = turnsLeft<=1 ? 'NEXT TURN!' : (turnsLeft+' TURNS');
+  document.getElementById('turn-n').textContent=G.turn;
+  document.getElementById('shuffle-banner').classList.toggle('warn', turnsLeft<=2);
+  // selection panel + actions
+  renderActions();
+  draw();
+}
+function setPill(id,val,delta){
+  const el=document.getElementById(id);
+  el.querySelector('.v').textContent=Math.round(val);
+  const d=el.querySelector('.delta');
+  if(d){ d.textContent= delta>0?('+'+delta):''; }
+}
+
+function costStr(c){ return Object.entries(c).map(([k,v])=>v+' '+k).join(' · '); }
+
+function renderActions(){
+  const info=document.getElementById('sel-info');
+  const acts=document.getElementById('actions');
+  acts.innerHTML='';
+  const t = G.sel ? G.tiles[key(G.sel.q,G.sel.r)] : null;
+
+  // Always-present: War Council + End Turn
+  const council = btn('🛠 War Council','btn-tl',openMeta);
+  const dmg=raidDamage();
+  const end = btn('END TURN ▸','btn-end',endTurn);
+
+  if(!t){
+    info.innerHTML='Tap a tile to inspect it. Next raid hits for <b>'+dmg+'</b> HQ damage.';
+    acts.appendChild(council); acts.appendChild(end);
+    return;
+  }
+  const def=KIND[t.kind];
+  if(t.kind==='hq'){
+    info.innerHTML='<b>Shelter 07</b> — your bunker. Integrity <b>'+Math.round(G.hqHP)+'/'+G.hqMax+'</b>. '+
+      'It survives every Shuffle. Next raid: <b>'+dmg+'</b> dmg'+(G.upg.turret?(' (−'+(G.upg.turret*3)+' from turrets)'):'')+'.';
+  } else if(t.controlled){
+    const y=yieldOf(t);
+    if(y){
+      const got=G.gatheredThisTurn[key(t.q,t.r)];
+      info.innerHTML='<b>'+def.name+'</b> (yours). Yields <b>+'+y.amt+' '+y.res+'</b>/turn.'+(got?' Already gathered this turn.':' Tap GATHER to collect now.');
+      acts.appendChild(btn('GATHER +'+y.amt+' '+y.res,'btn-or',()=>gatherTile(t), got));
+    } else {
+      info.innerHTML='<b>Open Ground</b> (yours). Claimed territory — buffers raids and lets you expand further.';
+    }
+  } else {
+    // unclaimed
+    const adj=adjacentToControlled(t);
+    if(t.kind==='raider'){
+      info.innerHTML='<b>Raider Camp</b> · HP <b>'+t.hp+'</b>. '+(adj?'Costs <b>8 scrap</b> to assault.':'Must be next to your land to attack.');
+      acts.appendChild(btn('ASSAULT  −8 scrap','btn-or',()=>attackRaider(t), !adj||G.scrap<8));
+    } else {
+      const claimCost=Math.max(0,12-G.upg.scout*5);
+      const isHaz=t.kind==='hazard';
+      info.innerHTML='<b>'+def.name+'</b>. '+(adj?('Claim for <b>'+claimCost+' fuel</b>'+(isHaz?' (−4 HQ: rad exposure)':'')+'.'):'Must be next to your land to claim.');
+      acts.appendChild(btn('CLAIM  −'+claimCost+' fuel','btn-or',()=>claimTile(t), !adj||G.fuel<claimCost));
+    }
+  }
+  acts.appendChild(council);
+  acts.appendChild(end);
+}
+function btn(label,cls,fn,disabled){
+  const b=document.createElement('button');
+  b.className='btn '+cls; b.innerHTML=label; b.disabled=!!disabled;
+  if(!disabled) b.onclick=fn;
+  return b;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  META / UPGRADE TREE
+// ════════════════════════════════════════════════════════════════
+function openMeta(){
+  if(!G||G.over) return;
+  renderMeta();
+  show('meta');
+}
+function closeMeta(){ hide('meta'); refresh(); }
+function renderMeta(){
+  const list=document.getElementById('meta-list');
+  list.innerHTML='';
+  const cats=['Economy','Defense','Expansion','Shuffleology'];
+  for(const cat of cats){
+    const h=document.createElement('div'); h.className='meta-head'; h.textContent=cat; list.appendChild(h);
+    for(const u of UPGRADES.filter(x=>x.cat===cat)){
+      const lvl=G.upg[u.id]; const maxed=lvl>=u.max;
+      const cost=upgCost(u,lvl);
+      const afford = Object.entries(cost).every(([k,v])=>G[k]>=v);
+      const row=document.createElement('div'); row.className='upg'+(maxed?' maxed':'');
+      const btnHtml = maxed ? 'MAX'
+        : '<span style="display:flex;flex-direction:column;line-height:1.05"><span>UPGRADE</span><span class="cost">'+costStr(cost)+'</span></span>';
+      row.innerHTML=`<div class="ix">${u.icon}</div>
+        <div class="ub"><div class="un">${u.name} <span class="ulvl">Lv ${lvl}/${u.max}</span></div>
+        <div class="ud">${u.desc}</div></div>`;
+      const b=document.createElement('button');
+      b.className='btn '+(maxed?'btn-ghost':'btn-or'); b.innerHTML=btnHtml;
+      b.disabled=maxed||!afford;
+      if(!maxed&&afford) b.onclick=()=>buyUpgrade(u);
+      row.appendChild(b);
+      list.appendChild(row);
+    }
+  }
+}
+function buyUpgrade(u){
+  const lvl=G.upg[u.id]; if(lvl>=u.max) return;
+  const cost=upgCost(u,lvl);
+  if(!Object.entries(cost).every(([k,v])=>G[k]>=v)) return;
+  for(const k in cost) G[k]-=cost[k];
+  G.upg[u.id]++;
+  if(u.id==='wall'){ G.hqMax=hqMax(); G.hqHP=Math.min(G.hqMax, G.hqHP+6); } // wall upgrade also patches HQ
+  if(typeof window.trackEvent==='function') window.trackEvent('upgrade_bought',{id:u.id,level:G.upg[u.id]});
+  renderMeta(); refresh();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════════════
+let toastTimer=null;
+function toast(main,sub){
+  const t=document.getElementById('toast');
+  t.innerHTML=main+(sub?'<span class="sub">'+sub+'</span>':'');
+  t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1400);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SCREEN FLOW
+// ════════════════════════════════════════════════════════════════
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+
+function startGame(){
+  newGame();
+  hide('title-screen'); hide('gameover'); hide('meta');
+  show('hud'); show('actionbar');
+  const hint=document.getElementById('hint'); show('hint');
+  setTimeout(()=>hide('hint'),4200);
+  resize(); refresh();
+  if(typeof window.trackEvent==='function') window.trackEvent('game_start',{});
+}
+function toTitle(){
+  G=null;
+  hide('gameover'); hide('hud'); hide('actionbar'); hide('meta');
+  document.getElementById('title-best').textContent =
+    best.shuffles>0 ? ('Best: '+best.shuffles+' shuffles weathered · '+best.turns+' turns') : '';
+  show('title-screen');
+}
+
+// expose for inline onclick
+window.startGame=startGame; window.toTitle=toTitle;
+window.closeMeta=closeMeta;
+
+// init
+document.getElementById('title-best').textContent =
+  best.shuffles>0 ? ('Best: '+best.shuffles+' shuffles weathered · '+best.turns+' turns') : '';
+resize();
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('big-shuffle');
+</script>
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('big-shuffle');
+</script>
+</body>
+</html>

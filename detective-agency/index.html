@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Casefile — Detective Agency</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Cutive+Mono&family=Playfair+Display:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05080d; --navy:#0a1626; --panel:#0f1d2e; --panel2:#142536; --line:#21384f;
+    --teal:#3cc7d8; --teal-dim:#27839a; --amber:#f0a847; --amber-hi:#ffc566;
+    --red:#e0342e; --red-hi:#ff5a4e; --paper:#e9ddc0; --paper2:#d8cba6;
+    --ink:#0c1420; --txt:#d4e2ec; --muted:#7d97aa; --good:#4cc98a;
+    --serif:'Playfair Display',Georgia,serif;
+    --mono:'Cutive Mono','Courier New',monospace;
+    --type:'Special Elite','Courier New',monospace;
+    --sans:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);overflow:hidden;user-select:none;-webkit-user-select:none}
+  body{background:radial-gradient(900px 700px at 50% -10%,#0d1c30 0%,var(--bg) 65%)}
+  #app{position:fixed;inset:0;max-width:520px;margin:0 auto;display:flex;flex-direction:column;background:var(--navy);box-shadow:0 0 50px rgba(0,0,0,.6)}
+
+  .back-link{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:calc(10px + env(safe-area-inset-left,0px));z-index:300;
+    color:var(--muted);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:1px;opacity:.7;background:rgba(6,12,20,.7);padding:5px 9px;border-radius:7px;border:1px solid var(--line)}
+  .back-link:hover{opacity:1;color:var(--txt)}
+
+  .scr-wrap{flex:1;position:relative;overflow:hidden}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:calc(40px + env(safe-area-inset-top,0px))}
+  .screen.active{display:flex;animation:fadeIn .28s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .scr-title{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--teal);text-transform:uppercase;padding:6px 18px 2px}
+  .scr-head{font-family:var(--serif);font-size:24px;color:var(--paper);padding:0 18px 8px;letter-spacing:.5px;font-weight:700}
+
+  .btn{display:block;border:none;cursor:pointer;font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;border-radius:10px;transition:all .15s;text-align:center;width:100%}
+  .btn:active{transform:scale(.97)}
+  .btn-amber{background:linear-gradient(180deg,var(--amber-hi),#cf8a2e);color:#241405;font-weight:700;font-size:14px;padding:15px;box-shadow:0 4px 18px rgba(240,168,71,.3),inset 0 1px 0 rgba(255,255,255,.45)}
+  .btn-red{background:linear-gradient(180deg,var(--red-hi),#a8201a);color:#fff;font-weight:700;font-size:14px;padding:15px;box-shadow:0 4px 18px rgba(224,52,46,.35)}
+  .btn-teal{background:linear-gradient(180deg,#4dd6e4,#1f7e92);color:#04202a;font-weight:700;font-size:14px;padding:15px}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:12px;padding:12px}
+  .btn-ghost:hover{color:var(--txt);border-color:var(--teal-dim)}
+  .btn:disabled{background:#2a3a4e;color:#5a7186;box-shadow:none;cursor:not-allowed;transform:none}
+
+  .pad{padding:0 16px}
+  .mt-auto{margin-top:auto}
+  .stack{display:flex;flex-direction:column;gap:10px;padding:12px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+
+  /* ---- TITLE ---- */
+  #scr-title{align-items:center;justify-content:center;padding-top:0}
+  #scr-title .logo-art{width:100%;max-width:420px}
+  .title-main{font-family:var(--serif);font-size:clamp(40px,13vw,64px);font-weight:900;letter-spacing:8px;color:var(--paper);text-align:center;line-height:1;text-shadow:0 6px 30px rgba(0,0,0,.7)}
+  .title-main .red{color:var(--red-hi)}
+  .tagline{font-family:var(--type);font-size:12px;letter-spacing:3px;color:var(--teal);text-align:center;margin:14px 0 4px;text-transform:uppercase}
+  .title-sub{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);text-align:center;margin-bottom:26px}
+
+  /* ---- OFFICE ---- */
+  .rep-panel{margin:12px 16px 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .rep-row{display:flex;justify-content:space-between;align-items:baseline}
+  .rep-tier{font-family:var(--serif);font-size:17px;color:var(--paper);font-weight:700}
+  .rep-num{font-family:var(--mono);font-size:9.5px;color:var(--muted);letter-spacing:1px}
+  .rep-bar{height:8px;background:#0a1422;border-radius:4px;margin-top:8px;overflow:hidden;border:1px solid #1b2c40}
+  .rep-fill{height:100%;background:linear-gradient(90deg,var(--teal-dim),var(--teal));border-radius:4px;box-shadow:0 0 8px rgba(60,199,216,.5);transition:width .5s}
+  .rep-next{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:6px}
+  .stat-strip{display:flex;gap:8px;margin:10px 16px 0}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 8px;text-align:center}
+  .stat .k{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--teal);text-transform:uppercase}
+  .stat .v{font-family:var(--serif);font-size:18px;color:var(--paper);margin-top:3px;font-weight:700}
+  .case-folder{margin:14px 16px 0;background:linear-gradient(180deg,#caa45c,#a9854a);border-radius:12px;padding:16px 16px 14px;cursor:pointer;position:relative;box-shadow:0 6px 20px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.3);transition:transform .15s}
+  .case-folder:active{transform:scale(.99)}
+  .case-folder::before{content:"";position:absolute;top:-8px;left:18px;width:84px;height:14px;background:#a9854a;border-radius:6px 6px 0 0}
+  .cf-label{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:#3d2c10;text-transform:uppercase}
+  .cf-title{font-family:var(--serif);font-size:21px;color:#241708;font-weight:900;margin:4px 0 4px}
+  .cf-meta{font-family:var(--mono);font-size:10px;color:#4a3719;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+  .cf-stamp{position:absolute;right:12px;top:10px;border:2px solid #8e2b20;border-radius:4px;color:#8e2b20;font-family:var(--type);font-size:10px;letter-spacing:2px;padding:3px 7px;transform:rotate(7deg);font-weight:700}
+  .office-row{display:flex;gap:10px;padding:12px 16px 0}
+  .office-row .btn{flex:1}
+
+  /* ---- BRIEFING ---- */
+  .casefile-card{position:relative;margin:14px 18px 0;background:linear-gradient(178deg,var(--paper) 0%,var(--paper2) 90%);border-radius:6px;padding:22px 18px 16px;color:var(--ink);box-shadow:0 14px 34px rgba(0,0,0,.6);transform:rotate(-.5deg)}
+  .casefile-card::after{content:"";position:absolute;inset:6px;border:1px solid rgba(90,70,40,.35);border-radius:4px;pointer-events:none}
+  .paperclip{position:absolute;top:-12px;right:34px;width:20px;height:34px;border:4px solid #93a3ae;border-radius:10px;border-bottom:none}
+  .case-no{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:#7a6238}
+  .case-title{font-family:var(--serif);font-size:26px;font-weight:900;color:#241708;margin:6px 0 2px}
+  .case-sub{font-family:var(--type);font-size:11px;color:#6b5530;letter-spacing:1px;margin-bottom:12px;text-transform:uppercase}
+  .dossier{border-top:1px dashed #a8946a;padding-top:10px;display:grid;grid-template-columns:84px 1fr;row-gap:9px;font-size:13px}
+  .dossier dt{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:#7a6238;text-transform:uppercase;padding-top:3px}
+  .dossier dd{color:#2c2010;font-family:var(--serif);font-size:14px;line-height:1.3}
+  .stars{display:inline-flex;gap:2px;vertical-align:-2px}
+  .reward-row{display:flex;gap:10px;margin-top:14px}
+  .reward{flex:1;background:rgba(36,23,8,.08);border:1px solid rgba(90,70,40,.3);border-radius:6px;padding:8px;text-align:center}
+  .reward .rk{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:#7a6238}
+  .reward .rv{font-family:var(--serif);font-size:17px;font-weight:900;color:#241708;margin-top:2px}
+  .stamp-new{position:absolute;right:14px;top:14px;border:2.5px solid #b03028;color:#b03028;font-family:var(--type);font-weight:700;font-size:11px;letter-spacing:3px;padding:5px 10px;border-radius:4px;transform:rotate(8deg);opacity:.85}
+  .brief-note{margin:12px 22px 0;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;line-height:1.7;text-align:center}
+
+  /* ---- TRAVEL / MAP ---- */
+  .map-list{display:flex;flex-direction:column;gap:10px;padding:8px 16px 0}
+  .loc-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
+  .loc-card:active{transform:scale(.99)}
+  .loc-card.done{border-color:#2c5a44;opacity:.85}
+  .loc-ico{width:40px;height:40px;flex-shrink:0;border-radius:9px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+  .loc-ico svg{width:24px;height:24px;stroke:var(--teal);fill:none;stroke-width:1.5}
+  .loc-card.done .loc-ico svg{stroke:var(--good)}
+  .loc-name{font-family:var(--serif);font-size:16px;color:var(--paper);font-weight:700}
+  .loc-meta{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+  .loc-badge{margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--amber);text-transform:uppercase}
+  .loc-card.done .loc-badge{color:var(--good)}
+
+  /* ---- SCENE ---- */
+  .scene-wrap{position:relative;margin:8px 0 0}
+  .scene-hud{display:flex;justify-content:space-between;align-items:center;padding:0 16px 6px}
+  .hud-pill{background:rgba(6,12,20,.6);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--teal);text-transform:uppercase}
+  .hud-pill b{color:var(--amber)}
+  .scene-stage{position:relative;margin:0 12px;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .hotspot{position:absolute;width:42px;height:42px;border:none;background:transparent;cursor:pointer;z-index:6;transform:translate(-50%,-50%)}
+  .hotspot .ring{position:absolute;inset:0;border:2px solid var(--teal);border-radius:50%;animation:pulse 1.9s ease-out infinite;box-shadow:0 0 12px rgba(60,199,216,.5)}
+  .hotspot .dot{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--teal);border-radius:50%;box-shadow:0 0 8px var(--teal)}
+  @keyframes pulse{0%{transform:scale(.7);opacity:.95}70%{transform:scale(1.3);opacity:0}100%{opacity:0}}
+  .hotspot.found .ring{animation:none;border-color:var(--amber);opacity:.85;transform:scale(.8)}
+  .hotspot.found .dot{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  .hotspot.found::after{content:"";position:absolute;left:50%;top:50%;width:16px;height:8px;border-left:3px solid #241405;border-bottom:3px solid #241405;transform:translate(-50%,-65%) rotate(-45deg)}
+  .hotspot.locked .ring{border-color:var(--muted);animation:none;opacity:.6}
+  .hotspot.locked .dot{background:var(--muted);box-shadow:none}
+
+  /* ---- CLUE TRAY ---- */
+  .tray-back{position:absolute;inset:0;background:rgba(4,8,14,.55);z-index:40;display:none}
+  .tray-back.open{display:block}
+  .clue-tray{position:absolute;left:12px;right:12px;bottom:12px;background:linear-gradient(178deg,var(--paper),var(--paper2));border-radius:12px;padding:16px 16px 14px;color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.6);z-index:41}
+  .ct-type{display:inline-block;font-family:var(--mono);font-size:8px;letter-spacing:2px;padding:3px 8px;border-radius:4px;background:#241708;color:var(--amber-hi);text-transform:uppercase}
+  .ct-title{font-family:var(--serif);font-size:19px;font-weight:900;color:#241708;margin:8px 0 5px}
+  .ct-body{font-size:13px;color:#43331a;line-height:1.55;font-family:var(--serif)}
+  .ct-tag{margin-top:9px;font-family:var(--mono);font-size:9px;color:#8e2b20;letter-spacing:1.5px}
+  .ct-locked{margin-top:9px;font-family:var(--mono);font-size:9px;color:#6b5530;letter-spacing:1px;font-style:italic}
+
+  /* ---- INTERROGATION ---- */
+  .sus-tabs{display:flex;gap:6px;padding:6px 16px 4px;overflow-x:auto}
+  .sus-tab{flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 12px;font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .sus-tab.active{background:#16314a;color:var(--teal);border-color:var(--teal)}
+  .sus-tab.closed{opacity:.45;text-decoration:line-through}
+  .suspect-head{display:flex;gap:14px;align-items:center;padding:8px 16px 8px}
+  .portrait-frame{width:74px;height:74px;border-radius:12px;overflow:hidden;border:1px solid var(--line);flex-shrink:0;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+  .sus-name{font-family:var(--serif);font-size:19px;color:var(--paper);font-weight:700}
+  .sus-role{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+  .rapport{margin-top:7px;display:flex;align-items:center;gap:8px}
+  .rapport .lbl{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--teal)}
+  .rap-bar{width:96px;height:6px;background:#0a1422;border-radius:3px;overflow:hidden;border:1px solid #1b2c40}
+  .rap-fill{height:100%;background:linear-gradient(90deg,#2a8ea0,var(--teal));transition:width .4s}
+  .statements{padding:2px 16px 6px;display:flex;flex-direction:column;gap:9px}
+  .stmt{background:var(--panel);border:1px solid var(--line);border-radius:12px 12px 12px 3px;padding:11px 13px;font-family:var(--serif);font-size:14px;line-height:1.45;color:var(--txt);cursor:pointer;transition:all .15s;position:relative}
+  .stmt:active{transform:scale(.995)}
+  .stmt.selected{border-color:var(--red);box-shadow:0 0 14px rgba(224,52,46,.25);background:#1c1722}
+  .stmt.selected::after{content:"MARKED";position:absolute;top:-8px;right:10px;background:var(--red);color:#fff;font-family:var(--mono);font-size:7.5px;letter-spacing:2px;padding:2px 7px;border-radius:3px}
+  .stmt.busted{border-color:var(--red);background:#231016}
+  .stmt.busted .stxt{text-decoration:line-through;color:#8a6a72}
+  .stmt .who{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--teal);text-transform:uppercase;display:block;margin-bottom:4px}
+  .stmt.tell .who::after{content:" · STRESS TELL";color:var(--amber)}
+  .crack{display:none;margin-top:8px;padding-top:8px;border-top:1px dashed #5a2a30;color:var(--red-hi);font-style:italic;font-size:13px}
+  .stmt.busted .crack{display:block}
+  .interro-foot{padding:8px 16px 6px}
+  .ed-label{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+  .ev-row{display:flex;flex-wrap:wrap;gap:8px}
+  .ev-chip{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;transition:all .15s;font-family:var(--mono);font-size:9px;letter-spacing:.5px;color:var(--txt);max-width:46%}
+  .ev-chip.selected{border-color:var(--amber);background:#26210f;box-shadow:0 0 10px rgba(240,168,71,.25)}
+  .press-zone{display:flex;gap:10px;padding:10px 16px 6px}
+  .press-zone .btn{flex:1}
+  .press-result{margin:0 16px 8px;background:#16240f;border:1px solid #3f6b2c;border-radius:10px;padding:11px 12px;font-size:13px;color:#bfe3a8;font-family:var(--serif);display:none}
+  .press-result.bad{background:#26120f;border-color:#6b3329;color:#e8b3ac}
+  .press-result b{color:var(--amber-hi);font-family:var(--mono);font-size:9px;letter-spacing:2px;display:block;margin-bottom:3px}
+  .shake{animation:shake .35s ease}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+  .clammed{margin:10px 16px;background:#1a1014;border:1px solid #4a2630;border-radius:10px;padding:12px;font-family:var(--serif);font-size:13px;color:#caa;text-align:center}
+
+  /* ---- BOARD ---- */
+  .board-intro{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;padding:2px 16px 8px;line-height:1.6}
+  .board-suspects{display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto}
+  .bsus{flex-shrink:0;width:84px;cursor:pointer;text-align:center;transition:transform .15s}
+  .bsus:active{transform:scale(.96)}
+  .bsus .pol{background:var(--paper);padding:5px 5px 3px;border-radius:2px;box-shadow:0 6px 14px rgba(0,0,0,.5)}
+  .bsus .pframe{width:100%;height:60px;overflow:hidden;background:#14202e;border-radius:1px}
+  .bsus .pname{font-family:var(--mono);font-size:8px;letter-spacing:.5px;color:#3d2c10;text-align:center;padding:3px 0 1px;text-transform:uppercase;font-weight:700}
+  .bsus.sel .pol{outline:2px solid var(--amber);outline-offset:2px}
+  .bsus.closed{opacity:.4}
+  .bsus .conf{font-family:var(--mono);font-size:9px;color:var(--amber);margin-top:3px}
+  .board-area{margin:0 16px;border-radius:12px;background:
+     radial-gradient(420px 320px at 70% 16%,rgba(240,168,71,.12),transparent 65%),
+     repeating-linear-gradient(47deg,#33241544 0 3px,transparent 3px 7px),
+     linear-gradient(160deg,#2e2113,#241a0e 60%,#1c1409);
+     border:1px solid #1a1209;padding:12px;min-height:130px;box-shadow:inset 0 0 50px rgba(0,0,0,.6)}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .pillar{background:rgba(10,12,18,.5);border:1px dashed #6b5024;border-radius:8px;padding:8px 6px;min-height:74px;text-align:center}
+  .pillar.filled{border-style:solid;border-color:var(--amber);background:rgba(38,33,15,.6)}
+  .pillar .pl{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--amber-hi);text-transform:uppercase}
+  .pillar .pv{font-family:var(--serif);font-size:11px;color:var(--paper);margin-top:6px;line-height:1.3}
+  .pillar .pv.empty{color:#7a6238;font-style:italic;font-size:10px}
+  .evidence-bank{padding:10px 16px 4px}
+  .eb-label{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+  .ev-card{background:var(--paper2);border-radius:3px;padding:8px 9px;margin-bottom:7px;box-shadow:0 4px 10px rgba(0,0,0,.4);cursor:pointer;color:#241708;transition:transform .12s}
+  .ev-card:active{transform:scale(.99)}
+  .ev-card .ek{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:#8e2b20;text-transform:uppercase;font-weight:700}
+  .ev-card .et{font-family:var(--serif);font-size:12.5px;line-height:1.35;margin-top:3px}
+  .ev-card.pinned{outline:2px solid var(--teal);outline-offset:-1px}
+  .pin-row{display:flex;gap:6px;margin-top:7px}
+  .pin-btn{flex:1;font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:6px 4px;border:1px solid #8e2b20;border-radius:5px;background:rgba(224,52,46,.06);color:#8e2b20;cursor:pointer}
+  .pin-btn.on{background:var(--red);color:#fff;border-color:var(--red)}
+  .conf-panel{margin:10px 16px;background:#0a1320;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .conf-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .conf-lbl{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase}
+  .conf-val{font-family:var(--serif);font-size:20px;color:var(--amber-hi);font-weight:900}
+  .conf-bar{height:10px;background:#0a1422;border:1px solid #1b2c40;border-radius:5px;position:relative;overflow:hidden}
+  .conf-fill{height:100%;width:0;background:linear-gradient(90deg,#8a5a20,var(--amber),var(--amber-hi));border-radius:5px;transition:width .4s;box-shadow:0 0 10px rgba(240,168,71,.4)}
+  .conf-gate{position:absolute;left:80%;top:-3px;bottom:-3px;width:2px;background:var(--red-hi)}
+  .conf-note{font-family:var(--mono);font-size:8.5px;letter-spacing:1px;margin-top:6px}
+
+  /* ---- ACCUSE MODAL ---- */
+  .modal-back{position:absolute;inset:0;background:rgba(4,8,14,.8);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
+  .modal-back.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;width:100%;max-width:420px}
+  .modal h3{font-family:var(--serif);font-size:20px;color:var(--paper);margin-bottom:4px}
+  .modal p{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:12px}
+  .pick-label{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--teal);text-transform:uppercase;margin:10px 0 5px}
+  .pick-opts{display:flex;flex-wrap:wrap;gap:6px}
+  .pick{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-family:var(--serif);font-size:13px;color:var(--txt);cursor:pointer}
+  .pick.sel{border-color:var(--amber);background:#26210f;color:var(--amber-hi)}
+
+  /* ---- VERDICT ---- */
+  #scr-verdict{background:radial-gradient(360px 280px at 50% 8%,#16314a 0%,#0a1626 70%)}
+  .vd-stamp{display:inline-block;border:4px solid var(--red);color:var(--red-hi);font-family:var(--type);font-weight:700;font-size:26px;letter-spacing:5px;padding:10px 24px;border-radius:8px;transform:rotate(-5deg);text-transform:uppercase;animation:stampIn .45s cubic-bezier(.2,1.6,.4,1) both;box-shadow:0 0 26px rgba(224,52,46,.2)}
+  .vd-stamp.ok{border-color:var(--good);color:var(--good);box-shadow:0 0 26px rgba(76,201,138,.2)}
+  @keyframes stampIn{from{transform:rotate(-5deg) scale(2.2);opacity:0}to{transform:rotate(-5deg) scale(1);opacity:1}}
+  .verdict-top{text-align:center;padding:20px 18px 6px}
+  .vd-culprit{font-family:var(--serif);font-size:15px;color:var(--txt);margin-top:14px;line-height:1.5}
+  .vd-culprit b{color:var(--amber-hi)}
+  .score-card{margin:12px 16px 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .score-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #1b2c40;font-size:12px}
+  .score-row:last-of-type{border-bottom:none}
+  .score-row .sk{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+  .score-row .sv{font-family:var(--mono);font-size:11px;color:var(--txt)}
+  .sv.pos{color:var(--good)} .sv.amb{color:var(--amber-hi)} .sv.neg{color:var(--red-hi)}
+  .score-total{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:9px;border-top:1px solid var(--line)}
+  .score-total .tk{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--paper)}
+  .score-total .tv{font-family:var(--serif);font-size:26px;font-weight:900;color:var(--amber-hi)}
+  .glasses{display:flex;gap:5px;justify-content:center;margin-top:10px}
+  .glasses svg{width:22px;height:22px}
+
+  .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#16240f;border:1px solid #3f6b2c;color:#bfe3a8;font-family:var(--mono);font-size:11px;letter-spacing:1px;padding:10px 16px;border-radius:10px;z-index:400;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center}
+  .toast.show{opacity:1}
+  .hint-bar{display:flex;gap:8px;padding:8px 16px 0;flex-wrap:wrap}
+  .hint-btn{flex:1;min-width:46%;background:var(--panel);border:1px solid var(--teal-dim);border-radius:9px;padding:9px 8px;font-family:var(--mono);font-size:9px;letter-spacing:.5px;color:var(--teal);cursor:pointer;text-transform:uppercase}
+  .hint-btn:disabled{opacity:.4;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
+
+  /* staff */
+  .staff-card{margin:0 16px 12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;gap:12px;position:relative}
+  .staff-card.owned{border-color:#2c5a44}
+  .sc-right{flex:1;min-width:0}
+  .sc-name{font-family:var(--serif);font-size:17px;color:var(--paper);font-weight:700}
+  .sc-spec{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--teal);text-transform:uppercase;margin:2px 0 7px}
+  .sc-rarity{position:absolute;top:10px;right:12px;font-family:var(--mono);font-size:7.5px;letter-spacing:2px;padding:3px 7px;border-radius:4px;text-transform:uppercase}
+  .r-expert{background:#1f3147;color:var(--teal);border:1px solid var(--teal-dim)}
+  .r-assoc{background:#222b38;color:var(--muted);border:1px solid var(--line)}
+  .r-legend{background:#2d2410;color:var(--amber-hi);border:1px solid var(--amber)}
+  .sc-abil{font-size:11px;color:var(--txt);line-height:1.5}
+  .sc-abil b{color:var(--amber-hi);font-family:var(--mono);font-size:8.5px;letter-spacing:1px;text-transform:uppercase}
+  .sc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px}
+  .hire-btn{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;border-radius:7px;padding:8px 14px;cursor:pointer;border:none;text-transform:uppercase;font-weight:700}
+  .hire-cash{background:linear-gradient(180deg,var(--amber-hi),#cf8a2e);color:#241405}
+  .hire-cash:disabled{background:#2a3a4e;color:#5a7186}
+  .hire-owned{background:#16301f;color:var(--good);border:1px solid #2c5a44;cursor:default}
+</style>
+</head>
+<body>
+<a href="../" class="back-link">← All Games</a>
+<div id="app">
+  <div class="scr-wrap">
+
+    <!-- ============ TITLE ============ -->
+    <div class="screen active" id="scr-title">
+      <svg class="logo-art" viewBox="0 0 400 220" style="margin-bottom:6px">
+        <defs>
+          <radialGradient id="tg" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#ffd58a" stop-opacity=".5"/><stop offset="1" stop-color="#ffd58a" stop-opacity="0"/></radialGradient>
+        </defs>
+        <ellipse cx="200" cy="120" rx="180" ry="110" fill="url(#tg)"/>
+        <g transform="translate(200,118) rotate(-12)">
+          <ellipse cx="0" cy="0" rx="58" ry="58" fill="none" stroke="#3a2a12" stroke-width="12"/>
+          <ellipse cx="0" cy="0" rx="58" ry="58" fill="none" stroke="#d8a955" stroke-width="5"/>
+          <ellipse cx="0" cy="0" rx="50" ry="50" fill="#9fdcec" opacity=".12"/>
+          <path d="M-34 -22 Q-6 -40 30 -26" stroke="#fff6e0" stroke-width="5" fill="none" opacity=".55" stroke-linecap="round"/>
+          <rect x="40" y="-9" width="92" height="18" rx="9" fill="#1c1208" transform="rotate(34)"/>
+          <rect x="40" y="-9" width="92" height="6" rx="3" fill="#8a6a33" opacity=".8" transform="rotate(34)"/>
+        </g>
+        <g stroke="#e0342e" stroke-width="2" fill="none"><path d="M40 40 C140 28 260 28 360 40"/></g>
+        <circle cx="40" cy="40" r="4" fill="#ef5a4e"/><circle cx="360" cy="40" r="4" fill="#ef5a4e"/>
+      </svg>
+      <div class="title-main">CASE<span class="red">FILE</span></div>
+      <div class="tagline">Every case is new · Every clue is real</div>
+      <div class="title-sub">A PROCEDURAL NOIR DETECTIVE AGENCY</div>
+      <div class="stack" style="width:100%;max-width:340px">
+        <button class="btn btn-amber" id="startBtn">Open the Agency</button>
+        <button class="btn btn-ghost" id="howBtn">How to play</button>
+      </div>
+      <div id="howText" style="display:none;max-width:340px;padding:0 22px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8;letter-spacing:.5px">
+        TRAVEL to each location and TAP the glowing points of interest to collect clues.
+        INTERVIEW suspects — one is lying. Catch the lie by selecting the false statement,
+        choosing the contradicting clue, and PRESSING. Work the BOARD: pin evidence to a suspect
+        as Motive / Method / Opportunity. ACCUSE when confident. Build your agency between cases.
+      </div>
+    </div>
+
+    <!-- ============ OFFICE ============ -->
+    <div class="screen" id="scr-office">
+      <div class="scr-title">Hale &amp; Partners · Private Inquiries</div>
+      <div class="scr-head" id="officeName">The Agency</div>
+      <div class="rep-panel">
+        <div class="rep-row"><span class="rep-tier" id="repTier">Storefront</span><span class="rep-num" id="repNum"></span></div>
+        <div class="rep-bar"><div class="rep-fill" id="repFill" style="width:0%"></div></div>
+        <div class="rep-next" id="repNext"></div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat"><div class="k">Funds</div><div class="v" id="stCash">$0</div></div>
+        <div class="stat"><div class="k">Solved</div><div class="v" id="stSolved">0</div></div>
+        <div class="stat"><div class="k">Best Score</div><div class="v" id="stBest">0</div></div>
+      </div>
+      <div class="case-folder" id="caseFolder">
+        <div class="cf-stamp">NEW</div>
+        <div class="cf-label">Active case on your desk</div>
+        <div class="cf-title" id="cfTitle">—</div>
+        <div class="cf-meta"><span id="cfMeta">—</span><span>OPEN FILE →</span></div>
+      </div>
+      <div class="office-row">
+        <button class="btn btn-ghost" id="toStaffBtn">Agency Staff</button>
+        <button class="btn btn-ghost" id="newCaseBtn">Generate New Case</button>
+      </div>
+    </div>
+
+    <!-- ============ BRIEFING ============ -->
+    <div class="screen" id="scr-briefing">
+      <div class="scr-title">Case briefing · Procedurally generated</div>
+      <div class="casefile-card" id="briefCard"></div>
+      <div class="brief-note">VALIDATED · UNIQUE SOLUTION · 2 INDEPENDENT EVIDENCE PATHS<br>SOLVER-BOT REPLAY PASSED — NO CASE SHIPS WITHOUT IT</div>
+      <div class="stack mt-auto">
+        <button class="btn btn-amber" id="acceptBtn">Accept case — travel the city</button>
+        <button class="btn btn-ghost" id="briefBackBtn">Back to office</button>
+      </div>
+    </div>
+
+    <!-- ============ TRAVEL ============ -->
+    <div class="screen" id="scr-travel">
+      <div class="scr-title">Travel · Tap a location to investigate</div>
+      <div class="scr-head">Work the city</div>
+      <div class="scene-hud"><div class="hud-pill">CLUES <b id="travClues">0</b>/<span id="travTotal">0</span></div><div class="hud-pill" id="travSus">SUSPECTS 0</div></div>
+      <div class="map-list" id="mapList"></div>
+      <div class="stack mt-auto">
+        <button class="btn btn-teal" id="toInterroBtn">Interview the suspects</button>
+        <button class="btn btn-amber" id="toBoardBtn">Go to the case board</button>
+      </div>
+    </div>
+
+    <!-- ============ SCENE ============ -->
+    <div class="screen" id="scr-scene">
+      <div class="scene-hud"><div class="hud-pill" id="sceneName">LOCATION</div><div class="hud-pill">CLUES <b id="sceneFound">0</b>/<span id="sceneTotal">0</span></div></div>
+      <div class="scene-wrap">
+        <div class="scene-stage" id="sceneStage"></div>
+      </div>
+      <div class="hint-bar" id="sceneHints"></div>
+      <div class="stack mt-auto"><button class="btn btn-amber" id="sceneBackBtn">Back to the city</button></div>
+      <div class="tray-back" id="trayBack">
+        <div class="clue-tray" id="clueTray">
+          <span class="ct-type" id="ctType">PHYSICAL</span>
+          <div class="ct-title" id="ctTitle"></div>
+          <div class="ct-body" id="ctBody"></div>
+          <div class="ct-tag" id="ctTag"></div>
+          <button class="btn btn-amber" id="ctClose" style="margin-top:12px">Add to case file</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ INTERROGATION ============ -->
+    <div class="screen" id="scr-interro">
+      <div class="scr-title">Interrogation · Catch the lie, then press</div>
+      <div class="sus-tabs" id="susTabs"></div>
+      <div class="suspect-head" id="susHead"></div>
+      <div class="hint-bar" id="interroHints"></div>
+      <div class="statements" id="stmts"></div>
+      <div class="press-result" id="pressResult"></div>
+      <div class="clammed" id="clammed" style="display:none"></div>
+      <div class="interro-foot">
+        <div class="ed-label">Present a clue from the case file</div>
+        <div class="ev-row" id="evRow"></div>
+      </div>
+      <div class="press-zone">
+        <button class="btn btn-red" id="pressBtn" disabled>Press the statement</button>
+      </div>
+      <div class="stack"><button class="btn btn-amber" id="interroBoardBtn">To the case board</button></div>
+    </div>
+
+    <!-- ============ BOARD ============ -->
+    <div class="screen" id="scr-board">
+      <div class="scr-title">Case board · Pin a theory, then accuse</div>
+      <div class="board-intro">Select a suspect, then pin clues as their MOTIVE, METHOD or OPPORTUNITY. The meter shows how much evidence supports your theory — not whether it's true.</div>
+      <div class="board-suspects" id="boardSus"></div>
+      <div class="board-area"><div class="pillars" id="pillars"></div></div>
+      <div class="evidence-bank">
+        <div class="eb-label">Case file — tap a pillar tab to pin</div>
+        <div id="evBank"></div>
+      </div>
+      <div class="conf-panel">
+        <div class="conf-row"><span class="conf-lbl" id="confLbl">Confidence</span><span class="conf-val" id="confVal">0%</span></div>
+        <div class="conf-bar"><div class="conf-fill" id="confFill"></div><div class="conf-gate"></div></div>
+        <div class="conf-note" id="confNote"></div>
+      </div>
+      <div class="stack">
+        <button class="btn btn-red" id="accuseBtn">Make the accusation</button>
+        <button class="btn btn-ghost" id="boardBackBtn">Keep investigating</button>
+      </div>
+      <div class="modal-back" id="accuseModal">
+        <div class="modal">
+          <h3>Name the verdict</h3>
+          <p id="accuseSubject">—</p>
+          <div class="pick-label">Motive</div><div class="pick-opts" id="pickMotive"></div>
+          <div class="pick-label">Method</div><div class="pick-opts" id="pickMethod"></div>
+          <div class="stack" style="padding:14px 0 0">
+            <button class="btn btn-red" id="confirmAccuse" disabled>Confirm accusation</button>
+            <button class="btn btn-ghost" id="cancelAccuse">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VERDICT ============ -->
+    <div class="screen" id="scr-verdict">
+      <div class="verdict-top">
+        <div class="vd-stamp" id="vdStamp">Case Closed</div>
+        <div class="vd-culprit" id="vdCulprit"></div>
+      </div>
+      <div class="score-card" id="scoreCard"></div>
+      <div class="glasses" id="glasses"></div>
+      <div class="stack mt-auto"><button class="btn btn-amber" id="verdictNextBtn">Return to the office</button></div>
+    </div>
+
+    <!-- ============ STAFF ============ -->
+    <div class="screen" id="scr-staff">
+      <div class="scr-title">Agency staff · Specialists grant case-time abilities</div>
+      <div class="scr-head">Hire your people</div>
+      <div id="staffList"></div>
+      <div class="stack mt-auto"><button class="btn btn-ghost" id="staffBackBtn">Back to the office</button></div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- shared SVG portrait defs -->
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="pBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173247"/><stop offset="1" stop-color="#0c1a28"/></linearGradient>
+  <linearGradient id="sk0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#caa183"/><stop offset="1" stop-color="#9a7257"/></linearGradient>
+  <linearGradient id="sk1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8765a"/><stop offset="1" stop-color="#7c5440"/></linearGradient>
+  <linearGradient id="sk2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5d46"/><stop offset="1" stop-color="#5f3e2e"/></linearGradient>
+  <linearGradient id="sk3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0b896"/><stop offset="1" stop-color="#b48a68"/></linearGradient>
+</defs></svg>
+
+<script>
+/* ============================================================
+   CASEFILE — provably-fair procedural mystery generator
+   ============================================================ */
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function track(name,params){ if(typeof window.trackEvent==='function'){ try{window.trackEvent(name,params||{});}catch(e){} } }
+
+/* ---------- tiny seeded RNG (mulberry32) ---------- */
+function rngFrom(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- content pools ---------- */
+const NAMES=[
+  {n:"Vera Holt",sk:"sk0",h:"bob"},{n:"Eddie Marsh",sk:"sk1",h:"slick"},{n:"Lionel Crane",sk:"sk2",h:"hat"},
+  {n:"Marlene Voss",sk:"sk0",h:"updo"},{n:"Sal Romano",sk:"sk1",h:"bald"},{n:"Iris Quayle",sk:"sk3",h:"long"},
+  {n:"Desmond Pike",sk:"sk2",h:"slick"},{n:"Cora Devine",sk:"sk0",h:"long"},{n:"Frankie Doyle",sk:"sk1",h:"hat"},
+  {n:"Nadia Ross",sk:"sk3",h:"bob"},{n:"Gus Albright",sk:"sk2",h:"bald"},{n:"Estelle Wynn",sk:"sk0",h:"updo"},
+  {n:"Theo Banks",sk:"sk1",h:"slick"},{n:"Ruby Salazar",sk:"sk3",h:"long"},{n:"Hal Mercer",sk:"sk2",h:"hat"},
+  {n:"Birdie Lang",sk:"sk0",h:"bob"},{n:"Otis Vane",sk:"sk1",h:"bald"},{n:"Clara Bishop",sk:"sk3",h:"updo"}
+];
+const ROLES=["the night manager","a regular patron","the bookkeeper","the bartender","the headliner","the doorman","the business partner","the rival owner","the chauffeur","the housekeeper","the stage hand","the gallery curator","the loan broker","the ex-spouse","the new investor"];
+// crime classes keyed to reputation tier
+const CLASSES=[
+  {tier:1,name:"Theft",sub:["Burglary","Inside Job","The Switcheroo"]},
+  {tier:2,name:"Fraud",sub:["Forgery","Insurance Scam","Skimming"]},
+  {tier:3,name:"Blackmail",sub:["Extortion","Cover-Up","Shakedown"]},
+  {tier:4,name:"Arson",sub:["Torch Job","Insurance Burn","Spite Fire"]},
+  {tier:5,name:"Homicide",sub:["Poisoning","Staged Accident","Crime of Passion"]}
+];
+const STOLEN=["the Tideglass sapphire brooch","a forged Vermeer canvas","$40,000 in bearer bonds","the Marlowe diamond ring","a sealed inheritance ledger","the club's protected liquor license","a rival's incriminating photographs","the Velasquez gold pocket watch"];
+const SCENES=["the Blue Canary jazz club","the Drake Gallery","the Marlowe townhouse","the Dockside warehouse","the Orpheum theatre","the Halcyon Hotel"];
+const MOTIVES=[
+  {fam:"Greed",txt:"Greed",detail:"buried in gambling debt"},
+  {fam:"Jealousy",txt:"Jealousy",detail:"passed over for the promotion"},
+  {fam:"Revenge",txt:"Revenge",detail:"ruined by the victim years ago"},
+  {fam:"Cover-Up",txt:"Fear / Cover-Up",detail:"hiding an earlier crime"},
+  {fam:"Obsession",txt:"Obsession",detail:"fixated on what was taken"}
+];
+const METHODS=[
+  {m:"a thin bar knife",trace:"the lock was pried with a thin flat blade — a bar-knife profile"},
+  {m:"a duplicate key",trace:"the lock is untouched — opened with a copied key only staff could cut"},
+  {m:"a forged signature",trace:"the release form bears a signature traced over a lightbox"},
+  {m:"a sedative in a drink",trace:"a champagne flute holds a chalky residue — a sedative"},
+  {m:"a glass cutter",trace:"a clean disc of glass was cut from the display case"}
+];
+// the four time-blocks of the night
+const BLOCKS=["before 11:00","11:00–11:20","11:20–11:40","11:40–midnight"];
+
+/* ---------- THE GENERATOR (truth-first, machine-verified) ---------- */
+function generateCase(seed,tier){
+  const rng=rngFrom(seed);
+  const pick=arr=>arr[Math.floor(rng()*arr.length)];
+  const pickIdx=n=>Math.floor(rng()*n);
+  const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+  // suspect count & location count scale with tier
+  const nSus=Math.min(3+(tier>=3?1:0)+(tier>=5?1:0),5);
+  const nLoc=Math.min(3+(tier>=3?1:0),4);
+
+  const cls=pick(CLASSES.filter(c=>c.tier<=tier));
+  const sub=pick(cls.sub);
+  const scene=pick(SCENES);
+  const stolen=pick(STOLEN);
+  const method=pick(METHODS);
+
+  // suspects (unique names + roles)
+  const names=shuffle(NAMES).slice(0,nSus);
+  const roles=shuffle(ROLES).slice(0,nSus);
+  const motives=shuffle(MOTIVES);
+  const suspects=names.map((nm,i)=>({id:i,name:nm.n,sk:nm.sk,h:nm.h,role:roles[i],motive:motives[i%motives.length]}));
+
+  /* ===== STEP 1: pick the truth ===== */
+  const culprit=pickIdx(nSus);
+  // The crime happens in the last guarded window. Culprit had OPPORTUNITY then.
+  const crimeBlock=3; // "11:40–midnight"
+
+  /* ===== STEP 2: assign opportunity (timeline) =====
+     - culprit: at the scene during the crime block (no alibi for it)
+     - innocents: each has an alibi clue placing them ELSEWHERE during the crime block
+     - one innocent (the red-herring liar) ALSO lies about an unrelated secret,
+       but their true whereabouts still clears them. */
+  let redHerring=-1;
+  if(nSus>=3){ do{ redHerring=pickIdx(nSus); }while(redHerring===culprit); }
+
+  /* ===== STEP 3: build the clue graph =====
+     Each clue is an object placed in a location. Clues fall into roles:
+       - METHOD: trace pointing at the means (links culprit only via access)
+       - MOTIVE_<id>: motive evidence per suspect
+       - ALIBI_<id>: clears an innocent for the crime block
+       - OPP_CULPRIT: places the culprit at the scene in the crime block (the lynchpin)
+       - HERRING: in-world explanation that resolves the red-herring's secret
+       - RULEOUT: removes an alternative explanation (e.g. no outside entry)
+  */
+  const clues=[];
+  let cid=0;
+  const addClue=(c)=>{c.id=cid++;clues.push(c);return c;};
+
+  // METHOD clue — the physical trace
+  addClue({role:"METHOD",type:"PHYSICAL",icon:"print",
+    title:"The means",
+    body:`At the scene, ${method.trace}. Whoever did this had access to ${method.m}.`,
+    tag:"ESTABLISHES: METHOD", refMethod:method.m});
+
+  // RULE-OUT clue — kills the "stranger / outside" theory, so it must be an insider
+  addClue({role:"RULEOUT",type:"PHYSICAL",icon:"window",
+    title:"No outside entry",
+    body:`The only window is painted shut and the alley door was bolted from inside. Nobody broke in. This was someone the place let in.`,
+    tag:"RULES OUT: AN OUTSIDER"});
+
+  // OPPORTUNITY (the lynchpin) — places culprit at scene during crime block
+  addClue({role:"OPP_CULPRIT",type:"RECORDS",icon:"ticket",
+    title:"Back-stairs log, "+BLOCKS[crimeBlock].replace("–"," to "),
+    body:`A signed entry log on the back stairs shows one person went up during ${BLOCKS[crimeBlock]} — initialled by ${suspects[culprit].name}. The room was theirs alone in that window.`,
+    tag:"PLACES "+suspects[culprit].name.toUpperCase()+" AT THE SCENE", refSus:culprit});
+
+  // MOTIVE clue for the culprit (actionable)
+  addClue({role:"MOTIVE",type:"RECORDS",icon:"doc",
+    title:"A reason that fits",
+    body:`Records show ${suspects[culprit].name} was ${suspects[culprit].motive.detail}. ${motiveLine(suspects[culprit].motive.fam,stolen)}`,
+    tag:"MOTIVE ("+suspects[culprit].motive.txt+"): "+suspects[culprit].name.toUpperCase(), refSus:culprit});
+
+  // a SECOND independent motive/method tie for the culprit (redundancy → 2 paths)
+  addClue({role:"MOTIVE",type:"TESTIMONY",icon:"people",
+    title:"A witness remembers",
+    body:`A staffer puts ${suspects[culprit].name} near the locked room earlier, "asking what it'd fetch." They knew where it was kept and what it was worth.`,
+    tag:"CORROBORATES: "+suspects[culprit].name.toUpperCase(), refSus:culprit});
+
+  // ALIBI clues clearing every innocent for the crime block
+  suspects.forEach(s=>{
+    if(s.id===culprit) return;
+    const place=pick(["downstairs at the bar","on stage for the late set","in the kitchen counting receipts","outside hailing a cab","in the office on the telephone"]);
+    addClue({role:"ALIBI",type:"TESTIMONY",icon:"doc",
+      title:"Alibi — "+s.name.split(" ")[0],
+      body:`Two people place ${s.name} ${place} for the whole of ${BLOCKS[crimeBlock]}. They could not have been upstairs when it happened.`,
+      tag:"CLEARS: "+s.name.toUpperCase()+", "+BLOCKS[crimeBlock].toUpperCase(), refSus:s.id, clears:true});
+  });
+
+  // RED HERRING — the liar's secret + its resolution clue
+  if(redHerring>=0){
+    const secret=pick(["was meeting a lover, not the victim","had pawned a personal watch, nothing stolen","was skimming small tips, unrelated to the theft","had snuck out for a smoke, alone"]);
+    addClue({role:"HERRING",type:"PHYSICAL",icon:"glass",
+      title:"A misleading detail",
+      body:`Something points at ${suspects[redHerring].name}: they were evasive and slipped out at one point. It looks bad — but it isn't what it seems.`,
+      tag:"POSSIBLE RED HERRING", refSus:redHerring});
+    addClue({role:"HERRING_RESOLVE",type:"RECORDS",icon:"doc",
+      title:"The innocent explanation",
+      body:`Dig deeper and it's clear: ${suspects[redHerring].name} ${secret}. Embarrassing, but it has nothing to do with the crime — and the alibi for ${BLOCKS[crimeBlock]} still holds.`,
+      tag:"RESOLVES: "+suspects[redHerring].name.toUpperCase()+" CLEARED", refSus:redHerring, resolves:true});
+  }
+
+  /* ===== STEP 4: distribute clues across locations ===== */
+  const locTemplates=shuffle([
+    {key:"scene",name:scene+" — the scene",ico:"M3 21 L21 21 M5 21 V9 L12 4 L19 9 V21 M9 21 V14 H15 V21"},
+    {key:"bar",name:"the back bar",ico:"M6 3 H18 L17 10 C17 13 7 13 7 10 Z M12 13 V20 M8 20 H16"},
+    {key:"office",name:"the manager's office",ico:"M4 8 H20 V20 H4 Z M4 8 L8 4 H16 L20 8 M9 13 H15"},
+    {key:"records",name:"city records hall",ico:"M5 4 H15 L19 8 V20 H5 Z M15 4 V8 H19 M8 12 H16 M8 16 H14"},
+    {key:"street",name:"the rain-slick street",ico:"M3 18 H21 M5 18 V8 H9 V18 M13 18 V11 H17 V18 M6 5 V8 M15 8 V11"}
+  ]).slice(0,nLoc);
+
+  // round-robin assign, but keep METHOD/RULEOUT/OPP at the scene-ish locations for coherence
+  const byLoc=locTemplates.map(l=>({...l,clueIds:[]}));
+  clues.forEach((c,i)=>{ byLoc[i%nLoc].clueIds.push(c.id); });
+  // ensure every location has >=1 clue
+  byLoc.forEach((l,li)=>{ if(l.clueIds.length===0){ const donor=byLoc.find(x=>x.clueIds.length>1); if(donor) l.clueIds.push(donor.clueIds.pop()); } });
+  // assign hotspot positions per clue within its location
+  const HOT=[[35,52],[78,18],[55,55],[12,46],[80,76],[50,30],[24,68],[66,40]];
+  byLoc.forEach(l=>{ l.clueIds.forEach((id,k)=>{ clues[id].pos=HOT[k%HOT.length]; clues[id].loc=l.key; }); });
+
+  /* ===== STEP 5: suspect statements (the lie mechanic) =====
+     Innocents: all statements consistent with facts.
+     Culprit: one statement (the LIE) claims an alibi that CONTRADICTS the OPP_CULPRIT clue.
+     The press requires presenting the OPP_CULPRIT clue against that lie. */
+  const oppClue=clues.find(c=>c.role==="OPP_CULPRIT");
+  const stmts=suspects.map(s=>{
+    const arr=[];
+    if(s.id===culprit){
+      arr.push({txt:`"${stolen[0]==='t'?capitalize(stolen):stolen} ${midClause(stolen)} — everyone here knew where it was kept."`,lie:false});
+      arr.push({txt:`"I was downstairs the entire night. Never went up those back stairs, not once. Check with anyone."`,lie:true,contradicts:oppClue.id,
+        crack:`"...All right. I went up around ${BLOCKS[crimeBlock].split('–')[0]}. But the log doesn't prove I touched anything—"`});
+      arr.push({txt:`"You're wasting your time on me. Talk to the people who actually had a grudge."`,lie:false});
+    } else if(s.id===redHerring){
+      arr.push({txt:`"I had nothing to do with this. I was ${pick(["downstairs","on the floor","at my post"])} most of the night."`,lie:false});
+      arr.push({txt:`"I never left my spot. Not even for a minute."`,lie:true,contradicts:(clues.find(c=>c.role==="HERRING_RESOLVE")||{}).id,
+        crack:`"Fine — I slipped out, but for my own reasons. It's not what you think, and it's got nothing to do with the crime."`});
+      arr.push({txt:`"If something looks off about me, it's personal. Leave it."`,lie:false});
+    } else {
+      const al=clues.find(c=>c.role==="ALIBI"&&c.refSus===s.id);
+      arr.push({txt:`"I was ${al?al.body.split(" ").slice(3,7).join(" "):"at my post"} when it happened. Two people saw me."`,lie:false});
+      arr.push({txt:`"I'd tell you if I knew. ${suspects[culprit].name} was acting strange, if you ask me."`,lie:false});
+      arr.push({txt:`"Look at the records. They'll back up exactly what I'm saying."`,lie:false});
+    }
+    return arr;
+  });
+
+  /* ===== STEP 6: VERIFY SOLVABILITY (solver-bot replay) =====
+     A suspect is "viable as culprit" iff:
+       motive evidence exists AND no clearing alibi AND not resolved-herring.
+     The OPP_CULPRIT clue is what removes the culprit's own alibi claim.
+     We require exactly ONE viable suspect from the full discoverable clue set. */
+  function viableSet(){
+    const cleared=new Set();
+    clues.forEach(c=>{ if(c.clears) cleared.add(c.refSus); if(c.resolves) cleared.add(c.refSus); });
+    const hasMotive=new Set();
+    clues.forEach(c=>{ if(c.role==="MOTIVE") hasMotive.add(c.refSus); });
+    const v=[];
+    suspects.forEach(s=>{ if(!cleared.has(s.id)&&hasMotive.has(s.id)) v.push(s.id); });
+    return v;
+  }
+  const viable=viableSet();
+  // Build motive/method option pools for the accusation pickers (truth + decoys).
+  const motivePool=shuffle(MOTIVES.map(m=>m.txt)).slice(0,4);
+  if(!motivePool.includes(suspects[culprit].motive.txt)) motivePool[0]=suspects[culprit].motive.txt;
+  const methodPool=shuffle(METHODS.map(m=>m.m)).slice(0,4);
+  if(!methodPool.includes(method.m)) methodPool[0]=method.m;
+
+  const caseObj={
+    seed,tier,cls:cls.name,sub,scene,stolen,method:method.m,
+    title:caseTitle(rng,scene,cls.name,stolen),
+    caseNo:"2026-"+(100+(seed%900)),
+    suspects,culprit,redHerring,crimeBlock,
+    clues,locations:byLoc,stmts,
+    truth:{culprit,motive:suspects[culprit].motive.txt,method:method.m},
+    motivePool:shuffle(motivePool),methodPool:shuffle(methodPool),
+    par: 7*60 + nSus*60 + nLoc*30, // par time in seconds
+    fee: 800*tier + 400*nSus,
+    rep: 60+30*tier,
+    valid: viable.length===1 && viable[0]===culprit
+  };
+  return caseObj;
+}
+function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function midClause(stolen){return stolen.includes("$")||stolen.includes("bonds")?"was kept in the safe":"was kept in the dressing room";}
+function motiveLine(fam,stolen){
+  return {Greed:`The payout from ${stolen} would clear it.`,Jealousy:`Taking it was a way to settle the score.`,
+    Revenge:`This was about hurting the victim, not the prize.`,"Cover-Up":`The crime would bury what came before.`,
+    Obsession:`They had to have it, whatever the cost.`}[fam]||"";
+}
+function caseTitle(rng,scene,cls,stolen){
+  const a=["The "+scene.split(" ").slice(-1)[0]+" Job","A Matter of "+cls,"The Last "+pick(rng,["Encore","Curtain","Ledger","Round"]),
+    "The "+pick(rng,["Glass","Midnight","Velvet","Crimson","Hollow"])+" "+pick(rng,["Alibi","Affair","Verdict","Hour"])];
+  return a[Math.floor(rng()*a.length)];
+  function pick(r,arr){return arr[Math.floor(r()*arr.length)];}
+}
+
+/* ============================================================
+   STAFF DEFINITIONS
+   ============================================================ */
+const STAFF=[
+  {id:"forensic",name:"Dr. Imani Cole",spec:"Forensic Technician",rarity:"r-expert",rk:"Expert",cost:1500,
+   passive:"Physical clues reveal extra detail.",active:"Lab analysis — reveal an undiscovered clue at a location.",sk:"sk2",h:"updo"},
+  {id:"hacker",name:'"Patch" Reyes',spec:"Hacker · Records",rarity:"r-assoc",rk:"Associate",cost:1200,
+   passive:"Records pulls are instant.",active:"Deep pull — instantly add one records clue to the file.",sk:"sk0",h:"bob"},
+  {id:"profiler",name:"Dr. Theo Maraj",spec:"Criminal Profiler",rarity:"r-legend",cost:2400,rk:"Legend",
+   passive:"Stress tells visible in interviews.",active:"Read — highlight that a lie exists in the current round.",sk:"sk1",h:"slick"}
+];
+
+/* ============================================================
+   STATE / PERSISTENCE
+   ============================================================ */
+const SAVE_KEY="casefile_v1";
+const TIERS=[
+  {name:"Storefront",rep:0},{name:"Licensed Agency",rep:1200},{name:"Established Firm",rep:3000},
+  {name:"Renowned Agency",rep:6000},{name:"The Agency",rep:10000}
+];
+let G={cash:500,rep:0,solved:0,best:0,staff:[],caseSeed:Date.now()%100000};
+function load(){ try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)G=Object.assign(G,s);}catch(e){} }
+function save(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){} }
+function tierIndex(){ let t=0; for(let i=0;i<TIERS.length;i++) if(G.rep>=TIERS[i].rep) t=i; return t; }
+function tierNum(){ return tierIndex()+1; }
+
+/* ============================================================
+   RUNTIME (current case session)
+   ============================================================ */
+let C=null;            // current generated case
+let R=null;            // runtime: found clues, presses, board pins, etc.
+function newCaseRuntime(){
+  R={ found:new Set(), startTime:Date.now(), elapsed:0,
+      wrongPress:0, presses:0, bustedSus:new Set(), clammed:new Set(),
+      rapport:{}, board:{sus:null, pins:{}}, hintsUsed:0, abilityUsed:{},
+      curSus:0, curLoc:null, sel:{stmt:null,ev:null}, herringResolved:false };
+  C.suspects.forEach(s=>{R.rapport[s.id]=100;});
+}
+
+/* ---------- navigation ---------- */
+function show(id){
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  const el=$('#scr-'+id); el.classList.add('active'); el.scrollTop=0;
+}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ============================================================
+   PORTRAIT RENDERER (procedural noir portraits)
+   ============================================================ */
+function portrait(sk,h){
+  const hair={
+    bob:`<path d="M30 42 C28 22 44 14 52 15 C68 16 72 28 70 42 C72 56 64 60 64 56 C68 44 62 34 56 30 C48 34 40 32 36 30 C32 38 34 50 36 56 C30 58 30 50 30 42 Z" fill="#241a10"/>`,
+    slick:`<path d="M34 36 C34 22 44 16 52 16 C62 16 67 24 66 34 C58 30 50 28 44 30 C40 32 36 34 34 36 Z" fill="#1a120a"/><path d="M36 24 Q46 18 60 22" stroke="#f0a847" stroke-width="1.2" opacity=".4" fill="none"/>`,
+    hat:`<path d="M26 32 L74 32 L70 26 L64 25 C62 14 38 14 36 25 L30 26 Z" fill="#171008"/><rect x="34" y="25" width="32" height="5" fill="#0c0804"/>`,
+    updo:`<ellipse cx="50" cy="26" rx="18" ry="12" fill="#241a10"/><path d="M32 40 C30 28 40 22 50 22 C60 22 70 28 68 40 C66 30 58 28 50 28 C42 28 34 30 32 40 Z" fill="#241a10"/>`,
+    long:`<path d="M30 46 C26 24 42 14 52 15 C66 16 72 28 70 46 C70 62 66 70 64 68 C68 50 62 34 54 30 C46 34 36 32 34 32 C30 44 30 56 34 68 C30 64 30 54 30 46 Z" fill="#1f160c"/>`,
+    bald:`<ellipse cx="50" cy="36" rx="16" ry="15" fill="${sk==='sk0'?'#b08a6a':sk==='sk1'?'#8c6048':sk==='sk2'?'#6e4836':'#c49a78'}"/>`
+  }[h]||"";
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <rect width="100" height="100" fill="url(#pBg)"/>
+    <circle cx="74" cy="22" r="13" fill="#3cc7d8" opacity=".14"/>
+    <path d="M18 100 C22 78 36 70 50 70 C64 70 78 78 82 100 Z" fill="#152433"/>
+    <rect x="44" y="56" width="12" height="14" fill="url(#${sk})"/>
+    <ellipse cx="50" cy="42" rx="15" ry="18" fill="url(#${sk})"/>
+    ${hair}
+    <circle cx="44" cy="42" r="1.8" fill="#140e06"/><circle cx="57" cy="42" r="1.8" fill="#140e06"/>
+    <path d="M46 52 Q50 54 54 52" stroke="#7a4a3a" stroke-width="1.6" fill="none"/>
+    <path d="M64 40 L68 56" stroke="#f0a847" stroke-width="1" opacity=".6"/>
+  </svg>`;
+}
+
+/* ============================================================
+   SCENE BACKDROP (one stylized noir room, tinted per location)
+   ============================================================ */
+function sceneSVG(locKey){
+  const tint={scene:"#1c2a3a",bar:"#1a2230",office:"#241a10",records:"#16222e",street:"#0d2034"}[locKey]||"#1c2a3a";
+  return `<svg viewBox="0 0 400 300" width="100%" style="display:block">
+    <defs>
+      <linearGradient id="swl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${tint}"/><stop offset="1" stop-color="#0e1620"/></linearGradient>
+      <radialGradient id="sbulb" cx="0.5" cy="0.3" r="0.7"><stop offset="0" stop-color="#ffe9bd" stop-opacity=".5"/><stop offset="1" stop-color="#ffe9bd" stop-opacity="0"/></radialGradient>
+    </defs>
+    <rect width="400" height="300" fill="url(#swl)"/>
+    <rect y="220" width="400" height="80" fill="#140e08"/>
+    <ellipse cx="240" cy="120" rx="180" ry="120" fill="url(#sbulb)"/>
+    <g stroke="#0d1620" stroke-width="2" opacity=".5"><line x1="0" y1="70" x2="400" y2="70"/><line x1="130" y1="0" x2="130" y2="70"/><line x1="270" y1="0" x2="270" y2="70"/></g>
+    <rect x="40" y="30" width="70" height="90" fill="#13202e"/><rect x="46" y="36" width="58" height="78" fill="#1c3346"/>
+    <rect x="150" y="70" width="120" height="120" rx="6" fill="#241a10"/><rect x="158" y="78" width="104" height="104" rx="4" fill="#101d2c"/>
+    <g fill="#ffd58a"><circle cx="160" cy="74" r="2.4"/><circle cx="186" cy="74" r="2.4"/><circle cx="212" cy="74" r="2.4"/><circle cx="238" cy="74" r="2.4"/><circle cx="264" cy="74" r="2.4"/></g>
+    <rect x="120" y="186" width="180" height="12" rx="3" fill="#3a2a14"/>
+    <rect x="300" y="40" width="64" height="100" fill="#0d2034"/><rect x="306" y="46" width="52" height="88" fill="#11293f"/>
+    <circle cx="322" cy="70" r="8" fill="#3cc7d8" opacity=".3"/><circle cx="346" cy="100" r="6" fill="#f0a847" opacity=".3"/>
+    <rect x="20" y="120" width="6" height="100" fill="#241a10"/>
+    <rect width="400" height="300" fill="#08111c" opacity=".15"/>
+  </svg>`;
+}
+
+/* ============================================================
+   FLOW: OFFICE
+   ============================================================ */
+function ensureCase(){
+  if(!C){
+    const tier=tierNum();
+    let tries=0,gen;
+    do{ gen=generateCase(G.caseSeed+tries, tier); tries++; }while(!gen.valid && tries<40);
+    C=gen; newCaseRuntime();
+  }
+}
+function renderOffice(){
+  const ti=tierIndex();
+  $('#officeName').textContent="Hale & Partners";
+  $('#repTier').textContent=TIERS[ti].name;
+  $('#repNum').textContent="TIER "+(ti+1)+" · REP "+G.rep;
+  const next=TIERS[ti+1];
+  if(next){
+    const lo=TIERS[ti].rep, span=next.rep-lo;
+    $('#repFill').style.width=Math.min(100,Math.round((G.rep-lo)/span*100))+"%";
+    const unlockCls=CLASSES.find(c=>c.tier===ti+2);
+    $('#repNext').textContent="NEXT: "+next.name.toUpperCase()+(unlockCls?" — UNLOCKS "+unlockCls.name.toUpperCase():"");
+  } else { $('#repFill').style.width="100%"; $('#repNext').textContent="MAX TIER — ALL CASE CLASSES UNLOCKED"; }
+  $('#stCash').textContent="$"+G.cash.toLocaleString();
+  $('#stSolved').textContent=G.solved;
+  $('#stBest').textContent=G.best.toLocaleString();
+  ensureCase();
+  $('#cfTitle').textContent=C.title;
+  $('#cfMeta').textContent=C.cls.toUpperCase()+" · "+C.sub.toUpperCase()+" · "+C.suspects.length+" SUSPECTS";
+}
+
+/* ---------- BRIEFING ---------- */
+function renderBriefing(){
+  const stars=n=>{let s='';for(let i=0;i<3;i++)s+=`<svg width="15" height="15" viewBox="0 0 20 20" fill="${i<n?'#f0a847':'none'}" stroke="#a8946a" stroke-width="1.4"><path d="M10 1.6 L12.5 7 L18.4 7.6 L14 11.6 L15.3 17.6 L10 14.5 L4.7 17.6 L6 11.6 L1.6 7.6 L7.5 7 Z"/></svg>`;return s;};
+  const diff=Math.min(3,Math.ceil(C.tier/2));
+  $('#briefCard').innerHTML=`
+    <div class="paperclip"></div>
+    <div class="stamp-new">UNSOLVED</div>
+    <div class="case-no">CASE NO. ${C.caseNo} · HARBOR CITY P.D. REFERRAL</div>
+    <div class="case-title">${C.title}</div>
+    <div class="case-sub">${C.cls} — ${C.sub}</div>
+    <dl class="dossier">
+      <dt>Stolen</dt><dd>${capitalize(C.stolen)}</dd>
+      <dt>Scene</dt><dd>${capitalize(C.scene)}. Lock forced between 11:40 PM and midnight.</dd>
+      <dt>Suspects</dt><dd>${C.suspects.length} on the premises after hours</dd>
+      <dt>Difficulty</dt><dd><span class="stars">${stars(diff)}</span>&nbsp; Par ${Math.floor(C.par/60)}:00</dd>
+    </dl>
+    <div class="reward-row">
+      <div class="reward"><div class="rk">FEE</div><div class="rv">$${C.fee.toLocaleString()}</div></div>
+      <div class="reward"><div class="rk">REPUTATION</div><div class="rv">+${C.rep}</div></div>
+      <div class="reward"><div class="rk">BONUS</div><div class="rv">Airtight +15%</div></div>
+    </div>`;
+}
+
+/* ---------- TRAVEL ---------- */
+function renderTravel(){
+  $('#travTotal').textContent=C.clues.length;
+  $('#travClues').textContent=R.found.size;
+  $('#travSus').textContent="SUSPECTS "+C.suspects.length;
+  const list=$('#mapList'); list.innerHTML='';
+  C.locations.forEach(l=>{
+    const total=l.clueIds.length;
+    const got=l.clueIds.filter(id=>R.found.has(id)).length;
+    const done=got>=total;
+    const card=document.createElement('div');
+    card.className='loc-card'+(done?' done':'');
+    card.innerHTML=`<div class="loc-ico"><svg viewBox="0 0 24 24"><path d="${l.ico}"/></svg></div>
+      <div><div class="loc-name">${capitalize(l.name)}</div><div class="loc-meta">${got}/${total} CLUES FOUND</div></div>
+      <div class="loc-badge">${done?'✓ SEARCHED':'SEARCH →'}</div>`;
+    card.onclick=()=>openScene(l.key);
+    list.appendChild(card);
+  });
+}
+
+/* ---------- SCENE ---------- */
+function openScene(locKey){
+  R.curLoc=locKey;
+  const l=C.locations.find(x=>x.key===locKey);
+  $('#sceneName').textContent=capitalize(l.name).toUpperCase();
+  $('#sceneTotal').textContent=l.clueIds.length;
+  $('#sceneFound').textContent=l.clueIds.filter(id=>R.found.has(id)).length;
+  const stage=$('#sceneStage');
+  stage.innerHTML=sceneSVG(locKey);
+  l.clueIds.forEach(id=>{
+    const c=C.clues[id];
+    const btn=document.createElement('button');
+    btn.className='hotspot'+(R.found.has(id)?' found':'');
+    btn.style.left=c.pos[0]+'%'; btn.style.top=c.pos[1]+'%';
+    btn.innerHTML='<span class="ring"></span><span class="dot"></span>';
+    btn.onclick=()=>revealClue(id,btn);
+    stage.appendChild(btn);
+  });
+  renderSceneHints();
+  show('scene');
+}
+function renderSceneHints(){
+  const bar=$('#sceneHints'); bar.innerHTML='';
+  if(G.staff.includes('forensic')){
+    const used=R.abilityUsed.forensic||0;
+    const b=document.createElement('button');
+    b.className='hint-btn'; b.disabled=used>=2;
+    b.textContent=`Dr. Cole · Lab Analysis (${2-used} left)`;
+    b.onclick=()=>useForensic();
+    bar.appendChild(b);
+  }
+  if(G.staff.includes('hacker')){
+    const used=R.abilityUsed.hacker||0;
+    const b=document.createElement('button');
+    b.className='hint-btn'; b.disabled=used>=1;
+    b.textContent=`Reyes · Deep Pull (${1-used} left)`;
+    b.onclick=()=>useHacker();
+    bar.appendChild(b);
+  }
+}
+function useForensic(){
+  // reveal an undiscovered clue at the current location
+  const l=C.locations.find(x=>x.key===R.curLoc);
+  const hidden=l.clueIds.find(id=>!R.found.has(id));
+  if(hidden===undefined){ toast("Nothing left to analyse here."); return; }
+  R.abilityUsed.forensic=(R.abilityUsed.forensic||0)+1; R.hintsUsed++;
+  collectClue(hidden); openScene(R.curLoc); toast("Lab reveals: "+C.clues[hidden].title);
+}
+function useHacker(){
+  // pull an undiscovered RECORDS-type clue anywhere
+  const rec=C.clues.find(c=>c.type==="RECORDS"&&!R.found.has(c.id)) || C.clues.find(c=>!R.found.has(c.id));
+  if(!rec){ toast("All records already pulled."); return; }
+  R.abilityUsed.hacker=(R.abilityUsed.hacker||0)+1; R.hintsUsed++;
+  collectClue(rec.id); openScene(R.curLoc); toast("Deep pull: "+rec.title);
+}
+function collectClue(id){
+  if(R.found.has(id)) return;
+  R.found.add(id);
+  if(C.clues[id].resolves) R.herringResolved=true;
+}
+function revealClue(id,btn){
+  const c=C.clues[id];
+  $('#ctType').textContent=c.type;
+  $('#ctTitle').textContent=c.title;
+  $('#ctBody').textContent=c.body;
+  $('#ctTag').textContent=c.tag;
+  $('#trayBack').classList.add('open');
+  if(!R.found.has(id)){
+    collectClue(id);
+    if(btn) btn.classList.add('found');
+    const l=C.locations.find(x=>x.key===R.curLoc);
+    $('#sceneFound').textContent=l.clueIds.filter(x=>R.found.has(x)).length;
+  }
+}
+$('#ctClose').onclick=()=>$('#trayBack').classList.remove('open');
+$('#trayBack').onclick=e=>{ if(e.target.id==='trayBack') $('#trayBack').classList.remove('open'); };
+
+/* ---------- INTERROGATION ---------- */
+function renderInterro(){
+  const tabs=$('#susTabs'); tabs.innerHTML='';
+  C.suspects.forEach(s=>{
+    const t=document.createElement('div');
+    t.className='sus-tab'+(s.id===R.curSus?' active':'')+(R.clammed.has(s.id)?' closed':'');
+    t.textContent=s.name.split(" ")[0];
+    t.onclick=()=>{ R.curSus=s.id; R.sel={stmt:null,ev:null}; renderInterro(); };
+    tabs.appendChild(t);
+  });
+  const s=C.suspects[R.curSus];
+  $('#susHead').innerHTML=`<div class="portrait-frame">${portrait(s.sk,s.h)}</div>
+    <div><div class="sus-name">${s.name}</div><div class="sus-role">${capitalize(s.role)}</div>
+    <div class="rapport"><span class="lbl">RAPPORT</span><div class="rap-bar"><div class="rap-fill" style="width:${R.rapport[s.id]}%"></div></div></div></div>`;
+
+  // profiler hint bar
+  const hb=$('#interroHints'); hb.innerHTML='';
+  if(G.staff.includes('profiler')){
+    const key='profiler_'+s.id, used=R.abilityUsed[key]||0;
+    const b=document.createElement('button'); b.className='hint-btn'; b.disabled=used>=1;
+    b.textContent="Dr. Maraj · Read this room";
+    b.onclick=()=>{
+      R.abilityUsed[key]=1; R.hintsUsed++;
+      const hasLie=C.stmts[s.id].some(st=>st.lie);
+      toast(hasLie?"Maraj: \"Someone in this room is lying.\"":"Maraj: \"They're telling the truth — for now.\"");
+      renderInterro();
+    };
+    hb.appendChild(b);
+  }
+  const showTells=G.staff.includes('profiler');
+
+  // statements
+  const wrap=$('#stmts'); wrap.innerHTML='';
+  C.stmts[s.id].forEach((st,i)=>{
+    const div=document.createElement('div');
+    const tell=showTells&&st.lie;
+    div.className='stmt'+(R.bustedSus.has(s.id)&&st.lie?' busted':'')+(tell?' tell':'');
+    div.innerHTML=`<span class="who">Statement ${i+1}</span><span class="stxt">${st.txt}</span>${st.crack?`<div class="crack">${st.crack}</div>`:''}`;
+    if(!(R.clammed.has(s.id))){
+      div.onclick=()=>{ if(R.bustedSus.has(s.id)) return; $$('#stmts .stmt').forEach(x=>x.classList.remove('selected')); div.classList.add('selected'); R.sel.stmt=i; updatePress(); };
+    }
+    wrap.appendChild(div);
+  });
+
+  // evidence row — only collected clues that can contradict
+  const ev=$('#evRow'); ev.innerHTML='';
+  C.clues.filter(c=>R.found.has(c.id)).forEach(c=>{
+    const chip=document.createElement('div');
+    chip.className='ev-chip';
+    chip.textContent=c.title;
+    chip.onclick=()=>{ if(R.bustedSus.has(s.id)||R.clammed.has(s.id)) return; $$('#evRow .ev-chip').forEach(x=>x.classList.remove('selected')); chip.classList.add('selected'); R.sel.ev=c.id; updatePress(); };
+    ev.appendChild(chip);
+  });
+
+  $('#pressResult').style.display='none';
+  $('#pressResult').className='press-result';
+  const clam=$('#clammed');
+  if(R.clammed.has(s.id)){ clam.style.display='block'; clam.textContent=`${s.name} has clammed up. Find new evidence elsewhere, then come back.`; $('#pressBtn').disabled=true; }
+  else { clam.style.display='none'; }
+  R.sel={stmt:null,ev:null};
+  updatePress();
+}
+function updatePress(){ $('#pressBtn').disabled=!(R.sel.stmt!==null && R.sel.ev!==null) || R.bustedSus.has(R.curSus) || R.clammed.has(R.curSus); }
+$('#pressBtn').onclick=()=>{
+  const s=C.suspects[R.curSus];
+  const st=C.stmts[s.id][R.sel.stmt];
+  R.presses++;
+  const res=$('#pressResult');
+  if(st.lie && st.contradicts===R.sel.ev){
+    R.bustedSus.add(s.id);
+    if(st.crack && s.id===C.culprit) collectCrackClue();
+    res.className='press-result'; res.style.display='block';
+    res.innerHTML=`<b>ALIBI CRACKED</b>${s.id===C.culprit?"You caught the culprit in the lie. The board is waiting.":"A secret falls out — but it has nothing to do with the crime. Red herring resolved."}`;
+    if(s.id===C.redHerring) R.herringResolved=true;
+    renderInterro();
+    res.style.display='block';
+  } else {
+    R.wrongPress++;
+    R.rapport[s.id]=Math.max(0,R.rapport[s.id]-25);
+    const rf=$('#susHead .rap-fill'); if(rf) rf.style.width=R.rapport[s.id]+'%';
+    const head=$('#susHead'); head.classList.remove('shake'); void head.offsetWidth; head.classList.add('shake');
+    res.className='press-result bad'; res.style.display='block';
+    res.innerHTML=`<b>THEY PUSH BACK</b>${st.lie?"That clue doesn't catch this statement — wrong evidence.":"That statement holds up. You're pressing the wrong thing."} Rapport falls.`;
+    if(R.rapport[s.id]<=0){ R.clammed.add(s.id); renderInterro(); res.style.display='block'; }
+  }
+};
+function collectCrackClue(){
+  // pressing the culprit drops a confession-fragment clue if not already present
+  if(C.clues.some(c=>c.role==="CONFESSION")) return;
+  const c={id:C.clues.length,role:"CONFESSION",type:"TESTIMONY",icon:"doc",
+    title:"Cracked statement",
+    body:`Under pressure, ${C.suspects[C.culprit].name} admitted going up the back stairs during the crime window — directly contradicting their own alibi.`,
+    tag:"CONFESSION FRAGMENT: "+C.suspects[C.culprit].name.toUpperCase(), refSus:C.culprit};
+  C.clues.push(c); R.found.add(c.id);
+}
+
+/* ---------- BOARD ---------- */
+const PILLAR_KEYS=["MOTIVE","METHOD","OPPORTUNITY"];
+function renderBoard(){
+  if(R.board.sus===null){ R.board.sus=C.suspects.find(s=>!R.clammed.has(s.id))?.id ?? 0; }
+  const bs=$('#boardSus'); bs.innerHTML='';
+  C.suspects.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='bsus'+(s.id===R.board.sus?' sel':'')+(R.clammed.has(s.id)?' closed':'');
+    div.innerHTML=`<div class="pol"><div class="pframe">${portrait(s.sk,s.h)}</div><div class="pname">${s.name.split(" ")[0]}</div></div><div class="conf">${confFor(s.id)}%</div>`;
+    div.onclick=()=>{ R.board.sus=s.id; renderBoard(); };
+    bs.appendChild(div);
+  });
+  // pillars for selected suspect
+  const sus=R.board.sus;
+  R.board.pins[sus]=R.board.pins[sus]||{MOTIVE:null,METHOD:null,OPPORTUNITY:null};
+  const pins=R.board.pins[sus];
+  const pil=$('#pillars'); pil.innerHTML='';
+  PILLAR_KEYS.forEach(k=>{
+    const cid=pins[k];
+    const filled=cid!==null;
+    const div=document.createElement('div');
+    div.className='pillar'+(filled?' filled':'');
+    div.innerHTML=`<div class="pl">${k}</div><div class="pv ${filled?'':'empty'}">${filled?C.clues.find(c=>c.id===cid).title:'unpinned'}</div>`;
+    if(filled){ div.style.cursor='pointer'; div.onclick=()=>{ pins[k]=null; renderBoard(); }; }
+    pil.appendChild(div);
+  });
+  // evidence bank
+  const bank=$('#evBank'); bank.innerHTML='';
+  C.clues.filter(c=>R.found.has(c.id)).forEach(c=>{
+    const card=document.createElement('div');
+    const pinnedAs=PILLAR_KEYS.find(k=>pins[k]===c.id);
+    card.className='ev-card'+(pinnedAs?' pinned':'');
+    card.innerHTML=`<div class="ek">${c.type}</div><div class="et">${c.title} — ${c.tag}</div>
+      <div class="pin-row">${PILLAR_KEYS.map(k=>`<div class="pin-btn ${pins[k]===c.id?'on':''}" data-k="${k}" data-c="${c.id}">${k}</div>`).join('')}</div>`;
+    card.querySelectorAll('.pin-btn').forEach(b=>{
+      b.onclick=(e)=>{ e.stopPropagation(); const k=b.dataset.k, id=+b.dataset.c;
+        if(pins[k]===id) pins[k]=null;
+        else { PILLAR_KEYS.forEach(pk=>{ if(pins[pk]===id) pins[pk]=null; }); pins[k]=id; }
+        renderBoard(); };
+    });
+    bank.appendChild(card);
+  });
+  // confidence
+  const conf=confFor(sus);
+  $('#confLbl').textContent="Confidence — "+C.suspects[sus].name;
+  $('#confVal').textContent=conf+"%";
+  $('#confFill').style.width=conf+"%";
+  const note=$('#confNote');
+  if(conf>=80){ note.textContent="AIRTIGHT THRESHOLD PASSED — BONUS ELIGIBLE"; note.style.color="var(--good)"; }
+  else if(conf>=50){ note.textContent="THIN CASE, DETECTIVE — ACCUSATION UNLOCKED"; note.style.color="var(--amber)"; }
+  else { note.textContent="HUNCH ONLY — PIN MORE EVIDENCE TO ACCUSE"; note.style.color="var(--muted)"; }
+  $('#accuseBtn').disabled=conf<50 || R.clammed.has(sus);
+  $('#accuseBtn').textContent=R.clammed.has(sus)?"This suspect has lawyered up":"Accuse "+C.suspects[sus].name;
+}
+function confFor(susId){
+  const pins=R.board.pins[susId]||{};
+  let filled=0;
+  PILLAR_KEYS.forEach(k=>{ if(pins[k]!==null&&pins[k]!==undefined) filled++; });
+  // base: each pillar ~27%; bonus if a pinned clue actually references this suspect (corroborated)
+  let conf=filled*27;
+  PILLAR_KEYS.forEach(k=>{ const cid=pins[k]; if(cid!=null){ const c=C.clues.find(x=>x.id===cid); if(c&&c.refSus===susId) conf+=4; } });
+  return Math.min(99,conf);
+}
+
+/* ---------- ACCUSE ---------- */
+$('#accuseBtn').onclick=()=>{
+  const sus=R.board.sus;
+  $('#accuseSubject').textContent="You are accusing "+C.suspects[sus].name+". Name the motive and method.";
+  let selM=null,selW=null;
+  const mo=$('#pickMotive'); mo.innerHTML='';
+  C.motivePool.forEach(m=>{ const b=document.createElement('div'); b.className='pick'; b.textContent=m;
+    b.onclick=()=>{ mo.querySelectorAll('.pick').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); selM=m; chk(); }; mo.appendChild(b); });
+  const me=$('#pickMethod'); me.innerHTML='';
+  C.methodPool.forEach(m=>{ const b=document.createElement('div'); b.className='pick'; b.textContent=m;
+    b.onclick=()=>{ me.querySelectorAll('.pick').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); selW=m; chk(); }; me.appendChild(b); });
+  function chk(){ $('#confirmAccuse').disabled=!(selM&&selW); }
+  $('#confirmAccuse').disabled=true;
+  $('#confirmAccuse').onclick=()=>{ $('#accuseModal').classList.remove('open'); resolveCase(sus,selM,selW); };
+  $('#accuseModal').classList.add('open');
+};
+$('#cancelAccuse').onclick=()=>$('#accuseModal').classList.remove('open');
+
+/* ---------- RESOLVE / VERDICT / SCORING ---------- */
+function resolveCase(susId,motive,method){
+  R.elapsed=Math.round((Date.now()-R.startTime)/1000);
+  const correctCulprit=susId===C.culprit;
+  const correctMotive=motive===C.truth.motive;
+  const correctMethod=method===C.truth.method;
+  const conf=confFor(susId);
+  const coverage=R.found.size/C.clues.length;
+  track('accusation_made',{correct:correctCulprit,tier:C.tier});
+
+  let score=0; const rows=[];
+  if(correctCulprit){
+    score=4000;
+    rows.push(['Culprit','CORRECT','pos']);
+    if(correctMotive){ score+=1500; rows.push(['Motive — '+motive,'CORRECT +20%','pos']); }
+    else rows.push(['Motive','WRONG','neg']);
+    if(correctMethod){ score+=1500; rows.push(['Method — '+method,'CORRECT +20%','pos']); }
+    else rows.push(['Method','WRONG','neg']);
+    const covPts=Math.round(coverage*1500);
+    score+=covPts; rows.push(['Clue coverage',Math.round(coverage*100)+'%'+(R.herringResolved?' · HERRING RESOLVED':''),'amb']);
+    const fast=R.elapsed<C.par;
+    const spdPts=fast?Math.round((1-R.elapsed/C.par)*1500):0;
+    score+=spdPts; rows.push(['Time '+fmt(R.elapsed)+' / par '+fmt(C.par),fast?'+'+spdPts:'OVER PAR','pos']);
+    const hintPen=R.hintsUsed*250;
+    if(hintPen){ score-=hintPen; rows.push(['Assists used',R.hintsUsed+' · −'+hintPen,'neg']); }
+    else rows.push(['Assists used','NONE','pos']);
+    if(conf>=80&&R.wrongPress===0){ score=Math.round(score*1.15); rows.push(['Airtight accusation','BONUS +15%','amb']); }
+    score=Math.max(0,score);
+  } else {
+    rows.push(['Culprit','WRONG — '+C.suspects[C.culprit].name+' walked','neg']);
+    rows.push(['Real motive',C.truth.motive,'amb']);
+    rows.push(['Real method',C.truth.method,'amb']);
+    score=Math.round(400*C.tier); rows.push(['Consolation','partial payout','amb']);
+  }
+
+  // payouts & meta
+  const cashGain=correctCulprit?Math.round(C.fee*(0.5+score/12000)):Math.round(C.fee*0.15);
+  const repGain=correctCulprit?C.rep:Math.max(0,Math.round(C.rep*0.1)-20);
+  G.cash+=cashGain;
+  G.rep=Math.max(0,G.rep+repGain);
+  if(correctCulprit) G.solved++;
+  if(score>G.best) G.best=score;
+  G.caseSeed=(G.caseSeed*1103515245+12345)%2147483647; // advance for next case
+  save();
+
+  // render verdict
+  const stamp=$('#vdStamp');
+  stamp.textContent=correctCulprit?"Case Solved":"Case Failed";
+  stamp.className='vd-stamp'+(correctCulprit?' ok':'');
+  $('#vdCulprit').innerHTML=correctCulprit
+    ? `<b>${C.suspects[C.culprit].name}</b> cracked under the weight of the evidence.<br>The truth: ${C.truth.motive.toLowerCase()}, by way of ${C.truth.method}.`
+    : `The trail went cold. The real culprit was <b>${C.suspects[C.culprit].name}</b> — ${C.suspects[C.culprit].motive.detail}.`;
+  const card=$('#scoreCard'); card.innerHTML='';
+  rows.forEach(r=>{ const d=document.createElement('div'); d.className='score-row';
+    d.innerHTML=`<span class="sk">${r[0]}</span><span class="sv ${r[2]}">${r[1]}</span>`; card.appendChild(d); });
+  const tot=document.createElement('div'); tot.className='score-total';
+  tot.innerHTML=`<span class="tk">CASE SCORE</span><span class="tv">${score.toLocaleString()}</span>`;
+  card.appendChild(tot);
+  const payd=document.createElement('div'); payd.className='score-row'; payd.style.borderTop='1px solid var(--line)'; payd.style.marginTop='8px';
+  payd.innerHTML=`<span class="sk">Earned</span><span class="sv pos">+$${cashGain.toLocaleString()} · +${repGain} rep</span>`;
+  card.appendChild(payd);
+  // magnifying-glass rating
+  const rating=correctCulprit?Math.max(1,Math.min(5,Math.round(score/2000))):0;
+  const g=$('#glasses'); g.innerHTML='';
+  for(let i=0;i<5;i++){ g.innerHTML+=`<svg viewBox="0 0 24 24" style="color:${i<rating?'#ffc566':'#2a3a4e'}"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15 L21 21"/></g></svg>`; }
+
+  track(correctCulprit?'case_solved':'case_failed',{score,tier:C.tier,correct:correctCulprit});
+  C=null; // next visit to office generates a fresh case
+  show('verdict');
+}
+function fmt(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
+
+/* ---------- STAFF ---------- */
+function renderStaff(){
+  const list=$('#staffList'); list.innerHTML='';
+  STAFF.forEach(s=>{
+    const owned=G.staff.includes(s.id);
+    const card=document.createElement('div');
+    card.className='staff-card'+(owned?' owned':'');
+    card.innerHTML=`<span class="sc-rarity ${s.rarity}">${s.rk}</span>
+      <div class="portrait-frame">${portrait(s.sk,s.h)}</div>
+      <div class="sc-right">
+        <div class="sc-name">${s.name}</div>
+        <div class="sc-spec">${s.spec}</div>
+        <div class="sc-abil"><b>Passive</b> — ${s.passive}<br><b>Active</b> — ${s.active}</div>
+        <div class="sc-foot">
+          <span class="sc-rarity" style="position:static;background:none;border:none;color:var(--muted);padding:0">${owned?'ON STAFF':'$'+s.cost.toLocaleString()}</span>
+          <button class="hire-btn ${owned?'hire-owned':'hire-cash'}" ${owned||G.cash<s.cost?'disabled':''}>${owned?'On staff':'Hire'}</button>
+        </div>
+      </div>`;
+    if(!owned){ card.querySelector('.hire-btn').onclick=()=>{ if(G.cash>=s.cost){ G.cash-=s.cost; G.staff.push(s.id); save(); toast(s.name+" joined the agency."); renderStaff(); } }; }
+    list.appendChild(card);
+  });
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+$('#startBtn').onclick=()=>{ renderOffice(); show('office'); };
+$('#howBtn').onclick=()=>{ const h=$('#howText'); h.style.display=h.style.display==='none'?'block':'none'; };
+$('#caseFolder').onclick=()=>{ ensureCase(); renderBriefing(); show('briefing'); };
+$('#newCaseBtn').onclick=()=>{ C=null; G.caseSeed=(Date.now())%2000000; save(); ensureCase(); renderOffice(); toast("New case generated."); };
+$('#toStaffBtn').onclick=()=>{ renderStaff(); show('staff'); };
+$('#staffBackBtn').onclick=()=>{ renderOffice(); show('office'); };
+$('#briefBackBtn').onclick=()=>{ renderOffice(); show('office'); };
+$('#acceptBtn').onclick=()=>{ track('case_start',{tier:C.tier,suspects:C.suspects.length}); R.startTime=Date.now(); renderTravel(); show('travel'); };
+$('#sceneBackBtn').onclick=()=>{ renderTravel(); show('travel'); };
+$('#toInterroBtn').onclick=()=>{
+  if(R.found.size<3){ toast("Gather at least 3 clues first."); return; }
+  R.curSus=0; renderInterro(); show('interro');
+};
+$('#toBoardBtn').onclick=()=>{
+  if(R.found.size<3){ toast("Gather at least 3 clues first."); return; }
+  renderBoard(); show('board');
+};
+$('#interroBoardBtn').onclick=()=>{ renderBoard(); show('board'); };
+$('#boardBackBtn').onclick=()=>{ renderTravel(); show('travel'); };
+$('#verdictNextBtn').onclick=()=>{ ensureCase(); renderOffice(); show('office'); };
+
+/* ---------- boot ---------- */
+load();
+
+/* ---------- DEV self-test: validate generator over many seeds (console only) ---------- */
+(function selfTest(){
+  let ok=0,bad=0;
+  for(let t=1;t<=5;t++){ for(let i=0;i<200;i++){
+    let g,tries=0; do{ g=generateCase(i*131+t*7+tries,t); tries++; }while(!g.valid&&tries<40);
+    if(g.valid) ok++; else bad++;
+  }}
+  console.log(`[Casefile generator] validated ${ok}/${ok+bad} cases solvable (unique culprit) across tiers 1-5.`);
+})();
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('detective-agency');
+</script>
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('detective-agency');
+</script>
+</body>
+</html>

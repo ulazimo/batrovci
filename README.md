@@ -22,6 +22,12 @@ A collection of experimental HTML5 game prototypes and interactive mechanics dem
 - **Black Hole City** - Control a black hole, consume everything
 - **Tower Stand** - Idle tower defense with endless stages, upgrade tree, and rogue-like boons
 - **Football Card Battler** - Marvel Snap-inspired tactical card duel vs AI across three pitch zones
+- **The Big Shuffle** - Turn-based survival 4X where the map rearranges around your bunker every few turns
+- **Casefile** - Noir detective sim with procedurally generated, provably-fair mysteries
+- **Hat Trick** - Football CCG: collect cards, build a squad-deck, win a 3-lane turn-based match
+- **Summer Games Fury** - One-finger multi-sport arcade with a stamina-redline twist
+- **Ramp-Age** - Top-down comedy racer where every car has a weaponizable deployable ramp
+- **Spuzzle Runner** - Match-3 racer where matching forward advances your runner and sideways banks power
 
 ## 🚀 Quick Start
 

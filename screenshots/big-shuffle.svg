@@ -1,0 +1,441 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <title>THE BIG SHUFFLE — Key Art</title>
+  <defs>
+    <!-- ======================= GRADIENTS ======================= -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#081c24"/>
+      <stop offset="0.28" stop-color="#0d3340"/>
+      <stop offset="0.52" stop-color="#1d4a52"/>
+      <stop offset="0.68" stop-color="#6a4a3a"/>
+      <stop offset="0.82" stop-color="#c4642a"/>
+      <stop offset="0.94" stop-color="#f08c33"/>
+      <stop offset="1"    stop-color="#ffb35c"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#ffe9b8" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#ffc063" stop-opacity="0.75"/>
+      <stop offset="0.6"  stop-color="#f08433" stop-opacity="0.35"/>
+      <stop offset="1"    stop-color="#f08433" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="anomaly" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#9fe8e0" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#4fb8b0" stop-opacity="0.18"/>
+      <stop offset="1"   stop-color="#4fb8b0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="farLand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8a868"/>
+      <stop offset="1" stop-color="#b97a4a"/>
+    </linearGradient>
+    <linearGradient id="farLand2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cf8a52"/>
+      <stop offset="1" stop-color="#9c6240"/>
+    </linearGradient>
+    <linearGradient id="midLand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#54414a"/>
+      <stop offset="1" stop-color="#2e2a3c"/>
+    </linearGradient>
+    <linearGradient id="suburb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#27343f"/>
+      <stop offset="1" stop-color="#16222c"/>
+    </linearGradient>
+    <linearGradient id="fgHill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10202a"/>
+      <stop offset="1" stop-color="#060d13"/>
+    </linearGradient>
+    <linearGradient id="hexFaceFar" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#f4c98e"/>
+      <stop offset="1" stop-color="#cf8d52"/>
+    </linearGradient>
+    <linearGradient id="hexFaceMid" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#e8a35f"/>
+      <stop offset="1" stop-color="#a05f3a"/>
+    </linearGradient>
+    <linearGradient id="hexFaceNear" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#b87044"/>
+      <stop offset="0.55" stop-color="#6f4633"/>
+      <stop offset="1" stop-color="#3a2c30"/>
+    </linearGradient>
+    <linearGradient id="hexSide" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5e3a2c"/>
+      <stop offset="1" stop-color="#241a1e"/>
+    </linearGradient>
+    <radialGradient id="doorGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffd98a" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#ffae4a" stop-opacity="0.45"/>
+      <stop offset="1"   stop-color="#ffae4a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="doorLight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe7ad"/>
+      <stop offset="1" stop-color="#f59a3a"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#fff3cc"/>
+      <stop offset="0.42" stop-color="#ffc25e"/>
+      <stop offset="0.74" stop-color="#f57f31"/>
+      <stop offset="1"    stop-color="#c14a1f"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.46" r="0.75">
+      <stop offset="0"    stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.66" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.88" stop-color="#04090d" stop-opacity="0.16"/>
+      <stop offset="1"    stop-color="#03070a" stop-opacity="0.34"/>
+    </radialGradient>
+    <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5a558" stop-opacity="0"/>
+      <stop offset="1" stop-color="#f5a558" stop-opacity="0.5"/>
+    </linearGradient>
+
+    <!-- ======================= SHAPES ======================= -->
+    <!-- pointy-top hexagon, radius 50, centered on origin -->
+    <polygon id="hx" points="0,-50 43.3,-25 43.3,25 0,50 -43.3,25 -43.3,-25"/>
+    <!-- hex chunk with earthen underside -->
+    <g id="chunkFar">
+      <polygon points="0,-38 43.3,-13 43.3,37 0,62 -43.3,37 -43.3,-13" fill="url(#hexSide)"/>
+      <use href="#hx" fill="url(#hexFaceFar)"/>
+      <use href="#hx" fill="none" stroke="#ffd27a" stroke-width="2.5" opacity="0.9"/>
+    </g>
+    <g id="chunkMid">
+      <polygon points="0,-32 43.3,-7 43.3,43 0,68 -43.3,43 -43.3,-7" fill="url(#hexSide)"/>
+      <use href="#hx" fill="url(#hexFaceMid)"/>
+      <use href="#hx" fill="none" stroke="#ffbe5e" stroke-width="3"/>
+    </g>
+    <g id="chunkNear">
+      <polygon points="0,-26 43.3,-1 43.3,49 0,74 -43.3,49 -43.3,-1" fill="url(#hexSide)"/>
+      <use href="#hx" fill="url(#hexFaceNear)"/>
+      <use href="#hx" fill="none" stroke="#ff9e3e" stroke-width="3.5"/>
+    </g>
+
+    <!-- ======================= FILTERS ======================= -->
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="soft2" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="glowSeam" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="distress" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.013 0.05" numOctaves="2" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.74" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.9  0 0 0 0 0.85  0 0 0 0 0.8  0 0 0 0.04 0"/>
+    </filter>
+  </defs>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 1 — SKY                                                -->
+  <!-- ============================================================ -->
+  <rect width="1200" height="985" fill="url(#sky)"/>
+  <!-- stars -->
+  <g fill="#cfe9ec">
+    <circle cx="96" cy="74" r="1.6" opacity="0.8"/><circle cx="221" cy="142" r="1.1" opacity="0.6"/>
+    <circle cx="338" cy="58" r="1.4" opacity="0.7"/><circle cx="470" cy="118" r="1" opacity="0.5"/>
+    <circle cx="612" cy="49" r="1.7" opacity="0.85"/><circle cx="751" cy="96" r="1.1" opacity="0.6"/>
+    <circle cx="873" cy="164" r="1.3" opacity="0.55"/><circle cx="988" cy="61" r="1.6" opacity="0.8"/>
+    <circle cx="1104" cy="131" r="1.1" opacity="0.6"/><circle cx="160" cy="232" r="1" opacity="0.45"/>
+    <circle cx="540" cy="201" r="1.2" opacity="0.5"/><circle cx="932" cy="247" r="1" opacity="0.4"/>
+    <circle cx="1142" cy="208" r="1.3" opacity="0.55"/><circle cx="58" cy="170" r="1.2" opacity="0.5"/>
+  </g>
+  <!-- anomaly aurora: the broken LHC field shimmering above the tear -->
+  <ellipse cx="600" cy="430" rx="560" ry="250" fill="url(#anomaly)"/>
+  <g stroke="#7fd8cf" fill="none" opacity="0.4" filter="url(#soft)">
+    <path d="M180,470 C380,380 520,420 700,330 C840,260 980,300 1080,240" stroke-width="5"/>
+    <path d="M140,560 C360,500 560,540 760,440 C900,370 1020,400 1130,330" stroke-width="3.5"/>
+    <path d="M260,360 C420,300 560,330 720,250" stroke-width="3"/>
+  </g>
+  <!-- low sun -->
+  <ellipse cx="600" cy="918" rx="520" ry="330" fill="url(#sun)"/>
+  <circle cx="600" cy="912" r="64" fill="#ffefc4" opacity="0.95"/>
+  <circle cx="600" cy="912" r="92" fill="#ffd684" opacity="0.35" filter="url(#soft2)"/>
+  <!-- streak clouds -->
+  <g fill="#3a2530" opacity="0.55" filter="url(#soft)">
+    <ellipse cx="280" cy="760" rx="260" ry="16"/>
+    <ellipse cx="880" cy="710" rx="300" ry="14"/>
+    <ellipse cx="520" cy="668" rx="210" ry="10"/>
+    <ellipse cx="980" cy="800" rx="240" ry="12"/>
+    <ellipse cx="180" cy="845" rx="200" ry="10"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 2 — FLOATING HEX SECTORS (the Shuffle, mid-air)        -->
+  <!-- ============================================================ -->
+  <!-- soft shadows cast on the distant land -->
+  <g fill="#2a1a1a" opacity="0.3" filter="url(#soft2)">
+    <ellipse cx="250" cy="952" rx="120" ry="14"/>
+    <ellipse cx="900" cy="948" rx="150" ry="16"/>
+    <ellipse cx="585" cy="958" rx="90" ry="11"/>
+    <ellipse cx="1080" cy="955" rx="80" ry="10"/>
+  </g>
+  <!-- far, small, hazy chunks -->
+  <g filter="url(#glowSeam)">
+    <use href="#chunkFar" transform="translate(505,545) scale(0.34) rotate(8)"  opacity="0.55"/>
+    <use href="#chunkFar" transform="translate(700,512) scale(0.3) rotate(-12)" opacity="0.5"/>
+    <use href="#chunkFar" transform="translate(610,470) scale(0.24) rotate(20)" opacity="0.45"/>
+    <use href="#chunkFar" transform="translate(395,610) scale(0.42) rotate(-6)" opacity="0.65"/>
+    <use href="#chunkFar" transform="translate(790,600) scale(0.4) rotate(14)"  opacity="0.62"/>
+    <use href="#chunkFar" transform="translate(545,640) scale(0.5) rotate(-15)" opacity="0.7"/>
+    <use href="#chunkFar" transform="translate(672,668) scale(0.46) rotate(6)"  opacity="0.72"/>
+  </g>
+  <!-- mid chunks, with tiny ruins riding on top -->
+  <g filter="url(#glowSeam)">
+    <use href="#chunkMid" transform="translate(250,700) scale(0.8) rotate(-9)"/>
+    <g transform="translate(250,700) scale(0.8) rotate(-9)" fill="#5e3424">
+      <rect x="-22" y="-30" width="16" height="14"/><polygon points="-24,-30 -14,-40 -4,-30"/>
+      <rect x="6" y="-24" width="10" height="10"/>
+    </g>
+    <use href="#chunkMid" transform="translate(905,665) scale(0.92) rotate(11)"/>
+    <g transform="translate(905,665) scale(0.92) rotate(11)" fill="#5e3424">
+      <rect x="-10" y="-34" width="22" height="16"/><polygon points="-12,-34 1,-46 14,-34"/>
+      <rect x="-30" y="-26" width="9" height="9"/>
+    </g>
+    <use href="#chunkMid" transform="translate(430,760) scale(0.66) rotate(17)"/>
+    <use href="#chunkMid" transform="translate(745,775) scale(0.72) rotate(-14)"/>
+    <use href="#chunkMid" transform="translate(580,742) scale(0.58) rotate(4)"/>
+    <use href="#chunkMid" transform="translate(1075,742) scale(0.62) rotate(-18)"/>
+    <use href="#chunkMid" transform="translate(118,772) scale(0.56) rotate(22)"/>
+  </g>
+  <!-- near, large hero chunks: dramatic tilt, debris trailing -->
+  <g filter="url(#glowSeam)">
+    <use href="#chunkNear" transform="translate(195,560) scale(1.35) rotate(-17)"/>
+    <g transform="translate(195,560) scale(1.35) rotate(-17)">
+      <rect x="-26" y="-52" width="26" height="22" fill="#231a20"/>
+      <polygon points="-28,-52 -13,-66 2,-52" fill="#2c2026"/>
+      <rect x="-19" y="-46" width="6" height="7" fill="#ffba55"/>
+      <rect x="10" y="-44" width="3" height="20" fill="#231a20"/>
+      <circle cx="11.5" cy="-46" r="2.4" fill="#ff5640"/>
+    </g>
+    <use href="#chunkNear" transform="translate(1010,520) scale(1.5) rotate(13)"/>
+    <g transform="translate(1010,520) scale(1.5) rotate(13)">
+      <rect x="-8" y="-58" width="34" height="26" fill="#231a20"/>
+      <polygon points="-10,-58 9,-74 28,-58" fill="#2c2026"/>
+      <rect x="0" y="-50" width="6" height="8" fill="#ffba55"/>
+      <rect x="14" y="-50" width="6" height="8" fill="#ffba55"/>
+      <path d="M-34,-30 l10,-16 4,16 z" fill="#1d2a26"/>
+    </g>
+  </g>
+  <!-- falling debris & dust motes -->
+  <g fill="#8a5436">
+    <circle cx="226" cy="668" r="3.4"/><circle cx="252" cy="700" r="2.2"/><circle cx="186" cy="652" r="2.6"/>
+    <circle cx="1030" cy="640" r="3.8"/><circle cx="996" cy="670" r="2.4"/><circle cx="1068" cy="624" r="2"/>
+    <circle cx="912" cy="744" r="2.6"/><circle cx="438" cy="824" r="2.2"/><circle cx="588" cy="796" r="1.8"/>
+  </g>
+  <g fill="#ffd27a" opacity="0.7">
+    <circle cx="300" cy="620" r="1.6"/><circle cx="700" cy="586" r="1.4"/><circle cx="860" cy="700" r="1.6"/>
+    <circle cx="520" cy="700" r="1.3"/><circle cx="1110" cy="664" r="1.5"/><circle cx="160" cy="708" r="1.4"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 3 — DISTANT HEX-TILED LAND, TEARING OPEN               -->
+  <!-- ============================================================ -->
+  <g>
+    <path d="M0,968 L0,930 C120,914 260,924 380,912 C520,898 680,910 820,900 C960,892 1090,906 1200,896 L1200,968 Z" fill="url(#farLand)"/>
+    <path d="M0,968 L0,944 C150,934 320,944 470,934 C640,924 820,936 1000,926 C1080,922 1150,928 1200,924 L1200,968 Z" fill="url(#farLand2)" opacity="0.85"/>
+    <!-- faint hex grid etched into the distant plain -->
+    <g stroke="#7a4a30" stroke-width="1.1" fill="none" opacity="0.5">
+      <path d="M30,930 l26,-9 26,9 0,18 -26,9 -26,-9 z"/><path d="M108,926 l26,-9 26,9 0,18 -26,9 -26,-9 z"/>
+      <path d="M186,922 l26,-9 26,9 0,18 -26,9 -26,-9 z"/><path d="M264,918 l26,-9 26,9 0,18 -26,9 -26,-9 z"/>
+      <path d="M342,914 l26,-9 26,9 0,18 -26,9 -26,-9 z"/><path d="M452,912 l26,-9 26,9 0,18 -26,9 -26,-9 z"/>
+      <path d="M530,910 l26,-9 26,9 0,18 -26,9 -26,-9 z"/><path d="M640,906 l26,-9 26,9 0,18 -26,9 -26,-9 z"/>
+      <path d="M718,904 l26,-9 26,9 0,18 -26,9 -26,-9 z"/><path d="M828,900 l26,-9 26,9 0,18 -26,9 -26,-9 z"/>
+      <path d="M938,898 l26,-9 26,9 0,18 -26,9 -26,-9 z"/><path d="M1048,898 l26,-9 26,9 0,18 -26,9 -26,-9 z"/>
+    </g>
+    <!-- glowing tear seams where sectors ripped out -->
+    <g filter="url(#glowSeam)">
+      <path d="M404,936 l30,-11 30,11 0,16 -30,11 -30,-11 z" fill="#1a0d10"/>
+      <path d="M404,936 l30,-11 30,11 0,16 -30,11 -30,-11 z" fill="none" stroke="#ffae3e" stroke-width="3"/>
+      <path d="M858,930 l34,-12 34,12 0,17 -34,12 -34,-12 z" fill="#1a0d10"/>
+      <path d="M858,930 l34,-12 34,12 0,17 -34,12 -34,-12 z" fill="none" stroke="#ffae3e" stroke-width="3"/>
+      <path d="M196,944 l24,-9 24,9 0,14 -24,9 -24,-9 z" fill="#1a0d10"/>
+      <path d="M196,944 l24,-9 24,9 0,14 -24,9 -24,-9 z" fill="none" stroke="#ff9a36" stroke-width="2.5"/>
+      <path d="M1066,938 l26,-9 26,9 0,14 -26,9 -26,-9 z" fill="#1a0d10"/>
+      <path d="M1066,938 l26,-9 26,9 0,14 -26,9 -26,-9 z" fill="none" stroke="#ff9a36" stroke-width="2.5"/>
+    </g>
+    <rect x="0" y="868" width="1200" height="100" fill="url(#haze)" opacity="0.55"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 4 — MID-GROUND: RUINED SUBURBIA (teal silhouettes)     -->
+  <!-- ============================================================ -->
+  <g>
+    <path d="M0,1075 L0,1006 L48,1006 L48,980 L70,962 L92,980 L92,1006 L150,1006 L150,1022
+             L210,1022 L210,986 L246,958 L282,986 L282,1022 L334,1022 L334,1042
+             L420,1042 L420,1000 L444,1000 L444,972 L470,950 L496,972 L496,1042
+             L560,1042 L560,1018 L600,1018 L612,996 L660,996 L660,1042
+             L740,1042 L740,1008 L772,982 L788,996 L788,966 L804,966 L804,1010 L836,1010 L836,1042
+             L920,1042 L920,1016 L968,978 L1016,1016 L1016,1042
+             L1090,1042 L1090,1004 L1112,1004 L1112,968 L1136,950 L1160,968 L1160,1042 L1200,1042 L1200,1075 Z"
+          fill="url(#suburb)"/>
+    <!-- collapsed roofline + rubble -->
+    <path d="M210,1022 L246,958 L262,1000 L282,986" fill="none" stroke="#0f1820" stroke-width="5"/>
+    <path d="M350,1042 l22,-14 18,8 14,-10 16,16 z" fill="#1b2832"/>
+    <path d="M848,1042 l18,-12 16,7 12,-9 18,14 z" fill="#1b2832"/>
+    <!-- water tower -->
+    <g fill="#16222c">
+      <rect x="660" y="930" width="6" height="70"/><rect x="700" y="930" width="6" height="70"/>
+      <path d="M650,936 L716,936 L708,896 L658,896 Z"/><ellipse cx="683" cy="896" rx="25" ry="8"/>
+      <path d="M664,1000 L702,952 M702,1000 L664,952" stroke="#16222c" stroke-width="4"/>
+    </g>
+    <!-- utility poles with sagging wires -->
+    <g stroke="#101b24" stroke-width="5" fill="none">
+      <path d="M120,1006 L120,918 M96,930 L144,930 M102,944 L138,944"/>
+      <path d="M540,1018 L540,924 M516,936 L564,936 M522,950 L558,950"/>
+      <path d="M880,1016 L880,920 M856,932 L904,932 M862,946 L898,946"/>
+    </g>
+    <g stroke="#101b24" stroke-width="2.4" fill="none">
+      <path d="M120,930 C260,968 400,964 540,936"/>
+      <path d="M540,936 C660,972 760,964 880,932"/>
+      <path d="M880,932 C980,962 1090,956 1200,934"/>
+    </g>
+    <!-- dead trees -->
+    <g stroke="#101b24" fill="none" stroke-linecap="round">
+      <path d="M40,1075 L40,1000 M40,1022 L18,996 M40,1012 L62,988 M18,996 L8,978 M62,988 L74,968" stroke-width="6"/>
+      <path d="M388,1042 L388,984 M388,1004 L370,982 M388,996 L406,976" stroke-width="5"/>
+      <path d="M1054,1042 L1054,976 M1054,1000 L1034,974 M1054,990 L1076,966 M1034,974 L1026,956" stroke-width="6"/>
+    </g>
+    <!-- scattered window lights of other survivors -->
+    <g fill="#ffb957">
+      <rect x="232" y="996" width="7" height="9" opacity="0.9"/>
+      <rect x="456" y="988" width="6" height="8" opacity="0.8"/>
+      <rect x="952" y="1010" width="7" height="9" opacity="0.85"/>
+      <rect x="1126" y="982" width="6" height="8" opacity="0.75"/>
+    </g>
+  </g>
+  <!-- mid haze band for depth -->
+  <rect x="0" y="1042" width="1200" height="46" fill="#c4642a" opacity="0.14"/>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 5 — FOREGROUND: BUNKER HILL + PREPPER                  -->
+  <!-- ============================================================ -->
+  <path d="M0,1600 L0,1180 C90,1150 200,1162 300,1136 C390,1114 470,1120 560,1102
+           C700,1076 840,1096 950,1080 C1040,1068 1130,1080 1200,1064 L1200,1600 Z"
+        fill="url(#fgHill)"/>
+  <!-- foreground scrub & rocks -->
+  <g fill="#04090d">
+    <path d="M70,1180 q14,-26 28,0 q12,-20 24,0 z"/>
+    <path d="M620,1112 q12,-22 24,0 q10,-16 20,0 z"/>
+    <path d="M1080,1086 q14,-24 28,0 q10,-18 22,0 z"/>
+    <ellipse cx="180" cy="1192" rx="34" ry="10"/>
+    <ellipse cx="700" cy="1124" rx="28" ry="8"/>
+  </g>
+
+  <!-- BUNKER ENTRANCE (right of center) -->
+  <g>
+    <ellipse cx="888" cy="1148" rx="190" ry="60" fill="url(#doorGlow)" opacity="0.8"/>
+    <!-- concrete portal frame set into the hill -->
+    <path d="M796,1196 L796,1086 C796,1042 836,1010 888,1010 C940,1010 980,1042 980,1086 L980,1196 Z" fill="#1c2630"/>
+    <path d="M810,1196 L810,1090 C810,1052 844,1024 888,1024 C932,1024 966,1052 966,1090 L966,1196 Z" fill="#26323e"/>
+    <!-- warm light spilling around the vault door -->
+    <path d="M822,1196 L822,1094 C822,1060 850,1036 888,1036 C926,1036 954,1060 954,1094 L954,1196 Z" fill="url(#doorLight)"/>
+    <!-- round vault door, ajar -->
+    <g transform="translate(884,1116)">
+      <circle r="62" fill="#141d26"/>
+      <circle r="62" fill="none" stroke="#33414e" stroke-width="6"/>
+      <circle r="40" fill="none" stroke="#33414e" stroke-width="4"/>
+      <g stroke="#33414e" stroke-width="5" stroke-linecap="round">
+        <path d="M0,-40 L0,40 M-40,0 L40,0 M-28,-28 L28,28 M-28,28 L28,-28"/>
+      </g>
+      <circle r="10" fill="#3e4e5c"/>
+      <!-- hot seam where door stands ajar -->
+      <path d="M50,-36 C58,-12 58,12 50,36" fill="none" stroke="#ffd98a" stroke-width="5" filter="url(#glowSeam)"/>
+    </g>
+    <!-- light pooling on the ground -->
+    <path d="M832,1196 L944,1196 L1006,1252 L786,1252 Z" fill="#f59a3a" opacity="0.3" filter="url(#soft)"/>
+    <!-- stencil over the door -->
+    <rect x="846" y="1042" width="84" height="16" rx="3" fill="#0d141b"/>
+    <text x="888" y="1054" text-anchor="middle" font-family="'Arial Black','Arial',sans-serif" font-size="11" letter-spacing="3" fill="#e8a35f">SHELTER 07</text>
+    <!-- sandbags -->
+    <g fill="#202c36" stroke="#0c141b" stroke-width="2">
+      <ellipse cx="770" cy="1190" rx="26" ry="11"/><ellipse cx="744" cy="1192" rx="26" ry="11"/>
+      <ellipse cx="758" cy="1176" rx="26" ry="11"/><ellipse cx="784" cy="1174" rx="24" ry="10"/>
+      <ellipse cx="1006" cy="1190" rx="26" ry="11"/><ellipse cx="1032" cy="1192" rx="26" ry="11"/>
+      <ellipse cx="1018" cy="1176" rx="26" ry="11"/>
+    </g>
+    <!-- antenna mast with beacon -->
+    <g>
+      <path d="M1052,1130 L1052,936" stroke="#0c141b" stroke-width="7"/>
+      <path d="M1052,960 L1022,978 M1052,960 L1082,978 M1052,1000 L1028,1014 M1052,1000 L1076,1014 M1052,1040 L1032,1052 M1052,1040 L1072,1052" stroke="#0c141b" stroke-width="4"/>
+      <circle cx="1052" cy="930" r="6" fill="#ff5640"/>
+      <circle cx="1052" cy="930" r="14" fill="#ff5640" opacity="0.3" filter="url(#soft)"/>
+    </g>
+  </g>
+
+  <!-- THE PREPPER — lone figure, back to viewer, rifle in hand -->
+  <g transform="translate(372,1136)">
+    <ellipse cx="0" cy="6" rx="58" ry="12" fill="#02060a" opacity="0.8"/>
+    <!-- rifle slung diagonally, barrel up-left -->
+    <g transform="rotate(-32)" fill="#0a1218">
+      <rect x="-96" y="-118" width="120" height="9" rx="3"/>
+      <rect x="-104" y="-120" width="14" height="5" rx="2"/>
+      <rect x="-30" y="-112" width="10" height="22" rx="3"/>
+      <rect x="6" y="-112" width="18" height="14" rx="3"/>
+    </g>
+    <!-- body silhouette: boots, cargo pants, field jacket, cap -->
+    <path d="M-20,0 L-15,-2 L-12,-48 L-16,-86 C-17,-100 -23,-106 -23,-122 L-25,-136
+             C-25,-148 -17,-155 -10,-157 L-10,-161 C-10,-172 -2,-179 5,-178
+             C13,-177 18,-169 17,-161 L16,-156 C23,-152 28,-145 27,-136 L25,-116
+             C25,-103 19,-96 17,-84 L14,-48 L18,-2 L23,0 L23,5 L7,5 L4,-44 L-3,-44 L-7,5 L-20,5 Z"
+          fill="#071019"/>
+    <!-- cap brim -->
+    <path d="M-12,-166 L20,-166 L26,-160 L-12,-160 Z" fill="#071019"/>
+    <!-- backpack -->
+    <path d="M-26,-140 C-34,-138 -36,-116 -32,-100 L-20,-98 L-22,-138 Z" fill="#0a141d"/>
+    <!-- warm rim light (sunset edge, right side) -->
+    <g stroke="#ffb45c" fill="none" stroke-linecap="round">
+      <path d="M17,-161 C19,-170 13,-177 5,-178" stroke-width="3"/>
+      <path d="M16,-156 C23,-152 28,-145 27,-136 L25,-118" stroke-width="2.6"/>
+      <path d="M17,-84 L14,-50" stroke-width="2"/>
+      <path d="M18,-4 L22,-1" stroke-width="2.4"/>
+      <path d="M26,-160 L20,-166" stroke-width="2.4"/>
+    </g>
+    <!-- cool rim from the anomaly, left side -->
+    <g stroke="#5fc4ba" fill="none" stroke-linecap="round" opacity="0.7">
+      <path d="M-25,-136 C-25,-146 -19,-153 -10,-156" stroke-width="2.2"/>
+      <path d="M-32,-100 C-35,-116 -34,-134 -26,-139" stroke-width="1.8"/>
+    </g>
+    <!-- rim light along the rifle barrel -->
+    <path d="M-96,-118 l116,0" transform="rotate(-32)" stroke="#ffb45c" stroke-width="1.8" opacity="0.9"/>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 6 — TITLE TREATMENT                                    -->
+  <!-- ============================================================ -->
+  <!-- warm glow bed behind the title so it pops off the dark hill -->
+  <ellipse cx="600" cy="1440" rx="560" ry="220" fill="url(#doorGlow)" opacity="0.62"/>
+  <g filter="url(#distress)">
+    <g font-family="'Arial Black','Haettenschweiler','Impact','Arial',sans-serif" font-weight="900" text-anchor="middle">
+      <!-- THE BIG — kicker line with rules -->
+      <g transform="translate(600,1318)">
+        <path d="M-330,-14 L-150,-14" stroke="#e8702a" stroke-width="3"/>
+        <path d="M150,-14 L330,-14" stroke="#e8702a" stroke-width="3"/>
+        <text x="0" y="0" transform="scale(1,1.18)" font-size="58" letter-spacing="20"
+              fill="none" stroke="#1a0c08" stroke-width="14" stroke-linejoin="round">THE BIG</text>
+        <text x="0" y="0" transform="scale(1,1.18)" font-size="58" letter-spacing="20"
+              fill="url(#titleGrad)">THE BIG</text>
+      </g>
+      <!-- SHUFFLE — the monster word -->
+      <text x="600" y="1238" transform="scale(1,1.22)" font-size="172" letter-spacing="6"
+            fill="#1a0c08" opacity="0.55" aria-hidden="true">SHUFFLE</text>
+      <text x="600" y="1232" transform="scale(1,1.22)" font-size="172" letter-spacing="6"
+            fill="none" stroke="#1a0c08" stroke-width="24" stroke-linejoin="round">SHUFFLE</text>
+      <text x="600" y="1232" transform="scale(1,1.22)" font-size="172" letter-spacing="6"
+            fill="url(#titleGrad)">SHUFFLE</text>
+    </g>
+  </g>
+  <!-- hex bullet + tagline -->
+  <g transform="translate(600,1548)">
+    <use href="#hx" transform="translate(-322,-6) scale(0.13)" fill="none" stroke="#e8a35f" stroke-width="14"/>
+    <use href="#hx" transform="translate(322,-6) scale(0.13)" fill="none" stroke="#e8a35f" stroke-width="14"/>
+    <text x="0" y="0" text-anchor="middle" font-family="'Georgia','Times New Roman',serif" font-style="italic"
+          font-size="27" letter-spacing="2.5" fill="#f2cf9e">In two weeks, the world moves. Will you be ready?</text>
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- LAYER 7 — ATMOSPHERE: VIGNETTE + FILM GRAIN                  -->
+  <!-- ============================================================ -->
+  <rect width="1200" height="1600" fill="url(#vignette)"/>
+  <rect width="1200" height="1600" filter="url(#grain)" opacity="0.5"/>
+</svg>

@@ -1,0 +1,493 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" width="1200" height="1600">
+  <!-- ====================================================================
+       SPUZZLE RUNNER — key art poster, 1200x1600
+       Candy-bright match-3 racer. Purple sky -> teal mid -> hot orange track.
+       ==================================================================== -->
+  <defs>
+    <!-- ============ GRADIENTS ============ -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b1466"/>
+      <stop offset="0.35" stop-color="#5b2a9d"/>
+      <stop offset="0.62" stop-color="#2e7faa"/>
+      <stop offset="0.82" stop-color="#37b8b8"/>
+      <stop offset="1" stop-color="#ffd089"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3c4"/>
+      <stop offset="0.35" stop-color="#ffd36e"/>
+      <stop offset="0.7" stop-color="#ff9d4d" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ff7a59" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="track" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb15c"/>
+      <stop offset="0.3" stop-color="#ff7e5f"/>
+      <stop offset="0.65" stop-color="#f0408a"/>
+      <stop offset="1" stop-color="#b1206e"/>
+    </linearGradient>
+    <linearGradient id="trackEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe6a8"/>
+      <stop offset="1" stop-color="#ff5fa8"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2fae9b"/>
+      <stop offset="1" stop-color="#0d6e74"/>
+    </linearGradient>
+    <radialGradient id="pathGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a8fff4"/>
+      <stop offset="0.5" stop-color="#4be3d2" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#1fb6c9" stop-opacity="0"/>
+    </radialGradient>
+    <!-- gem gradients -->
+    <linearGradient id="gemTeal" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#b8fff2"/>
+      <stop offset="0.45" stop-color="#3fe0c8"/>
+      <stop offset="1" stop-color="#0f9b9e"/>
+    </linearGradient>
+    <linearGradient id="gemPink" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#ffd1ec"/>
+      <stop offset="0.45" stop-color="#ff5fb0"/>
+      <stop offset="1" stop-color="#bb2274"/>
+    </linearGradient>
+    <linearGradient id="gemAmber" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#fff3b8"/>
+      <stop offset="0.45" stop-color="#ffc24b"/>
+      <stop offset="1" stop-color="#d97a16"/>
+    </linearGradient>
+    <linearGradient id="gemViolet" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#e6ccff"/>
+      <stop offset="0.45" stop-color="#a45cf0"/>
+      <stop offset="1" stop-color="#5d23a8"/>
+    </linearGradient>
+    <!-- title candy gradient -->
+    <linearGradient id="titleFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7d6"/>
+      <stop offset="0.28" stop-color="#ffe14d"/>
+      <stop offset="0.55" stop-color="#ff8f3f"/>
+      <stop offset="0.78" stop-color="#ff4f8d"/>
+      <stop offset="1" stop-color="#d6258f"/>
+    </linearGradient>
+    <linearGradient id="titleFill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9fff7"/>
+      <stop offset="0.4" stop-color="#5fe8d6"/>
+      <stop offset="1" stop-color="#1f9fc4"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.75" stop-color="#12042e" stop-opacity="0"/>
+      <stop offset="1" stop-color="#12042e" stop-opacity="0.45"/>
+    </radialGradient>
+    <radialGradient id="boom" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fffbe0"/>
+      <stop offset="0.35" stop-color="#ffd34d"/>
+      <stop offset="0.7" stop-color="#ff7e3f" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ff4f8d" stop-opacity="0"/>
+    </radialGradient>
+    <!-- ============ FILTERS ============ -->
+    <filter id="glowBig" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="18" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowMid" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowSoft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="dof" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.4"/>
+    </filter>
+    <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="dropSh" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#3a0a4d" flood-opacity="0.45"/>
+    </filter>
+    <!-- reusable gem (pointy-top hexagon cut) -->
+    <g id="gemShape">
+      <polygon points="0,-26 22,-12 22,14 0,28 -22,14 -22,-12"/>
+    </g>
+    <g id="star4">
+      <path d="M0,-10 L2.6,-2.6 L10,0 L2.6,2.6 L0,10 L-2.6,2.6 L-10,0 L-2.6,-2.6 Z"/>
+    </g>
+  </defs>
+
+  <!-- ============ SKY ============ -->
+  <rect width="1200" height="1600" fill="url(#sky)"/>
+  <!-- stars -->
+  <g fill="#ffffff">
+    <circle cx="120" cy="120" r="3" opacity="0.9"/><circle cx="318" cy="76" r="2" opacity="0.7"/>
+    <circle cx="540" cy="140" r="2.5" opacity="0.8"/><circle cx="760" cy="90" r="2" opacity="0.6"/>
+    <circle cx="980" cy="150" r="3" opacity="0.85"/><circle cx="1110" cy="80" r="2" opacity="0.7"/>
+    <circle cx="210" cy="240" r="2" opacity="0.55"/><circle cx="880" cy="250" r="2.4" opacity="0.6"/>
+    <circle cx="1060" cy="330" r="2" opacity="0.5"/><circle cx="80" cy="380" r="2.4" opacity="0.5"/>
+    <use href="#star4" transform="translate(420,200) scale(1.3)" fill="#ffe9a8" opacity="0.9"/>
+    <use href="#star4" transform="translate(1010,210) scale(1)" fill="#ffd9f1" opacity="0.8"/>
+    <use href="#star4" transform="translate(150,520) scale(0.9)" fill="#c8fff4" opacity="0.8"/>
+  </g>
+  <!-- sun at horizon -->
+  <circle cx="600" cy="868" r="360" fill="url(#sun)"/>
+  <circle cx="600" cy="862" r="130" fill="#fff0bf" opacity="0.9" filter="url(#softBlur)"/>
+  <!-- horizon haze clouds (desaturated, blurred = depth of field) -->
+  <g filter="url(#dof)" opacity="0.75">
+    <ellipse cx="220" cy="700" rx="180" ry="36" fill="#cfa7e8" opacity="0.55"/>
+    <ellipse cx="330" cy="730" rx="130" ry="26" fill="#e3c3f2" opacity="0.5"/>
+    <ellipse cx="960" cy="660" rx="200" ry="40" fill="#cfa7e8" opacity="0.5"/>
+    <ellipse cx="1060" cy="700" rx="140" ry="28" fill="#e8cdf5" opacity="0.5"/>
+    <ellipse cx="600" cy="600" rx="150" ry="24" fill="#bf9be0" opacity="0.4"/>
+  </g>
+  <!-- distant candy hills, light + desaturated for depth -->
+  <g filter="url(#dof)">
+    <path d="M0,880 Q140,760 300,860 Q420,930 520,880 L520,960 L0,960 Z" fill="#7fc9c0" opacity="0.85"/>
+    <path d="M680,890 Q820,770 980,860 Q1100,925 1200,870 L1200,960 L680,960 Z" fill="#7fc9c0" opacity="0.85"/>
+    <path d="M0,920 Q200,840 380,920 L380,980 L0,980 Z" fill="#5fb4ad" opacity="0.9"/>
+    <path d="M820,920 Q1010,838 1200,915 L1200,980 L820,980 Z" fill="#5fb4ad" opacity="0.9"/>
+    <!-- tiny lollipop trees -->
+    <g opacity="0.9">
+      <rect x="246" y="824" width="8" height="40" rx="4" fill="#9a6b5a"/>
+      <circle cx="250" cy="812" r="26" fill="#ff9fce"/>
+      <circle cx="250" cy="812" r="26" fill="none" stroke="#ffd5ea" stroke-width="5" stroke-dasharray="10 14"/>
+      <rect x="942" y="816" width="8" height="42" rx="4" fill="#9a6b5a"/>
+      <circle cx="946" cy="802" r="28" fill="#9fe0ff"/>
+      <circle cx="946" cy="802" r="28" fill="none" stroke="#e2f6ff" stroke-width="5" stroke-dasharray="10 14"/>
+    </g>
+  </g>
+
+  <!-- ============ GROUND ============ -->
+  <rect x="0" y="900" width="1200" height="700" fill="url(#grass)"/>
+
+  <!-- ============ FINISH GATE at horizon (slightly blurred for DOF) ============ -->
+  <g filter="url(#dof)">
+    <rect x="478" y="742" width="14" height="160" rx="7" fill="#e8eef5"/>
+    <rect x="708" y="742" width="14" height="160" rx="7" fill="#cdd8e4"/>
+    <rect x="470" y="722" width="260" height="56" rx="16" fill="#ffffff" stroke="#2a3550" stroke-width="5"/>
+    <!-- checker pattern -->
+    <g fill="#2a3550">
+      <rect x="482" y="730" width="20" height="20"/><rect x="522" y="730" width="20" height="20"/>
+      <rect x="562" y="730" width="20" height="20"/><rect x="602" y="730" width="20" height="20"/>
+      <rect x="642" y="730" width="20" height="20"/><rect x="682" y="730" width="20" height="20"/>
+      <rect x="502" y="750" width="20" height="20"/><rect x="542" y="750" width="20" height="20"/>
+      <rect x="582" y="750" width="20" height="20"/><rect x="622" y="750" width="20" height="20"/>
+      <rect x="662" y="750" width="20" height="20"/><rect x="702" y="750" width="18" height="20"/>
+    </g>
+    <!-- gate flags -->
+    <path d="M485,742 l-30,18 30,14 Z" fill="#ff5fa8"/>
+    <path d="M722,742 l30,18 -30,14 Z" fill="#3fe0c8"/>
+    <text x="600" y="712" text-anchor="middle" font-family="Arial Rounded MT Bold, Arial Black, Arial, sans-serif" font-size="30" font-weight="900" fill="#ffe9b0" opacity="0.95">FINISH</text>
+  </g>
+  <!-- gate glow on the road -->
+  <ellipse cx="600" cy="905" rx="170" ry="22" fill="#ffd98f" opacity="0.6" filter="url(#softBlur)"/>
+
+  <!-- ============ TRACK (perspective trapezoid) ============ -->
+  <path d="M510,900 L690,900 L1140,1600 L60,1600 Z" fill="url(#track)"/>
+  <!-- candy edge rails -->
+  <path d="M510,900 L60,1600 L130,1600 L540,900 Z" fill="url(#trackEdge)"/>
+  <path d="M690,900 L1140,1600 L1070,1600 L660,900 Z" fill="url(#trackEdge)"/>
+  <!-- edge stripe dashes -->
+  <g stroke="#7a1050" stroke-width="0" fill="#ffffff" opacity="0.85">
+    <path d="M531,938 l16,0 -10,26 -16,0 Z"/><path d="M505,1010 l18,0 -12,30 -18,0 Z"/>
+    <path d="M472,1098 l20,0 -14,36 -20,0 Z"/><path d="M432,1206 l24,0 -17,42 -24,0 Z"/>
+    <path d="M382,1338 l28,0 -20,50 -28,0 Z"/><path d="M322,1490 l32,0 -23,58 -32,0 Z"/>
+    <path d="M653,938 l16,0 10,26 -16,0 Z"/><path d="M677,1010 l18,0 12,30 -18,0 Z"/>
+    <path d="M708,1098 l20,0 14,36 -20,0 Z"/><path d="M744,1206 l24,0 17,42 -24,0 Z"/>
+    <path d="M790,1338 l28,0 20,50 -28,0 Z"/><path d="M846,1490 l32,0 23,58 -32,0 Z"/>
+  </g>
+  <!-- faint perspective lane lines -->
+  <g stroke="#ffffff" opacity="0.18" stroke-width="3" fill="none">
+    <path d="M555,900 L330,1600"/><path d="M600,900 L600,1600"/><path d="M645,900 L870,1600"/>
+  </g>
+  <!-- track row separators (perspective compressed) -->
+  <g stroke="#7a1050" opacity="0.28" fill="none">
+    <path d="M524,925 L676,925" stroke-width="2"/>
+    <path d="M512,962 L688,962" stroke-width="2.5"/>
+    <path d="M494,1014 L706,1014" stroke-width="3"/>
+    <path d="M470,1085 L730,1085" stroke-width="3.5"/>
+    <path d="M438,1180 L762,1180" stroke-width="4"/>
+    <path d="M396,1305 L804,1305" stroke-width="5"/>
+    <path d="M342,1465 L858,1465" stroke-width="6"/>
+  </g>
+
+  <!-- ============ GEMS ON TRACK (rows recede; far rows desaturated/blurred) ============ -->
+  <!-- far rows -->
+  <g filter="url(#dof)" opacity="0.85">
+    <use href="#gemShape" transform="translate(548,944) scale(0.42)" fill="url(#gemViolet)"/>
+    <use href="#gemShape" transform="translate(600,942) scale(0.42)" fill="url(#gemAmber)"/>
+    <use href="#gemShape" transform="translate(652,944) scale(0.42)" fill="url(#gemTeal)"/>
+    <use href="#gemShape" transform="translate(522,990) scale(0.55)" fill="url(#gemPink)"/>
+    <use href="#gemShape" transform="translate(584,988) scale(0.55)" fill="url(#gemTeal)"/>
+    <use href="#gemShape" transform="translate(648,988) scale(0.55)" fill="url(#gemViolet)"/>
+    <use href="#gemShape" transform="translate(706,990) scale(0.55)" fill="url(#gemAmber)"/>
+  </g>
+  <!-- mid rows -->
+  <g opacity="0.95">
+    <use href="#gemShape" transform="translate(492,1050) scale(0.72)" fill="url(#gemAmber)"/>
+    <use href="#gemShape" transform="translate(566,1048) scale(0.72)" fill="url(#gemViolet)"/>
+    <use href="#gemShape" transform="translate(642,1048) scale(0.72)" fill="url(#gemPink)"/>
+    <use href="#gemShape" transform="translate(716,1050) scale(0.72)" fill="url(#gemTeal)"/>
+    <use href="#gemShape" transform="translate(458,1130) scale(0.92)" fill="url(#gemViolet)"/>
+    <use href="#gemShape" transform="translate(550,1128) scale(0.92)" fill="url(#gemAmber)"/>
+    <use href="#gemShape" transform="translate(648,1128) scale(0.92)" fill="url(#gemViolet)"/>
+    <use href="#gemShape" transform="translate(744,1130) scale(0.92)" fill="url(#gemPink)"/>
+  </g>
+
+  <!-- ============ GLOWING MATCH PATH under hero (teal serpentine) ============ -->
+  <g filter="url(#glowBig)">
+    <path d="M390,1505 Q470,1452 540,1390 Q600,1336 588,1252 Q580,1196 648,1128"
+          fill="none" stroke="#7dfff0" stroke-width="26" stroke-linecap="round" opacity="0.9"/>
+    <path d="M390,1505 Q470,1452 540,1390 Q600,1336 588,1252 Q580,1196 648,1128"
+          fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.95"/>
+  </g>
+  <ellipse cx="470" cy="1462" rx="120" ry="46" fill="url(#pathGlow)" opacity="0.8"/>
+  <ellipse cx="585" cy="1300" rx="100" ry="40" fill="url(#pathGlow)" opacity="0.7"/>
+  <!-- lit gems ON the path -->
+  <g filter="url(#glowMid)">
+    <use href="#gemShape" transform="translate(390,1505) scale(1.5)" fill="url(#gemTeal)" stroke="#eafffa" stroke-width="4"/>
+    <use href="#gemShape" transform="translate(540,1390) scale(1.3)" fill="url(#gemTeal)" stroke="#eafffa" stroke-width="4"/>
+    <use href="#gemShape" transform="translate(588,1252) scale(1.1)" fill="url(#gemTeal)" stroke="#eafffa" stroke-width="3"/>
+  </g>
+  <!-- unlit big foreground gems -->
+  <use href="#gemShape" transform="translate(250,1530) scale(1.7)" fill="url(#gemPink)" opacity="0.97"/>
+  <use href="#gemShape" transform="translate(700,1480) scale(1.55)" fill="url(#gemAmber)" opacity="0.97"/>
+  <use href="#gemShape" transform="translate(905,1560) scale(1.8)" fill="url(#gemViolet)" opacity="0.97"/>
+  <!-- gem facet highlights -->
+  <g fill="#ffffff" opacity="0.55">
+    <path d="M232,1500 l14,-10 8,12 -14,10 Z"/>
+    <path d="M684,1452 l13,-9 7,11 -13,9 Z"/>
+    <path d="M886,1528 l15,-10 8,12 -15,10 Z"/>
+    <path d="M374,1478 l13,-9 7,11 -13,9 Z"/>
+  </g>
+  <!-- sparkles on the lit path -->
+  <g fill="#ffffff" filter="url(#glowSoft)">
+    <use href="#star4" transform="translate(452,1438) scale(1.6)"/>
+    <use href="#star4" transform="translate(572,1318) scale(1.2)"/>
+    <use href="#star4" transform="translate(612,1212) scale(1)"/>
+    <use href="#star4" transform="translate(398,1540) scale(1.3)"/>
+  </g>
+
+  <!-- ============ RIVAL 2: slipping on a banked combo explosion (left mid) ============ -->
+  <g filter="url(#dof)">
+    <circle cx="430" cy="1060" r="64" fill="url(#boom)" filter="url(#glowMid)"/>
+    <g stroke="#ffd34d" stroke-width="5" stroke-linecap="round" opacity="0.9">
+      <path d="M392,1016 l-18,-18"/><path d="M470,1018 l18,-16"/><path d="M382,1086 l-20,12"/>
+      <path d="M474,1090 l20,14"/><path d="M430,996 l0,-24"/>
+    </g>
+  </g>
+  <g transform="translate(430,1042) rotate(-24)">
+    <!-- soft shadow -->
+    <ellipse cx="4" cy="58" rx="44" ry="11" fill="#5a0c3f" opacity="0.4"/>
+    <!-- golem body, tumbling -->
+    <g>
+      <ellipse cx="0" cy="26" rx="26" ry="22" fill="#8d9bb5"/>
+      <ellipse cx="0" cy="26" rx="26" ry="22" fill="none" stroke="#5d6a85" stroke-width="4"/>
+      <!-- flailing arms/legs -->
+      <path d="M-22,16 q-22,-12 -28,-30" stroke="#8d9bb5" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <path d="M22,20 q24,-4 34,10" stroke="#8d9bb5" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <path d="M-12,44 q-12,16 -26,18" stroke="#7d8aa3" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <path d="M14,44 q4,20 -4,30" stroke="#7d8aa3" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <!-- big head -->
+      <circle cx="2" cy="-22" r="32" fill="#a7b4cc"/>
+      <circle cx="2" cy="-22" r="32" fill="none" stroke="#5d6a85" stroke-width="4"/>
+      <!-- rim light from explosion -->
+      <path d="M-26,-38 a32,32 0 0 1 30,-15" stroke="#ffe9a8" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.9"/>
+      <!-- dizzy face -->
+      <g stroke="#2a3550" stroke-width="4" fill="none" stroke-linecap="round">
+        <path d="M-12,-28 l10,8 M-2,-28 l-10,8"/>
+        <path d="M10,-28 l10,8 M20,-28 l-10,8"/>
+        <path d="M-4,-8 q8,6 14,-2"/>
+      </g>
+    </g>
+    <!-- dizzy stars -->
+    <use href="#star4" transform="translate(-30,-58) scale(1.1)" fill="#ffe14d"/>
+    <use href="#star4" transform="translate(34,-52) scale(0.8)" fill="#ffe14d"/>
+  </g>
+
+  <!-- ============ RIVAL 1: cheetah chasing (right mid) ============ -->
+  <g transform="translate(790,1150)">
+    <ellipse cx="0" cy="78" rx="58" ry="13" fill="#5a0c3f" opacity="0.42"/>
+    <!-- tail -->
+    <path d="M28,40 q44,-4 58,-34" stroke="#f5b942" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M80,12 q8,-8 6,-16" stroke="#7a4a12" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <!-- legs in sprint -->
+    <path d="M-14,52 q-22,12 -40,8" stroke="#e8a832" stroke-width="15" fill="none" stroke-linecap="round"/>
+    <path d="M16,54 q18,14 38,12" stroke="#e8a832" stroke-width="15" fill="none" stroke-linecap="round"/>
+    <!-- body lean forward -->
+    <ellipse cx="0" cy="34" rx="30" ry="26" transform="rotate(-14)" fill="#f5b942"/>
+    <ellipse cx="0" cy="34" rx="30" ry="26" transform="rotate(-14)" fill="none" stroke="#9a6210" stroke-width="4"/>
+    <circle cx="-9" cy="30" r="6" fill="#c47e16"/><circle cx="10" cy="44" r="5" fill="#c47e16"/>
+    <!-- arms pumping -->
+    <path d="M-20,26 q-20,2 -28,18" stroke="#f5b942" stroke-width="13" fill="none" stroke-linecap="round"/>
+    <path d="M22,30 q20,-8 24,-24" stroke="#f5b942" stroke-width="13" fill="none" stroke-linecap="round"/>
+    <!-- big head -->
+    <circle cx="-6" cy="-26" r="40" fill="#ffce63"/>
+    <circle cx="-6" cy="-26" r="40" fill="none" stroke="#9a6210" stroke-width="4"/>
+    <!-- ears -->
+    <circle cx="-34" cy="-56" r="12" fill="#ffce63" stroke="#9a6210" stroke-width="4"/>
+    <circle cx="20" cy="-60" r="12" fill="#ffce63" stroke="#9a6210" stroke-width="4"/>
+    <!-- rim light (sun side) -->
+    <path d="M-44,-36 a40,40 0 0 1 26,-28" stroke="#ffeec2" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.95"/>
+    <!-- spots + face -->
+    <circle cx="18" cy="-44" r="5" fill="#c47e16"/><circle cx="-30" cy="-14" r="4" fill="#c47e16"/>
+    <g fill="#2a3550">
+      <circle cx="-20" cy="-28" r="7"/><circle cx="6" cy="-28" r="7"/>
+    </g>
+    <circle cx="-22" cy="-31" r="2.6" fill="#ffffff"/><circle cx="4" cy="-31" r="2.6" fill="#ffffff"/>
+    <path d="M-16,-8 q8,8 18,0" stroke="#2a3550" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-8" cy="-14" rx="6" ry="4.5" fill="#7a4a12"/>
+    <!-- determined brows -->
+    <path d="M-30,-42 l16,4 M14,-40 l-14,2" stroke="#2a3550" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- ============ HERO: Pip the Pig, mid-dash foreground ============ -->
+  <g transform="translate(560,1290)" filter="url(#dropSh)">
+    <!-- soft contact shadow -->
+    <ellipse cx="-6" cy="158" rx="105" ry="22" fill="#4d0a36" opacity="0.5"/>
+    <!-- scarf streaming behind -->
+    <path d="M-30,16 Q-110,28 -158,-8 Q-200,-40 -252,-30 Q-216,-2 -196,30 Q-150,52 -92,52 Q-56,48 -34,36 Z"
+          fill="#ff8a3d"/>
+    <path d="M-30,16 Q-110,28 -158,-8 Q-200,-40 -252,-30" fill="none" stroke="#d65f12" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-96,44 q-20,-12 -34,-30" stroke="#ffb877" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.9"/>
+    <!-- back leg trailing -->
+    <path d="M-18,96 q-36,28 -64,30" stroke="#f792bd" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-86" cy="128" rx="20" ry="14" transform="rotate(-18 -86 128)" fill="#5b2a9d"/>
+    <!-- body, leaning into the dash -->
+    <ellipse cx="0" cy="62" rx="56" ry="50" transform="rotate(-10)" fill="#ffa6c9"/>
+    <ellipse cx="0" cy="62" rx="56" ry="50" transform="rotate(-10)" fill="none" stroke="#b13d72" stroke-width="5"/>
+    <ellipse cx="2" cy="78" rx="34" ry="26" fill="#ffd2e4"/>
+    <!-- front leg planted on lit gem -->
+    <path d="M22,96 q14,30 8,52" stroke="#f792bd" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <ellipse cx="32" cy="152" rx="22" ry="15" fill="#5b2a9d"/>
+    <ellipse cx="32" cy="148" rx="22" ry="8" fill="#7a45c4"/>
+    <!-- back arm pumping -->
+    <path d="M-34,40 q-30,8 -42,32" stroke="#f792bd" stroke-width="20" fill="none" stroke-linecap="round"/>
+    <circle cx="-78" cy="76" r="13" fill="#ffa6c9" stroke="#b13d72" stroke-width="4"/>
+    <!-- scarf knot front -->
+    <path d="M-34,28 q18,18 52,12 q-6,18 -30,22 q-26,2 -36,-16 Z" fill="#ff8a3d" stroke="#d65f12" stroke-width="4"/>
+    <!-- BIG head -->
+    <circle cx="34" cy="-58" r="86" fill="#ffb3d1"/>
+    <circle cx="34" cy="-58" r="86" fill="none" stroke="#b13d72" stroke-width="6"/>
+    <!-- rim light from sunset, left edge -->
+    <path d="M-46,-86 a86,86 0 0 1 50,-56" stroke="#ffe9b8" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.95"/>
+    <!-- teal bounce light, right edge from gem path -->
+    <path d="M114,-30 a86,86 0 0 0 4,-58" stroke="#8ef2e2" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
+    <!-- ears -->
+    <path d="M-24,-122 q-14,-34 4,-52 q22,8 26,42 Z" fill="#ffb3d1" stroke="#b13d72" stroke-width="5"/>
+    <path d="M76,-130 q6,-36 28,-46 q14,20 0,52 Z" fill="#ffb3d1" stroke="#b13d72" stroke-width="5"/>
+    <path d="M-14,-128 q-6,-22 4,-34 q10,8 12,30 Z" fill="#ff7fb1"/>
+    <path d="M84,-132 q4,-24 16,-30 q8,14 -2,36 Z" fill="#ff7fb1"/>
+    <!-- goggles: band -->
+    <path d="M-50,-78 q84,-30 168,-4" stroke="#5b2a9d" stroke-width="16" fill="none"/>
+    <!-- goggles: lenses -->
+    <g>
+      <circle cx="4" cy="-78" r="32" fill="#bff3ff" stroke="#5b2a9d" stroke-width="9"/>
+      <circle cx="74" cy="-72" r="32" fill="#bff3ff" stroke="#5b2a9d" stroke-width="9"/>
+      <rect x="32" y="-84" width="16" height="14" rx="6" fill="#5b2a9d"/>
+      <!-- lens shine -->
+      <path d="M-12,-92 a32,32 0 0 1 22,-14" stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.9"/>
+      <path d="M58,-86 a32,32 0 0 1 20,-12" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.9"/>
+      <!-- happy eyes inside lenses -->
+      <circle cx="8" cy="-74" r="10" fill="#2a3550"/>
+      <circle cx="78" cy="-68" r="10" fill="#2a3550"/>
+      <circle cx="5" cy="-78" r="3.6" fill="#ffffff"/>
+      <circle cx="75" cy="-72" r="3.6" fill="#ffffff"/>
+    </g>
+    <!-- snout -->
+    <ellipse cx="48" cy="-22" rx="34" ry="24" fill="#ff8fbb" stroke="#b13d72" stroke-width="5"/>
+    <ellipse cx="38" cy="-24" rx="6" ry="9" fill="#a8336a"/>
+    <ellipse cx="60" cy="-22" rx="6" ry="9" fill="#a8336a"/>
+    <!-- gleeful open smile -->
+    <path d="M-10,-2 q26,26 64,12" stroke="#7a1d4d" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- blush -->
+    <ellipse cx="-26" cy="-22" rx="14" ry="9" fill="#ff7fb1" opacity="0.75"/>
+    <!-- front arm reaching forward -->
+    <path d="M40,34 q44,-10 64,-44" stroke="#f792bd" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <circle cx="108" cy="-14" r="15" fill="#ffa6c9" stroke="#b13d72" stroke-width="4"/>
+  </g>
+
+  <!-- ============ SPEED LINES + MOTION ============ -->
+  <g stroke="#ffffff" stroke-linecap="round" fill="none">
+    <path d="M150,1180 l130,-6" stroke-width="7" opacity="0.5"/>
+    <path d="M120,1250 l170,-8" stroke-width="9" opacity="0.6"/>
+    <path d="M170,1330 l120,-4" stroke-width="6" opacity="0.4"/>
+    <path d="M905,1230 l150,10" stroke-width="8" opacity="0.55"/>
+    <path d="M950,1320 l120,8" stroke-width="6" opacity="0.45"/>
+    <path d="M880,1130 l110,6" stroke-width="5" opacity="0.4"/>
+  </g>
+  <g stroke="#ffd9ec" stroke-linecap="round" fill="none" opacity="0.7">
+    <path d="M300,1240 q60,-10 110,-2" stroke-width="4"/>
+    <path d="M868,1395 q-60,8 -104,2" stroke-width="4"/>
+  </g>
+
+  <!-- ============ CONFETTI ============ -->
+  <g>
+    <rect x="180" y="980" width="14" height="8" rx="3" fill="#ffe14d" transform="rotate(28 187 984)"/>
+    <rect x="260" y="900" width="12" height="7" rx="3" fill="#3fe0c8" transform="rotate(-20 266 903)"/>
+    <rect x="980" y="950" width="14" height="8" rx="3" fill="#ff5fa8" transform="rotate(40 987 954)"/>
+    <rect x="1060" y="1060" width="12" height="7" rx="3" fill="#a45cf0" transform="rotate(-32 1066 1063)"/>
+    <rect x="120" y="1080" width="13" height="8" rx="3" fill="#ff8a3d" transform="rotate(12 126 1084)"/>
+    <rect x="930" y="860" width="11" height="7" rx="3" fill="#ffe14d" transform="rotate(-44 935 863)"/>
+    <circle cx="220" cy="1040" r="5" fill="#ff5fa8"/>
+    <circle cx="1010" cy="1000" r="5" fill="#3fe0c8"/>
+    <circle cx="320" cy="950" r="4" fill="#ffffff"/>
+    <circle cx="890" cy="1080" r="4" fill="#ffe14d"/>
+    <path d="M150,930 q8,-10 16,0 q-8,10 -16,0" fill="#a45cf0"/>
+    <path d="M1090,920 q8,-10 16,0 q-8,10 -16,0" fill="#ff8a3d"/>
+  </g>
+
+  <!-- ============ TITLE TREATMENT ============ -->
+  <g font-family="'Arial Rounded MT Bold','Baloo 2','Fredoka One','Arial Black',Arial,sans-serif" font-weight="900" text-anchor="middle">
+    <!-- soft glow plate behind title -->
+    <ellipse cx="600" cy="250" rx="470" ry="170" fill="#2a0a52" opacity="0.5" filter="url(#softBlur)"/>
+    <!-- SPUZZLE: per-letter bounce + arc, candy gradient, fat dark outline -->
+    <g font-size="158" stroke="#3a1060" stroke-width="22" stroke-linejoin="round" paint-order="stroke fill" fill="url(#titleFill)">
+      <text x="172" y="232" transform="rotate(-9 172 232)">S</text>
+      <text x="298" y="210" transform="rotate(-6 298 210)">P</text>
+      <text x="424" y="196" transform="rotate(-3 424 196)">U</text>
+      <text x="546" y="190" transform="rotate(-1 546 190)">Z</text>
+      <text x="664" y="192" transform="rotate(2 664 192)">Z</text>
+      <text x="782" y="202" transform="rotate(5 782 202)">L</text>
+      <text x="898" y="220" transform="rotate(8 898 220)">E</text>
+    </g>
+    <!-- inner candy shine band on SPUZZLE -->
+    <g font-size="158" fill="#ffffff" opacity="0.25">
+      <text x="172" y="226" transform="rotate(-9 172 232)">S</text>
+      <text x="298" y="204" transform="rotate(-6 298 210)">P</text>
+      <text x="424" y="190" transform="rotate(-3 424 196)">U</text>
+      <text x="546" y="184" transform="rotate(-1 546 190)">Z</text>
+      <text x="664" y="186" transform="rotate(2 664 192)">Z</text>
+      <text x="782" y="196" transform="rotate(5 782 202)">L</text>
+      <text x="898" y="214" transform="rotate(8 898 220)">E</text>
+    </g>
+    <!-- RUNNER: teal candy, opposite tilt, slightly smaller, overlapping up -->
+    <g font-size="126" stroke="#0c2d52" stroke-width="19" stroke-linejoin="round" paint-order="stroke fill" fill="url(#titleFill2)">
+      <text x="294" y="368" transform="rotate(4 294 368)">R</text>
+      <text x="402" y="380" transform="rotate(2 402 380)">U</text>
+      <text x="510" y="386" transform="rotate(0 510 386)">N</text>
+      <text x="618" y="386" transform="rotate(-1 618 386)">N</text>
+      <text x="726" y="380" transform="rotate(-3 726 380)">E</text>
+      <text x="828" y="368" transform="rotate(-5 828 368)">R</text>
+    </g>
+    <g font-size="126" fill="#ffffff" opacity="0.22">
+      <text x="294" y="363" transform="rotate(4 294 368)">R</text>
+      <text x="402" y="375" transform="rotate(2 402 380)">U</text>
+      <text x="510" y="381" transform="rotate(0 510 386)">N</text>
+      <text x="618" y="381" transform="rotate(-1 618 386)">N</text>
+      <text x="726" y="375" transform="rotate(-3 726 380)">E</text>
+      <text x="828" y="363" transform="rotate(-5 828 368)">R</text>
+    </g>
+    <!-- title sparkles -->
+    <use href="#star4" transform="translate(176,148) scale(1.8)" fill="#fff6c9" filter="url(#glowSoft)"/>
+    <use href="#star4" transform="translate(948,170) scale(1.4)" fill="#cffff5" filter="url(#glowSoft)"/>
+    <use href="#star4" transform="translate(880,330) scale(1.1)" fill="#ffffff" filter="url(#glowSoft)"/>
+    <!-- gem dotting the title -->
+    <use href="#gemShape" transform="translate(600,300) scale(0.8) rotate(14)" fill="url(#gemPink)" stroke="#3a1060" stroke-width="6" filter="url(#glowSoft)"/>
+    <!-- tagline ribbon -->
+    <g>
+      <path d="M380,432 L820,432 L846,468 L820,504 L380,504 L354,468 Z" fill="#3a1060" stroke="#ffd36e" stroke-width="4"/>
+      <text x="600" y="481" font-size="34" letter-spacing="3" fill="#ffe9b0" stroke="none">MATCH FAST. RUN FASTER.</text>
+    </g>
+  </g>
+
+  <!-- ============ VIGNETTE ============ -->
+  <rect width="1200" height="1600" fill="url(#vignette)"/>
+</svg>

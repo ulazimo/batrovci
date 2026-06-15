@@ -1,0 +1,402 @@
+<svg viewBox="0 0 1200 1600" width="1200" height="1600" xmlns="http://www.w3.org/2000/svg">
+  <!-- OLYMPICS FURY (working title) — key art. Vintage athletic poster x modern mobile. No Olympic rings anywhere. -->
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d6f7e"/>
+      <stop offset="0.42" stop-color="#3d97a3"/>
+      <stop offset="0.74" stop-color="#8fcbc9"/>
+      <stop offset="0.92" stop-color="#f6d98a"/>
+      <stop offset="1" stop-color="#ffe9ae"/>
+    </linearGradient>
+    <radialGradient id="sunCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fffbe8"/>
+      <stop offset="0.35" stop-color="#ffe89a"/>
+      <stop offset="0.75" stop-color="#f7b93e"/>
+      <stop offset="1" stop-color="#f7b93e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="flareHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3c4" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#ffd166" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="trackGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e0703f"/>
+      <stop offset="0.25" stop-color="#d6582f"/>
+      <stop offset="1" stop-color="#a93a22"/>
+    </linearGradient>
+    <linearGradient id="standGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a4a3a"/>
+      <stop offset="1" stop-color="#5d3328"/>
+    </linearGradient>
+    <linearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf2d8"/>
+      <stop offset="1" stop-color="#e8cf9f"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.46" r="0.78">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#2a0f08" stop-opacity="0.42"/>
+    </radialGradient>
+    <radialGradient id="dustPuff" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe9c2" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffe9c2" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="medalRibbonL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d6452c"/>
+      <stop offset="1" stop-color="#b03020"/>
+    </linearGradient>
+    <radialGradient id="medalGold" cx="0.38" cy="0.34" r="0.75">
+      <stop offset="0" stop-color="#ffe9a0"/>
+      <stop offset="0.55" stop-color="#f2b93b"/>
+      <stop offset="1" stop-color="#c98a1d"/>
+    </radialGradient>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="bigGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.7 0.7 0.7 0 0" result="alpha"/>
+      <feComposite operator="in" in="alpha" in2="SourceGraphic"/>
+    </filter>
+    <!-- halftone-feel crowd dot patterns -->
+    <pattern id="crowdA" width="26" height="22" patternUnits="userSpaceOnUse">
+      <rect width="26" height="22" fill="#6a3a2c"/>
+      <circle cx="6" cy="6" r="3.4" fill="#f2b93b"/>
+      <circle cx="19" cy="5" r="3.2" fill="#f7ead3"/>
+      <circle cx="12" cy="15" r="3.4" fill="#d6452c"/>
+      <circle cx="24" cy="16" r="3" fill="#3d97a3"/>
+      <circle cx="1" cy="17" r="2.8" fill="#e98a4f"/>
+    </pattern>
+    <pattern id="crowdB" width="22" height="18" patternUnits="userSpaceOnUse">
+      <rect width="22" height="18" fill="#5d3328"/>
+      <circle cx="5" cy="5" r="2.7" fill="#f7ead3"/>
+      <circle cx="16" cy="4" r="2.9" fill="#d6452c"/>
+      <circle cx="10" cy="13" r="2.7" fill="#f2b93b"/>
+      <circle cx="21" cy="13" r="2.5" fill="#7fc4c9"/>
+    </pattern>
+    <pattern id="crowdC" width="18" height="15" patternUnits="userSpaceOnUse">
+      <rect width="18" height="15" fill="#4f2b21"/>
+      <circle cx="4" cy="4" r="2.1" fill="#f2b93b"/>
+      <circle cx="13" cy="4" r="2.1" fill="#f7ead3"/>
+      <circle cx="8" cy="11" r="2.1" fill="#d6452c"/>
+      <circle cx="16" cy="11" r="1.9" fill="#3d97a3"/>
+    </pattern>
+  </defs>
+
+  <!-- ====================== SKY ====================== -->
+  <rect x="0" y="0" width="1200" height="780" fill="url(#skyGrad)"/>
+
+  <!-- sunburst rays from the horizon sun -->
+  <g opacity="0.5">
+    <g transform="translate(600,742)">
+      <polygon points="0,0 -1400,-130 -1400,-260" fill="#ffd166" opacity="0.5"/>
+      <polygon points="0,0 -1300,-420 -1300,-560" fill="#ffd166" opacity="0.42"/>
+      <polygon points="0,0 -900,-760 -740,-860" fill="#ffd166" opacity="0.38"/>
+      <polygon points="0,0 -420,-1000 -260,-1060" fill="#ffd166" opacity="0.34"/>
+      <polygon points="0,0 -60,-1100 100,-1100" fill="#ffd166" opacity="0.34"/>
+      <polygon points="0,0 300,-1050 460,-980" fill="#ffd166" opacity="0.34"/>
+      <polygon points="0,0 780,-840 920,-720" fill="#ffd166" opacity="0.38"/>
+      <polygon points="0,0 1300,-540 1300,-400" fill="#ffd166" opacity="0.42"/>
+      <polygon points="0,0 1400,-250 1400,-120" fill="#ffd166" opacity="0.5"/>
+    </g>
+  </g>
+
+  <!-- sun + layered flare glow -->
+  <circle cx="600" cy="742" r="330" fill="url(#flareHalo)" filter="url(#bigGlow)"/>
+  <circle cx="600" cy="742" r="150" fill="url(#sunCore)" filter="url(#softGlow)"/>
+  <circle cx="600" cy="742" r="76" fill="#fffdf2"/>
+  <!-- anamorphic flare streak -->
+  <rect x="120" y="734" width="960" height="14" rx="7" fill="#fff3c4" opacity="0.65" filter="url(#softGlow)"/>
+  <rect x="320" y="738" width="560" height="6" rx="3" fill="#ffffff" opacity="0.8"/>
+  <circle cx="430" cy="640" r="14" fill="#ffe9a0" opacity="0.5"/>
+  <circle cx="790" cy="660" r="9" fill="#ffe9a0" opacity="0.45"/>
+  <circle cx="845" cy="610" r="5" fill="#fff3c4" opacity="0.5"/>
+
+  <!-- confetti drifting in the sky -->
+  <g>
+    <rect x="150" y="430" width="16" height="9" rx="2" fill="#d6452c" transform="rotate(24 158 434)"/>
+    <rect x="240" y="520" width="14" height="8" rx="2" fill="#f2b93b" transform="rotate(-32 247 524)"/>
+    <rect x="330" y="455" width="15" height="8" rx="2" fill="#f7ead3" transform="rotate(48 337 459)"/>
+    <rect x="455" y="540" width="13" height="8" rx="2" fill="#2a8a96" transform="rotate(-18 461 544)"/>
+    <rect x="540" y="470" width="16" height="9" rx="2" fill="#d6452c" transform="rotate(64 548 474)"/>
+    <rect x="660" y="525" width="14" height="8" rx="2" fill="#f2b93b" transform="rotate(-44 667 529)"/>
+    <rect x="760" y="450" width="15" height="9" rx="2" fill="#f7ead3" transform="rotate(20 767 454)"/>
+    <rect x="880" y="515" width="14" height="8" rx="2" fill="#2a8a96" transform="rotate(-58 887 519)"/>
+    <rect x="980" y="440" width="16" height="9" rx="2" fill="#d6452c" transform="rotate(36 988 444)"/>
+    <rect x="1060" y="540" width="13" height="8" rx="2" fill="#f2b93b" transform="rotate(-26 1066 544)"/>
+    <circle cx="205" cy="480" r="5" fill="#f2b93b"/>
+    <circle cx="395" cy="505" r="4" fill="#f7ead3"/>
+    <circle cx="600" cy="430" r="5" fill="#d6452c"/>
+    <circle cx="715" cy="478" r="4" fill="#7fc4c9"/>
+    <circle cx="925" cy="470" r="5" fill="#f7ead3"/>
+    <circle cx="1105" cy="490" r="4" fill="#d6452c"/>
+    <rect x="115" y="560" width="13" height="7" rx="2" fill="#7fc4c9" transform="rotate(52 121 563)"/>
+    <rect x="1010" y="575" width="14" height="8" rx="2" fill="#f7ead3" transform="rotate(-40 1017 579)"/>
+  </g>
+
+  <!-- ====================== STADIUM STANDS ====================== -->
+  <!-- roof canopy -->
+  <path d="M -10,584 Q 600,520 1210,584 L 1210,604 Q 600,544 -10,604 Z" fill="url(#roofGrad)"/>
+  <path d="M -10,604 Q 600,544 1210,604 L 1210,612 Q 600,553 -10,612 Z" fill="#b53324" opacity="0.85"/>
+  <!-- roof support posts -->
+  <rect x="90" y="596" width="7" height="48" fill="#4f2b21"/>
+  <rect x="330" y="572" width="7" height="58" fill="#4f2b21"/>
+  <rect x="596" y="562" width="7" height="62" fill="#4f2b21"/>
+  <rect x="862" y="572" width="7" height="58" fill="#4f2b21"/>
+  <rect x="1102" y="596" width="7" height="48" fill="#4f2b21"/>
+  <!-- tiered halftone crowd bands -->
+  <path d="M -10,612 Q 600,556 1210,612 L 1210,660 Q 600,606 -10,660 Z" fill="url(#crowdC)"/>
+  <path d="M -10,660 Q 600,606 1210,660 L 1210,712 Q 600,660 -10,712 Z" fill="url(#crowdB)"/>
+  <path d="M -10,712 Q 600,660 1210,712 L 1210,756 Q 600,708 -10,756 Z" fill="url(#crowdA)"/>
+  <!-- stand rail + warm wall below crowd -->
+  <path d="M -10,756 Q 600,708 1210,756 L 1210,768 Q 600,720 -10,768 Z" fill="#f7ead3"/>
+  <path d="M -10,768 Q 600,720 1210,768 L 1210,790 Q 600,744 -10,790 Z" fill="url(#standGrad)"/>
+  <!-- pennant flags on the rail (generic triangles, NOT rings) -->
+  <g>
+    <polygon points="120,762 138,762 129,780" fill="#d6452c"/>
+    <polygon points="240,754 258,754 249,772" fill="#f2b93b"/>
+    <polygon points="360,748 378,748 369,766" fill="#2a8a96"/>
+    <polygon points="480,742 498,742 489,760" fill="#f7ead3"/>
+    <polygon points="700,742 718,742 709,760" fill="#d6452c"/>
+    <polygon points="820,748 838,748 829,766" fill="#f2b93b"/>
+    <polygon points="940,754 958,754 949,772" fill="#2a8a96"/>
+    <polygon points="1060,762 1078,762 1069,780" fill="#f7ead3"/>
+  </g>
+
+  <!-- ====================== TRACK (low angle, converging lanes) ====================== -->
+  <rect x="0" y="784" width="1200" height="816" fill="url(#trackGrad)"/>
+  <!-- infield strip at horizon -->
+  <path d="M 0,784 L 1200,784 L 1200,796 L 0,796 Z" fill="#3f8f4e"/>
+  <!-- lane lines converging to vanishing point (600,790) -->
+  <g fill="#fdf2d8" opacity="0.92">
+    <polygon points="600,790 -340,1600 -260,1600"/>
+    <polygon points="600,790 -40,1600 28,1600"/>
+    <polygon points="600,790 250,1600 306,1600"/>
+    <polygon points="600,790 540,1600 588,1600"/>
+    <polygon points="600,790 818,1600 866,1600"/>
+    <polygon points="600,790 1106,1600 1162,1600"/>
+    <polygon points="600,790 1392,1600 1460,1600"/>
+    <polygon points="600,790 1690,1600 1770,1600"/>
+  </g>
+  <!-- subtle lane sheen from the sun -->
+  <polygon points="600,790 380,1600 880,1600" fill="#ffd166" opacity="0.16"/>
+  <!-- start line band under athletes -->
+  <polygon points="92,1430 1140,1430 1200,1492 22,1492" fill="#fdf2d8" opacity="0.95"/>
+  <polygon points="92,1430 1140,1430 1148,1438 84,1438" fill="#caa86f" opacity="0.6"/>
+  <!-- painted lane numbers -->
+  <g fill="#fdf2d8" opacity="0.85" font-family="Arial Black, Arial, sans-serif" font-weight="900" text-anchor="middle">
+    <text x="170" y="1572" font-size="54" transform="skewX(-4)">2</text>
+    <text x="588" y="1582" font-size="58" transform="skewX(-2)">4</text>
+    <text x="1030" y="1572" font-size="54" transform="skewX(2)">6</text>
+  </g>
+
+  <!-- ====================== ATHLETES ====================== -->
+  <!-- long golden-hour shadows -->
+  <ellipse cx="268" cy="1448" rx="150" ry="26" fill="#6e2113" opacity="0.42"/>
+  <ellipse cx="612" cy="1500" rx="190" ry="30" fill="#6e2113" opacity="0.45"/>
+  <ellipse cx="952" cy="1452" rx="130" ry="22" fill="#6e2113" opacity="0.4"/>
+
+  <!-- speed lines -->
+  <g stroke="#fff3dc" stroke-linecap="round" opacity="0.85">
+    <line x1="20" y1="1185" x2="148" y2="1185" stroke-width="9"/>
+    <line x1="-10" y1="1235" x2="136" y2="1235" stroke-width="6"/>
+    <line x1="40" y1="1290" x2="150" y2="1290" stroke-width="8"/>
+    <line x1="330" y1="1170" x2="450" y2="1170" stroke-width="7"/>
+    <line x1="306" y1="1255" x2="446" y2="1255" stroke-width="9"/>
+    <line x1="346" y1="1330" x2="452" y2="1330" stroke-width="6"/>
+    <line x1="690" y1="1190" x2="806" y2="1190" stroke-width="8"/>
+    <line x1="716" y1="1262" x2="822" y2="1262" stroke-width="6"/>
+    <line x1="1056" y1="1210" x2="1180" y2="1210" stroke-width="8"/>
+    <line x1="1082" y1="1276" x2="1196" y2="1276" stroke-width="6"/>
+  </g>
+
+  <!-- ATHLETE 1 : NANA BLITZ — determined sprint grandma (left) -->
+  <g transform="translate(258,1108) rotate(6)">
+    <!-- trailing leg -->
+    <path d="M -18,210 Q -64,238 -96,224" fill="none" stroke="#caa07c" stroke-width="26" stroke-linecap="round"/>
+    <path d="M -96,224 l -34,16 6,14 38,-8 z" fill="#f7ead3"/>
+    <path d="M -96,224 l -34,16 3,7 33,-12 z" fill="#d6452c"/>
+    <!-- lead leg -->
+    <path d="M 18,206 Q 58,238 60,286" fill="none" stroke="#caa07c" stroke-width="26" stroke-linecap="round"/>
+    <path d="M 52,286 l 44,4 0,16 -46,2 z" fill="#f7ead3"/>
+    <path d="M 52,300 l 46,-2 0,8 -46,0 z" fill="#d6452c"/>
+    <!-- tracksuit body -->
+    <path d="M -36,96 Q -52,176 -22,214 L 30,214 Q 52,168 34,96 Z" fill="#2a8a96"/>
+    <path d="M -36,96 L 34,96 L 30,120 L -33,120 Z" fill="#f7ead3" opacity="0.9"/>
+    <rect x="-7" y="120" width="11" height="92" fill="#f7ead3" opacity="0.85"/>
+    <!-- race bib -->
+    <rect x="-22" y="132" width="46" height="36" rx="5" fill="#fdf2d8"/>
+    <text x="1" y="159" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="24" fill="#b03020" text-anchor="middle">74</text>
+    <!-- pumping arms -->
+    <path d="M -32,116 Q -76,128 -84,170" fill="none" stroke="#2a8a96" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="-86" cy="176" r="13" fill="#caa07c"/>
+    <path d="M 30,116 Q 72,104 92,72" fill="none" stroke="#2a8a96" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="96" cy="66" r="13" fill="#caa07c"/>
+    <!-- BIG head -->
+    <circle cx="6" cy="6" r="92" fill="#f2c9a0"/>
+    <!-- silver bun + side hair -->
+    <path d="M -84,-18 Q -86,-86 -16,-92 Q 60,-96 86,-38 Q 60,-66 6,-66 Q -56,-64 -84,-18 Z" fill="#d8dde2"/>
+    <circle cx="-12" cy="-92" r="30" fill="#d8dde2"/>
+    <circle cx="-12" cy="-98" r="12" fill="#b8c0c8"/>
+    <!-- glasses -->
+    <circle cx="-26" cy="2" r="24" fill="#fffdf6" stroke="#5d3328" stroke-width="6"/>
+    <circle cx="44" cy="2" r="24" fill="#fffdf6" stroke="#5d3328" stroke-width="6"/>
+    <line x1="-2" y1="2" x2="20" y2="2" stroke="#5d3328" stroke-width="6"/>
+    <!-- fierce eyes + brows -->
+    <circle cx="-22" cy="6" r="7" fill="#3a1c14"/>
+    <circle cx="48" cy="6" r="7" fill="#3a1c14"/>
+    <path d="M -46,-22 L -6,-12" stroke="#9aa3ab" stroke-width="9" stroke-linecap="round"/>
+    <path d="M 66,-22 L 28,-12" stroke="#9aa3ab" stroke-width="9" stroke-linecap="round"/>
+    <!-- gritted determined mouth + blush -->
+    <path d="M -14,52 Q 12,64 38,50" fill="none" stroke="#8a4a3a" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="-52" cy="34" rx="13" ry="8" fill="#e98a6f" opacity="0.7"/>
+    <ellipse cx="64" cy="34" rx="13" ry="8" fill="#e98a6f" opacity="0.7"/>
+    <!-- flying sweat drops -->
+    <path d="M -96,-44 q -10,-16 2,-22 q 10 8 4 22 z" fill="#bfe6ea"/>
+    <path d="M -110,-8 q -12,-12 -2,-20 q 10 6 6 20 z" fill="#bfe6ea"/>
+  </g>
+
+  <!-- ATHLETE 2 : CLUCK NORRIS — muscular chicken mascot (center, hero) -->
+  <g transform="translate(606,1086) rotate(4)">
+    <!-- trailing leg -->
+    <path d="M -22,242 Q -70,272 -110,260" fill="none" stroke="#f2b93b" stroke-width="22" stroke-linecap="round"/>
+    <path d="M -110,260 l -30,4 -4,12 30,6 14,-10 z" fill="#e98a2f"/>
+    <!-- lead leg -->
+    <path d="M 26,240 Q 64,276 62,330" fill="none" stroke="#f2b93b" stroke-width="22" stroke-linecap="round"/>
+    <path d="M 50,330 l 48,0 6,14 -56,4 z" fill="#e98a2f"/>
+    <!-- massive torso -->
+    <path d="M -62,98 Q -84,196 -34,248 L 42,248 Q 88,192 60,98 Z" fill="#fdf2d8"/>
+    <!-- gold tank top -->
+    <path d="M -56,116 Q -70,186 -36,228 L 40,228 Q 72,182 54,116 Z" fill="#f2b93b"/>
+    <path d="M -56,116 L 54,116 L 50,138 L -52,138 Z" fill="#d6452c"/>
+    <rect x="-26" y="150" width="54" height="40" rx="6" fill="#fdf2d8"/>
+    <text x="1" y="180" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="27" fill="#b03020" text-anchor="middle">1</text>
+    <!-- red shorts -->
+    <path d="M -36,228 L 44,228 L 50,262 L -42,262 Z" fill="#d6452c"/>
+    <!-- flexed wing-arms with bicep bumps -->
+    <path d="M -58,124 Q -118,116 -124,62" fill="none" stroke="#fdf2d8" stroke-width="30" stroke-linecap="round"/>
+    <circle cx="-104" cy="84" r="22" fill="#fdf2d8"/>
+    <path d="M -124,62 l -16,-30 14,-6 16,28 z" fill="#fdf2d8"/>
+    <path d="M 56,124 Q 116,118 124,64" fill="none" stroke="#fdf2d8" stroke-width="30" stroke-linecap="round"/>
+    <circle cx="106" cy="86" r="22" fill="#fdf2d8"/>
+    <path d="M 124,64 l 16,-30 -14,-6 -16,28 z" fill="#fdf2d8"/>
+    <!-- BIG chicken head -->
+    <circle cx="0" cy="-4" r="104" fill="#fdf2d8"/>
+    <!-- comb -->
+    <path d="M -52,-92 Q -56,-130 -28,-122 Q -34,-148 -2,-136 Q 4,-160 26,-138 Q 44,-150 44,-114 Q 60,-112 48,-86 Q 20,-108 -16,-104 Q -40,-102 -52,-92 Z" fill="#d6452c"/>
+    <!-- intense eyes -->
+    <circle cx="-32" cy="-14" r="26" fill="#ffffff"/>
+    <circle cx="40" cy="-14" r="26" fill="#ffffff"/>
+    <circle cx="-26" cy="-10" r="9" fill="#3a1c14"/>
+    <circle cx="46" cy="-10" r="9" fill="#3a1c14"/>
+    <path d="M -60,-44 L -10,-34" stroke="#e98a2f" stroke-width="10" stroke-linecap="round"/>
+    <path d="M 70,-44 L 22,-34" stroke="#e98a2f" stroke-width="10" stroke-linecap="round"/>
+    <!-- open beak (battle cry) -->
+    <path d="M -6,16 L 66,8 L 18,42 Z" fill="#e98a2f"/>
+    <path d="M -2,40 L 52,40 L 16,62 Z" fill="#c96a1c"/>
+    <!-- wattle -->
+    <path d="M 0,62 q -4,30 14,32 q 16,-2 8,-32 z" fill="#d6452c"/>
+    <!-- sweat -->
+    <path d="M -98,-66 q -12,-18 2,-24 q 12 8 4 24 z" fill="#bfe6ea"/>
+    <path d="M 102,-58 q 14,-16 2,-24 q -14 8 -8 24 z" fill="#bfe6ea"/>
+    <path d="M -118,-22 q -12,-12 -2,-20 q 10 6 6 20 z" fill="#bfe6ea"/>
+  </g>
+
+  <!-- ATHLETE 3 : B0LT-3000 — tiny robot, stumbling comically (right) -->
+  <g transform="translate(948,1190) rotate(26)">
+    <!-- telescoping legs, tangled -->
+    <g stroke="#8c98a4" stroke-width="16" stroke-linecap="round" fill="none">
+      <path d="M -16,140 Q -10,176 -44,196"/>
+      <path d="M 18,140 Q 36,168 8,200"/>
+    </g>
+    <rect x="-60" y="188" width="36" height="16" rx="7" fill="#5a646e"/>
+    <rect x="-8" y="194" width="36" height="16" rx="7" fill="#5a646e" transform="rotate(18 10 202)"/>
+    <!-- body -->
+    <rect x="-44" y="64" width="88" height="84" rx="18" fill="#aeb9c4"/>
+    <rect x="-30" y="80" width="60" height="34" rx="8" fill="#2a8a96"/>
+    <circle cx="0" cy="130" r="9" fill="#f2b93b"/>
+    <rect x="-26" y="124" width="14" height="6" rx="3" fill="#5a646e"/>
+    <rect x="14" y="124" width="14" height="6" rx="3" fill="#5a646e"/>
+    <!-- flailing arms -->
+    <path d="M -42,86 Q -84,66 -92,28" fill="none" stroke="#8c98a4" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="-94" cy="22" r="11" fill="#5a646e"/>
+    <path d="M 42,90 Q 80,108 102,96" fill="none" stroke="#8c98a4" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="106" cy="94" r="11" fill="#5a646e"/>
+    <!-- BIG boxy head -->
+    <rect x="-66" y="-78" width="132" height="118" rx="24" fill="#c8d2dc"/>
+    <rect x="-50" y="-58" width="100" height="64" rx="14" fill="#22313c"/>
+    <!-- panicked screen eyes: one wide O, one glitch X -->
+    <circle cx="-20" cy="-26" r="15" fill="none" stroke="#7fe3ea" stroke-width="7"/>
+    <path d="M 12,-38 L 36,-14 M 36,-38 L 12,-14" stroke="#7fe3ea" stroke-width="7" stroke-linecap="round"/>
+    <!-- wobbly mouth line -->
+    <path d="M -34,-4 q 8,8 16,0 q 8,-8 16,0 q 8,8 16,0" fill="none" stroke="#7fe3ea" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+    <!-- antenna -->
+    <line x1="0" y1="-78" x2="-10" y2="-112" stroke="#8c98a4" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="-12" cy="-118" r="10" fill="#d6452c"/>
+    <!-- side rivets -->
+    <circle cx="-58" cy="-20" r="5" fill="#8c98a4"/>
+    <circle cx="58" cy="-20" r="5" fill="#8c98a4"/>
+    <!-- bolt popping off + panic sparks -->
+    <g transform="translate(74,-122) rotate(34)">
+      <circle r="9" fill="#8c98a4"/>
+      <rect x="-3" y="-13" width="6" height="8" fill="#8c98a4"/>
+    </g>
+    <path d="M 96,-90 l 10,-14 4,8 12,-10 -6,16 -8,-4 z" fill="#f2b93b"/>
+  </g>
+  <!-- stumble dust puff + skid -->
+  <circle cx="1042" cy="1450" r="52" fill="url(#dustPuff)"/>
+  <circle cx="1098" cy="1428" r="32" fill="url(#dustPuff)"/>
+  <path d="M 880,1462 q 60,16 130,6" fill="none" stroke="#ffe9c2" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- ====================== MEDAL RIBBON ELEMENT ====================== -->
+  <g transform="translate(1066,0)">
+    <path d="M -34,0 L -6,0 L 16,128 L -14,150 L -44,128 Z" fill="url(#medalRibbonL)"/>
+    <path d="M 6,0 L 34,0 L 44,128 L 14,150 L -16,128 Z" fill="#f7ead3"/>
+    <path d="M 6,0 L 34,0 L 44,128 L 14,150 L 4,80 Z" fill="#e8d6b4"/>
+    <circle cx="0" cy="178" r="52" fill="url(#medalGold)" stroke="#9a6a12" stroke-width="5"/>
+    <circle cx="0" cy="178" r="38" fill="none" stroke="#fff3c4" stroke-width="4" opacity="0.8"/>
+    <path d="M 0,150 l 8.8,18.2 20,2.6 -14.6,13.9 3.7,19.8 -17.9,-9.6 -17.9,9.6 3.7,-19.8 -14.6,-13.9 20,-2.6 z" fill="#9a6a12"/>
+    <path d="M -2,148 l 8.8,18.2 20,2.6 -14.6,13.9 3.7,19.8 -17.9,-9.6 -17.9,9.6 3.7,-19.8 -14.6,-13.9 20,-2.6 z" fill="#fff3c4"/>
+    <ellipse cx="-16" cy="158" rx="14" ry="7" fill="#ffffff" opacity="0.45" transform="rotate(-24 -16 158)"/>
+  </g>
+
+  <!-- ====================== TITLE BLOCK ====================== -->
+  <g font-family="Arial Black, Impact, Arial, sans-serif" font-weight="900" text-anchor="middle">
+    <g transform="translate(600,0) skewX(-8)">
+      <!-- OLYMPICS : dark stroke shadow layer -->
+      <text x="10" y="190" font-size="138" letter-spacing="2" fill="none" stroke="#3a1c14" stroke-width="24" stroke-linejoin="round">OLYMPICS</text>
+      <!-- red drop-shadow fill layer -->
+      <text x="10" y="190" font-size="138" letter-spacing="2" fill="#c8392a">OLYMPICS</text>
+      <!-- dark outline directly behind main fill -->
+      <text x="0" y="180" font-size="138" letter-spacing="2" fill="none" stroke="#3a1c14" stroke-width="12" stroke-linejoin="round">OLYMPICS</text>
+      <!-- cream main fill -->
+      <text x="0" y="180" font-size="138" letter-spacing="2" fill="#fff3dc">OLYMPICS</text>
+      <!-- FURY : dark stroke shadow layer -->
+      <text x="12" y="356" font-size="196" letter-spacing="14" fill="none" stroke="#3a1c14" stroke-width="28" stroke-linejoin="round">FURY</text>
+      <!-- red drop-shadow fill layer -->
+      <text x="12" y="356" font-size="196" letter-spacing="14" fill="#c8392a">FURY</text>
+      <!-- dark outline behind main fill -->
+      <text x="0" y="344" font-size="196" letter-spacing="14" fill="none" stroke="#3a1c14" stroke-width="14" stroke-linejoin="round">FURY</text>
+      <!-- gold-cream main fill -->
+      <text x="0" y="344" font-size="196" letter-spacing="14" fill="#ffe9ae">FURY</text>
+    </g>
+    <!-- working title subscript -->
+    <text x="600" y="408" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="400" font-size="30" fill="#fff3dc" opacity="0.85">(working title)</text>
+    <!-- tagline plate -->
+    <g transform="translate(600,468)">
+      <rect x="-292" y="-34" width="584" height="56" rx="28" fill="#3a1c14" opacity="0.78"/>
+      <line x1="-326" y1="-6" x2="-304" y2="-6" stroke="#ffe9ae" stroke-width="5" stroke-linecap="round"/>
+      <line x1="304" y1="-6" x2="326" y2="-6" stroke="#ffe9ae" stroke-width="5" stroke-linecap="round"/>
+      <text x="0" y="6" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="700" font-size="34" fill="#ffe9ae" letter-spacing="3">FIFTEEN SECONDS TO GLORY.</text>
+    </g>
+  </g>
+
+  <!-- ====================== FINISH: vignette, grain, poster frame ====================== -->
+  <rect x="0" y="0" width="1200" height="1600" fill="url(#vignette)"/>
+  <rect x="0" y="0" width="1200" height="1600" fill="#caa07c" opacity="0.10" filter="url(#grain)"/>
+  <rect x="26" y="26" width="1148" height="1548" fill="none" stroke="#fff3dc" stroke-width="5" opacity="0.7"/>
+  <rect x="38" y="38" width="1124" height="1524" fill="none" stroke="#3a1c14" stroke-width="2.5" opacity="0.5"/>
+</svg>

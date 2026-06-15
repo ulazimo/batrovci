@@ -1,0 +1,517 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" width="1200" height="1600">
+  <!-- ============================================================
+       CASEFILE — key art, 1200x1600 portrait noir poster
+       Palette: deep navy/teal noir + warm amber lamp + signal red
+       ============================================================ -->
+  <defs>
+    <!-- ambient room / sky gradients -->
+    <linearGradient id="roomBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#060d18"/>
+      <stop offset="0.45" stop-color="#0a1626"/>
+      <stop offset="0.8" stop-color="#0c1a2b"/>
+      <stop offset="1" stop-color="#05090f"/>
+    </linearGradient>
+    <linearGradient id="nightSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1d33"/>
+      <stop offset="0.55" stop-color="#0e2741"/>
+      <stop offset="0.85" stop-color="#123349"/>
+      <stop offset="1" stop-color="#0d2436"/>
+    </linearGradient>
+    <linearGradient id="wallRight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0a1422"/>
+      <stop offset="1" stop-color="#101c2a"/>
+    </linearGradient>
+    <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1722"/>
+      <stop offset="1" stop-color="#030508"/>
+    </linearGradient>
+    <!-- lamp light -->
+    <radialGradient id="lampGlowBig" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffc25e" stop-opacity="0.55"/>
+      <stop offset="0.35" stop-color="#f5a843" stop-opacity="0.28"/>
+      <stop offset="0.7" stop-color="#c97f2e" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#c97f2e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lampCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff3d6" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#ffd58a" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffd58a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="boardWash" cx="0.62" cy="0.85" r="0.95">
+      <stop offset="0" stop-color="#ffb95c" stop-opacity="0.5"/>
+      <stop offset="0.55" stop-color="#d98f3a" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#d98f3a" stop-opacity="0"/>
+    </radialGradient>
+    <!-- corkboard -->
+    <linearGradient id="cork" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#241a11"/>
+      <stop offset="0.6" stop-color="#332415"/>
+      <stop offset="1" stop-color="#3e2c1a"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9ddc0"/>
+      <stop offset="1" stop-color="#c8b794"/>
+    </linearGradient>
+    <linearGradient id="photoTone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#27384a"/>
+      <stop offset="1" stop-color="#14202e"/>
+    </linearGradient>
+    <!-- desk -->
+    <linearGradient id="deskTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a3115"/>
+      <stop offset="0.25" stop-color="#33220f"/>
+      <stop offset="1" stop-color="#120b05"/>
+    </linearGradient>
+    <!-- bokeh -->
+    <radialGradient id="bokehTeal" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#46e0e8" stop-opacity="0.9"/>
+      <stop offset="0.7" stop-color="#2fb9d6" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#2fb9d6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bokehAmber" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffce7a" stop-opacity="0.85"/>
+      <stop offset="0.7" stop-color="#f0a447" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#f0a447" stop-opacity="0"/>
+    </radialGradient>
+    <!-- rim light for silhouette -->
+    <linearGradient id="rimAmber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd591" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#e89540" stop-opacity="0.35"/>
+    </linearGradient>
+    <linearGradient id="rimTeal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd6e0" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2e94ad" stop-opacity="0.12"/>
+    </linearGradient>
+    <!-- title -->
+    <linearGradient id="titleInk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4ead0"/>
+      <stop offset="0.55" stop-color="#ddcca2"/>
+      <stop offset="1" stop-color="#b5a075"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.44" r="0.72">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.88" stop-color="#000000" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.78"/>
+    </radialGradient>
+    <linearGradient id="glassSheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bfe6ff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#bfe6ff" stop-opacity="0.07"/>
+      <stop offset="0.62" stop-color="#bfe6ff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- filters -->
+    <filter id="blur2"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="blur4"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="blur16" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="blur28" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="28"/></filter>
+    <!-- letterpress: dark inner shadow pressed into the top edge of glyphs -->
+    <filter id="letterpress" x="-15%" y="-15%" width="130%" height="130%">
+      <feOffset in="SourceAlpha" dx="0" dy="6" result="off"/>
+      <feComposite in="SourceAlpha" in2="off" operator="out" result="topEdge"/>
+      <feFlood flood-color="#241405" flood-opacity="0.85" result="ink"/>
+      <feComposite in="ink" in2="topEdge" operator="in" result="press"/>
+      <feGaussianBlur in="press" stdDeviation="2.2" result="pressSoft"/>
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode in="pressSoft"/>
+      </feMerge>
+    </filter>
+    <!-- rubber-stamp ink bleed -->
+    <filter id="inkBleed" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5"/>
+    </filter>
+    <!-- film grain -->
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="2" seed="7" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.8  0 0 0 0 0.8  0 0 0 0 0.78  0.55 0.55 0.55 0 0"/>
+    </filter>
+    <!-- worn stamp mask: noise punches holes in the ink -->
+    <mask id="stampWear">
+      <rect x="-40" y="-40" width="420" height="200" fill="#fff"/>
+      <rect x="-40" y="-40" width="420" height="200" filter="url(#grain)" opacity="0.85"/>
+    </mask>
+  </defs>
+
+  <!-- ===================== ROOM ===================== -->
+  <rect width="1200" height="1600" fill="url(#roomBg)"/>
+  <rect x="640" y="0" width="560" height="1240" fill="url(#wallRight)"/>
+  <!-- floor -->
+  <rect x="0" y="1230" width="1200" height="370" fill="url(#floorGrad)"/>
+  <!-- faint floorboards -->
+  <g stroke="#1b2735" stroke-width="2" opacity="0.35">
+    <line x1="0" y1="1300" x2="1200" y2="1286"/>
+    <line x1="0" y1="1390" x2="1200" y2="1370"/>
+    <line x1="0" y1="1500" x2="1200" y2="1474"/>
+  </g>
+
+  <!-- ===================== WINDOW ===================== -->
+  <g>
+    <!-- recess shadow -->
+    <rect x="54" y="320" width="636" height="772" fill="#020409" opacity="0.7" filter="url(#blur8)"/>
+    <!-- glass -->
+    <rect x="70" y="334" width="600" height="740" fill="url(#nightSky)"/>
+    <!-- skyline beyond glass -->
+    <g fill="#0a1a2b">
+      <rect x="70" y="780" width="86" height="294"/>
+      <rect x="150" y="700" width="64" height="374"/>
+      <rect x="208" y="828" width="92" height="246"/>
+      <rect x="296" y="742" width="70" height="332"/>
+      <rect x="360" y="884" width="96" height="190"/>
+      <rect x="450" y="690" width="58" height="384"/>
+      <rect x="502" y="800" width="84" height="274"/>
+      <rect x="580" y="744" width="90" height="330"/>
+    </g>
+    <!-- distant lit windows -->
+    <g fill="#37c4d8" opacity="0.5">
+      <rect x="166" y="724" width="9" height="12"/><rect x="186" y="752" width="9" height="12"/>
+      <rect x="312" y="766" width="8" height="11"/><rect x="332" y="800" width="8" height="11"/>
+      <rect x="464" y="712" width="8" height="11"/><rect x="482" y="748" width="8" height="11"/>
+      <rect x="600" y="770" width="9" height="12"/><rect x="624" y="806" width="9" height="12"/>
+      <rect x="92" y="806" width="9" height="12"/><rect x="118" y="842" width="9" height="12"/>
+    </g>
+    <g fill="#f0b35c" opacity="0.45">
+      <rect x="220" y="852" width="9" height="12"/><rect x="376" y="902" width="9" height="12"/>
+      <rect x="528" y="828" width="9" height="12"/><rect x="640" y="852" width="9" height="12"/>
+    </g>
+    <!-- neon bokeh, defocused city lights -->
+    <g>
+      <circle cx="170" cy="470" r="44" fill="url(#bokehTeal)" filter="url(#blur16)" opacity="0.8"/>
+      <circle cx="300" cy="410" r="26" fill="url(#bokehTeal)" filter="url(#blur8)" opacity="0.75"/>
+      <circle cx="420" cy="500" r="52" fill="url(#bokehTeal)" filter="url(#blur28)" opacity="0.7"/>
+      <circle cx="560" cy="430" r="30" fill="url(#bokehTeal)" filter="url(#blur16)" opacity="0.7"/>
+      <circle cx="620" cy="560" r="20" fill="url(#bokehTeal)" filter="url(#blur8)" opacity="0.8"/>
+      <circle cx="120" cy="610" r="22" fill="url(#bokehTeal)" filter="url(#blur8)" opacity="0.65"/>
+      <circle cx="250" cy="568" r="14" fill="url(#bokehTeal)" filter="url(#blur4)" opacity="0.85"/>
+      <circle cx="360" cy="624" r="36" fill="url(#bokehTeal)" filter="url(#blur16)" opacity="0.5"/>
+      <circle cx="500" cy="588" r="16" fill="url(#bokehTeal)" filter="url(#blur4)" opacity="0.8"/>
+      <circle cx="216" cy="690" r="24" fill="url(#bokehAmber)" filter="url(#blur8)" opacity="0.6"/>
+      <circle cx="470" cy="676" r="18" fill="url(#bokehAmber)" filter="url(#blur8)" opacity="0.65"/>
+      <circle cx="612" cy="690" r="28" fill="url(#bokehAmber)" filter="url(#blur16)" opacity="0.5"/>
+      <circle cx="86" cy="520" r="14" fill="url(#bokehAmber)" filter="url(#blur4)" opacity="0.55"/>
+      <circle cx="540" cy="520" r="10" fill="url(#bokehTeal)" filter="url(#blur2)" opacity="0.9"/>
+    </g>
+    <!-- glass sheen -->
+    <rect x="70" y="334" width="600" height="740" fill="url(#glassSheen)"/>
+    <!-- rain: long streaks running down the pane -->
+    <g stroke="#cfeaff" stroke-linecap="round" fill="none">
+      <g opacity="0.16" stroke-width="2">
+        <line x1="98"  y1="350" x2="103" y2="560"/>
+        <line x1="142" y1="402" x2="146" y2="690"/>
+        <line x1="188" y1="340" x2="193" y2="520"/>
+        <line x1="238" y1="430" x2="243" y2="770"/>
+        <line x1="282" y1="352" x2="286" y2="600"/>
+        <line x1="330" y1="470" x2="335" y2="840"/>
+        <line x1="382" y1="340" x2="386" y2="540"/>
+        <line x1="430" y1="420" x2="435" y2="760"/>
+        <line x1="478" y1="356" x2="482" y2="640"/>
+        <line x1="528" y1="440" x2="533" y2="900"/>
+        <line x1="574" y1="348" x2="578" y2="566"/>
+        <line x1="622" y1="410" x2="627" y2="744"/>
+        <line x1="656" y1="356" x2="660" y2="610"/>
+      </g>
+      <g opacity="0.10" stroke-width="3.4" filter="url(#blur2)">
+        <line x1="118" y1="380" x2="124" y2="900"/>
+        <line x1="208" y1="350" x2="215" y2="1020"/>
+        <line x1="306" y1="420" x2="313" y2="980"/>
+        <line x1="406" y1="360" x2="413" y2="1040"/>
+        <line x1="504" y1="390" x2="511" y2="940"/>
+        <line x1="600" y1="350" x2="607" y2="1000"/>
+      </g>
+      <!-- bright droplet runs catching the neon -->
+      <g opacity="0.5" stroke-width="2.4">
+        <line x1="163" y1="488" x2="164" y2="516"/>
+        <line x1="296" y1="430" x2="297" y2="452"/>
+        <line x1="414" y1="520" x2="415" y2="552"/>
+        <line x1="552" y1="452" x2="553" y2="478"/>
+        <line x1="248" y1="590" x2="249" y2="612"/>
+        <line x1="488" y1="606" x2="489" y2="626"/>
+        <line x1="346" y1="654" x2="347" y2="672"/>
+      </g>
+      <g fill="#dff3ff" stroke="none" opacity="0.55">
+        <circle cx="164" cy="520" r="2.6"/><circle cx="297" cy="456" r="2.2"/>
+        <circle cx="415" cy="556" r="2.8"/><circle cx="553" cy="482" r="2.3"/>
+        <circle cx="249" cy="616" r="2.1"/><circle cx="489" cy="630" r="2"/>
+      </g>
+    </g>
+    <!-- window frame + mullions -->
+    <g fill="#142231">
+      <rect x="48" y="312" width="644" height="24"/>
+      <rect x="48" y="1072" width="644" height="26"/>
+      <rect x="48" y="312" width="24" height="786"/>
+      <rect x="668" y="312" width="24" height="786"/>
+      <rect x="362" y="334" width="16" height="740"/>
+      <rect x="70" y="694" width="600" height="16"/>
+    </g>
+    <g fill="#223852" opacity="0.8">
+      <rect x="48" y="312" width="644" height="5"/>
+      <rect x="362" y="334" width="4" height="740"/>
+      <rect x="70" y="694" width="600" height="4"/>
+    </g>
+    <!-- cold spill of city light onto the floor -->
+    <polygon points="90,1098 650,1098 760,1330 10,1330" fill="#2a86a8" opacity="0.07" filter="url(#blur16)"/>
+  </g>
+
+  <!-- ===================== LAMP GLOW (behind objects) ===================== -->
+  <ellipse cx="985" cy="1060" rx="560" ry="620" fill="url(#lampGlowBig)"/>
+
+  <!-- ===================== CASE BOARD ===================== -->
+  <g>
+    <!-- frame -->
+    <rect x="706" y="330" width="462" height="600" rx="6" fill="#1a1209"/>
+    <rect x="722" y="346" width="430" height="568" rx="3" fill="url(#cork)"/>
+    <rect x="722" y="346" width="430" height="568" rx="3" fill="url(#boardWash)"/>
+    <!-- pinned photographs (suspects) -->
+    <g>
+      <g transform="translate(756,376) rotate(-3)">
+        <rect x="-4" y="-4" width="86" height="104" fill="#0a0805" opacity="0.55" filter="url(#blur2)"/>
+        <rect width="84" height="102" fill="url(#paper)"/>
+        <rect x="7" y="7" width="70" height="72" fill="url(#photoTone)"/>
+        <circle cx="42" cy="32" r="13" fill="#06101c"/>
+        <path d="M20 79 C24 56 60 56 64 79 Z" fill="#06101c"/>
+        <rect x="14" y="86" width="56" height="6" fill="#9b8a64"/>
+      </g>
+      <g transform="translate(902,360) rotate(4)">
+        <rect x="-4" y="-4" width="86" height="104" fill="#0a0805" opacity="0.55" filter="url(#blur2)"/>
+        <rect width="84" height="102" fill="url(#paper)"/>
+        <rect x="7" y="7" width="70" height="72" fill="url(#photoTone)"/>
+        <circle cx="42" cy="32" r="13" fill="#06101c"/>
+        <path d="M20 79 C24 56 60 56 64 79 Z" fill="#06101c"/>
+        <rect x="14" y="86" width="56" height="6" fill="#9b8a64"/>
+      </g>
+      <g transform="translate(1046,386) rotate(-5)">
+        <rect x="-4" y="-4" width="86" height="104" fill="#0a0805" opacity="0.55" filter="url(#blur2)"/>
+        <rect width="84" height="102" fill="url(#paper)"/>
+        <rect x="7" y="7" width="70" height="72" fill="url(#photoTone)"/>
+        <circle cx="42" cy="32" r="13" fill="#06101c"/>
+        <path d="M20 79 C24 56 60 56 64 79 Z" fill="#06101c"/>
+        <rect x="14" y="86" width="56" height="6" fill="#9b8a64"/>
+      </g>
+    </g>
+    <!-- documents -->
+    <g>
+      <g transform="translate(748,540) rotate(2)">
+        <rect x="-3" y="-3" width="104" height="128" fill="#0a0805" opacity="0.5" filter="url(#blur2)"/>
+        <rect width="102" height="126" fill="url(#paper)"/>
+        <g stroke="#8d7c58" stroke-width="3">
+          <line x1="12" y1="22" x2="90" y2="22"/><line x1="12" y1="38" x2="78" y2="38"/>
+          <line x1="12" y1="54" x2="90" y2="54"/><line x1="12" y1="70" x2="66" y2="70"/>
+          <line x1="12" y1="86" x2="86" y2="86"/><line x1="12" y1="102" x2="58" y2="102"/>
+        </g>
+      </g>
+      <g transform="translate(1032,548) rotate(-3)">
+        <rect x="-3" y="-3" width="104" height="128" fill="#0a0805" opacity="0.5" filter="url(#blur2)"/>
+        <rect width="102" height="126" fill="url(#paper)"/>
+        <g stroke="#8d7c58" stroke-width="3">
+          <line x1="12" y1="22" x2="90" y2="22"/><line x1="12" y1="38" x2="84" y2="38"/>
+          <line x1="12" y1="54" x2="70" y2="54"/><line x1="12" y1="70" x2="90" y2="70"/>
+          <line x1="12" y1="86" x2="62" y2="86"/>
+        </g>
+        <rect x="12" y="100" width="46" height="14" fill="none" stroke="#bb3a30" stroke-width="2.5" opacity="0.8"/>
+      </g>
+      <!-- map fragment, center -->
+      <g transform="translate(876,520) rotate(1)">
+        <rect x="-3" y="-3" width="132" height="112" fill="#0a0805" opacity="0.5" filter="url(#blur2)"/>
+        <rect width="130" height="110" fill="#d8cba6"/>
+        <g stroke="#8d7c58" stroke-width="2.5" fill="none">
+          <path d="M8 30 C40 22 66 46 122 34"/>
+          <path d="M8 66 C46 60 80 84 122 70"/>
+          <path d="M40 8 C46 40 36 78 46 102"/>
+          <path d="M88 8 C82 44 96 76 88 102"/>
+        </g>
+        <circle cx="66" cy="52" r="9" fill="none" stroke="#bb3a30" stroke-width="3"/>
+      </g>
+      <!-- small notes, lower band -->
+      <g transform="translate(770,712) rotate(-2)">
+        <rect width="84" height="64" fill="url(#paper)"/>
+        <g stroke="#8d7c58" stroke-width="3">
+          <line x1="10" y1="18" x2="74" y2="18"/><line x1="10" y1="34" x2="60" y2="34"/><line x1="10" y1="50" x2="70" y2="50"/>
+        </g>
+      </g>
+      <g transform="translate(926,724) rotate(3)">
+        <rect width="84" height="64" fill="url(#paper)"/>
+        <g stroke="#8d7c58" stroke-width="3">
+          <line x1="10" y1="18" x2="70" y2="18"/><line x1="10" y1="34" x2="74" y2="34"/><line x1="10" y1="50" x2="52" y2="50"/>
+        </g>
+      </g>
+      <g transform="translate(1066,716) rotate(-4)">
+        <rect width="76" height="92" fill="url(#paper)"/>
+        <rect x="10" y="10" width="56" height="50" fill="url(#photoTone)"/>
+        <g stroke="#8d7c58" stroke-width="3">
+          <line x1="10" y1="72" x2="64" y2="72"/><line x1="10" y1="84" x2="48" y2="84"/>
+        </g>
+      </g>
+    </g>
+    <!-- red string web: shadows first, then string -->
+    <g stroke="#0a0503" stroke-width="3" opacity="0.4" fill="none" transform="translate(2,3)">
+      <path d="M798 386 L944 372"/><path d="M944 372 L1088 398"/>
+      <path d="M798 386 L940 568"/><path d="M1088 398 L940 568"/>
+      <path d="M940 568 L800 552"/><path d="M940 568 L1084 560"/>
+      <path d="M940 568 L812 722"/><path d="M940 568 L968 734"/>
+      <path d="M1084 560 L1104 726"/>
+    </g>
+    <g stroke="#e0342e" stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M798 386 L944 372"/><path d="M944 372 L1088 398"/>
+      <path d="M798 386 L940 568"/><path d="M1088 398 L940 568"/>
+      <path d="M940 568 L800 552"/><path d="M940 568 L1084 560"/>
+      <path d="M940 568 L812 722"/><path d="M940 568 L968 734"/>
+      <path d="M1084 560 L1104 726"/>
+    </g>
+    <!-- pins -->
+    <g>
+      <g fill="#7e1d18"><circle cx="800" cy="389" r="7"/><circle cx="946" cy="375" r="7"/><circle cx="1090" cy="401" r="7"/><circle cx="942" cy="571" r="7"/><circle cx="802" cy="555" r="7"/><circle cx="1086" cy="563" r="7"/><circle cx="814" cy="725" r="7"/><circle cx="970" cy="737" r="7"/><circle cx="1106" cy="729" r="7"/></g>
+      <g fill="#ef5a4e"><circle cx="798" cy="386" r="5"/><circle cx="944" cy="372" r="5"/><circle cx="1088" cy="398" r="5"/><circle cx="940" cy="568" r="5"/><circle cx="800" cy="552" r="5"/><circle cx="1084" cy="560" r="5"/><circle cx="812" cy="722" r="5"/><circle cx="968" cy="734" r="5"/><circle cx="1104" cy="726" r="5"/></g>
+      <g fill="#ffd9c9" opacity="0.9"><circle cx="796.5" cy="384.5" r="1.6"/><circle cx="942.5" cy="370.5" r="1.6"/><circle cx="1086.5" cy="396.5" r="1.6"/><circle cx="938.5" cy="566.5" r="1.6"/><circle cx="798.5" cy="550.5" r="1.6"/><circle cx="1082.5" cy="558.5" r="1.6"/></g>
+    </g>
+    <!-- board top edge catching lamp light -->
+    <rect x="706" y="330" width="462" height="5" fill="#f0b35c" opacity="0.25"/>
+  </g>
+
+  <!-- ===================== DESK ===================== -->
+  <g>
+    <polygon points="588,1196 1200,1180 1200,1268 560,1290" fill="url(#deskTop)"/>
+    <polygon points="560,1290 1200,1268 1200,1600 560,1600" fill="#0b0703"/>
+    <polygon points="588,1196 1200,1180 1200,1190 588,1206" fill="#f0b35c" opacity="0.18"/>
+    <!-- scattered papers on desk -->
+    <g transform="translate(640,1216) rotate(-4)"><rect width="110" height="64" fill="url(#paper)" opacity="0.92"/><g stroke="#8d7c58" stroke-width="2.5"><line x1="10" y1="16" x2="98" y2="16"/><line x1="10" y1="30" x2="80" y2="30"/><line x1="10" y1="44" x2="92" y2="44"/></g></g>
+    <g transform="translate(806,1226) rotate(3)"><rect width="96" height="58" fill="#d8cba6" opacity="0.9"/><g stroke="#8d7c58" stroke-width="2.5"><line x1="10" y1="16" x2="84" y2="16"/><line x1="10" y1="30" x2="68" y2="30"/></g><rect x="10" y="40" width="40" height="11" fill="none" stroke="#bb3a30" stroke-width="2"/></g>
+
+    <!-- banker's lamp -->
+    <g>
+      <ellipse cx="1014" cy="1196" rx="50" ry="11" fill="#0a0703"/>
+      <ellipse cx="1014" cy="1190" rx="36" ry="9" fill="#3a2c12"/>
+      <rect x="1009" y="1108" width="10" height="84" fill="#473411"/>
+      <rect x="1009" y="1108" width="3" height="84" fill="#caa44e" opacity="0.7"/>
+      <!-- shade -->
+      <path d="M942 1106 Q1014 1058 1086 1106 L1072 1126 Q1014 1090 956 1126 Z" fill="#173a2d"/>
+      <path d="M942 1106 Q1014 1058 1086 1106 L1082 1112 Q1014 1068 946 1112 Z" fill="#2c5c46" opacity="0.9"/>
+      <!-- light under the shade -->
+      <ellipse cx="1014" cy="1124" rx="62" ry="14" fill="#ffe9bd" opacity="0.9" filter="url(#blur4)"/>
+      <ellipse cx="1014" cy="1122" rx="120" ry="44" fill="url(#lampCore)" filter="url(#blur8)"/>
+      <!-- pull chain -->
+      <line x1="1052" y1="1116" x2="1056" y2="1150" stroke="#caa44e" stroke-width="2"/>
+      <circle cx="1056" cy="1154" r="3.4" fill="#caa44e"/>
+      <!-- pool of light on the desk -->
+      <ellipse cx="1010" cy="1216" rx="190" ry="40" fill="#ffc25e" opacity="0.20" filter="url(#blur16)"/>
+    </g>
+
+    <!-- magnifying glass catching the light -->
+    <g transform="translate(742,1248) rotate(-9)">
+      <ellipse cx="6" cy="16" rx="64" ry="20" fill="#050302" opacity="0.5" filter="url(#blur4)"/>
+      <!-- handle -->
+      <g transform="rotate(206)"><rect x="52" y="-9" width="86" height="18" rx="9" fill="#1c1208"/><rect x="52" y="-9" width="86" height="6" rx="3" fill="#8a6a33" opacity="0.8"/></g>
+      <!-- ring -->
+      <ellipse cx="0" cy="0" rx="60" ry="26" fill="none" stroke="#3a2a12" stroke-width="11"/>
+      <ellipse cx="0" cy="-2" rx="60" ry="26" fill="none" stroke="#d8a955" stroke-width="5"/>
+      <!-- lens -->
+      <ellipse cx="0" cy="-1" rx="52" ry="21" fill="#9fdcec" opacity="0.16"/>
+      <path d="M-40 -10 Q-10 -24 28 -14" stroke="#fff6e0" stroke-width="5" fill="none" opacity="0.65" stroke-linecap="round"/>
+      <path d="M-30 4 Q0 12 34 2" stroke="#ffd58a" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ===================== LAMP CORE FLARE ===================== -->
+  <ellipse cx="1014" cy="1118" rx="220" ry="150" fill="url(#lampCore)" opacity="0.5" filter="url(#blur28)"/>
+  <!-- warm shaft from lamp toward the board -->
+  <polygon points="960,1100 1070,1100 1160,930 760,930" fill="#ffbf63" opacity="0.05" filter="url(#blur16)"/>
+
+  <!-- ===================== DETECTIVE SILHOUETTE ===================== -->
+  <g>
+    <!-- cast shadow -->
+    <ellipse cx="420" cy="1560" rx="240" ry="52" fill="#000" opacity="0.55" filter="url(#blur16)"/>
+    <!-- figure: stylish woman seen from behind, collar up, belted trench -->
+    <g fill="#04080f">
+      <!-- low chignon, head turned slightly toward the board -->
+      <circle cx="468" cy="868" r="27"/>
+      <circle cx="432" cy="884" r="52"/>
+      <path d="M392 858 Q430 818 472 850 Q488 864 484 888 L470 870 Q436 838 398 872 Z"/>
+      <!-- neck -->
+      <rect x="412" y="912" width="42" height="34"/>
+      <!-- coat with popped collar, cinched waist, flare -->
+      <path d="M300 1018
+               C316 952 360 924 432 922
+               C506 924 550 952 566 1020
+               C580 1090 572 1138 556 1186
+               C592 1318 612 1452 624 1600
+               L240 1600
+               C254 1452 276 1318 312 1186
+               C296 1138 287 1090 300 1018 Z"/>
+      <!-- collar -->
+      <path d="M362 944 L412 912 L426 962 Z"/>
+      <path d="M506 946 L456 912 L444 962 Z"/>
+    </g>
+    <!-- coat fold hints -->
+    <g stroke="#101c2c" stroke-width="3" opacity="0.65" fill="none">
+      <path d="M412 980 C406 1080 398 1300 388 1560"/>
+      <path d="M462 982 C470 1090 480 1320 492 1570"/>
+    </g>
+    <!-- belt -->
+    <path d="M312 1166 C380 1188 492 1188 556 1164 L552 1196 C488 1218 382 1218 318 1198 Z" fill="#02050a"/>
+    <path d="M312 1166 C380 1188 492 1188 556 1164" stroke="#cf9a4c" stroke-width="3" fill="none" opacity="0.5"/>
+    <rect x="418" y="1176" width="34" height="26" rx="4" fill="none" stroke="#cf9a4c" stroke-width="3" opacity="0.6"/>
+    <!-- amber rim light, lamp side (right contour) -->
+    <g fill="none" stroke="url(#rimAmber)" stroke-linecap="round">
+      <path d="M468 842 A27 27 0 0 1 494 872" stroke-width="6"/>
+      <path d="M452 940 C520 950 552 980 566 1022 C579 1090 572 1138 556 1186" stroke-width="7"/>
+      <path d="M556 1186 C592 1320 610 1452 622 1592" stroke-width="5" opacity="0.8"/>
+      <path d="M506 946 L458 914" stroke-width="4" opacity="0.9"/>
+    </g>
+    <g fill="none" stroke="url(#rimAmber)" stroke-linecap="round" filter="url(#blur4)" opacity="0.55">
+      <path d="M452 940 C520 950 552 980 566 1022 C579 1090 572 1138 556 1186" stroke-width="12"/>
+    </g>
+    <!-- cool teal rim, window side (left contour) -->
+    <g fill="none" stroke="url(#rimTeal)" stroke-linecap="round" opacity="0.8">
+      <path d="M406 838 A52 52 0 0 0 382 880" stroke-width="4"/>
+      <path d="M414 940 C352 950 316 978 300 1020 C288 1090 296 1138 312 1186" stroke-width="4.5"/>
+      <path d="M312 1186 C278 1320 258 1452 244 1588" stroke-width="3.5" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- ===================== TITLE BLOCK ===================== -->
+  <g>
+    <!-- soft halo so the title reads on the dark wall -->
+    <ellipse cx="600" cy="195" rx="520" ry="150" fill="#091525" opacity="0.55" filter="url(#blur28)"/>
+    <!-- drop shadow copy -->
+    <text x="600" y="232" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', 'Times New Roman', serif"
+          font-size="148" font-weight="700" letter-spacing="20" fill="#000a14" opacity="0.85"
+          textLength="980" lengthAdjust="spacingAndGlyphs">CASEFILE</text>
+    <!-- main letterpress title -->
+    <text x="600" y="226" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', 'Times New Roman', serif"
+          font-size="148" font-weight="700" letter-spacing="20" fill="url(#titleInk)" filter="url(#letterpress)"
+          textLength="980" lengthAdjust="spacingAndGlyphs">CASEFILE</text>
+    <!-- red string rule under the title, pinned at both ends -->
+    <path d="M250 268 C420 282 780 282 950 268" stroke="#e0342e" stroke-width="2.6" fill="none"/>
+    <circle cx="250" cy="268" r="5" fill="#ef5a4e"/><circle cx="250" cy="268" r="2" fill="#ffd9c9"/>
+    <circle cx="950" cy="268" r="5" fill="#ef5a4e"/><circle cx="950" cy="268" r="2" fill="#ffd9c9"/>
+    <!-- tagline -->
+    <text x="600" y="318" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', serif"
+          font-size="27" letter-spacing="6" fill="#8fc3cf" opacity="0.92"
+          textLength="760" lengthAdjust="spacingAndGlyphs">EVERY CASE IS NEW. EVERY CLUE IS REAL.</text>
+    <!-- CLASSIFIED stamp, knocked over the title's corner -->
+    <g transform="translate(872,64) rotate(8)" filter="url(#inkBleed)" mask="url(#stampWear)" opacity="0.92">
+      <rect x="0" y="0" width="268" height="74" rx="8" fill="none" stroke="#d8302c" stroke-width="5"/>
+      <rect x="8" y="8" width="252" height="58" rx="5" fill="none" stroke="#d8302c" stroke-width="2"/>
+      <text x="134" y="49" text-anchor="middle" font-family="'Courier New', Courier, monospace"
+            font-size="34" font-weight="700" letter-spacing="7" fill="#d8302c">CLASSIFIED</text>
+    </g>
+  </g>
+
+  <!-- ===================== FOOTER ===================== -->
+  <g font-family="'Courier New', Courier, monospace" fill="#5f8a99">
+    <text x="74" y="1556" font-size="20" letter-spacing="3" opacity="0.85">CASE NO. 2026-001</text>
+    <text x="74" y="1582" font-size="16" letter-spacing="2" opacity="0.6">PROCEDURAL MYSTERY · AGENCY SIM · CONCEPT KEY ART</text>
+    <text x="1126" y="1576" text-anchor="end" font-size="16" letter-spacing="2" opacity="0.6">EST. 2014 — REOPENED 2026</text>
+  </g>
+
+  <!-- ===================== ATMOSPHERE PASSES ===================== -->
+  <!-- dust motes in the lamp beam -->
+  <g fill="#ffd9a0" opacity="0.5">
+    <circle cx="930" cy="1010" r="2"/><circle cx="980" cy="960" r="1.5"/><circle cx="1050" cy="1000" r="1.8"/>
+    <circle cx="900" cy="1070" r="1.4"/><circle cx="1080" cy="1056" r="1.5"/><circle cx="1010" cy="924" r="1.3"/>
+  </g>
+  <!-- film grain -->
+  <rect width="1200" height="1600" filter="url(#grain)" opacity="0.05"/>
+  <!-- vignette -->
+  <rect width="1200" height="1600" fill="url(#vignette)"/>
+</svg>
