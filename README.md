@@ -21,6 +21,7 @@ A collection of experimental HTML5 game prototypes and interactive mechanics dem
 - **Memory Match** - Flip cards to build color chains and combos
 - **Black Hole City** - Control a black hole, consume everything
 - **Tower Stand** - Idle tower defense with endless stages, upgrade tree, and rogue-like boons
+- **Football Card Battler** - Marvel Snap-inspired tactical card duel vs AI across three pitch zones
 
 ## 🚀 Quick Start
 

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Football Card Battler</title>
+    <!-- GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg:#0a0e16; --panel:#151923; --panel2:#1b2230; --border:#243044;
+            --cyan:#00f0ff; --amber:#f59e0b; --muted:#7a899c; --text:#e8eef5;
+            --red:#ff4d6d; --green:#39d98a;
+            --gk:#f59e0b; --def:#4d9fff; --mid:#39d98a; --fwd:#ff5d8f;
+        }
+        *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+        html,body{margin:0; height:100%; overflow:hidden;}
+        body{
+            background:radial-gradient(circle at 50% -10%, #16203a 0%, var(--bg) 60%);
+            color:var(--text); font-family:'Rajdhani',sans-serif;
+            display:flex; flex-direction:column; height:100dvh;
+            user-select:none;
+        }
+        .display{font-family:'Orbitron',sans-serif;}
+        button{font-family:'Rajdhani',sans-serif; cursor:pointer; border:none; color:inherit;}
+
+        /* ---------- HUD ---------- */
+        #hud{
+            display:flex; align-items:center; justify-content:space-between;
+            padding:8px 12px; border-bottom:1px solid var(--border); background:rgba(10,14,22,.8);
+            flex-shrink:0; gap:8px;
+        }
+        #hud .blk{display:flex; flex-direction:column; align-items:center; line-height:1;}
+        #hud .lbl{font-size:9px; letter-spacing:.15em; color:var(--muted); text-transform:uppercase;}
+        #hud .val{font-size:18px; font-weight:700;}
+        .score-pill{display:flex; align-items:center; gap:6px; font-family:'Orbitron'; font-weight:700;}
+        .score-pill .me{color:var(--cyan);} .score-pill .op{color:var(--red);}
+        #energyDots{display:flex; gap:3px;}
+        .edot{width:9px; height:9px; border-radius:50%; background:var(--border);}
+        .edot.on{background:var(--cyan); box-shadow:0 0 6px var(--cyan);}
+
+        /* ---------- BOARD ---------- */
+        #board{flex:1; display:flex; gap:6px; padding:8px 6px; overflow:hidden; min-height:0;}
+        .zone{
+            flex:1; display:flex; flex-direction:column; min-width:0;
+            background:linear-gradient(180deg, rgba(255,77,109,.05), transparent 18%, transparent 82%, rgba(0,240,255,.05));
+            border:1px solid var(--border); border-radius:10px; overflow:hidden;
+        }
+        .zone.lead-you{border-color:rgba(0,240,255,.55); box-shadow:0 0 14px rgba(0,240,255,.12) inset;}
+        .zone.lead-ai{border-color:rgba(255,77,109,.5); box-shadow:0 0 14px rgba(255,77,109,.12) inset;}
+        .zone-half{flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; gap:3px; padding:5px; overflow-y:auto; justify-content:center;}
+        .zone-half.you{align-content:flex-end;}
+        .zone-half.you.droppable{background:rgba(0,240,255,.06); outline:1px dashed rgba(0,240,255,.5); outline-offset:-3px;}
+        .zone-mid{
+            flex-shrink:0; text-align:center; padding:4px 3px; border-top:1px solid var(--border);
+            border-bottom:1px solid var(--border); background:rgba(0,0,0,.25);
+        }
+        .zone-name{font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700;}
+        .zone-cond{font-size:9.5px; color:var(--amber); line-height:1.05; margin-top:2px; min-height:11px;}
+        .zone-cond.hidden{color:var(--muted); font-style:italic;}
+        .zone-score{font-family:'Orbitron'; font-weight:700; font-size:14px; margin-top:3px;}
+        .zone-score .me{color:var(--cyan);} .zone-score .op{color:var(--red);} .zone-score .vs{color:var(--muted); font-size:10px; margin:0 4px;}
+
+        /* ---------- CARDS ---------- */
+        .card{
+            position:relative; width:58px; height:78px; border-radius:7px; flex-shrink:0;
+            background:linear-gradient(160deg,var(--panel2),#10151f);
+            border:1px solid var(--border); border-left-width:3px;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            transition:transform .15s, box-shadow .15s, opacity .25s;
+            animation:dealIn .25s ease;
+        }
+        @keyframes dealIn{from{opacity:0; transform:translateY(8px) scale(.9);} to{opacity:1; transform:none;}}
+        .card.gk{border-left-color:var(--gk);} .card.def{border-left-color:var(--def);}
+        .card.mid{border-left-color:var(--mid);} .card.fwd{border-left-color:var(--fwd);}
+        .card .cost{position:absolute; top:-5px; left:-5px; width:17px; height:17px; border-radius:50%;
+            background:var(--cyan); color:#04141a; font-weight:700; font-size:11px;
+            display:flex; align-items:center; justify-content:center; font-family:'Orbitron';}
+        .card .pwr{position:absolute; top:-5px; right:-5px; width:19px; height:19px; border-radius:50%;
+            background:var(--amber); color:#1a1100; font-weight:700; font-size:12px;
+            display:flex; align-items:center; justify-content:center; font-family:'Orbitron';
+            box-shadow:0 0 0 1px rgba(0,0,0,.4);}
+        .card .pwr.buffed{background:var(--green); color:#03130c;}
+        .card .pwr.nerfed{background:var(--red); color:#fff;}
+        .card .role{font-size:13px; line-height:1;}
+        .card .nm{font-size:8.5px; text-align:center; line-height:1.02; padding:2px 2px 0; font-weight:600; color:#cdd8e6;}
+        .card .abil{font-size:6.5px; text-align:center; color:var(--muted); padding:0 2px; line-height:1; margin-top:1px;}
+        .card.back{background:repeating-linear-gradient(45deg,#10151f,#10151f 5px,#161d2b 5px,#161d2b 10px);
+            border-color:var(--border); border-left-width:1px;}
+        .card.back::after{content:'⚽'; font-size:22px; opacity:.35;}
+        .card.sel{transform:translateY(-4px) scale(1.05); box-shadow:0 0 0 2px var(--cyan), 0 6px 14px rgba(0,0,0,.5);}
+        .card.played{cursor:pointer;}
+        .card.reveal-pop{animation:pop .35s ease;}
+        @keyframes pop{0%{transform:scale(.6); opacity:.2;} 60%{transform:scale(1.12);} 100%{transform:none; opacity:1;}}
+
+        /* ---------- HAND / FOOTER ---------- */
+        #footer{flex-shrink:0; border-top:1px solid var(--border); background:rgba(10,14,22,.92); padding:6px 8px 8px;}
+        #infobar{font-size:11px; color:var(--muted); text-align:center; min-height:14px; margin-bottom:4px;}
+        #infobar b{color:var(--cyan);}
+        #hand{display:flex; gap:6px; justify-content:center; align-items:flex-end; min-height:84px; overflow-x:auto; padding:4px 2px;}
+        #hand:empty::after{content:'No cards in hand'; color:var(--muted); font-size:12px; align-self:center;}
+        #footer .row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px;}
+        .btn{padding:10px 18px; border-radius:8px; font-weight:700; font-size:14px; letter-spacing:.08em;
+            text-transform:uppercase; font-family:'Orbitron'; transition:filter .15s, transform .1s;}
+        .btn:active{transform:scale(.96);}
+        .btn-primary{background:var(--cyan); color:#04141a;}
+        .btn-primary:disabled{background:var(--border); color:var(--muted); cursor:default;}
+        .btn-ghost{background:transparent; border:1px solid var(--border); color:var(--muted);}
+
+        /* ---------- OVERLAYS ---------- */
+        .overlay{position:fixed; inset:0; background:rgba(6,9,15,.92); backdrop-filter:blur(4px);
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+            text-align:center; padding:24px; z-index:50;}
+        .overlay h1{font-family:'Orbitron'; font-weight:900; font-size:clamp(26px,7vw,44px); margin:0;
+            background:linear-gradient(90deg,var(--cyan),var(--amber)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+        .overlay h2{font-family:'Orbitron'; margin:0; font-size:clamp(22px,6vw,34px);}
+        .overlay p{color:var(--muted); max-width:340px; line-height:1.35; margin:0;}
+        .res-zones{display:flex; gap:8px; margin:4px 0;}
+        .res-zones .z{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 10px; min-width:78px;}
+        .res-zones .z .zn{font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em;}
+        .res-zones .z .zv{font-family:'Orbitron'; font-weight:700; font-size:15px; margin-top:3px;}
+        .res-zones .z.w{border-color:var(--cyan);} .res-zones .z.l{border-color:var(--red);}
+        .legend{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; font-size:12px; color:var(--muted);}
+        .legend span{display:inline-flex; align-items:center; gap:4px;}
+        .dot{width:10px; height:10px; border-radius:2px; display:inline-block;}
+        .hidden{display:none !important;}
+        .howto{text-align:left; background:var(--panel); border:1px solid var(--border); border-radius:10px;
+            padding:14px 16px; max-width:380px; font-size:13.5px; line-height:1.5;}
+        .howto li{margin:3px 0;}
+        .howto b{color:var(--cyan);}
+    </style>
+</head>
+<body>
+    <!-- ===== TITLE ===== -->
+    <div id="title" class="overlay">
+        <div style="font-size:46px;">⚽🃏</div>
+        <h1>Football Card Battler</h1>
+        <p>A 3-minute tactical card duel. Outsmart the manager across three pitch zones — read the bluff, time your super-sub, win the mind game.</p>
+        <ul class="howto">
+            <li>Each turn you get <b>energy = turn number</b>. Play cards face-down into <b>Defense</b>, <b>Midfield</b> or <b>Attack</b>.</li>
+            <li>Cards reveal <b>simultaneously</b> — so does the AI's. Highest total <b>power</b> wins a zone.</li>
+            <li><b>Win 2 of 3 zones</b> after turn 6 to win the match. Zone conditions reveal on turns 1–3.</li>
+            <li>Players have abilities tied to football — captains, pressing wingers, the late <b>super-sub</b>.</li>
+        </ul>
+        <button class="btn btn-primary" onclick="startMatch()">Kick Off</button>
+    </div>
+
+    <!-- ===== RESULT ===== -->
+    <div id="result" class="overlay hidden">
+        <h2 id="resTitle"></h2>
+        <p id="resSub"></p>
+        <div class="res-zones" id="resZones"></div>
+        <button class="btn btn-primary" onclick="startMatch()">Play Again</button>
+        <a href="../index.html" style="color:var(--muted); font-size:12px;">← Back to lab</a>
+    </div>
+
+    <!-- ===== GAME ===== -->
+    <div id="hud">
+        <div class="blk"><span class="lbl">Turn</span><span class="val display" id="turnVal">1/6</span></div>
+        <div class="blk"><span class="lbl">Energy</span><div id="energyDots" style="margin-top:4px;"></div></div>
+        <div class="blk"><span class="lbl">Zones</span>
+            <span class="val score-pill"><span class="me" id="youZones">0</span><span style="color:var(--muted)">–</span><span class="op" id="aiZones">0</span></span>
+        </div>
+    </div>
+
+    <div id="board"></div>
+
+    <div id="footer">
+        <div id="infobar">Tap a card, then tap a zone to deploy.</div>
+        <div id="hand"></div>
+        <div class="row">
+            <span style="font-size:11px; color:var(--muted);" class="legend">
+                <span><i class="dot" style="background:var(--gk)"></i>GK</span>
+                <span><i class="dot" style="background:var(--def)"></i>DEF</span>
+                <span><i class="dot" style="background:var(--mid)"></i>MID</span>
+                <span><i class="dot" style="background:var(--fwd)"></i>FWD</span>
+            </span>
+            <button class="btn btn-primary" id="endBtn" onclick="endTurn()">End Turn</button>
+        </div>
+    </div>
+
+<script>
+// ============================================================
+//  FOOTBALL CARD BATTLER  — single-file prototype (vs AI)
+// ============================================================
+const ZONE_NAMES = ['Defense','Midfield','Attack'];
+const MAX_TURNS = 6, ZONE_CAP = 4;
+const FORWARDS = new Set(['winger','target','poacher','supersub']);
+
+// ---- Card templates (the 11-card squad) ----
+const SQUAD = [
+    {key:'keeper',  name:'Veteran Keeper',     role:'🧤', line:'gk',  cost:5, power:9, abil:'A wall. No ability.'},
+    {key:'sweeper', name:'Sweeper',            role:'🛡️', line:'def', cost:2, power:2, abil:'+3 power in Defense'},
+    {key:'fullback',name:'Overlapping Back',   role:'🏃', line:'def', cost:2, power:2, abil:'On reveal: +3 to a card in an adjacent zone'},
+    {key:'ballwin', name:'Ball-Winner',        role:'⚔️', line:'mid', cost:3, power:3, abil:"On reveal: -3 to enemy's weakest here"},
+    {key:'captain', name:'Captain',            role:'©',  line:'mid', cost:3, power:3, abil:'Ongoing: +2 to your other cards here'},
+    {key:'playmkr', name:'Playmaker #10',      role:'🎩', line:'mid', cost:4, power:4, abil:'On reveal: +2 to a card in each other zone'},
+    {key:'wonder',  name:'Wonderkid',          role:'⭐', line:'mid', cost:1, power:1, abil:'Ongoing: +2 power each turn it stays'},
+    {key:'winger',  name:'Pressing Winger',    role:'⚡', line:'fwd', cost:2, power:3, abil:'+4 power in Attack'},
+    {key:'target',  name:'Target Man',         role:'🎯', line:'fwd', cost:4, power:4, abil:'On reveal: +2 per other forward here'},
+    {key:'poacher', name:'Poacher',            role:'🦊', line:'fwd', cost:2, power:2, abil:'On reveal: +4 if losing this zone'},
+    {key:'supersub',name:'Super-Sub',          role:'🔥', line:'fwd', cost:3, power:3, abil:'On reveal: +6 if played turn 5–6'},
+];
+
+// ---- Zone conditions (per-card flat modifiers) ----
+const CONDITIONS = [
+    {name:'Home Advantage', desc:'+2 to all players here',           mod:()=>2},
+    {name:'Hostile Crowd',  desc:'-2 to all players here',           mod:()=>-2},
+    {name:'Wing Overload',  desc:'+3 each if you hold 3+ here',      mod:(c,side,z)=> zones[z].cards[side].length>=3 ? 3:0},
+    {name:'Open Space',     desc:'+3 if you have exactly 1 here',    mod:(c,side,z)=> zones[z].cards[side].length===1 ? 3:0},
+    {name:'End to End',     desc:'+2 to forwards here',              mod:(c)=> FORWARDS.has(c.key) ? 2:0},
+];
+
+// ---- State ----
+let zones, turn, energyLeft, youDeck, aiDeck, youHand, aiHand, selUid, busy, uidc;
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function newDeck(){ return shuffle(SQUAD.map(t=>({...t, uid:'c'+(uidc++), bonus:0, revealed:false}))); }
+
+function startMatch(){
+    uidc = 0;
+    const conds = shuffle(CONDITIONS.slice()).slice(0,3);
+    zones = ZONE_NAMES.map((n,i)=>({name:n, cond:conds[i], condRevealed:false, cards:{you:[], ai:[]}}));
+    youDeck = newDeck(); aiDeck = newDeck();
+    youHand = []; aiHand = [];
+    for(let i=0;i<3;i++){ youHand.push(youDeck.pop()); aiHand.push(aiDeck.pop()); }
+    turn = 0; selUid = null; busy = false;
+    document.getElementById('title').classList.add('hidden');
+    document.getElementById('result').classList.add('hidden');
+    if(window.trackEvent) window.trackEvent('match_start');
+    beginTurn();
+}
+
+function beginTurn(){
+    turn++;
+    energyLeft = turn;
+    selUid = null;
+    if(turn-1 < 3) zones[turn-1].condRevealed = true;   // reveal zone conditions on turns 1,2,3
+    if(youDeck.length) youHand.push(youDeck.pop());
+    if(aiDeck.length) aiHand.push(aiDeck.pop());
+    busy = false;
+    setInfo('Tap a card, then tap a zone to deploy.');
+    render();
+}
+
+// ---- Power model ----
+function eff(card){
+    let p = card.power + (card.bonus||0);
+    const z = card.zoneIdx, side = card.side;
+    if(z===undefined) return p;   // still in hand — base power only
+    if(card.key==='sweeper' && z===0) p += 3;
+    if(card.key==='winger'  && z===2) p += 4;
+    if(card.key==='wonder')  p += 2 * Math.max(0, turn - card.placedTurn);
+    // captain ongoing (other revealed captains, same side+zone)
+    const caps = zones[z].cards[side].filter(c=>c!==card && c.key==='captain' && c.revealed).length;
+    p += 2 * caps;
+    if(zones[z].condRevealed) p += zones[z].cond.mod(card, side, z);
+    return p;
+}
+// player sees own staged cards; AI side only counts revealed
+function zoneTotal(side, z){
+    return zones[z].cards[side].reduce((s,c)=> s + ((c.revealed || side==='you') ? eff(c) : 0), 0);
+}
+function zoneWinner(z){
+    const y = zoneTotal('you',z), a = zoneTotal('ai',z);
+    return y>a ? 'you' : a>y ? 'ai' : 'tie';
+}
+function zonesWon(side){ return [0,1,2].filter(z=>zoneWinner(z)===side).length; }
+
+// ---- Staging (player) ----
+function selectCard(uid){
+    if(busy) return;
+    selUid = (selUid===uid) ? null : uid;
+    const c = youHand.find(x=>x.uid===uid);
+    if(c && selUid) setInfo(`<b>${c.name}</b> — ${c.abil}`);
+    else setInfo('Tap a card, then tap a zone to deploy.');
+    render();
+}
+function deployTo(z){
+    if(busy || !selUid) return;
+    const idx = youHand.findIndex(c=>c.uid===selUid);
+    if(idx<0) return;
+    const c = youHand[idx];
+    if(c.cost > energyLeft){ setInfo('Not enough energy this turn.'); return; }
+    if(zones[z].cards.you.length >= ZONE_CAP){ setInfo('That zone is full (max 4).'); return; }
+    youHand.splice(idx,1);
+    Object.assign(c, {side:'you', zoneIdx:z, placedTurn:turn, revealed:false});
+    zones[z].cards.you.push(c);
+    energyLeft -= c.cost;
+    selUid = null;
+    setInfo('Tap a card, then tap a zone to deploy.');
+    render();
+}
+function recall(uid){   // un-stage a not-yet-revealed card back to hand
+    if(busy) return;
+    for(const z of zones){
+        const i = z.cards.you.findIndex(c=>c.uid===uid && !c.revealed);
+        if(i>=0){ const c=z.cards.you.splice(i,1)[0]; energyLeft+=c.cost; delete c.zoneIdx; youHand.push(c); render(); return; }
+    }
+}
+
+// ---- AI staging (sees only revealed board) ----
+function aiRevealed(side,z){ return zones[z].cards[side].filter(c=>c.revealed).reduce((s,c)=>s+eff(c),0); }
+function aiTurn(){
+    let energy = turn;
+    let guard = 12;
+    while(guard-- > 0){
+        let best=null, bestScore=-1e9;
+        for(const c of aiHand){
+            if(c.cost>energy) continue;
+            for(let z=0; z<3; z++){
+                if(zones[z].cards.ai.length>=ZONE_CAP) continue;
+                const s = aiScore(c,z,energy);
+                if(s>bestScore){ bestScore=s; best={c,z}; }
+            }
+        }
+        if(!best) break;
+        // occasional early bluff: hold remaining cards
+        if(turn<=2 && Math.random()<0.18 && zones[best.z].cards.ai.length>0) break;
+        const {c,z}=best;
+        aiHand.splice(aiHand.indexOf(c),1);
+        Object.assign(c,{side:'ai', zoneIdx:z, placedTurn:turn, revealed:false});
+        zones[z].cards.ai.push(c);
+        energy -= c.cost;
+    }
+}
+function aiScore(c,z,energy){
+    let v = c.power;
+    if(c.key==='winger' && z===2) v+=4;
+    if(c.key==='sweeper' && z===0) v+=3;
+    if(c.key==='supersub' && turn>=5) v+=6;
+    if(c.key==='wonder') v += (MAX_TURNS-turn);          // value future growth
+    if(c.key==='captain') v += 2*zones[z].cards.ai.length;
+    if(c.key==='target') v += 2*zones[z].cards.ai.filter(x=>FORWARDS.has(x.key)).length;
+    if(c.key==='playmkr') v += 4;
+    if(zones[z].condRevealed) v += zones[z].cond.mod(c,'ai',z);
+    const ai = aiRevealed('ai',z), you = aiRevealed('you',z);
+    if(c.key==='poacher' && ai<you) v+=4;
+    // strategic weighting: chase zones AI can flip; don't overstack a runaway lead
+    const diff = ai - you;
+    if(diff < 0 && ai+v >= you) v += 5;        // this play flips a losing zone
+    else if(diff < 0) v += 2;                   // contesting
+    else if(diff > 6) v -= 4;                    // already winning comfortably
+    v -= zones[z].cards.ai.length;               // mild spread incentive
+    v += Math.random()*1.5;
+    return v;
+}
+
+// ---- Reveal & resolve ----
+function endTurn(){
+    if(busy) return;
+    busy = true; selUid=null;
+    aiTurn();
+    // gather cards staged this turn, in play order: player first then AI
+    const staged = [];
+    for(const z of zones) for(const c of z.cards.you) if(!c.revealed) staged.push(c);
+    for(const z of zones) for(const c of z.cards.ai)  if(!c.revealed) staged.push(c);
+    staged.forEach(c=>c.revealed=true);
+    staged.forEach(c=>onReveal(c));
+    render(true);
+    setInfo('Reveal! ' + revealSummary());
+    setTimeout(()=>{
+        if(turn>=MAX_TURNS) endMatch();
+        else beginTurn();
+    }, 1300);
+}
+function onReveal(c){
+    const z = c.zoneIdx, side = c.side, opp = side==='you'?'ai':'you';
+    const myCards = zones[z].cards[side].filter(x=>x.revealed);
+    if(c.key==='ballwin'){
+        const foes = zones[z].cards[opp].filter(x=>x.revealed);
+        if(foes.length){ foes.sort((a,b)=>eff(a)-eff(b)); foes[0].bonus -= 3; }
+    } else if(c.key==='target'){
+        c.bonus += 2 * myCards.filter(x=>x!==c && FORWARDS.has(x.key)).length;
+    } else if(c.key==='poacher'){
+        if(zoneTotal(side,z) <= zoneTotal(opp,z)) c.bonus += 4;
+    } else if(c.key==='supersub'){
+        if(c.placedTurn>=5) c.bonus += 6;
+    } else if(c.key==='playmkr'){
+        for(let oz=0; oz<3; oz++){ if(oz===z) continue;
+            const mates = zones[oz].cards[side].filter(x=>x.revealed);
+            if(mates.length){ mates.sort((a,b)=>eff(b)-eff(a)); mates[0].bonus += 2; }
+        }
+    } else if(c.key==='fullback'){
+        const adj = [z-1,z+1].filter(i=>i>=0&&i<3);
+        let target=null;
+        for(const az of adj){ const m=zones[az].cards[side].filter(x=>x.revealed); if(m.length){ m.sort((a,b)=>eff(b)-eff(a)); if(!target||eff(m[0])>eff(target)) target=m[0]; } }
+        if(target) target.bonus += 3;
+    }
+}
+function revealSummary(){
+    const yw=zonesWon('you'), aw=zonesWon('ai');
+    return `You lead ${yw} zone${yw!==1?'s':''}, AI ${aw}.`;
+}
+
+function endMatch(){
+    const yw=zonesWon('you'), aw=zonesWon('ai');
+    let result, title, sub;
+    if(yw>aw){ result='win'; title='You outsmarted them!'; sub='Two zones, one mind game — beautifully read.'; }
+    else if(aw>yw){ result='loss'; title='Outplayed.'; sub='The manager called your bluff. Run it back.'; }
+    else {
+        const yt=[0,1,2].reduce((s,z)=>s+zoneTotal('you',z),0), at=[0,1,2].reduce((s,z)=>s+zoneTotal('ai',z),0);
+        result = yt>at?'win':at>yt?'loss':'draw';
+        title = result==='win'?'Edge on power!':result==='loss'?'Beaten on power.':'Stalemate.';
+        sub = `Zones tied ${yw}–${aw} · total power ${yt}–${at}.`;
+    }
+    document.getElementById('resTitle').textContent = title;
+    document.getElementById('resTitle').style.color = result==='win'?'var(--cyan)':result==='loss'?'var(--red)':'var(--text)';
+    document.getElementById('resSub').textContent = sub;
+    document.getElementById('resZones').innerHTML = [0,1,2].map(z=>{
+        const w=zoneWinner(z); const cls = w==='you'?'w':w==='ai'?'l':'';
+        return `<div class="z ${cls}"><div class="zn">${ZONE_NAMES[z]}</div>
+            <div class="zv"><span style="color:var(--cyan)">${zoneTotal('you',z)}</span>
+            <span style="color:var(--muted);font-size:11px"> v </span>
+            <span style="color:var(--red)">${zoneTotal('ai',z)}</span></div></div>`;
+    }).join('');
+    document.getElementById('result').classList.remove('hidden');
+    if(window.trackEvent) window.trackEvent('match_end', {result, you_zones:yw, ai_zones:aw});
+}
+
+// ---- Render ----
+function setInfo(html){ document.getElementById('infobar').innerHTML = html; }
+function cardHTML(c, opts){
+    const faceDown = opts.faceDown;
+    if(faceDown) return `<div class="card back"></div>`;
+    const p = eff(c), base = c.power;
+    const cls = p>base?'buffed':p<base?'nerfed':'';
+    const extra = opts.sel?' sel':'';
+    const click = opts.click||'';
+    return `<div class="card ${c.line}${extra}${opts.played?' played reveal-pop':''}" ${click} title="${c.name}: ${c.abil}">
+        ${opts.showCost?`<span class="cost">${c.cost}</span>`:''}
+        <span class="pwr ${cls}">${p}</span>
+        <span class="role">${c.role}</span>
+        <span class="nm">${c.name}</span>
+    </div>`;
+}
+function render(revealed){
+    document.getElementById('turnVal').textContent = `${turn}/${MAX_TURNS}`;
+    document.getElementById('youZones').textContent = zonesWon('you');
+    document.getElementById('aiZones').textContent = zonesWon('ai');
+    let dots=''; for(let i=0;i<MAX_TURNS;i++) dots+=`<div class="edot ${i<energyLeft?'on':''}"></div>`;
+    document.getElementById('energyDots').innerHTML = dots;
+
+    const droppable = selUid ? 'droppable' : '';
+    document.getElementById('board').innerHTML = zones.map((zn,z)=>{
+        const w = zoneWinner(z);
+        const aiHalf = zn.cards.ai.map(c=>cardHTML(c, {faceDown:!c.revealed})).join('');
+        const youHalf = zn.cards.you.map(c=>cardHTML(c, {played:revealed&&c.revealed, click:c.revealed?'':`onclick="recall('${c.uid}')"`})).join('');
+        const cond = zn.condRevealed
+            ? `<div class="zone-cond"><b style="color:#fff">${zn.cond.name}</b> · ${zn.cond.desc}</div>`
+            : `<div class="zone-cond hidden">Tactic hidden — reveals turn ${z+1}</div>`;
+        return `<div class="zone ${w==='you'?'lead-you':w==='ai'?'lead-ai':''}">
+            <div class="zone-half ai">${aiHalf}</div>
+            <div class="zone-mid">
+                <div class="zone-name">${zn.name}</div>
+                ${cond}
+                <div class="zone-score"><span class="op">${zoneTotal('ai',z)}</span><span class="vs">vs</span><span class="me">${zoneTotal('you',z)}</span></div>
+            </div>
+            <div class="zone-half you ${droppable}" onclick="deployTo(${z})">${youHalf}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('hand').innerHTML = youHand.map(c=>{
+        const afford = c.cost<=energyLeft;
+        return `<div style="opacity:${afford?1:.45}">${cardHTML(c,{showCost:true, sel:selUid===c.uid, click:`onclick="selectCard('${c.uid}')"`})}</div>`;
+    }).join('');
+    document.getElementById('endBtn').disabled = busy;
+    document.getElementById('endBtn').textContent = (turn>=MAX_TURNS && !busy) ? 'Final Reveal' : 'End Turn';
+}
+
+// expose for inline handlers
+window.startMatch = startMatch;
+window.selectCard = selectCard;
+window.deployTo = deployTo;
+window.recall = recall;
+window.endTurn = endTurn;
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('football-card-battler');
+</script>
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('football-card-battler');
+</script>
+</body>
+</html>
