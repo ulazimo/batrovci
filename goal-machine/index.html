@@ -64,6 +64,12 @@
   .pbtn.transfer:disabled{filter:grayscale(.6) brightness(.7);box-shadow:0 3px 0 #333;cursor:default;}
   .pbtn.mode{flex:none;width:84px;background:linear-gradient(180deg,var(--teal),var(--teal-d));box-shadow:0 3px 0 #074651;}
 
+  /* ── Tabs ── */
+  .tabs{flex:none;display:flex;gap:6px;padding:7px 8px 0;background:#0a2316;}
+  .tab{flex:1;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:13px;border:none;border-radius:11px 11px 0 0;
+    padding:8px;color:#9fd3b1;background:#0e3320;cursor:pointer;transition:background .15s,color .15s;}
+  .tab.on{background:var(--card);color:#fff;}
+
   /* ── Upgrades ── */
   .ups{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 8px calc(14px + env(safe-area-inset-bottom,0px));}
   .grouphdr{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6fcf8e;
@@ -86,6 +92,10 @@
   .up.afford .price{color:var(--gold);}
   .up:not(.afford) .price{color:#7fa68d;}
   .up .lbl{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:#79a98c;margin-top:2px;}
+  .up.life .ic{font-size:25px;}
+  .up.life.owned{border-color:#7b3ff0;background:#2a1d3a;opacity:1;cursor:default;}
+  .up.life.owned .price{color:#c9a9ff;}
+  .up.life.owned [data-lbl]{color:#c9a9ff;}
 
   /* ── Overlays ── */
   .overlay{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -134,6 +144,10 @@
       <small id="transferSub">+0 Legacy</small></button>
   </div>
 
+  <div class="tabs">
+    <button class="tab on" id="tabTrain">⚽ Training</button>
+    <button class="tab" id="tabLife">💎 Lifestyle</button>
+  </div>
   <div class="ups" id="ups"></div>
 </div>
 
@@ -141,7 +155,7 @@
 <div class="overlay" id="startOv">
   <div class="logo">GOAL<br><span class="g">MACHINE</span></div>
   <div class="tagline">Your striker never stops shooting.</div>
-  <div class="blurb">Auto-fire on goal, smash the keeper, clear the stage. Pour your cash into 20 attributes that only ever go up — then sign for a bigger club to multiply everything. Forever.</div>
+  <div class="blurb">Auto-fire at the targets in the goal, beat the keeper, clear the stage. Train 21 attributes — including Placement, so fewer shots sail wide — then blow your fortune on cars, mansions and jets that boost you forever.</div>
   <button class="btn" id="playBtn">PLAY</button>
 </div>
 
@@ -159,7 +173,7 @@
 <div class="overlay hidden" id="prestigeOv">
   <div class="pmodal">
     <h2>📝 Transfer Window</h2>
-    <p>Sign for a bigger club: reset your stage and all 20 attributes, but keep a permanent boost to <b>damage &amp; cash</b>.</p>
+    <p>Sign for a bigger club: reset your stage and all 21 attributes, but keep a permanent boost to <b>damage &amp; cash</b>. Your <b>Lifestyle</b> stays yours.</p>
     <div class="gain">+<span id="pGain">0</span> 🏆 Legacy</div>
     <p style="font-size:12px;opacity:.85;">Each Legacy point = <b>+10%</b> to everything, forever.</p>
     <div class="row" style="justify-content:center;">
@@ -324,87 +338,125 @@ function resize(){
 }
 window.addEventListener('resize',resize);
 
-let balls=[], particles=[], floaters=[];
+let balls=[], particles=[], floaters=[], targets=[];
 let keeperX=0, keeperDir=1, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0;
-let combo=0;       // live combo counter (resets each keeper)
+let combo=0;       // live combo counter (resets on a goal or a missed shot)
 let fkTimer=0, shotTimer=0;
 
-function goalY(){return Hh*0.30;}
 function strikerY(){return Hh*0.86;}
+// goal mouth geometry — single source for update + draw
+function goalRect(){ const gy=Hh*0.34, gh=Hh*0.26, gtop=gy-gh, gw=W*0.5, gx=W/2-gw/2; return {gy,gh,gtop,gw,gx}; }
+function keeperReach(){ return goalRect().gw*0.15; }            // half the keeper's blocking width
+function keeperSpan(){ return goalRect().gw*0.38; }             // how far it slides from centre
+function guarded(x){ return Math.abs(x-keeperX) < keeperReach(); }
+
+// ---- Targets ----
+const SLOTS=[{rx:.18,ry:.34},{rx:.82,ry:.34},{rx:.50,ry:.26},{rx:.18,ry:.74},{rx:.82,ry:.74},{rx:.50,ry:.74}];
+function targetCount(stage){ return Math.min(6, 3+Math.floor((stage-1)/4)); }
+function spawnTargets(stage){
+  const n=targetCount(stage), each=stageHP(stage)/n;
+  targets=[];
+  for(let i=0;i<n;i++) targets.push({rx:SLOTS[i].rx, ry:SLOTS[i].ry, hp:each, maxHp:each, broken:false, flash:0});
+}
+function targetPos(t){ const G=goalRect(); return {x:G.gx+t.rx*G.gw, y:G.gtop+t.ry*G.gh}; }
+function aliveTargets(){ return targets.filter(t=>!t.broken); }
 
 function spawnVolley(){
   const n = attr('multi');
   kickAnim=1;
-  for(let i=0;i<n;i++){
-    const spread = (n>1)?(i-(n-1)/2)*16:0;
-    spawnBall(W/2+spread+(Math.random()*8-4));
-  }
+  for(let i=0;i<n;i++) spawnBall(false);
 }
-function spawnBall(x, special){
+function spawnBall(special){
+  const live=aliveTargets();
+  if(!live.length) return;
+  // aim at a target the keeper isn't guarding when possible
+  let pool=live.filter(t=>!guarded(targetPos(t).x));
+  if(!pool.length) pool=live;
+  const t=pool[Math.floor(Math.random()*pool.length)];
+  const tp=targetPos(t);
+  // accuracy roll — a missed shot sails wide of the target
+  const hit = special || Math.random()<attr('accuracy');
+  let tx=tp.x, ty=tp.y, miss=false;
+  if(!hit){ miss=true; tx=tp.x+(Math.random()<.5?-1:1)*(34+Math.random()*46); }
   // roll the damage now
-  let dmg = attr('power')*attr('hype')*attr('speed')*attr('stagger')*prestigeMult();
-  const comboMult = 1+Math.min(attr('combo'), combo*0.02);
-  dmg *= comboMult;
+  let dmg = attr('power')*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
+  dmg *= 1+Math.min(attr('combo'), combo*0.02);
   let crit=false, big=false;
-  if(Math.random()<attr('critC')){dmg*=attr('critD'); crit=true;}
-  if(Math.random()<attr('power2')){dmg*=5; big=true;}
-  if(special){dmg = attr('power')*attr('free')*attr('hype')*prestigeMult(); big=true;}
+  if(!special && Math.random()<attr('critC')){dmg*=attr('critD'); crit=true;}
+  if(!special && Math.random()<attr('power2')){dmg*=5; big=true;}
+  if(special){dmg = attr('power')*attr('free')*attr('hype')*prestigeMult()*lifeMult('dmg'); big=true;}
   const golden = !special && Math.random()<attr('gold');
-  balls.push({x, y:strikerY()-10, dmg, crit, big, golden, special,
-              vy:-(360+attr('speed')*30+ (special?180:0)), r: special?13:(big?9:7)});
+  // trajectory from striker to the landing point
+  const sx=W/2+(Math.random()*16-8), sy=strikerY()-10;
+  const dx=tx-sx, dy=ty-sy, dist=Math.hypot(dx,dy)||1, sp=360+attr('speed')*30+(special?160:0);
+  balls.push({x:sx, y:sy, vx:dx/dist*sp, vy:dy/dist*sp, ty,
+              tgt:targets.indexOf(t), miss, dmg, crit, big, golden, special, r:special?13:(big?9:7)});
 }
 
-function onKeeperBreak(){
+function resolveBall(b){
+  if(b.miss){ floater(b.x, b.ty-6, 'MISS', '#bcd3c4', 13); puff(b.x,b.ty,'#cfe0d4'); combo=0; return; }
+  const t=targets[b.tgt];
+  if(!t || t.broken){ puff(b.x,b.ty,'#ffffff'); return; }
+  const tp=targetPos(t);
+  // keeper save (free kicks beat the keeper)
+  if(!b.special && guarded(tp.x) && Math.random()<SAVE_PROB){
+    floater(tp.x, tp.y-6, 'SAVE!', '#7af0ff', 15); puff(b.x,b.ty,'#7af0ff');
+    keeperShake=Math.min(8,keeperShake+4); return;
+  }
+  // lucky strike shatters a chunk of this target
+  if(!b.special && Math.random()<attr('lucky')){
+    const tear=t.maxHp*0.04; t.hp-=tear; floater(tp.x, tp.y-4, 'TEAR -'+fmt(tear), '#7af0ff', 12);
+  }
+  t.hp-=b.dmg; t.flash=1; combo++;
+  S.cash += cashPerHit() * (b.golden?10:1);
+  for(let i=0;i<(b.big?8:4);i++) impact(b.x, b.y, b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
+  if(b.crit||b.big) floater(b.x, b.y-6, (b.special?'FREE KICK ':b.big?'POWER ':'CRIT ')+fmt(b.dmg), b.special?'#a685ff':'#ff9a3a', b.big?16:12);
+  if(t.hp<=0) breakTarget(t);
+}
+function breakTarget(t){
+  t.broken=true; t.hp=0;
+  const tp=targetPos(t);
+  floater(tp.x, tp.y, '⚽', '#fff', 22);
+  for(let i=0;i<10;i++) impact(tp.x, tp.y, '#ffcf3a');
+  if(aliveTargets().length===0) onStageClear();
+}
+function onStageClear(){
   goalFlash=1; netFlash=1; combo=0;
-  // reward
   const reward = stageReward(S.stage)*(1+attr('over')*0.6);
   S.cash += reward;
-  floater(W/2, goalY()-10, 'GOAL! +'+fmt(reward), '#ffcf3a', 26);
+  floater(W/2, goalRect().gy-10, 'GOAL! +'+fmt(reward), '#ffcf3a', 26);
   for(let i=0;i<26;i++) confetti();
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
-  S.kHP = keeperMaxHP(S.stage);
-}
-function hitKeeper(ball){
-  let dmg = ball.dmg;
-  // lucky strike tear
-  if(!ball.special && Math.random()<attr('lucky')){
-    const tear = keeperMaxHP(S.stage)*0.04;
-    S.kHP -= tear; floater(keeperX, goalY()-4, 'TEAR -'+fmt(tear), '#7af0ff', 14);
-  }
-  S.kHP -= dmg;
-  combo++;
-  S.cash += cashPerHit() * (ball.golden?10:1);
-  keeperShake=Math.min(8, keeperShake+(ball.big?6:3));
-  for(let i=0;i<(ball.big?8:4);i++) impact(ball.x, ball.y, ball.golden?'#ffd84a':(ball.crit?'#ff9a3a':'#ffffff'));
-  if(ball.crit||ball.big) floater(ball.x, ball.y-6, (ball.special?'FREE KICK ':ball.big?'POWER ':'CRIT ')+fmt(dmg), ball.special?'#a685ff':'#ff9a3a', ball.big?16:12);
-  if(S.kHP<=0) onKeeperBreak();
+  spawnTargets(S.stage);
 }
 function impact(x,y,c){particles.push({x,y,vx:(Math.random()*2-1)*120,vy:(Math.random()*-1-0.3)*120,life:.5,c,sz:2+Math.random()*2});}
-function confetti(){particles.push({x:W/2+(Math.random()*120-60),y:goalY(),vx:(Math.random()*2-1)*160,vy:(Math.random()*-1-0.5)*220,life:1.1,c:['#ffcf3a','#ff7a1a','#19aebb','#3fae6a','#fff'][Math.floor(Math.random()*5)],sz:3+Math.random()*3,conf:true});}
+function puff(x,y,c){for(let i=0;i<5;i++)particles.push({x,y,vx:(Math.random()*2-1)*90,vy:(Math.random()*-1-0.2)*90,life:.4,c,sz:2+Math.random()*2});}
+function confetti(){particles.push({x:W/2+(Math.random()*120-60),y:goalRect().gy,vx:(Math.random()*2-1)*160,vy:(Math.random()*-1-0.5)*220,life:1.1,c:['#ffcf3a','#ff7a1a','#19aebb','#3fae6a','#fff'][Math.floor(Math.random()*5)],sz:3+Math.random()*3,conf:true});}
 function floater(x,y,txt,c,sz){floaters.push({x,y,txt,c,sz,life:1});}
 
 function update(dt){
-  if(S.kHP<=0) S.kHP=keeperMaxHP(S.stage);
+  if(!targets.length) spawnTargets(S.stage);
   // passive income
-  S.cash += attr('sponsor')*dt;
+  S.cash += attr('sponsor')*lifeMult('cash')*dt;
   // auto fire
   const bps = ballsPerSec();
   if(bps>0){ shotTimer+=dt; const interval=1/attr('rate'); while(shotTimer>=interval){shotTimer-=interval; spawnVolley();} }
   // free kick
-  if(attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(W/2,true);} }
-  // keeper movement
-  keeperX += keeperDir*40*dt;
-  const span=W*0.18;
+  if(attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(true);} }
+  // keeper sweep
+  const span=keeperSpan();
+  keeperX += keeperDir*60*dt;
   if(keeperX>W/2+span){keeperX=W/2+span;keeperDir=-1;}
   if(keeperX<W/2-span){keeperX=W/2-span;keeperDir=1;}
   if(keeperShake>0) keeperShake=Math.max(0,keeperShake-dt*30);
   netFlash=Math.max(0,netFlash-dt*2.2); goalFlash=Math.max(0,goalFlash-dt*1.6); kickAnim=Math.max(0,kickAnim-dt*5);
+  for(const t of targets) if(t.flash>0) t.flash=Math.max(0,t.flash-dt*4);
   // balls
   for(let i=balls.length-1;i>=0;i--){
-    const b=balls[i]; b.y+=b.vy*dt;
-    if(b.y<=goalY()+6){ hitKeeper(b); balls.splice(i,1); }
-    else if(b.y<-20) balls.splice(i,1);
+    const b=balls[i]; b.x+=b.vx*dt; b.y+=b.vy*dt;
+    if(b.y<=b.ty){ resolveBall(b); balls.splice(i,1); }
+    else if(b.y<-30 || b.x<-30 || b.x>W+30) balls.splice(i,1);
   }
   // particles
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.conf)p.vy+=420*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
@@ -415,35 +467,39 @@ function draw(){
   // pitch stripes
   const stripe=Hh/7;
   for(let i=0;i<8;i++){ctx.fillStyle=(i%2)?'#1f7a3d':'#23873f';ctx.fillRect(0,i*stripe,W,stripe);}
-  // penalty box + arc
+  const G=goalRect(), gy=G.gy, gx=G.gx, gw=G.gw, gtop=G.gtop, gh=G.gh;
+  // penalty box + arc (below the goal)
   ctx.strokeStyle='rgba(234,255,240,.55)';ctx.lineWidth=2;
-  const gy=goalY();
-  ctx.strokeRect(W*0.5-W*0.34,gy+6,W*0.68,Hh*0.30);
-  ctx.beginPath();ctx.arc(W/2,gy+6+Hh*0.30,W*0.16,Math.PI,0,true);ctx.stroke();
-  // goal frame
-  const gw=W*0.46, gx=W/2-gw/2, gh=Hh*0.16, gtop=gy-gh;
+  ctx.strokeRect(W*0.5-W*0.34,gy+6,W*0.68,Hh*0.26);
+  ctx.beginPath();ctx.arc(W/2,gy+6+Hh*0.26,W*0.16,Math.PI,0,true);ctx.stroke();
   // net
-  if(netFlash>0){ctx.fillStyle=`rgba(255,255,255,${0.18+netFlash*0.3})`;ctx.fillRect(gx,gtop,gw,gh);}
-  ctx.strokeStyle='rgba(255,255,255,.30)';ctx.lineWidth=1;
-  for(let x=gx;x<=gx+gw;x+=11){ctx.beginPath();ctx.moveTo(x,gtop);ctx.lineTo(x,gy);ctx.stroke();}
-  for(let yy=gtop;yy<=gy;yy+=11){ctx.beginPath();ctx.moveTo(gx,yy);ctx.lineTo(gx+gw,yy);ctx.stroke();}
+  if(netFlash>0){ctx.fillStyle=`rgba(255,255,255,${0.12+netFlash*0.25})`;ctx.fillRect(gx,gtop,gw,gh);}
+  ctx.strokeStyle='rgba(255,255,255,.26)';ctx.lineWidth=1;
+  for(let x=gx;x<=gx+gw;x+=12){ctx.beginPath();ctx.moveTo(x,gtop);ctx.lineTo(x,gy);ctx.stroke();}
+  for(let yy=gtop;yy<=gy;yy+=12){ctx.beginPath();ctx.moveTo(gx,yy);ctx.lineTo(gx+gw,yy);ctx.stroke();}
   ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.lineCap='round';
   ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx,gtop);ctx.lineTo(gx+gw,gtop);ctx.lineTo(gx+gw,gy);ctx.stroke();
   // keeper
   const kx=keeperX+(keeperShake?Math.sin(Date.now()*0.05)*keeperShake:0), ky=gy-6;
   ctx.fillStyle='#ffe27a';
-  // gloves
-  ctx.beginPath();ctx.arc(kx-20,ky-26,6,0,7);ctx.arc(kx+20,ky-26,6,0,7);ctx.fill();
+  ctx.beginPath();ctx.arc(kx-20,ky-26,6,0,7);ctx.arc(kx+20,ky-26,6,0,7);ctx.fill();   // gloves
   ctx.fillStyle=goalFlash>0?'#fff':'#16a0d8';
   roundRect(kx-15,ky-40,30,38,8);ctx.fill();          // body
   ctx.fillStyle='#f6c98a';ctx.beginPath();ctx.arc(kx,ky-46,9,0,7);ctx.fill(); // head
-  // keeper HP bar
-  const hpw=gw*0.92, hpx=W/2-hpw/2, hpy=gtop-16, frac=Math.max(0,S.kHP/keeperMaxHP(S.stage));
-  ctx.fillStyle='rgba(0,0,0,.45)';roundRect(hpx,hpy,hpw,9,4);ctx.fill();
-  const grd=ctx.createLinearGradient(hpx,0,hpx+hpw,0);grd.addColorStop(0,'#ff5a4d');grd.addColorStop(1,'#ffcf3a');
-  ctx.fillStyle=grd;roundRect(hpx,hpy,Math.max(0,hpw*frac),9,4);ctx.fill();
-  ctx.fillStyle='#fff';ctx.font='700 10px Fredoka';ctx.textAlign='center';
-  ctx.fillText(fmt(Math.max(0,S.kHP))+' / '+fmt(keeperMaxHP(S.stage)),W/2,hpy-3);
+  // targets
+  const tr=Math.min(15, gh*0.20);
+  for(const t of targets){
+    if(t.broken) continue;
+    const tp=targetPos(t), g2=guarded(tp.x), fr=Math.max(0,t.hp/t.maxHp);
+    ctx.lineWidth=3; ctx.strokeStyle=t.flash>0?'#fff':(g2?'#ff6a5a':'#ffcf3a');
+    ctx.beginPath();ctx.arc(tp.x,tp.y,tr,0,7);ctx.stroke();
+    ctx.fillStyle=g2?'rgba(255,106,90,.5)':'rgba(255,207,58,.85)';
+    ctx.beginPath();ctx.arc(tp.x,tp.y,Math.max(1.5,tr*0.7*fr),0,7);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(tp.x,tp.y,2,0,7);ctx.fill();
+  }
+  // targets-left label
+  ctx.fillStyle='#dff7e6';ctx.font='700 11px Fredoka';ctx.textAlign='center';
+  ctx.fillText('TARGETS '+aliveTargets().length+'/'+targets.length, W/2, gtop-7);
   // striker
   const sy=strikerY(), kick=kickAnim;
   ctx.fillStyle='#ff7a1a';roundRect(W/2-12,sy-34,24,32,7);ctx.fill();
@@ -478,13 +534,17 @@ function frame(t){
 }
 
 // ======================= UI =======================
-let buyMode=1; // 1 or 'max'
+let buyMode=1;     // 1 or 'max'
+let tab='train';   // 'train' or 'life'
 const upsEl=document.getElementById('ups');
-const els={};
+const els={}, lifeEls={};
+let trainWrap, lifeWrap;
 function buildUps(){
   upsEl.innerHTML='';
+  // ── Training ──
+  trainWrap=document.createElement('div');
   GROUPS.forEach(([cat,label])=>{
-    const h=document.createElement('div');h.className='grouphdr';h.textContent=label;upsEl.appendChild(h);
+    const h=document.createElement('div');h.className='grouphdr';h.textContent=label;trainWrap.appendChild(h);
     ATTR.filter(a=>a.cat===cat).forEach(a=>{
       const d=document.createElement('div');d.className='up';d.dataset.id=a.id;
       d.innerHTML=`<div class="ic">${a.ic}</div>
@@ -493,10 +553,35 @@ function buildUps(){
         <div class="buy"><div class="price"><span class="c"></span><span data-cost></span></div>
         <div class="lbl" data-lbl>UPGRADE</div></div>`;
       d.addEventListener('click',()=>buy(a.id));
-      upsEl.appendChild(d);
+      trainWrap.appendChild(d);
       els[a.id]=d;
     });
   });
+  upsEl.appendChild(trainWrap);
+  // ── Lifestyle ──
+  lifeWrap=document.createElement('div');lifeWrap.style.display='none';
+  const lh=document.createElement('div');lh.className='grouphdr';lh.textContent='Footballer Lifestyle';lifeWrap.appendChild(lh);
+  const note=document.createElement('div');note.style.cssText='font-size:11.5px;color:#9fd3b1;margin:0 4px 6px;';
+  note.textContent='Buy with cash. Permanent boosts you keep through every transfer.';lifeWrap.appendChild(note);
+  LIFESTYLE.forEach(it=>{
+    const d=document.createElement('div');d.className='up life';d.dataset.id=it.id;
+    d.innerHTML=`<div class="ic">${it.ic}</div>
+      <div class="mid"><div class="nm">${it.nm}</div><div class="eff">${it.blurb}</div></div>
+      <div class="buy"><div class="price"><span class="c"></span><span data-cost></span></div>
+      <div class="lbl" data-lbl>BUY</div></div>`;
+    d.addEventListener('click',()=>buyAsset(it.id));
+    lifeWrap.appendChild(d);
+    lifeEls[it.id]=d;
+  });
+  upsEl.appendChild(lifeWrap);
+}
+function setTab(t){
+  tab=t;
+  trainWrap.style.display = t==='train'?'':'none';
+  lifeWrap.style.display  = t==='life'?'':'none';
+  document.getElementById('tabTrain').classList.toggle('on',t==='train');
+  document.getElementById('tabLife').classList.toggle('on',t==='life');
+  if(t==='life') refreshLife(); else refreshUps();
 }
 function buyCost(id,n){let c=0,l=lv(id);for(let i=0;i<n;i++)c+=AMAP[id].cost(l+i);return c;}
 function maxAffordable(id){let l=lv(id),c=0,n=0,cash=S.cash;while(n<9999){const nc=AMAP[id].cost(l+n);if(c+nc>cash)break;c+=nc;n++;}return n;}
@@ -525,6 +610,24 @@ function refreshUps(){
   document.getElementById('transferSub').textContent='+'+fmt(legacyGain())+' Legacy';
   document.getElementById('transferBtn').disabled = legacyGain()<1;
 }
+function buyAsset(id){
+  if(S.assets&&S.assets[id]) return;
+  const it=LMAP[id];
+  if(S.cash<it.cost) return;
+  S.cash-=it.cost; (S.assets=S.assets||{})[id]=true;
+  if(typeof window.trackEvent==='function') window.trackEvent('lifestyle',{asset:id});
+  refreshLife(); refreshUps(); save();
+}
+function refreshLife(){
+  LIFESTYLE.forEach(it=>{
+    const d=lifeEls[it.id]; const owned=!!(S.assets&&S.assets[it.id]);
+    d.classList.toggle('owned',owned);
+    d.classList.toggle('afford', !owned && S.cash>=it.cost);
+    d.querySelector('.price .c').style.display=owned?'none':'';
+    d.querySelector('[data-cost]').textContent=owned?'':fmt(it.cost);
+    d.querySelector('[data-lbl]').textContent=owned?'✓ OWNED':'BUY';
+  });
+}
 function refreshHUD(){
   els._c=els._c||{cash:document.getElementById('cash'),stage:document.getElementById('stage'),
     income:document.getElementById('income'),legacy:document.getElementById('legacy'),dps:document.getElementById('dps')};
@@ -534,7 +637,7 @@ function refreshHUD(){
   els._c.legacy.textContent=fmt(S.legacy);
   els._c.dps.textContent=fmt(analyticDPS());
   // keep affordability fresh as cash ticks in (throttled)
-  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now();refreshUps();}
+  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now(); tab==='life'?refreshLife():refreshUps();}
 }
 
 // ---- Buy mode toggle ----
@@ -543,6 +646,10 @@ document.getElementById('modeBtn').addEventListener('click',()=>{
   document.getElementById('modeBtn').textContent = buyMode==='max'?'Buy MAX':'Buy ×1';
   refreshUps();
 });
+
+// ---- Tabs ----
+document.getElementById('tabTrain').addEventListener('click',()=>setTab('train'));
+document.getElementById('tabLife').addEventListener('click',()=>setTab('life'));
 
 // ---- Prestige ----
 const prestigeOv=document.getElementById('prestigeOv');
@@ -555,10 +662,11 @@ document.getElementById('pCancel').addEventListener('click',()=>prestigeOv.class
 document.getElementById('pConfirm').addEventListener('click',()=>{
   const g=legacyGain();
   if(typeof window.trackEvent==='function') window.trackEvent('prestige',{legacy_gained:g,best_stage:S.bestStage});
-  const keepLegacy=S.legacy+g;
-  S=newState(); S.legacy=keepLegacy; S.kHP=keeperMaxHP(1);
+  const keepLegacy=S.legacy+g, keepAssets=S.assets;
+  S=newState(); S.legacy=keepLegacy; S.assets=keepAssets;
   prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0; fkTimer=0; shotTimer=0;
-  refreshUps(); save();
+  spawnTargets(S.stage);
+  refreshUps(); refreshLife(); save();
 });
 
 // ======================= Save / Load / Offline =======================
@@ -589,8 +697,9 @@ document.getElementById('collectBtn').addEventListener('click',()=>{
 // ======================= Boot =======================
 function start(){
   resize();
-  if(!S.kHP || S.kHP<=0) S.kHP=keeperMaxHP(S.stage);
-  buildUps(); refreshUps();
+  keeperX=W/2;
+  spawnTargets(S.stage);
+  buildUps(); refreshUps(); refreshLife();
   running=true; last=performance.now(); requestAnimationFrame(frame);
 }
 document.getElementById('playBtn').addEventListener('click',()=>{
