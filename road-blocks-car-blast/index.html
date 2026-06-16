@@ -1266,7 +1266,7 @@
                     if (successPath) {
                         if (!onGrid) successPath.unshift({ r: GRID_SIZE, c: car.col }); // Enter grid from Cars Row
                         successPath.push({ r: -1, c: targetGarage.col });  // Exit grid into Garages Row
-                        pathsFound.push({ car, path: successPath });
+                        pathsFound.push({ car, path: successPath, garageId: targetGarage.id });
                     } else if (gameMode === 'drivefirst' && farthestDist > 0) {
                         // Drive First: car drives as far as it can, consuming road cells
                         let path = [];
@@ -1683,8 +1683,9 @@
             grid = newGrid;
             renderGrid(); 
             
-            let pointsEarned = placedShape.matrix.flat().filter(v => v === 1).length * 10;
-            score += pointsEarned; 
+            let basePoints = placedShape.matrix.flat().filter(v => v === 1).length * 10;
+            let bonusPoints = 0;
+            score += basePoints;
             
             const paths = findCarPaths(grid);
             if (paths.length > 0) {
@@ -1693,12 +1694,12 @@
                 renderGrid(); 
                 cars = cars.filter(c => !paths.find(p => p.car.id === c.id && !p.partial));
                 if (gameMode === 'parking' || gameMode === 'drivefirst') {
-                    garages = garages.filter(g => !paths.find(p => !p.partial && p.car.color === g.color));
+                    garages = garages.filter(g => !paths.find(p => !p.partial && p.garageId === g.id));
                     renderGaragesRow();
                 }
                 replaceEscapedCars(paths.length);
                 renderCarsRow();
-                pointsEarned += await executeDrivingSequence(paths, comboMultiplier);
+                bonusPoints += await executeDrivingSequence(paths, comboMultiplier);
 
                 // Drive First: move partially-driven cars to their final grid position
                 if (gameMode === 'drivefirst') {
@@ -1724,11 +1725,11 @@
                 await delay(400);
                 fullRows.forEach(r => { for (let c = 0; c < GRID_SIZE; c++) { if(grid[r][c] !== 'blocker') grid[r][c] = null; } });
                 fullCols.forEach(c => { for (let r = 0; r < GRID_SIZE; r++) { if(grid[r][c] !== 'blocker') grid[r][c] = null; } });
-                pointsEarned += (fullRows.length + fullCols.length) * 100;
+                bonusPoints += (fullRows.length + fullCols.length) * 100;
                 clearingRowsCols = [];
             }
 
-            score += (pointsEarned - (placedShape.matrix.flat().filter(v => v === 1).length * 10));
+            score += bonusPoints;
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('blockBlastHighScore', highScore);

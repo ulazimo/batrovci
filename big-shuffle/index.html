@@ -397,7 +397,7 @@ function attackRaider(t){
 
 // ── End turn: collect remaining income, raid hits HQ, advance, maybe shuffle ──
 function endTurn(){
-  if(G.over) return;
+  if(G.over||anim.shuffle>0) return;
   // auto-collect any ungathered controlled nodes (convenience)
   for(const t of controlledNodes()){
     if(!G.gatheredThisTurn[key(t.q,t.r)]){ const y=yieldOf(t); G[y.res]+=y.amt; }
@@ -439,6 +439,7 @@ function triggerShuffle(){
     window.trackEvent('shuffle_triggered',{shuffle:G.shufflesWeathered,turn:G.turn});
 
   toast('THE SHUFFLE','The world tears loose…');
+  hide('actionbar'); // lock out actions while the world reseeds
   // animate the tearing, then reseed mid-animation
   anim.shuffle = 0.0001;
   let reseeded=false;
@@ -449,7 +450,7 @@ function triggerShuffle(){
     if(p>0.5 && !reseeded){ reseeded=true; seedNeighbourhood(false); }
     draw();
     if(p<1){ requestAnimationFrame(step); }
-    else { anim.shuffle=0; saveBestIfNeeded(); refresh();
+    else { anim.shuffle=0; show('actionbar'); saveBestIfNeeded(); refresh();
            toast('NEW WORLD','Shuffle '+G.shufflesWeathered+' weathered'); }
   }
   requestAnimationFrame(step);
@@ -765,7 +766,7 @@ function btn(label,cls,fn,disabled){
 //  META / UPGRADE TREE
 // ════════════════════════════════════════════════════════════════
 function openMeta(){
-  if(!G||G.over) return;
+  if(!G||G.over||anim.shuffle>0) return;
   renderMeta();
   show('meta');
 }

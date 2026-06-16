@@ -646,7 +646,6 @@
         const SafeGame = ({ onComplete, level }) => {
           const [securityLevel, setSecurityLevel] = useState(1);
           const [cursorPos, setCursorPos] = useState(0);
-          const [direction, setDirection] = useState(1);
           const [targetZone, setTargetZone] = useState({ start: 30, width: 40 }); // Easy start
           const [isPlaying, setIsPlaying] = useState(true);
           const [resultMsg, setResultMsg] = useState("");
@@ -654,36 +653,40 @@
           
           const speed = useRef(1);
           const requestRef = useRef();
+          const directionRef = useRef(1);
+          const cursorPosRef = useRef(0);
 
           useEffect(() => {
             // Reset based on level
             if (securityLevel === 1) { speed.current = 1.5; setTargetZone({start: 30, width: 40}); }
             if (securityLevel === 2) { speed.current = 2.5; setTargetZone({start: 40, width: 20}); }
             if (securityLevel === 3) { speed.current = 4.0; setTargetZone({start: 45, width: 10}); }
-            
+
+            directionRef.current = 1;
+            cursorPosRef.current = 0;
             setCursorPos(0);
             setIsPlaying(true);
-            
+
             const animate = () => {
-              setCursorPos(prev => {
-                let next = prev + speed.current * direction; // Use current direction
-                if (next >= 100) { next = 100; setDirection(-1); }
-                if (next <= 0) { next = 0; setDirection(1); }
-                return next;
-              });
+              let next = cursorPosRef.current + speed.current * directionRef.current; // live direction
+              if (next >= 100) { next = 100; directionRef.current = -1; }
+              if (next <= 0) { next = 0; directionRef.current = 1; }
+              cursorPosRef.current = next;
+              setCursorPos(next);
               requestRef.current = requestAnimationFrame(animate);
             };
-            
+
             requestRef.current = requestAnimationFrame(animate);
             return () => cancelAnimationFrame(requestRef.current);
-          }, [securityLevel, direction]); // Re-run when level changes
+          }, [securityLevel]); // Re-run only when level changes
 
           const handleUnlock = () => {
             cancelAnimationFrame(requestRef.current);
             setIsPlaying(false);
-            
-            // Check Hit
-            const hit = cursorPos >= targetZone.start && cursorPos <= (targetZone.start + targetZone.width);
+
+            // Check Hit against live cursor position
+            const pos = cursorPosRef.current;
+            const hit = pos >= targetZone.start && pos <= (targetZone.start + targetZone.width);
             
             if (hit) {
                const win = 25000 * level * securityLevel;
@@ -1163,8 +1166,7 @@
           const [isMoving, setIsMoving] = useState(false);
           const [isRolling, setIsRolling] = useState(false);
           const [diceValues, setDiceValues] = useState([1, 1]);
-          const [showDice, setShowDice] = useState(false); 
-          const [riggedInput, setRiggedInput] = useState(''); 
+          const [showDice, setShowDice] = useState(false);
           const [modal, setModal] = useState({ type: null });
           const [feedback, setFeedback] = useState([]);
           const currentCity = CITIES[(level - 1) % CITIES.length];
@@ -1178,15 +1180,8 @@
           const handleRoll = async () => {
             if (isMoving || isRolling || dice <= 0 || modal.type) return;
             setDice(d => d - 1);
-            let d1, d2;
-            const riggedSum = parseInt(riggedInput);
-            if (!isNaN(riggedSum) && riggedSum >= 2 && riggedSum <= 12) {
-              d1 = Math.ceil(riggedSum / 2);
-              d2 = riggedSum - d1;
-            } else {
-              d1 = getRandomInt(1, 6);
-              d2 = getRandomInt(1, 6);
-            }
+            const d1 = getRandomInt(1, 6);
+            const d2 = getRandomInt(1, 6);
             const totalRoll = d1 + d2;
             setDiceValues([d1, d2]);
             setShowDice(true);
@@ -1393,7 +1388,6 @@
               </div>
               <div className="flex-none w-full p-2 pb-4 sm:p-4 sm:pb-8 flex items-center justify-center gap-4 relative">
                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900 to-transparent pointer-events-none -top-10"></div>
-                 <div className="relative z-10 flex flex-col items-end"><span className="text-[10px] text-slate-500 font-bold mb-1">FORCE ROLL</span><input type="number" placeholder="?" className="w-12 h-12 rounded-xl bg-slate-800 text-white text-center font-bold border-2 border-slate-700 focus:border-red-500 outline-none" value={riggedInput} onChange={(e) => setRiggedInput(e.target.value)} /></div>
                  <button onClick={handleRoll} disabled={isMoving || isRolling || dice <= 0} className={`relative z-10 w-20 h-20 md:w-24 md:h-24 rounded-full flex flex-col items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.5)] border-[6px] border-white transition-all transform ${isMoving || isRolling || dice <= 0 ? 'bg-slate-600 scale-95 opacity-80' : 'bg-gradient-to-br from-red-500 to-orange-600 hover:scale-105 active:scale-90 cursor-pointer'}`}><span className="text-white font-black text-xl md:text-2xl tracking-tight drop-shadow-md">GO!</span><div className="absolute -top-3 bg-white text-slate-900 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold border border-slate-300 shadow-sm flex items-center gap-1"><Zap size={10} className="fill-purple-500 text-purple-500" />{dice}</div></button>
               </div>
               {modal.type === 'heist' && <Modal title="BANK HEIST" onClose={() => setModal({ type: null })}><HeistGame level={level} onComplete={(winAmount) => { setMoney(m => m + winAmount); addFeedback(`STOLEN! +$${winAmount.toLocaleString()}`); setTimeout(() => setModal({ type: null }), 1000); }} /></Modal>}

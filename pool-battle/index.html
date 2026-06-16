@@ -1533,8 +1533,9 @@ function updateBall(dt) {
     const speed = ballSpeed();
     if (speed > MIN_SPEED && eSpin.x !== 0) {
         const curve = eSpin.x * 0.005 * speed * scale;
+        const ovx = ball.vx;
         ball.vx += -ball.vy / speed * curve;
-        ball.vy += ball.vx / speed * curve;
+        ball.vy += ovx / speed * curve;
     }
 
     // Move (dt-scaled)
@@ -1630,6 +1631,7 @@ function updateBall(dt) {
         if (ball.x < BALL_RADIUS || ball.x > level.width - BALL_RADIUS ||
             ball.y < BALL_RADIUS || ball.y > level.height - BALL_RADIUS) {
             ball.x = ball.shotX; ball.y = ball.shotY;
+            strokes++; updateHUD();
         }
         if (level.maxStrokes && strokes >= level.maxStrokes) {
             failLevel();
@@ -2128,8 +2130,9 @@ function drawGuideline() {
 
         if (sSpinX !== 0) {
             const curve = sSpinX * 0.005 * spd;
+            const ovx = svx;
             svx += -svy / spd * curve;
-            svy += svx / spd * curve;
+            svy += ovx / spd * curve;
         }
 
         let fric = 0.985;

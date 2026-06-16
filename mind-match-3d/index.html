@@ -676,7 +676,15 @@
             objects.forEach(obj => {
                 scene.remove(obj.mesh);
                 if(obj.mesh.geometry) obj.mesh.geometry.dispose();
-                // We reuse materials in cache ideally, but here we let GC handle it
+                // Dispose each unique material and its texture (faceMat carries the CanvasTexture .map)
+                const mats = Array.isArray(obj.mesh.material) ? obj.mesh.material : [obj.mesh.material];
+                const seen = new Set();
+                mats.forEach(mat => {
+                    if(!mat || seen.has(mat)) return;
+                    seen.add(mat);
+                    if(mat.map) mat.map.dispose();
+                    mat.dispose();
+                });
                 world.remove(obj.body);
             });
             objects = [];
@@ -1054,6 +1062,7 @@
         }
 
         function moveToTray(objData) {
+            if (tray.length >= TRAY_SIZE) return; // Respect tray capacity for all callers
             world.remove(objData.body); // Disable physics
             objData.isMovingToTray = true;
             objData.inTray = true;

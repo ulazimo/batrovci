@@ -163,7 +163,7 @@
                     if(node.type==="END"){if(token.value===node.data.target){ns="success";token.status="success";}else{ns="failed";token.status="error";}continue;}
                     let nv=token.value,op="out";
                     if(node.type==="START"){nv=node.data.value;}
-                    else if(node.type==="MATH"){const o=node.data.operator,v=Number(node.data.operand);if(o==="+")nv+=v;if(o==="-")nv-=v;if(o==="*")nv*=v;if(o==="/"){if(v===0){token.status="error";ns="failed";continue;}nv=Math.trunc(nv/v);}}
+                    else if(node.type==="MATH"){const o=node.data.operator,v=Number(node.data.operand);if(Number.isNaN(v)){token.status="error";ns="failed";continue;}if(o==="+")nv+=v;if(o==="-")nv-=v;if(o==="*")nv*=v;if(o==="/"){if(v===0){token.status="error";ns="failed";continue;}nv=Math.trunc(nv/v);}}
                     else if(node.type==="CONDITION"){const o=node.data.operator,v=Number(node.data.operand);const met=o===">"?nv>v:o==="<"?nv<v:nv===v;op=met?"true":"false";}
                     const conn=connections.find(c=>c.from===node.id&&c.fromPort===op);
                     if(conn){token.nodeId=conn.to;token.value=nv;}else{token.status="stuck";ns="failed";}

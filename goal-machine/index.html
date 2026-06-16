@@ -198,7 +198,7 @@ const ATTR = [
     cost:l=>320*Math.pow(1.27,l),     val:l=>Math.min(0.5,0.02*l), show:v=>(v*100).toFixed(0)+'%'},
   {id:'combo',  cat:'dmg', ic:'📈', nm:'Combo Mastery',  desc:'max streak bonus',
     cost:l=>260*Math.pow(1.25,l),     val:l=>0.10+0.04*l,    show:v=>'+'+(v*100).toFixed(0)+'%'},
-  {id:'lucky',  cat:'dmg', ic:'🍀', nm:'Lucky Strike',   desc:'chance to tear 4% keeper HP',
+  {id:'lucky',  cat:'dmg', ic:'🍀', nm:'Lucky Strike',   desc:'chance to shatter 4% of a target',
     cost:l=>520*Math.pow(1.32,l),     val:l=>Math.min(0.4,0.012*l), show:v=>(v*100).toFixed(0)+'%'},
   {id:'free',   cat:'dmg', ic:'🎆', nm:'Free Kick',      desc:'auto power-strike every 9s',
     cost:l=>900*Math.pow(1.30,l),     val:l=>l<1?0:8*(1+0.4*l), show:v=>v?'×'+fmt(v)+' pwr':'locked'},
@@ -218,11 +218,13 @@ const ATTR = [
   {id:'over',   cat:'cash', ic:'⌛', nm:'Overtime Bonus',  desc:'extra reward for fast clears',
     cost:l=>300*Math.pow(1.28,l),     val:l=>0.25*l,         show:v=>'+'+(v*100).toFixed(0)+'% max'},
   // PITCH / UTILITY ------------------------------------------------------
+  {id:'accuracy',cat:'util',ic:'👟', nm:'Placement',       desc:'chance a shot finds the target',
+    cost:l=>80*Math.pow(1.18,l),      val:l=>Math.min(0.98,0.65+0.03*l), show:v=>(v*100).toFixed(0)+'%'},
   {id:'speed',  cat:'util', ic:'💨', nm:'Ball Speed',     desc:'faster balls, more impacts',
     cost:l=>90*Math.pow(1.20,l),      val:l=>1+0.02*l,       show:v=>'×'+v.toFixed(2)+' dmg'},
   {id:'stagger',cat:'util', ic:'🧤', nm:'Keeper Stagger',  desc:'rattle the keeper for more dmg',
     cost:l=>150*Math.pow(1.23,l),     val:l=>1+0.025*l,      show:v=>'×'+v.toFixed(2)+' dmg'},
-  {id:'scout',  cat:'util', ic:'🔭', nm:'Scout Report',    desc:'lower keeper HP growth',
+  {id:'scout',  cat:'util', ic:'🔭', nm:'Scout Report',    desc:'lower target HP growth',
     cost:l=>700*Math.pow(1.34,l),     val:l=>Math.min(0.35,0.012*l), show:v=>'−'+(v*100).toFixed(0)+'% HP'},
   {id:'agent',  cat:'util', ic:'💼', nm:'Star Agent',      desc:'more Legacy on transfer',
     cost:l=>1200*Math.pow(1.40,l),    val:l=>1+0.08*l,       show:v=>'×'+v.toFixed(2)+' 🏆'},
@@ -230,50 +232,76 @@ const ATTR = [
 const AMAP = {}; ATTR.forEach(a=>AMAP[a.id]=a);
 const GROUPS = [['dmg','Attack'],['cash','Economy'],['util','Pitch']];
 
+// ---- Lifestyle: one-time purchases, permanent bonuses, kept through transfers ----
+const LIFESTYLE = [
+  {id:'boots', ic:'👟', nm:'Golden Boots',    cost:1.2e3, b:{cash:.05}, blurb:'+5% cash'},
+  {id:'car',   ic:'🏎️', nm:'Sports Car',       cost:5e4,   b:{cash:.10}, blurb:'+10% cash'},
+  {id:'watch', ic:'⌚', nm:'Luxury Watch',     cost:4e5,   b:{dmg:.10},  blurb:'+10% damage'},
+  {id:'house', ic:'🏠', nm:'Mansion',          cost:2e6,   b:{cash:.15}, blurb:'+15% cash'},
+  {id:'yacht', ic:'🛥️', nm:'Yacht',            cost:8e7,   b:{dmg:.15},  blurb:'+15% damage'},
+  {id:'island',ic:'🏝️', nm:'Private Island',   cost:1.5e9, b:{all:.15},  blurb:'+15% everything'},
+  {id:'jet',   ic:'✈️', nm:'Private Jet',       cost:3e10,  b:{all:.20},  blurb:'+20% everything'},
+  {id:'club',  ic:'🏟️', nm:'Buy the Club',     cost:1e12,  b:{all:.30},  blurb:'+30% everything'},
+];
+const LMAP = {}; LIFESTYLE.forEach(it=>LMAP[it.id]=it);
+
 // ---- State ----
 let S = newState();
 function newState(){
-  return {cash:0, stage:1, kHP:0, lv:{}, legacy:0, bestStage:1, lastSeen:Date.now()};
+  return {cash:0, stage:1, lv:{}, legacy:0, bestStage:1, assets:{}, lastSeen:Date.now()};
 }
 function lv(id){return S.lv[id]||0;}
 function attr(id){return AMAP[id].val(lv(id));}
 
 // ---- Derived stats ----
+const SAVE_PROB = 0.5;   // chance a ball on a guarded target is saved
+const SAVE_FRAC = 0.12;  // approx share of shots the keeper saves (for analytics)
 function prestigeMult(){return 1+0.10*S.legacy;}
-function keeperMaxHP(stage){
+function lifeMult(kind){
+  let dmg=1, cash=1;
+  for(const it of LIFESTYLE){
+    if(S.assets && S.assets[it.id]){ const b=it.b;
+      if(b.all){dmg+=b.all; cash+=b.all;} if(b.dmg)dmg+=b.dmg; if(b.cash)cash+=b.cash; }
+  }
+  return kind==='dmg'?dmg:cash;
+}
+// total HP spread across all targets in a stage
+function stageHP(stage){
   const base = 30*Math.pow(1.33,stage-1);
   return base*(1-attr('scout'));
 }
 function stageReward(stage){
   const base = 10*Math.pow(1.18,stage-1);
-  return base*attr('cashG')*prestigeMult();
+  return base*attr('cashG')*prestigeMult()*lifeMult('cash');
 }
-function comboCap(){return 1+attr('combo');}
 function ballsPerSec(){return attr('rate')*attr('multi');}
-// average damage per ball (for DPS readout + offline estimate)
+// share of fired balls that actually land on a target (accuracy minus keeper saves)
+function hitFrac(){return attr('accuracy')*(1-SAVE_FRAC);}
+// average damage per ball that lands (for DPS readout + offline estimate)
 function avgBallDmg(){
-  const base = attr('power')*attr('hype')*attr('speed')*attr('stagger')*prestigeMult();
+  const base = attr('power')*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
   const critF = 1+attr('critC')*(attr('critD')-1);
   const psF   = 1+attr('power2')*(5-1);
   const comboAvg = 1+attr('combo')*0.6; // averages over the ramp
   return base*critF*psF*comboAvg;
 }
 function analyticDPS(){
-  let dps = avgBallDmg()*ballsPerSec();
-  // free kick contribution
+  let dps = avgBallDmg()*ballsPerSec()*hitFrac();
+  // free kick: always on target, beats the keeper
   const fk = attr('free');
-  if(fk>0) dps += (attr('power')*fk*attr('hype')*prestigeMult())/9;
-  // lucky strike: tears 4% of keeper max hp
-  dps += attr('lucky')*ballsPerSec()*0.04*keeperMaxHP(S.stage);
+  if(fk>0) dps += (attr('power')*fk*attr('hype')*prestigeMult()*lifeMult('dmg'))/9;
+  // lucky strike: shatters 4% of a single target's max hp
+  const tHP = stageHP(S.stage)/targetCount(S.stage);
+  dps += attr('lucky')*ballsPerSec()*hitFrac()*0.04*tHP;
   return dps;
 }
-function cashPerHit(){return attr('coins')*(1+attr('gold')*9);}
+function cashPerHit(){return attr('coins')*(1+attr('gold')*9)*lifeMult('cash');}
 function incomePerSec(){
   const dps = analyticDPS();
-  const tClear = Math.max(0.25, keeperMaxHP(S.stage)/dps);
+  const tClear = Math.max(0.25, stageHP(S.stage)/dps);
   const clear = stageReward(S.stage)/tClear;
-  const hits = cashPerHit()*ballsPerSec();
-  return attr('sponsor') + clear + hits;
+  const hits = cashPerHit()*ballsPerSec()*hitFrac();
+  return attr('sponsor')*lifeMult('cash') + clear + hits;
 }
 
 // ---- Prestige math ----
@@ -529,7 +557,7 @@ document.getElementById('pConfirm').addEventListener('click',()=>{
   if(typeof window.trackEvent==='function') window.trackEvent('prestige',{legacy_gained:g,best_stage:S.bestStage});
   const keepLegacy=S.legacy+g;
   S=newState(); S.legacy=keepLegacy; S.kHP=keeperMaxHP(1);
-  prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0;
+  prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0; fkTimer=0; shotTimer=0;
   refreshUps(); save();
 });
 

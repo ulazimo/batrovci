@@ -927,10 +927,13 @@ function handleDragMove(e){
   const p = canvasPos(e);
   const dx = p.x - drag.sx, dy = p.y - drag.sy;
   if (Math.hypot(dx,dy) < TILE*0.4) return;
-  e.preventDefault();
+  // require a clearly dominant axis before committing — keep waiting on diagonal flicks
+  const axisMargin = TILE*0.25;
   let dr=0,dc=0;
-  if (Math.abs(dx) > Math.abs(dy)) dc = dx>0?1:-1;
-  else dr = dy<0?1:-1; // up swipe (negative dy) -> +row (forward)
+  if (Math.abs(dx) - Math.abs(dy) > axisMargin) dc = dx>0?1:-1;
+  else if (Math.abs(dy) - Math.abs(dx) > axisMargin) dr = dy<0?1:-1; // up swipe (negative dy) -> +row (forward)
+  else return; // ambiguous diagonal so far — wait for a clearer axis
+  e.preventDefault();
   const from = drag.start;
   const to = {r:from.r+dr, c:from.c+dc};
   drag = null; G.sel=null;

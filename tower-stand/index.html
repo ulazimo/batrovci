@@ -1147,8 +1147,9 @@
 
         // wave / spawn ticking
         if (state.waveActive) {
-            if (state.waveStartedAt == null) state.waveStartedAt = now;
-            const elapsed = now - state.waveStartedAt;
+            if (state.waveStartedAt == null) state.waveStartedAt = 0;
+            state.waveStartedAt += dt;
+            const elapsed = state.waveStartedAt;
             while (state.waveSpawnQueue.length && state.waveSpawnQueue[0].at <= elapsed) {
                 const sd = state.waveSpawnQueue.shift();
                 spawnEnemy(sd.type);

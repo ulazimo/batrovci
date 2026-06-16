@@ -395,7 +395,10 @@ function endTurn(){
     for(const z of zones) for(const c of z.cards.you) if(!c.revealed) staged.push(c);
     for(const z of zones) for(const c of z.cards.ai)  if(!c.revealed) staged.push(c);
     staged.forEach(c=>c.revealed=true);
-    staged.forEach(c=>onReveal(c));
+    // snapshot zone totals after reveal flags but before any onReveal bonus,
+    // so reveal abilities resolve independently of order
+    const preRevealTotals = [0,1,2].map(z=>({you:zoneTotal('you',z), ai:zoneTotal('ai',z)}));
+    staged.forEach(c=>onReveal(c, preRevealTotals));
     render(true);
     setInfo('Reveal! ' + revealSummary());
     setTimeout(()=>{
@@ -403,7 +406,7 @@ function endTurn(){
         else beginTurn();
     }, 1300);
 }
-function onReveal(c){
+function onReveal(c, preRevealTotals){
     const z = c.zoneIdx, side = c.side, opp = side==='you'?'ai':'you';
     const myCards = zones[z].cards[side].filter(x=>x.revealed);
     if(c.key==='ballwin'){
@@ -412,7 +415,7 @@ function onReveal(c){
     } else if(c.key==='target'){
         c.bonus += 2 * myCards.filter(x=>x!==c && FORWARDS.has(x.key)).length;
     } else if(c.key==='poacher'){
-        if(zoneTotal(side,z) <= zoneTotal(opp,z)) c.bonus += 4;
+        if(preRevealTotals[z][side] <= preRevealTotals[z][opp]) c.bonus += 4;
     } else if(c.key==='supersub'){
         if(c.placedTurn>=5) c.bonus += 6;
     } else if(c.key==='playmkr'){

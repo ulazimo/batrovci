@@ -83,6 +83,7 @@
             const [timeLeft, setTimeLeft] = useState(10);
             const [winner, setWinner] = useState(null);
             const timerRef = useRef(null);
+            const phaseTimerRef = useRef(null);
 
             const getCombinations = useCallback((currentRound) => {
                 let availColors = [...COLORS];
@@ -97,6 +98,7 @@
             }, []);
 
             const initGame = (count) => {
+                clearTimeout(phaseTimerRef.current);
                 const combos = getCombinations(1);
                 const initialPlayers = PLAYER_CONFIGS.slice(0, count).map(p => ({
                     ...p,
@@ -121,7 +123,7 @@
                 setTargetRule(ruleDisplay);
                 setPlayers(prev => prev.map(p => ({ ...p, combinations: combos })));
                 setGameState('PRE_ROUND');
-                setTimeout(() => startRitual(roundNum), 2000);
+                phaseTimerRef.current = setTimeout(() => startRitual(roundNum), 2000);
             };
 
             const startRitual = (roundNum) => {
@@ -144,6 +146,15 @@
                 return () => clearInterval(timerRef.current);
             }, [gameState, timeLeft]);
 
+            // Cancel any pending phase transition when the game resets to LOBBY,
+            // so a mid-round Restart Ritual can't fire a stale transition.
+            useEffect(() => {
+                if (gameState === 'LOBBY') clearTimeout(phaseTimerRef.current);
+            }, [gameState]);
+
+            // Clear the phase-transition timer on unmount.
+            useEffect(() => () => clearTimeout(phaseTimerRef.current), []);
+
             const endRound = () => {
                 clearInterval(timerRef.current);
                 setPlayers(prev => {
@@ -163,7 +174,7 @@
                         setGameState('GAME_OVER');
                     } else {
                         setGameState('ROUND_RESULT');
-                        setTimeout(() => {
+                        phaseTimerRef.current = setTimeout(() => {
                             setRound(r => r + 1);
                             startPreRound(round + 1, updated);
                         }, 1500);

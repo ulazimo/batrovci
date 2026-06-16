@@ -599,8 +599,8 @@
     function checkSpearHit(spear){
         const sx=spear.targetX, sy=spear.targetY;
         let shotData={hit:false,tier:'miss',animal:null,bulletX:sx,bulletY:sy};
-        state.animals.forEach(animal=>{
-            if(animal.dead) return;
+        for(const animal of state.animals){
+            if(animal.dead) continue;
             const s=animal.type.size;
             const visCY=animal.y-s; const bodyR=s*1.1;
             const distBody=Math.hypot(sx-animal.x,sy-visCY);
@@ -616,10 +616,11 @@
                 tier='body';
             }
             if(tier){
-                if(!shotData.hit){ shotData.hit=true; shotData.animal={...animal}; shotData.tier=tier; }
+                shotData.hit=true; shotData.animal={...animal}; shotData.tier=tier;
                 processHit(animal,tier);
+                break;
             }
-        });
+        }
         return shotData;
     }
 
@@ -633,7 +634,9 @@
                 else{
                     state.isWaitingForAnalysis=false;
                     statusEl.textContent='MISSED!'; statusEl.className='text-xl font-bold text-red-500';
-                    if(state.animals.filter(a=>!a.dead).length===0) spawnAnimal();
+                    if(state.ammo<=0&&state.animals.filter(a=>!a.dead).length===0){
+                        setTimeout(()=>showEndScreen('DIVE FAILED','Out of Spears','Retry',false),300);
+                    } else if(state.animals.filter(a=>!a.dead).length===0) spawnAnimal();
                 }
             },500);
         } else {
@@ -943,8 +946,8 @@
                 }
             }
         }
-        state.particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.vy-=0.15;p.life-=0.025;if(p.life<=0)state.particles.splice(i,1);});
-        state.floatingTexts.forEach((t,i)=>{t.y-=1.5;t.life-=0.015;if(t.life<=0)state.floatingTexts.splice(i,1);});
+        for(let i=state.particles.length-1;i>=0;i--){const p=state.particles[i];p.x+=p.vx;p.y+=p.vy;p.vy-=0.15;p.life-=0.025;if(p.life<=0)state.particles.splice(i,1);}
+        for(let i=state.floatingTexts.length-1;i>=0;i--){const t=state.floatingTexts[i];t.y-=1.5;t.life-=0.015;if(t.life<=0)state.floatingTexts.splice(i,1);}
     }
 
     // DRAW

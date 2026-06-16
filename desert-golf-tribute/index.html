@@ -339,13 +339,6 @@
             
             gameState.currentScore++;
             updateUI();
-            
-            if (db && currentUser) {
-                const statsRef = doc(db, "game_stats", GAME_ID);
-                updateDoc(statsRef, {
-                    plays: increment(1)
-                }).catch(e => console.log("Stats error:", e));
-            }
         }
 
         canvas.addEventListener('mousedown', handleStart);

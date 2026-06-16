@@ -941,6 +941,7 @@ function aiTurn(){
   let acts=2, stam=Math.min(M.round+1,8);
   // simple heuristic: opponent tries to stack attack & defence sensibly
   const play=(laneArr,want)=>{
+    if(M.oppLanes[want].length>=3)return false;
     // pick best affordable card of matching position from oppDeck
     let best=-1,bi=-1;
     M.oppHand=M.oppHand||[];

@@ -196,7 +196,8 @@ class Game {
         this.gridSize = 10;
         this.state = 'playing'; // playing, won, lost
         this.particles = [];
-        
+        this.pendingTimeouts = [];
+
         // DOM Elements
         this.elBoard = document.getElementById('gameBoard');
         this.elBlocks = document.getElementById('blocksContainer');
@@ -248,6 +249,8 @@ class Game {
     }
 
     startLevel(lvl) {
+        this.pendingTimeouts.forEach(clearTimeout);
+        this.pendingTimeouts = [];
         this.level = lvl;
         if (this.elLevelSelect) this.elLevelSelect.value = lvl;
         
@@ -431,11 +434,11 @@ class Game {
             this.updateBlockVisual(block);
             
             // Remove after animation
-            setTimeout(() => {
+            this.pendingTimeouts.push(setTimeout(() => {
                 this.blocks = this.blocks.filter(b => b.id !== id);
                 this.checkWin();
                 this.updateUI();
-            }, 600);
+            }, 600));
         } else {
             // Failure
             this.lives = Math.max(0, this.lives - 1);
@@ -444,10 +447,10 @@ class Game {
             this.updateUI();
             
             // Reset state
-            setTimeout(() => {
+            this.pendingTimeouts.push(setTimeout(() => {
                 if (block.state === 'blocked') block.state = 'idle';
                 this.updateBlockVisual(block);
-            }, 400);
+            }, 400));
 
             if (this.lives === 0) this.gameOver();
         }

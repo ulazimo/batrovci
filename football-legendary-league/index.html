@@ -765,20 +765,6 @@
         </button>
     </div>
 
-    <!-- LIVE SQUAD -->
-    <div id="view-live-squad" class="app-view view-hidden">
-        <div class="mb-4 shrink-0">
-            <h1 class="text-3xl font-black italic uppercase tracking-tighter text-blue-400">Pick Lineup</h1>
-            <p class="text-xs text-slate-400 uppercase tracking-widest">Choose 5 players (<span id="live-selection-count">0</span>/5)</p>
-            <p class="text-[10px] text-slate-500 mt-1">Each picks boosts their color on the live board</p>
-        </div>
-        <div id="live-squad-grid" class="flex-1 overflow-y-auto space-y-2 mb-4 px-1 min-h-0"></div>
-        <div class="flex gap-2 mb-4 shrink-0">
-            <button onclick="switchView('view-live-standings')" class="bg-slate-800 text-white px-6 rounded-xl font-bold uppercase text-xs">Back</button>
-            <button id="live-confirm-squad-btn" onclick="liveStartMatch()" class="flex-1 bg-blue-600 opacity-50 pointer-events-none py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all">Kick Off</button>
-        </div>
-    </div>
-
     <!-- LIVE MATCH -->
     <div id="view-live-match" class="app-view view-hidden relative">
         <!-- Score header -->
@@ -1325,17 +1311,6 @@
             if (selectedPlayerIds.includes(id)) selectedPlayerIds = selectedPlayerIds.filter(pid => pid !== id);
             else if (selectedPlayerIds.length < 5) selectedPlayerIds.push(id);
             updateSquadUI();
-        }
-
-        function switchView(viewId) {
-            ['view-standings', 'view-puzzle', 'view-sim', 'view-squad', 'view-season-end'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('view-hidden');
-            });
-            const target = document.getElementById(viewId);
-            if (target) target.classList.remove('view-hidden');
-            gamePhase = (viewId === 'view-standings') ? 'standings' : (viewId === 'view-sim' ? 'sim' : 'prep');
-            if (viewId === 'view-standings') setStandingsTab(standingsTab);
         }
 
         function setStandingsTab(tab) {
@@ -2155,45 +2130,6 @@
             liveStartMatch();
         }
 
-        function liveUpdateSquadUI() {
-            const grid = document.getElementById('live-squad-grid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            SQUAD.forEach(player => {
-                const isSelected = liveSelectedIds.includes(player.id);
-                const col = POS_COLORS[player.pos] || POS_COLORS.defense;
-                const card = document.createElement('div');
-                card.className = `player-card p-3 rounded-xl border-2 flex justify-between items-center cursor-pointer ${isSelected ? 'selected' : ''}`;
-                card.style.borderColor = isSelected ? col.borderSel : col.border;
-                card.style.background  = isSelected ? col.bgSel    : col.bg;
-                card.onclick = () => liveTogglePlayer(player.id);
-                const badgeBg    = isSelected ? col.badge : 'rgba(255,255,255,0.06)';
-                const badgeColor = isSelected ? '#fff'    : 'rgba(255,255,255,0.25)';
-                const nameColor  = isSelected ? '#fff'    : 'rgba(255,255,255,0.55)';
-                card.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs" style="background:${badgeBg};color:${badgeColor}">${player.pos.slice(0,3).toUpperCase()}</div>
-                        <div>
-                            <div class="text-sm font-bold" style="color:${nameColor}">${player.name}</div>
-                            <div class="text-[10px] uppercase font-bold" style="color:${isSelected ? col.textSel : col.text}">${player.pos}</div>
-                        </div>
-                    </div>
-                    <div class="text-xs font-black uppercase" style="color:${isSelected ? col.textSel : 'rgba(255,255,255,0.2)'}">${isSelected ? '✓ IN' : 'PICK'}</div>
-                `;
-                grid.appendChild(card);
-            });
-            document.getElementById('live-selection-count').innerText = liveSelectedIds.length;
-            const btn = document.getElementById('live-confirm-squad-btn');
-            if (liveSelectedIds.length === 5) btn.classList.remove('opacity-50', 'pointer-events-none');
-            else btn.classList.add('opacity-50', 'pointer-events-none');
-        }
-
-        function liveTogglePlayer(id) {
-            if (liveSelectedIds.includes(id)) liveSelectedIds = liveSelectedIds.filter(p => p !== id);
-            else if (liveSelectedIds.length < 5) liveSelectedIds.push(id);
-            liveUpdateSquadUI();
-        }
-
         // ─── LIVE MATCH RUNTIME ─────────────────────────────────────────
         function liveStartMatch() {
             if (liveSelectedIds.length !== 5) return;
@@ -2258,6 +2194,10 @@
             if (da) da.classList.remove('active');
             const sa = document.getElementById('live-shoot-alert');
             if (sa) sa.classList.remove('active');
+
+            // Reset cross-match meter-delta carryover
+            liveUpdateBars._prevShot = 0;
+            liveUpdateBars._prevPress = 0;
 
             // Reset field visuals
             liveResetPlayers();

@@ -361,7 +361,7 @@ function showScreen(id){
   $(id).classList.add('on');
 }
 function go(name){
-  if(name==='events'){ showScreen('scr-events'); renderEvents(); }
+  if(name==='events'){ loopRunning=false; G.running=false; showScreen('scr-events'); renderEvents(); }
   else if(name==='roster'){ showScreen('scr-roster'); renderRoster(); }
 }
 
@@ -571,6 +571,7 @@ function startRace(ev){
 }
 function resetRaceState(){
   const a=G.ath, ab=G.abil;
+  G.hurdleSpacing=0; G.nextHurdle=1e9;
   G.t=0; G.progress=0; G.speed=0; G.stamina=.5;
   G.gassed=false; G.gasTimer=0; G.usedGasFree=false; G.usedAllNighter=false;
   G.lastTapT=-1; G.tapRate=0;
@@ -1117,7 +1118,7 @@ function pressZone(on){ zone._held=on; clearTimeout(pulseZone._t); zone.style.ba
 // ════════════════════════════════════════════════════════════════
 $('btnReplay').onclick=()=>{ $('scr-result').classList.remove('on'); startRace(currentEvent); };
 $('btnNextEvent').onclick=()=>{ $('scr-result').classList.remove('on'); const i=EVENTS.indexOf(currentEvent); startRace(EVENTS[(i+1)%EVENTS.length]); };
-$('btnResultHome').onclick=()=>{ $('scr-result').classList.remove('on'); G.running=false; G.state='idle'; go('events'); };
+$('btnResultHome').onclick=()=>{ $('scr-result').classList.remove('on'); G.running=false; G.state='idle'; loopRunning=false; go('events'); };
 
 // ════════════════════════════════════════════════════════════════
 //  BOOT

@@ -1826,6 +1826,9 @@
                 state.prizePool = 0;
                 if (window._poolClaim) window._poolClaim(prize, getNickname());
             }
+            if (!isReplay && isWeekly) {
+                if (window._megaPoolClaim) window._megaPoolClaim(prize, getNickname());
+            }
             if (!isReplay) spawnConfetti();
         } else {
             r.innerHTML =
@@ -1837,12 +1840,12 @@
         if (isReplay) return;
 
         // Fresh draw — persist snapshot for later replay and bookkeep history.
-        state.lastDrawTime = new Date().toISOString();
-        state.drawHistory.push({ date: state.lastDrawTime, mode: drawMode, pool: poolTotal, won: playerWon, prize });
+        const drawTime = new Date().toISOString();
+        state.drawHistory.push({ date: drawTime, mode: drawMode, pool: poolTotal, won: playerWon, prize });
         if (state.drawHistory.length > 10) state.drawHistory = state.drawHistory.slice(-10);
 
         const snapshot = Object.assign({}, options.snapshot, {
-            won: playerWon, prize, poolAtDraw: poolTotal, timestamp: state.lastDrawTime,
+            won: playerWon, prize, poolAtDraw: poolTotal, timestamp: drawTime,
         });
 
         if (isWeekly) {
@@ -1852,6 +1855,8 @@
             state.tickets = 0;
             _weeklyDrawInFlight = false;
         } else {
+            // Only daily draws drive the daily countdown (lastDrawTime + 24h).
+            state.lastDrawTime = drawTime;
             state.lastDrawDate = todayUTCStr();
             state.lastDrawResult = Object.assign({ mode: 'daily' }, snapshot);
             // Daily does NOT consume tickets — they ride on to next day + weekly.
@@ -2457,6 +2462,17 @@
                 lastWinner: { prize, date: entry.date, ts: serverTimestamp() },
                 recentWinners: trimRecentWinners(window._recentWinners, [entry]),
             }).catch(e => console.warn('Pool claim failed:', e));
+        };
+
+        // Called by finishDraw() on a weekly win — debits this player's share from
+        // the shared mega pool (top-10 split), records winner, appends to feed.
+        window._megaPoolClaim = (prize, winnerName) => {
+            const entry = { name: winnerName || 'Anon', prize, date: new Date().toISOString() };
+            return updateDoc(poolDoc, {
+                megaPool: increment(-prize),
+                lastWinner: { prize, date: entry.date, ts: serverTimestamp() },
+                recentWinners: trimRecentWinners(window._recentWinners, [entry]),
+            }).catch(e => console.warn('Mega pool claim failed:', e));
         };
 
     } catch (e) {

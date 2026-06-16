@@ -197,6 +197,7 @@
 
         let width, height;
         let lastTime = 0;
+        let rafHandle = 0;
         let isGameRunning = false;
         let isLevelComplete = false; 
         let level = 1;
@@ -895,9 +896,10 @@
         function restartLevel() {
             gameOverScreen.style.display = 'none';
             isGameRunning = true;
-            loadLevel(level - 1); 
+            loadLevel(level - 1);
             lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+            cancelAnimationFrame(rafHandle);
+            rafHandle = requestAnimationFrame(gameLoop);
         }
 
         function gameLoop(timestamp) {
@@ -941,7 +943,7 @@
 
             checkFail();
 
-            requestAnimationFrame(gameLoop);
+            rafHandle = requestAnimationFrame(gameLoop);
         }
 
         function drawInventory() {
@@ -1035,14 +1037,8 @@
             resize();
             loadLevel(0);
             lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-
-            if (db && currentUser) {
-                const statsRef = doc(db, "game_stats", GAME_ID);
-                updateDoc(statsRef, {
-                    plays: increment(1)
-                }).catch(e => console.log("Stats error:", e));
-            }
+            cancelAnimationFrame(rafHandle);
+            rafHandle = requestAnimationFrame(gameLoop);
         }
 
         function handleInput(e) {

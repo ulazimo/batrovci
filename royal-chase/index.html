@@ -254,8 +254,18 @@
                     // Prikaži tačnu figuru u boji igrača na kockici
                     diceElement.textContent = PIECES[currentTurn + rollResult];
                     diceElement.style.color = currentTurn === 'w' ? '#10b981' : '#3b82f6';
-                    addLog(`${currentTurn === 'w' ? 'White' : 'Black'} must move a ${PIECE_NAMES[rollResult]}.`);
-                    hasRolled = true;
+                    // Provjeri da li ijedna figura tog tipa ima validan potez
+                    const canMove = board.some((p, idx) =>
+                        p && p[0] === currentTurn && p[1] === rollResult &&
+                        getValidMoves(idx, p[1], currentTurn).length > 0
+                    );
+                    if (!canMove) {
+                        addLog(`No legal ${PIECE_NAMES[rollResult]} moves. Turn skipped!`);
+                        setTimeout(switchTurn, 1000);
+                    } else {
+                        addLog(`${currentTurn === 'w' ? 'White' : 'Black'} must move a ${PIECE_NAMES[rollResult]}.`);
+                        hasRolled = true;
+                    }
                 }
                 renderBoard();
             }, 600);

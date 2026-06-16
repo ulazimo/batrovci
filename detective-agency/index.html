@@ -595,7 +595,7 @@ function generateCase(seed,tier){
     addClue({role:"ALIBI",type:"TESTIMONY",icon:"doc",
       title:"Alibi — "+s.name.split(" ")[0],
       body:`Two people place ${s.name} ${place} for the whole of ${BLOCKS[crimeBlock]}. They could not have been upstairs when it happened.`,
-      tag:"CLEARS: "+s.name.toUpperCase()+", "+BLOCKS[crimeBlock].toUpperCase(), refSus:s.id, clears:true});
+      tag:"CLEARS: "+s.name.toUpperCase()+", "+BLOCKS[crimeBlock].toUpperCase(), refSus:s.id, clears:true, place:place});
   });
 
   // RED HERRING — the liar's secret + its resolution clue
@@ -637,7 +637,7 @@ function generateCase(seed,tier){
   const stmts=suspects.map(s=>{
     const arr=[];
     if(s.id===culprit){
-      arr.push({txt:`"${stolen[0]==='t'?capitalize(stolen):stolen} ${midClause(stolen)} — everyone here knew where it was kept."`,lie:false});
+      arr.push({txt:`"Everyone here knew that ${stolen} ${midClause(stolen)} — it was no secret."`,lie:false});
       arr.push({txt:`"I was downstairs the entire night. Never went up those back stairs, not once. Check with anyone."`,lie:true,contradicts:oppClue.id,
         crack:`"...All right. I went up around ${BLOCKS[crimeBlock].split('–')[0]}. But the log doesn't prove I touched anything—"`});
       arr.push({txt:`"You're wasting your time on me. Talk to the people who actually had a grudge."`,lie:false});
@@ -648,7 +648,7 @@ function generateCase(seed,tier){
       arr.push({txt:`"If something looks off about me, it's personal. Leave it."`,lie:false});
     } else {
       const al=clues.find(c=>c.role==="ALIBI"&&c.refSus===s.id);
-      arr.push({txt:`"I was ${al?al.body.split(" ").slice(3,7).join(" "):"at my post"} when it happened. Two people saw me."`,lie:false});
+      arr.push({txt:`"I was ${al?al.place:"at my post"} when it happened. Two people saw me."`,lie:false});
       arr.push({txt:`"I'd tell you if I knew. ${suspects[culprit].name} was acting strange, if you ask me."`,lie:false});
       arr.push({txt:`"Look at the records. They'll back up exactly what I'm saying."`,lie:false});
     }
@@ -1254,6 +1254,7 @@ load();
 
 /* ---------- DEV self-test: validate generator over many seeds (console only) ---------- */
 (function selfTest(){
+  if(!location.search.includes('debug')) return;
   let ok=0,bad=0;
   for(let t=1;t<=5;t++){ for(let i=0;i<200;i++){
     let g,tries=0; do{ g=generateCase(i*131+t*7+tries,t); tries++; }while(!g.valid&&tries<40);

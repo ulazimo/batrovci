@@ -323,11 +323,11 @@
 
         let shotData = { hit: false, tier: 'miss', animal: null, bulletX: state.mouseX, bulletY: state.mouseY };
 
-        state.animals.forEach(animal => {
-            if (animal.dead) return;
+        for (const animal of state.animals) {
+            if (animal.dead) continue;
             const bodyY = animal.y - animal.type.size * 0.5;
             const distBody = Math.hypot(state.mouseX - animal.x, state.mouseY - bodyY);
-            
+
             const hx = animal.x + (animal.dir * animal.type.size * animal.type.hX);
             const hy = animal.y - (animal.type.size * animal.type.hY);
             const dH = Math.hypot(state.mouseX - hx, state.mouseY - hy);
@@ -339,13 +339,15 @@
                 else if (dH < animal.type.heartSize * 0.6) shotData.tier = 'great';
                 else shotData.tier = 'heart';
                 processHit(animal, shotData.tier);
+                break;
             } else if (distBody < animal.type.size) {
                 shotData.hit = true;
                 shotData.animal = { ...animal };
                 shotData.tier = 'body';
                 processHit(animal, 'body');
+                break;
             }
-        });
+        }
 
         setTimeout(() => {
             if (shotData.hit) showShotAnalysis(shotData);
@@ -488,14 +490,16 @@
                 }
             }
         }
-        state.particles.forEach((p, i) => {
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+            const p = state.particles[i];
             p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.03;
             if (p.life <= 0) state.particles.splice(i, 1);
-        });
-        state.floatingTexts.forEach((t, i) => {
+        }
+        for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+            const t = state.floatingTexts[i];
             t.y -= 1.5; t.life -= 0.015;
             if (t.life <= 0) state.floatingTexts.splice(i, 1);
-        });
+        }
     }
 
     function draw() {

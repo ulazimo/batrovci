@@ -562,10 +562,11 @@ function updateHUD(){
     document.getElementById('hud-coins').textContent = `🪙 ${progress.coins}`;
     document.getElementById('hud-timer').textContent = fmtTime(levelTime);
 }
+let stateBeforePause = 'PLAYING';
 function togglePause(){
-    if (state === 'DRIVING') return;
-    if (paused){ paused=false; hide('pause-menu'); state='PLAYING'; }
-    else { paused=true; show('pause-menu'); state='PAUSED'; }
+    if (state !== 'PLAYING' && state !== 'DRIVING' && state !== 'PAUSED') return;
+    if (paused){ paused=false; hide('pause-menu'); state=stateBeforePause; }
+    else { stateBeforePause = state; paused=true; show('pause-menu'); state='PAUSED'; }
 }
 function restartLevel(){ hide('pause-menu'); hide('level-complete'); hide('level-failed'); paused=false; loadLevel(currentLevelIdx); }
 function exitToLevelSelect(){ paused=false; hide('pause-menu'); hide('level-complete'); hide('level-failed'); showLevelSelect(); }
