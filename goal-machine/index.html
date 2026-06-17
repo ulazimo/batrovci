@@ -57,6 +57,8 @@
   .chip b{color:#fff;font-weight:700;}
   .chip.legacy{background:#2a1d3a;border-color:#5a3f7a;color:#e7d6ff;}
   .chip.legacy b{color:var(--gold);}
+  .chip.fame{background:#3a2f08;border-color:#7a5f1a;color:#ffe9a8;}
+  .chip.fame b{color:#fff;}
 
   /* ── Scene ── */
   .scene{flex:none;position:relative;height:36vh;min-height:200px;background:#060d12;}
@@ -112,7 +114,15 @@
   .up.afford .price{color:var(--gold);}
   .up:not(.afford) .price{color:#7fa68d;}
   .up .lbl{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:#79a98c;margin-top:2px;}
+  .up .price .f{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3b0,#e0b020);border:1.5px solid #8a6a10;}
   .up.life .ic{font-size:25px;}
+  /* ── Quests ── */
+  .quest{background:var(--card);border:1px solid #2a5c7a;border-radius:14px;padding:9px 11px;margin-bottom:7px;}
+  .quest .qh{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700;}
+  .quest .qr{color:#ffe9a8;white-space:nowrap;}
+  .quest .bar{height:7px;background:#0e2a1a;border-radius:5px;margin-top:6px;overflow:hidden;}
+  .quest .bar i{display:block;height:100%;background:linear-gradient(90deg,#19aebb,#3fae6a);transition:width .25s;}
+  .quest .qp{font-size:10.5px;color:#9fd3b1;margin-top:3px;}
   .up.life.owned{border-color:#7b3ff0;background:#2a1d3a;opacity:1;cursor:default;}
   .up.life.owned .price{color:#c9a9ff;}
   .up.life.owned [data-lbl]{color:#c9a9ff;}
@@ -148,8 +158,9 @@
   <div class="hud">
     <div class="cash"><span class="coin"></span><span id="cash">0</span></div>
     <div class="hud-sub">
-      <span class="chip">🥅 Stage <b id="stage">1</b></span>
+      <span class="chip">🥅 <b id="tier">Sunday League</b> · <span id="stage">1</span></span>
       <span class="chip">⚡ <b id="income">0</b>/s</span>
+      <span class="chip fame">⭐ <b id="fame">0</b> Fame</span>
       <span class="chip legacy">🏆 <b id="legacy">0</b> Legacy</span>
     </div>
   </div>
@@ -169,6 +180,7 @@
 
   <div class="tabs">
     <button class="tab on" id="tabTrain">⚽ Training</button>
+    <button class="tab" id="tabQuest">📜 Quests</button>
     <button class="tab" id="tabLife">💎 Lifestyle</button>
   </div>
   <div class="ups" id="ups"></div>
@@ -178,7 +190,7 @@
 <div class="overlay" id="startOv">
   <div class="logo">GOAL<br><span class="g">MACHINE</span></div>
   <div class="tagline">Your striker never stops shooting.</div>
-  <div class="blurb">Start with one target. Tap SHOOT to fire a board, beat the keeper, bank the gold. Buy more targets, fatter targets (bigger value), sharper aim and 23 other upgrades — grab Auto-Serve to go hands-free, then blow your fortune on cars, mansions and jets that boost you forever.</div>
+  <div class="blurb">Start with one target. Tap SHOOT to fire a board, beat the keeper, bank the gold. Buy more targets, fatter targets and magic balls — 🔥 burn, 🌀 bend past the keeper, 💣 splash, ❄️ freeze. Clear quests for ⭐ Fame, climb from Sunday League to Legend, then blow your fortune on cars, mansions and jets.</div>
   <button class="btn" id="playBtn">PLAY</button>
 </div>
 
@@ -196,7 +208,7 @@
 <div class="overlay hidden" id="prestigeOv">
   <div class="pmodal">
     <h2>📝 Transfer Window</h2>
-    <p>Sign for a bigger club: reset your stage and all 24 upgrades, but keep a permanent boost to <b>damage &amp; cash</b>. Your <b>Lifestyle</b> stays yours.</p>
+    <p>Sign for a bigger club: reset your stage, training &amp; magic infusions, but keep a permanent boost to <b>damage &amp; cash</b>. Your <b>Lifestyle</b> and <b>Fame</b> upgrades stay yours.</p>
     <div class="gain">+<span id="pGain">0</span> 🏆 Legacy</div>
     <p style="font-size:12px;opacity:.85;">Each Legacy point = <b>+10%</b> to everything, forever.</p>
     <div class="row" style="justify-content:center;">
@@ -252,6 +264,15 @@ const ATTR = [
     cost:l=>140*Math.pow(1.22,l),     val:l=>1+0.6*l,        show:v=>'×'+v.toFixed(2)+' HP'},
   {id:'auto',   cat:'board',ic:'🔁', nm:'Auto-Serve',     desc:'auto-restart boards + offline income',
     cost:l=>l>=1?Infinity:2500,       val:l=>l>0?1:0,        show:v=>v?'active':'manual tap'},
+  // MAGIC INFUSIONS (unlock, then level the proc chance) -----------------
+  {id:'fire',   cat:'magic',ic:'🔥', nm:'Fireball',       desc:'chance to set a target ablaze',
+    cost:l=>l<1?5e3:5e3*Math.pow(1.55,l-1),  val:l=>l<1?0:Math.min(0.6,0.05+0.03*(l-1)), show:v=>v?(v*100).toFixed(0)+'%':'locked'},
+  {id:'curve',  cat:'magic',ic:'🌀', nm:'Curveball',      desc:'chance to bend past the keeper',
+    cost:l=>l<1?8e3:8e3*Math.pow(1.55,l-1),  val:l=>l<1?0:Math.min(0.75,0.10+0.04*(l-1)), show:v=>v?(v*100).toFixed(0)+'%':'locked'},
+  {id:'cannon', cat:'magic',ic:'💣', nm:'Cannonball',     desc:'chance to splash every target',
+    cost:l=>l<1?14e3:14e3*Math.pow(1.6,l-1), val:l=>l<1?0:Math.min(0.5,0.04+0.025*(l-1)), show:v=>v?(v*100).toFixed(0)+'%':'locked'},
+  {id:'frost',  cat:'magic',ic:'❄️', nm:'Frostball',      desc:'chance to freeze the keeper',
+    cost:l=>l<1?20e3:20e3*Math.pow(1.6,l-1), val:l=>l<1?0:Math.min(0.6,0.05+0.03*(l-1)), show:v=>v?(v*100).toFixed(0)+'%':'locked'},
   // ECONOMY --------------------------------------------------------------
   {id:'cashG',  cat:'cash', ic:'💰', nm:'Cash Per Goal', desc:'stage-clear reward',
     cost:l=>55*Math.pow(1.15,l),      val:l=>1+0.18*l,       show:v=>'×'+v.toFixed(2)},
@@ -276,9 +297,19 @@ const ATTR = [
     cost:l=>700*Math.pow(1.34,l),     val:l=>Math.min(0.35,0.012*l), show:v=>'−'+(v*100).toFixed(0)+'% HP'},
   {id:'agent',  cat:'util', ic:'💼', nm:'Star Agent',      desc:'more Legacy on transfer',
     cost:l=>1200*Math.pow(1.40,l),    val:l=>1+0.08*l,       show:v=>'×'+v.toFixed(2)+' 🏆'},
+  // FAME STORE (bought with Fame from quests; kept through transfers) ----
+  {id:'coach',  cat:'fame', cur:'fame', ic:'🎓', nm:'Elite Coaching', desc:'global damage',
+    cost:l=>5*Math.pow(1.6,l),  val:l=>1+0.25*l, show:v=>'×'+v.toFixed(2)+' dmg'},
+  {id:'brand',  cat:'fame', cur:'fame', ic:'📺', nm:'Brand Deals',    desc:'global cash',
+    cost:l=>5*Math.pow(1.6,l),  val:l=>1+0.25*l, show:v=>'×'+v.toFixed(2)+' cash'},
+  {id:'academy',cat:'fame', cur:'fame', ic:'🏟️', nm:'Training Academy',desc:'global fire rate',
+    cost:l=>8*Math.pow(1.7,l),  val:l=>1+0.15*l, show:v=>'×'+v.toFixed(2)+' rate'},
 ];
 const AMAP = {}; ATTR.forEach(a=>AMAP[a.id]=a);
-const GROUPS = [['dmg','Attack'],['board','Targets'],['cash','Economy'],['util','Pitch']];
+const GROUPS = [['dmg','Attack'],['board','Targets'],['magic','Magic Infusions'],['cash','Economy'],['util','Pitch']];
+const TIERS = [[1,'Sunday League'],[10,'Academy'],[25,'Semi-Pro'],[50,'Championship'],[100,'Pro Club'],[250,'International'],[500,'Legend']];
+function tierIndex(stage){ let i=0; for(let k=0;k<TIERS.length;k++) if(stage>=TIERS[k][0]) i=k; return i; }
+function tierName(stage){ return TIERS[tierIndex(stage)][1]; }
 
 // ---- Lifestyle: one-time purchases, permanent bonuses, kept through transfers ----
 const LIFESTYLE = [
@@ -296,14 +327,20 @@ const LMAP = {}; LIFESTYLE.forEach(it=>LMAP[it.id]=it);
 // ---- State ----
 let S = newState();
 function newState(){
-  return {cash:0, stage:1, lv:{}, legacy:0, bestStage:1, assets:{}, lastSeen:Date.now()};
+  return {cash:0, fame:0, stage:1, lv:{}, fameLv:{}, legacy:0, bestStage:1, assets:{}, quests:[], tier:0, lastSeen:Date.now()};
 }
-function lv(id){return S.lv[id]||0;}
+// fame-store upgrades keep their levels in S.fameLv (survive prestige); everything else in S.lv
+function lv(id){ return ((AMAP[id]&&AMAP[id].cur==='fame')?S.fameLv:S.lv)[id]||0; }
 function attr(id){return AMAP[id].val(lv(id));}
 
 // ---- Derived stats ----
 const SAVE_PROB = 0.5;   // chance a ball on a guarded target is saved
 const SAVE_FRAC = 0.12;  // approx share of shots the keeper saves (for analytics)
+const BURN_MULT = 1.5, BURN_TIME = 2.0;     // Fireball: total burn = ball dmg × MULT over TIME
+const CANNON_SPLASH = 0.5;                  // Cannonball: splash dmg to each other target
+const FROST_TIME = 2.5;                     // Frostball: keeper frozen for this long
+// extra average damage per ball from infusions (Fireball burn + Cannonball splash)
+function infusionDmgFactor(){ return 1 + attr('fire')*BURN_MULT + attr('cannon')*CANNON_SPLASH*Math.max(0,targetCount()-1); }
 function prestigeMult(){return 1+0.10*S.legacy;}
 function lifeMult(kind){
   let dmg=1, cash=1;
@@ -320,20 +357,20 @@ function targetHP(){ return TGT_BASE*stageScale(S.stage)*attr('tgtHP')*(1-attr('
 // per-kill reward multiplier — shared by the live payout and the income readout so they match.
 // Board fullness (+25%/extra target) makes More Targets pay; the Target Size term (+15%/level)
 // breaks the HP↔kill-rate cancellation so a bigger target is always worth more gold.
-function rewardMult(){ return attr('cashG')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5)
+function rewardMult(){ return attr('cashG')*attr('brand')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5)
   *(1+0.25*(targetCount()-1))*(1+0.15*lv('tgtHP')); }
 // gold for destroying a target — scales with its HP, so a stronger shot has visible value
 function targetReward(maxHP){ return REWARD_C*maxHP*rewardMult(); }
-function ballsPerSec(){return attr('rate')*attr('multi');}
-// share of fired balls that actually land on a target (accuracy minus keeper saves)
-function hitFrac(){return attr('accuracy')*(1-SAVE_FRAC);}
+function ballsPerSec(){return attr('rate')*attr('multi')*attr('academy');}
+// share of fired balls that land on a target (accuracy; Curveball + Frostball cut keeper saves)
+function hitFrac(){ const effSave=SAVE_FRAC*(1-attr('curve'))*(1-Math.min(0.9,attr('frost'))); return attr('accuracy')*(1-effSave); }
 // average damage per ball that lands (for DPS readout + offline estimate)
 function avgBallDmg(){
-  const base = attr('power')*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
+  const base = attr('power')*attr('hype')*attr('speed')*attr('stagger')*attr('coach')*prestigeMult()*lifeMult('dmg');
   const critF = 1+attr('critC')*(attr('critD')-1);
   const psF   = 1+attr('power2')*(5-1);
   const comboAvg = 1+attr('combo')*0.6; // averages over the ramp
-  return base*critF*psF*comboAvg;
+  return base*critF*psF*comboAvg*infusionDmgFactor();
 }
 function analyticDPS(){
   let dps = avgBallDmg()*ballsPerSec()*hitFrac();
@@ -344,14 +381,14 @@ function analyticDPS(){
   dps += attr('lucky')*ballsPerSec()*hitFrac()*0.04*targetHP();
   return dps;
 }
-function cashPerHit(){return attr('coins')*(1+attr('gold')*9)*lifeMult('cash');}
+function cashPerHit(){return attr('coins')*(1+attr('gold')*9)*lifeMult('cash')*attr('brand');}
 function incomePerSec(){
   // gold/s from clears is capped by min(DPS, HP×shots); raising Target HP toward your
   // shot damage stops overkill waste — the "value of a stronger shot".
   const hp=targetHP(), K=REWARD_C*rewardMult();
   const clear = K*Math.min(analyticDPS(), hp*ballsPerSec()*hitFrac());
   const hits = cashPerHit()*ballsPerSec()*hitFrac();
-  return attr('sponsor')*lifeMult('cash') + clear + hits;
+  return attr('sponsor')*lifeMult('cash')*attr('brand') + clear + hits;
 }
 
 // ---- Prestige math ----
@@ -382,7 +419,7 @@ let spin=0;
 
 // ---- sim state ----
 let balls=[], particles=[], floaters=[], targets=[];
-let keeperX=0, keeperDir=1, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0;
+let keeperX=0, keeperDir=1, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0, keeperFreeze=0;
 let combo=0;       // live combo counter (resets on a goal or a missed shot)
 let fkTimer=0, shotTimer=0;
 let serving=false; // firing only while a board is being served
@@ -391,7 +428,7 @@ const serveBtn=document.getElementById('serveBtn');
 // goal-mouth → world helpers
 function keeperReachW(){ return 1.05; }                 // half the keeper's blocking width
 function keeperSpanW(){ return (GW-1.2)/2 - 0.3; }      // how far it slides from centre
-function guarded(x){ return Math.abs(x-keeperX) < keeperReachW(); }
+function guarded(x){ return keeperFreeze<=0 && Math.abs(x-keeperX) < keeperReachW(); }
 
 // ---- Targets ---- (slot order puts a single target dead-centre, then fills out)
 const SLOTS=[{rx:.50,ry:.34},{rx:.22,ry:.36},{rx:.78,ry:.36},{rx:.22,ry:.72},{rx:.78,ry:.72},{rx:.50,ry:.72}];
@@ -399,7 +436,7 @@ function targetCount(){ return Math.round(attr('targets')); }
 function spawnTargets(){
   const n=targetCount(), each=targetHP();
   targets=[];
-  for(let i=0;i<n;i++) targets.push({rx:SLOTS[i].rx, ry:SLOTS[i].ry, hp:each, maxHp:each, broken:false, flash:0});
+  for(let i=0;i<n;i++) targets.push({rx:SLOTS[i].rx, ry:SLOTS[i].ry, hp:each, maxHp:each, broken:false, flash:0, burn:0, burnT:0});
 }
 // serve loop: a board only fires while `serving`; clearing it stops (or auto-restarts)
 function serve(){ serving=true; spawnTargets(); showServeBtn(false); }
@@ -440,6 +477,11 @@ function spawnBall(special, sf=1){
   if(special){dmg = attr('power')*attr('free')*attr('hype')*prestigeMult()*lifeMult('dmg'); big=true;}
   dmg*=sf;
   const golden = !special && Math.random()<attr('gold');
+  // magic infusions (rolled per ball)
+  const fire   = !special && Math.random()<attr('fire');
+  const curve  = special  || Math.random()<attr('curve');
+  const cannon = !special && Math.random()<attr('cannon');
+  const frost  = !special && Math.random()<attr('frost');
   // 3D trajectory from the striker's boot to the landing point
   const p0={x:(Math.random()*0.5-0.25), y:0.35, z:STRIKER_Z-0.7};
   const p1={x:tx, y:ty, z:0.05};
@@ -447,7 +489,7 @@ function spawnBall(special, sf=1){
   const dist=Math.hypot(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z)||1;
   const sp=11+attr('speed')*0.5+(special?5:0);          // world units / sec
   balls.push({p0, c, p1, t:0, spd:sp/dist, tgt:targets.indexOf(t), miss, sf,
-              dmg, crit, big, golden, special, seed:Math.random()*7});
+              dmg, crit, big, golden, special, fire, curve, cannon, frost, seed:Math.random()*7});
 }
 
 function resolveBall(b){
@@ -456,8 +498,9 @@ function resolveBall(b){
   const t=targets[b.tgt];
   if(!t || t.broken){ puff(p,'#ffffff'); return; }
   const tp=target3D(t);
-  // keeper save (free kicks beat the keeper)
-  if(!b.special && guarded(tp.x) && Math.random()<SAVE_PROB){
+  if(b.frost){ keeperFreeze=FROST_TIME; floater(tp.x,tp.y+0.35,tp.z,'FROZEN','#aef',14); }
+  // keeper save (free kicks & curveballs beat the keeper)
+  if(!b.special && !b.curve && guarded(tp.x) && Math.random()<SAVE_PROB){
     floater(tp.x,tp.y,tp.z,'SAVE!','#7af0ff',15); puff(tp,'#7af0ff');
     keeperShake=Math.min(8,keeperShake+4); return;
   }
@@ -467,16 +510,21 @@ function resolveBall(b){
   }
   t.hp-=b.dmg; t.flash=1; combo++;
   S.cash += cashPerHit() * (b.golden?10:1) * b.sf;
-  for(let i=0;i<(b.big?8:4);i++) impact(tp, b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
+  for(let i=0;i<(b.big?8:4);i++) impact(tp, b.fire?'#ff7a1a':b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
   if(b.crit||b.big) floater(tp.x,tp.y+0.3,tp.z,(b.special?'FREE KICK ':b.big?'POWER ':'CRIT ')+fmt(b.dmg), b.special?'#a685ff':'#ff9a3a', b.big?16:12);
-  if(t.hp<=0) breakTarget(t);
+  if(b.fire){ t.burn=b.dmg*BURN_MULT/BURN_TIME; t.burnT=BURN_TIME; }       // Fireball: burn DoT
+  if(b.cannon){ const sp=b.dmg*CANNON_SPLASH;                              // Cannonball: splash all
+    for(const o of targets){ if(o!==t && !o.broken){ o.hp-=sp; o.flash=1; if(o.hp<=0) breakTarget(o); } }
+    floater(tp.x,tp.y+0.6,tp.z,'SPLASH','#ffb24a',13); }
+  if(t.hp<=0) breakTarget(t, b.special);
 }
-function breakTarget(t){
-  t.broken=true; t.hp=0;
+function breakTarget(t, viaSpecial){
+  t.broken=true; t.hp=0; t.burnT=0;
   const tp=target3D(t), rew=targetReward(t.maxHp);
   S.cash += rew;
   floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
   for(let i=0;i<10;i++) impact(tp,'#ffcf3a');
+  questBump('targets',1); if(viaSpecial) questBump('free',1);
   if(aliveTargets().length===0) onBoardClear();
 }
 function onBoardClear(){
@@ -485,6 +533,9 @@ function onBoardClear(){
   for(let i=0;i<26;i++) confetti();
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
+  questBump('boards',1);
+  const ti=tierIndex(S.stage);                  // career tier-up banner
+  if(ti>(S.tier||0)){ S.tier=ti; floater(0,GH*0.96,0,TIERS[ti][1].toUpperCase()+'!','#9be7ff',30); }
   if(attr('auto')>=1) serve();                 // automation owned → next board immediately
   else { serving=false; showServeBtn(true); }  // otherwise wait for a SHOOT tap
 }
@@ -496,6 +547,33 @@ function impact(w,c){ const s=project(w.x,w.y,w.z); for(let i=0;i<4;i++) particl
 function puff(w,c){ const s=project(w.x,w.y,w.z); for(let i=0;i<5;i++) particles.push({x:s.x,y:s.y,vx:(Math.random()*2-1)*90,vy:(Math.random()*-1-0.2)*90,life:.4,c,sz:2+Math.random()*2}); }
 function confetti(){ const s=project((Math.random()*GW-GW/2)*0.7, GH*0.6, -0.3); particles.push({x:s.x,y:s.y,vx:(Math.random()*2-1)*160,vy:(Math.random()*-1-0.5)*220,life:1.1,c:['#ffcf3a','#ff7a1a','#19aebb','#3fae6a','#fff'][Math.floor(Math.random()*5)],sz:3+Math.random()*3,conf:true}); }
 function floater(x,y,z,txt,c,sz){ const s=project(x,y,z); floaters.push({x:s.x,y:s.y,txt,c,sz,life:1}); }
+
+// ======================= Quests + Fame =======================
+const QPOOL=[
+  {type:'boards', label:g=>`Clear ${g} boards`,          goal:s=>5+Math.floor(s/3),   fame:g=>Math.max(1,Math.ceil(g*0.7))},
+  {type:'targets',label:g=>`Destroy ${g} targets`,       goal:s=>25+s*2,              fame:g=>Math.max(1,Math.ceil(g*0.12))},
+  {type:'free',   label:g=>`Score ${g} free-kick goals`, goal:s=>3+Math.floor(s/10),  fame:g=>Math.max(2,g*2)},
+  {type:'combo',  label:g=>`Land a ${g}-hit combo`,       goal:s=>15+s,                fame:g=>Math.max(2,Math.ceil(g*0.25))},
+  {type:'stage',  label:g=>`Reach stage ${g}`,            goal:s=>s+6+Math.floor(s/4), fame:g=>Math.max(3,Math.ceil(g*0.3))},
+];
+let questDirty=false;
+function genQuest(avoid){
+  let pool=QPOOL; if(avoid){ const f=QPOOL.filter(t=>!avoid.has(t.type)); if(f.length) pool=f; }
+  const tpl=pool[Math.floor(Math.random()*pool.length)];
+  const goal=Math.max(1,Math.round(tpl.goal(S.bestStage)));
+  return {type:tpl.type, goal, prog:tpl.type==='stage'?S.stage:0, fame:tpl.fame(goal), label:tpl.label(goal)};
+}
+function ensureQuests(){ if(!S.quests) S.quests=[]; while(S.quests.length<3) S.quests.push(genQuest(new Set(S.quests.map(q=>q.type)))); }
+function questBump(type,amt){ if(S.quests) for(const q of S.quests) if(q.type===type) q.prog+=amt; }
+function questTick(){
+  if(!S.quests) return;
+  for(let i=0;i<S.quests.length;i++){ const q=S.quests[i];
+    if(q.type==='combo') q.prog=Math.max(q.prog,combo);
+    else if(q.type==='stage') q.prog=S.stage;
+    if(q.prog>=q.goal){ S.fame=(S.fame||0)+q.fame; floater(0,GH*0.5,0,'+'+fmt(q.fame)+' ⭐ Fame','#ffe27a',22);
+      S.quests[i]=genQuest(new Set(S.quests.filter((_,j)=>j!==i).map(x=>x.type))); questDirty=true; }
+  }
+}
 
 function update(dt){
   if(!targets.length && serving) spawnTargets();
@@ -509,14 +587,21 @@ function update(dt){
   }
   // free kick
   if(serving && attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(true);} }
-  // keeper sweep
-  const span=keeperSpanW();
-  keeperX += keeperDir*KEEPER_SPEED*dt;
-  if(keeperX>span){keeperX=span;keeperDir=-1;}
-  if(keeperX<-span){keeperX=-span;keeperDir=1;}
+  // keeper sweep (a frozen keeper holds still and can't save)
+  if(keeperFreeze>0){ keeperFreeze=Math.max(0,keeperFreeze-dt); }
+  else {
+    const span=keeperSpanW();
+    keeperX += keeperDir*KEEPER_SPEED*dt;
+    if(keeperX>span){keeperX=span;keeperDir=-1;}
+    if(keeperX<-span){keeperX=-span;keeperDir=1;}
+  }
   if(keeperShake>0) keeperShake=Math.max(0,keeperShake-dt*30);
   netFlash=Math.max(0,netFlash-dt*2.2); goalFlash=Math.max(0,goalFlash-dt*1.6); kickAnim=Math.max(0,kickAnim-dt*5);
-  for(const t of targets) if(t.flash>0) t.flash=Math.max(0,t.flash-dt*4);
+  for(const t of targets){
+    if(t.flash>0) t.flash=Math.max(0,t.flash-dt*4);
+    if(t.burnT>0 && !t.broken){ t.hp-=t.burn*dt; t.burnT-=dt; if(t.hp<=0) breakTarget(t); }   // Fireball DoT
+  }
+  questTick();
   // balls
   for(let i=balls.length-1;i>=0;i--){
     const b=balls[i]; b.t+=b.spd*dt;
@@ -645,7 +730,7 @@ function render3d(dt){
       const sc=(b.special?1.7:b.big?1.3:1)*(b.golden?1.15:1);
       _q.setFromAxisAngle(AXIS, spin*7+b.seed); _s.setScalar(sc); _p.set(pos.x,pos.y,pos.z);
       _m.compose(_p,_q,_s); ballMesh.setMatrixAt(i,_m);
-      _col.setHex(b.special?0xb79bff:b.golden?0xffd84a:b.crit?0xffcaa0:0xffffff); ballMesh.setColorAt(i,_col);
+      _col.setHex(b.frost?0x8fd8ff:b.fire?0xff7a1a:b.cannon?0x7a4636:b.curve?0xb79bff:b.special?0xb79bff:b.golden?0xffd84a:b.crit?0xffcaa0:0xffffff); ballMesh.setColorAt(i,_col);
     }
     for(let i=n;i<MAX_BALLS;i++){ _m.makeScale(0,0,0); ballMesh.setMatrixAt(i,_m); }
     ballMesh.count=MAX_BALLS; ballMesh.instanceMatrix.needsUpdate=true;
@@ -656,7 +741,7 @@ function render3d(dt){
     const tm=targetMeshes[i], t=targets[i];
     if(!t || t.broken){ tm.grp.visible=false; continue; }
     tm.grp.visible=true; const p=target3D(t); tm.grp.position.set(p.x,p.y,p.z);
-    const g2=guarded(p.x), fr=Math.max(0,t.hp/t.maxHp), hex=t.flash>0?0xffffff:(g2?0xff5a4d:0xffcf3a);
+    const g2=guarded(p.x), fr=Math.max(0,t.hp/t.maxHp), hex=t.flash>0?0xffffff:(t.burnT>0?0xff7a1a:(g2?0xff5a4d:0xffcf3a));
     tm.ring.material.color.setHex(hex); tm.ring.material.emissive.setHex(hex); tm.ring.material.emissiveIntensity=t.flash>0?1.6:0.6;
     tm.disk.material.color.setHex(g2?0xff5a4d:0xffcf3a); tm.disk.material.emissive.setHex(g2?0xff5a4d:0xffcf3a);
     tm.disk.scale.setScalar(Math.max(0.06,fr));
@@ -713,7 +798,7 @@ let buyMode=1;     // 1 or 'max'
 let tab='train';   // 'train' or 'life'
 const upsEl=document.getElementById('ups');
 const els={}, lifeEls={};
-let trainWrap, lifeWrap;
+let trainWrap, questWrap, lifeWrap, questListEl;
 function buildUps(){
   upsEl.innerHTML='';
   // ── Training ──
@@ -733,6 +818,24 @@ function buildUps(){
     });
   });
   upsEl.appendChild(trainWrap);
+  // ── Quests + Fame store ──
+  questWrap=document.createElement('div');questWrap.style.display='none';
+  const qhd=document.createElement('div');qhd.className='grouphdr';qhd.textContent='Active Quests';questWrap.appendChild(qhd);
+  questListEl=document.createElement('div');questWrap.appendChild(questListEl);
+  const fhd=document.createElement('div');fhd.className='grouphdr';fhd.textContent='Fame Store';questWrap.appendChild(fhd);
+  const fnt=document.createElement('div');fnt.style.cssText='font-size:11.5px;color:#9fd3b1;margin:0 4px 6px;';
+  fnt.textContent='Spend ⭐ Fame earned from quests. Kept through every transfer.';questWrap.appendChild(fnt);
+  ATTR.filter(a=>a.cat==='fame').forEach(a=>{
+    const d=document.createElement('div');d.className='up';d.dataset.id=a.id;
+    d.innerHTML=`<div class="ic">${a.ic}</div>
+      <div class="mid"><div class="nm">${a.nm}<span class="lvl">Lv <i data-lvl></i></span></div>
+      <div class="eff"><span data-eff></span> <span class="nx" data-nx></span></div></div>
+      <div class="buy"><div class="price"><span class="f"></span><span data-cost></span></div>
+      <div class="lbl" data-lbl>UPGRADE</div></div>`;
+    d.addEventListener('click',()=>buy(a.id));
+    questWrap.appendChild(d); els[a.id]=d;
+  });
+  upsEl.appendChild(questWrap);
   // ── Lifestyle ──
   lifeWrap=document.createElement('div');lifeWrap.style.display='none';
   const lh=document.createElement('div');lh.className='grouphdr';lh.textContent='Footballer Lifestyle';lifeWrap.appendChild(lh);
@@ -753,14 +856,35 @@ function buildUps(){
 function setTab(t){
   tab=t;
   trainWrap.style.display = t==='train'?'':'none';
+  questWrap.style.display = t==='quest'?'':'none';
   lifeWrap.style.display  = t==='life'?'':'none';
   document.getElementById('tabTrain').classList.toggle('on',t==='train');
+  document.getElementById('tabQuest').classList.toggle('on',t==='quest');
   document.getElementById('tabLife').classList.toggle('on',t==='life');
-  if(t==='life') refreshLife(); else refreshUps();
+  if(t==='life') refreshLife(); else if(t==='quest'){ renderQuests(); refreshUps(); } else refreshUps();
+}
+function renderQuests(){
+  if(!questListEl) return;
+  ensureQuests();
+  questListEl.innerHTML = S.quests.map(q=>{
+    const pct=Math.min(100,Math.round(100*q.prog/q.goal));
+    return `<div class="quest"><div class="qh"><span>${q.label}</span><span class="qr">+${fmt(q.fame)} ⭐</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="qp">${fmt(Math.min(q.prog,q.goal))} / ${fmt(q.goal)}</div></div>`;
+  }).join('');
+  questDirty=false;
 }
 function buyCost(id,n){let c=0,l=lv(id);for(let i=0;i<n;i++)c+=AMAP[id].cost(l+i);return c;}
 function maxAffordable(id){let l=lv(id),c=0,n=0,cash=S.cash;while(n<9999){const nc=AMAP[id].cost(l+n);if(c+nc>cash)break;c+=nc;n++;}return n;}
 function buy(id){
+  const a=AMAP[id];
+  if(a.cur==='fame'){                                        // Fame-store upgrade (×1, paid in Fame)
+    const c=a.cost(lv(id));
+    if(!isFinite(c) || (S.fame||0)<c) return;
+    S.fame-=c; S.fameLv[id]=(S.fameLv[id]||0)+1;
+    if(typeof window.trackEvent==='function') window.trackEvent('fame_upgrade',{attr:id,level:S.fameLv[id]});
+    refreshUps(); refreshHUD(); save(); return;
+  }
   const n = buyMode==='max'? Math.max(1,maxAffordable(id)) : 1;
   const cost=buyCost(id,n);
   if(buyMode==='max' && maxAffordable(id)<1) return;
@@ -773,6 +897,16 @@ function buy(id){
 function refreshUps(){
   ATTR.forEach(a=>{
     const d=els[a.id]; const l=lv(a.id);
+    if(a.cur==='fame'){                                       // Fame-store rows (own currency, ×1)
+      const cost=a.cost(l), afford=(S.fame||0)>=cost;
+      d.classList.toggle('afford',afford);
+      d.querySelector('[data-lvl]').textContent=l;
+      d.querySelector('[data-eff]').textContent=a.desc+': '+a.show(a.val(l));
+      d.querySelector('[data-nx]').textContent='→ '+a.show(a.val(l+1));
+      d.querySelector('[data-cost]').textContent=fmt(cost);
+      d.querySelector('[data-lbl]').textContent='UPGRADE';
+      return;
+    }
     const n = buyMode==='max'? Math.max(1,maxAffordable(a.id)) : 1;
     const cost=buyMode==='max'? buyCost(a.id, Math.max(1,maxAffordable(a.id))) : a.cost(l);
     const afford = buyMode==='max' ? maxAffordable(a.id)>=1 : S.cash>=cost;
@@ -806,14 +940,18 @@ function refreshLife(){
 }
 function refreshHUD(){
   els._c=els._c||{cash:document.getElementById('cash'),stage:document.getElementById('stage'),
-    income:document.getElementById('income'),legacy:document.getElementById('legacy'),dps:document.getElementById('dps')};
+    income:document.getElementById('income'),legacy:document.getElementById('legacy'),dps:document.getElementById('dps'),
+    fame:document.getElementById('fame'),tier:document.getElementById('tier')};
   els._c.cash.textContent=fmt(S.cash);
   els._c.stage.textContent=S.stage;
+  els._c.tier.textContent=tierName(S.stage);
+  els._c.fame.textContent=fmt(S.fame||0);
   els._c.income.textContent=fmt(incomePerSec());
   els._c.legacy.textContent=fmt(S.legacy);
   els._c.dps.textContent=fmt(analyticDPS());
   // keep affordability fresh as cash ticks in (throttled)
-  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now(); tab==='life'?refreshLife():refreshUps();}
+  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now();
+    if(tab==='life') refreshLife(); else if(tab==='quest'){ renderQuests(); refreshUps(); } else refreshUps(); }
 }
 
 // ---- Buy mode toggle ----
@@ -825,6 +963,7 @@ document.getElementById('modeBtn').addEventListener('click',()=>{
 
 // ---- Tabs ----
 document.getElementById('tabTrain').addEventListener('click',()=>setTab('train'));
+document.getElementById('tabQuest').addEventListener('click',()=>setTab('quest'));
 document.getElementById('tabLife').addEventListener('click',()=>setTab('life'));
 
 // ---- Serve (manual shoot) ----
@@ -851,11 +990,11 @@ document.getElementById('pCancel').addEventListener('click',()=>prestigeOv.class
 document.getElementById('pConfirm').addEventListener('click',()=>{
   const g=legacyGain();
   if(typeof window.trackEvent==='function') window.trackEvent('prestige',{legacy_gained:g,best_stage:S.bestStage});
-  const keepLegacy=S.legacy+g, keepAssets=S.assets;
-  S=newState(); S.legacy=keepLegacy; S.assets=keepAssets;
-  prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0; fkTimer=0; shotTimer=0;
+  const keepLegacy=S.legacy+g, keepAssets=S.assets, keepFame=S.fame, keepFameLv=S.fameLv, keepQuests=S.quests;
+  S=newState(); S.legacy=keepLegacy; S.assets=keepAssets; S.fame=keepFame; S.fameLv=keepFameLv; S.quests=keepQuests;
+  prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0; fkTimer=0; shotTimer=0; keeperFreeze=0;
   serve();
-  refreshUps(); refreshLife(); save();
+  refreshUps(); refreshLife(); renderQuests(); save();
 });
 
 // ======================= Save / Load / Offline =======================
@@ -887,9 +1026,10 @@ document.getElementById('collectBtn').addEventListener('click',()=>{
 // ======================= Boot =======================
 function start(){
   resize();
-  keeperX=0;
+  keeperX=0; S.tier=tierIndex(S.stage);
+  ensureQuests();
   serve();
-  buildUps(); refreshUps(); refreshLife();
+  buildUps(); refreshUps(); refreshLife(); renderQuests();
   running=true; last=performance.now(); requestAnimationFrame(frame);
 }
 document.getElementById('playBtn').addEventListener('click',()=>{
