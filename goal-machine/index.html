@@ -276,7 +276,7 @@ const ATTR = [
   {id:'tgtHP',  cat:'board',ic:'🧱', nm:'Target Size',    desc:'HP per target — bigger = more gold',
     cost:l=>140*Math.pow(1.22,l),     val:l=>1+0.6*l,        show:v=>'×'+v.toFixed(2)+' HP'},
   {id:'auto',   cat:'board',ic:'🔁', nm:'Auto-Serve',     desc:'auto-restart boards + offline income',
-    cost:l=>l>=1?Infinity:2500,       val:l=>l>0?1:0,        show:v=>v?'active':'manual tap'},
+    cost:l=>l>=1?Infinity:450,        val:l=>l>0?1:0,        show:v=>v?'active':'manual tap'},
   // MAGIC INFUSIONS — bought with Magic Points; potency scales with Magic Affinity
   {id:'fire',   cat:'magic',cur:'mp',ic:'🔥', nm:'Fireball',     desc:'chance to set a target ablaze',
     cost:l=>l<1?3:Math.ceil(3*Math.pow(1.4,l-1)),  val:l=>l<1?0:Math.min(0.6,0.05+0.03*(l-1)), show:v=>v?(v*100).toFixed(0)+'%':'locked'},
@@ -327,7 +327,7 @@ const SKILLS = [
 const SKMAP={}; SKILLS.forEach(s=>SKMAP[s.id]=s);
 function ensureSkills(){ if(!S.skills)S.skills={}; for(const s of SKILLS) if(!S.skills[s.id]) S.skills[s.id]={lv:0,xp:0}; if(!S.focus||!SKMAP[S.focus]) S.focus='str'; }
 function sl(id){ return (S.skills&&S.skills[id])?S.skills[id].lv:0; }
-function skXpNeed(l){ return 12*Math.pow(1.16,l); }
+function skXpNeed(l){ return 10*Math.pow(1.14,l); }
 // skill → stat curves
 function skillDmg(){ return 5*Math.pow(1.14, sl('str')); }
 function skillRate(){ return 1.0*Math.pow(1.055, sl('dex')); }
@@ -590,7 +590,6 @@ function breakTarget(t, viaSpecial){
   S.cash += rew;
   floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
   for(let i=0;i<10;i++) impact(tp,'#ffcf3a');
-  grantXP(2+0.2*S.stage);                       // breaking a target trains the focused skill
   if(aliveTargets().length===0) onBoardClear();
 }
 function onBoardClear(){
@@ -599,6 +598,7 @@ function onBoardClear(){
   for(let i=0;i<26;i++) confetti();
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
+  grantXP(9 + targetCount()*2);                 // XP per board clear → rate self-limits with difficulty
   const ti=tierIndex(S.stage);                  // career tier-up banner
   if(ti>(S.tier||0)){ S.tier=ti; floater(0,GH*0.96,0,TIERS[ti][1].toUpperCase()+'!','#9be7ff',30); }
   if(attr('auto')>=1) serve();                 // automation owned → next board immediately
