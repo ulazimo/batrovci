@@ -902,12 +902,26 @@ function render3d(dt){
     tm.disk.scale.setScalar(Math.max(0.06,fr));
     tm.grp.rotation.z=Math.sin(spin*1.5+i)*0.06;
   }
-  // keeper
-  if(keeperObj){ keeperObj.position.x=keeperX;
-    const bob=keeperShake>0?Math.sin(spin*40)*0.04*keeperShake:0; keeperObj.position.y=GROUND_Y+bob;
-    keeperObj.rotation.y=Math.sin(spin*1.2)*0.12; }
-  // striker — lean into the kick
-  if(strikerObj){ strikerObj.rotation.x=-kickAnim*0.32; strikerObj.position.y=GROUND_Y+kickAnim*0.05; }
+  // keeper — procedural body animation (no rig): shuffle + lean into the run, step-bob,
+  // lunge on a save, shiver when frozen, slump when a goal goes in
+  if(keeperObj){
+    const moving=keeperFreeze<=0;
+    const step=moving?Math.abs(Math.sin(spin*8))*0.03:0;       // bobbing footwork while sliding
+    const dive=Math.min(1,keeperShake/4);                      // 0..1 save lunge
+    keeperObj.position.x=keeperX;
+    keeperObj.position.y=GROUND_Y+step-dive*0.10-goalFlash*0.05;
+    keeperObj.rotation.x=dive*0.38-goalFlash*0.20;             // reach forward on a save / slump on a goal
+    keeperObj.rotation.z=(moving?-keeperDir*0.16:0)+(keeperFreeze>0?Math.sin(spin*28)*0.04:0);
+    keeperObj.rotation.y=(moving?keeperDir*0.22:0)+Math.sin(spin*1.2)*0.08;
+  }
+  // striker — idle breath, rhythmic strike rock while firing, plant/step into each kick, cheer on a goal
+  if(strikerObj){
+    const breath=Math.sin(spin*2)*0.015, rock=serving?Math.sin(spin*6)*0.05:0;
+    strikerObj.position.y=GROUND_Y+breath+kickAnim*0.06+goalFlash*0.16;
+    strikerObj.position.z=STRIKER_Z-kickAnim*0.12;             // step into the shot, returns to rest
+    strikerObj.rotation.x=-0.05-kickAnim*0.30+goalFlash*0.14;  // plant forward kicking / lean back celebrating
+    strikerObj.rotation.z=rock;
+  }
   // camera sway + goal flash
   camera.position.x=Math.sin(spin*0.25)*0.5; camera.lookAt(0,1.45,0);
   flashLight.intensity=goalFlash*9;
