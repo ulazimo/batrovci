@@ -753,10 +753,20 @@ function render(){
         continue;
       }
       if (cell.removing) continue; // drawn via anim
+      if (G.swap && ((r===G.swap.p1.r&&c===G.swap.p1.c)||(r===G.swap.p2.r&&c===G.swap.p2.c))) continue; // drawn via swap anim
       const selected = G.sel && G.sel.r===r && G.sel.c===c;
       const lift = cell.lift||0;
       drawGem(ctx, x, y, TILE, cell.color, cell.mud, lift, selected);
     }
+  }
+
+  // animated swapping gems (slide)
+  if (G.swap){
+    const {p1,p2,gem1,gem2,t}=G.swap;
+    const x1=colToX(p1.c), y1=rowToY(p1.r);
+    const x2=colToX(p2.c), y2=rowToY(p2.r);
+    drawGem(ctx, x1+(x2-x1)*t, y1+(y2-y1)*t, TILE, gem1.color, gem1.mud, 0, false);
+    drawGem(ctx, x2+(x1-x2)*t, y2+(y1-y2)*t, TILE, gem2.color, gem2.mud, 0, false);
   }
 
   // animated removing gems (pop)
@@ -945,19 +955,36 @@ function doSwap(from, to){
   if (!inBounds(to.r,to.c)) { render(); return; }
   const a=G.grid[from.r][from.c], b=G.grid[to.r][to.c];
   if (!swappable(a) || !swappable(b)){ render(); return; }
-  // swap
-  G.grid[from.r][from.c]=b; G.grid[to.r][to.c]=a;
-  const matches = findMatches();
-  if (matches.length===0){
-    // invalid: swap back
-    G.grid[from.r][from.c]=a; G.grid[to.r][to.c]=b;
-    flashInvalid(to);
-    render();
-    return;
-  }
-  // valid move — spend a move (unless free), determine forward vs sideways
   G.busy = true;
-  resolveMatches(from, to);
+  // slide the two gems into each other's place, then decide valid/invalid
+  animateSwap(from, to, a, b, 150, ()=>{
+    // commit the swap and test for matches
+    G.grid[from.r][from.c]=b; G.grid[to.r][to.c]=a;
+    const matches = findMatches();
+    if (matches.length===0){
+      // invalid: slide them back, then release
+      G.grid[from.r][from.c]=a; G.grid[to.r][to.c]=b;
+      animateSwap(from, to, a, b, 140, ()=>{ G.busy=false; render(); });
+      return;
+    }
+    // valid move — resolve forward/sideways
+    resolveMatches(from, to);
+  });
+}
+
+// ease-in-out cubic for a smooth glide; gem1 starts at p1→p2, gem2 at p2→p1
+function animateSwap(p1, p2, gem1, gem2, dur, done){
+  G.swap = { p1, p2, gem1, gem2, t:0 };
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1,(now-start)/dur);
+    const e = t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+    G.swap.t = e;
+    render();
+    if (t<1) requestAnimationFrame(step);
+    else { G.swap=null; render(); done(); }
+  }
+  requestAnimationFrame(step);
 }
 
 function flashInvalid(cell){
