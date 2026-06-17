@@ -195,7 +195,6 @@
   </div>
 
   <div class="tabs">
-    <button class="tab" id="tab_skills">💪 Skills</button>
     <button class="tab on" id="tab_train">⚽ Train</button>
     <button class="tab" id="tab_magic">🪄 Magic</button>
     <button class="tab" id="tab_quest">📜 Quests</button>
@@ -837,7 +836,7 @@ let buyMode=1;     // 1 or 'max'
 let tab='train';   // 'train' or 'life'
 const upsEl=document.getElementById('ups');
 const els={}, lifeEls={};
-let skillWrap, trainWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl;
+let trainWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl;
 function upRow(a, coin){
   const d=document.createElement('div');d.className='up';d.dataset.id=a.id;
   d.innerHTML=`<div class="ic">${a.ic}</div>
@@ -849,13 +848,10 @@ function upRow(a, coin){
 }
 function buildUps(){
   upsEl.innerHTML='';
-  // ── Skills ──
-  skillWrap=document.createElement('div');skillWrap.style.display='none';
-  const sh=document.createElement('div');sh.className='grouphdr';sh.textContent='Skills — tap one to focus your XP';skillWrap.appendChild(sh);
-  skillListEl=document.createElement('div');skillWrap.appendChild(skillListEl);
-  upsEl.appendChild(skillWrap);
-  // ── Training (cash equipment) ──
+  // ── Train: Skills (XP/focus) on top, then gold equipment ──
   trainWrap=document.createElement('div');
+  const sh=document.createElement('div');sh.className='grouphdr';sh.textContent='Skills — tap one to focus your XP';trainWrap.appendChild(sh);
+  skillListEl=document.createElement('div');trainWrap.appendChild(skillListEl);
   GROUPS.forEach(([cat,label])=>{
     const h=document.createElement('div');h.className='grouphdr';h.textContent=label;trainWrap.appendChild(h);
     ATTR.filter(a=>a.cat===cat).forEach(a=>trainWrap.appendChild(upRow(a,'c')));
@@ -890,16 +886,15 @@ function buildUps(){
   });
   upsEl.appendChild(lifeWrap);
 }
-const TABS=[['skills','💪'],['train','⚽'],['magic','🪄'],['quest','📜'],['life','💎']];
+const TABS=[['train','⚽'],['magic','🪄'],['quest','📜'],['life','💎']];
 function setTab(t){
   tab=t;
-  skillWrap.style.display=t==='skills'?'':'none';
   trainWrap.style.display=t==='train'?'':'none';
   magicWrap.style.display=t==='magic'?'':'none';
   questWrap.style.display=t==='quest'?'':'none';
   lifeWrap.style.display =t==='life'?'':'none';
   for(const [k] of TABS) document.getElementById('tab_'+k).classList.toggle('on',k===t);
-  if(t==='skills') renderSkills(); else if(t==='quest') renderQuests(); else if(t==='life') refreshLife(); else refreshUps();
+  if(t==='quest') renderQuests(); else if(t==='life') refreshLife(); else { renderSkills(); refreshUps(); }
 }
 function setFocus(id){ S.focus=id; renderSkills(); save(); }
 function renderSkills(){
@@ -1000,7 +995,7 @@ function refreshHUD(){
   els._c.dps.textContent=fmt(analyticDPS());
   // keep affordability fresh as cash ticks in (throttled)
   if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now();
-    if(tab==='skills') renderSkills(); else if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else refreshUps(); }
+    if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else { renderSkills(); refreshUps(); } }
 }
 
 // ---- Buy mode toggle ----
