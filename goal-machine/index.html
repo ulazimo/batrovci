@@ -8,6 +8,12 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   :root{
@@ -47,8 +53,9 @@
   .chip.legacy b{color:var(--gold);}
 
   /* ── Scene ── */
-  .scene{flex:none;position:relative;height:36vh;min-height:200px;background:#13371f;}
-  canvas{display:block;width:100%;height:100%;}
+  .scene{flex:none;position:relative;height:36vh;min-height:200px;background:#060d12;}
+  #cv{display:block;width:100%;height:100%;}
+  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
   .dps-tag{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);z-index:5;
     background:rgba(6,40,22,.7);border:1px solid #2a6b40;border-radius:12px;padding:3px 12px;
     font-size:12px;font-weight:700;color:#dfffe9;pointer-events:none;}
@@ -135,6 +142,7 @@
 
   <div class="scene">
     <canvas id="cv"></canvas>
+    <canvas id="fx"></canvas>
     <div class="dps-tag">DPS <b id="dps">0</b></div>
   </div>
 
@@ -183,7 +191,10 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 // ======================= Goal Machine =======================
 const SAVE_KEY = 'goal-machine-save';
 const SUF = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qd','Qq','Sd','St','Od','Nd','Vg'];
@@ -325,30 +336,35 @@ function legacyGain(){
   return Math.floor(raw*attr('agent'));
 }
 
-// ======================= Canvas scene =======================
+// ======================= 3D Scene (Three.js) =======================
 const cv = document.getElementById('cv');
-const ctx = cv.getContext('2d');
-let W=0,Hh=0,DPR=1;
-function resize(){
-  DPR = Math.min(2, window.devicePixelRatio||1);
-  const r = cv.getBoundingClientRect();
-  W=r.width; Hh=r.height;
-  cv.width=W*DPR; cv.height=Hh*DPR;
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-}
-window.addEventListener('resize',resize);
+const fx = document.getElementById('fx');
+const fxctx = fx.getContext('2d');
+let W=0, Hh=0, DPR=1;
 
+// ---- world constants (arbitrary units; goal roughly to scale) ----
+const GW=7.32, GH=3.3;          // goal mouth width / height
+const NET_DEPTH=1.7;
+const STRIKER_Z=9.5, KEEPER_Z=0.4, GROUND_Y=0;
+const BALL_R=0.17;
+const MAX_BALLS=140, VOLLEY_CAP=12, MAX_VPS=18;   // swarm caps (visuals only)
+const KEEPER_SPEED=2.4;
+const AXIS=new THREE.Vector3(1,0.7,0.35).normalize();
+
+let renderer, scene, camera, ballMesh, ballGeo, ballMat, keeperObj, strikerObj, flashLight, netMat;
+let targetMeshes=[];
+let spin=0;
+
+// ---- sim state ----
 let balls=[], particles=[], floaters=[], targets=[];
 let keeperX=0, keeperDir=1, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0;
 let combo=0;       // live combo counter (resets on a goal or a missed shot)
 let fkTimer=0, shotTimer=0;
 
-function strikerY(){return Hh*0.86;}
-// goal mouth geometry — single source for update + draw
-function goalRect(){ const gy=Hh*0.34, gh=Hh*0.26, gtop=gy-gh, gw=W*0.5, gx=W/2-gw/2; return {gy,gh,gtop,gw,gx}; }
-function keeperReach(){ return goalRect().gw*0.15; }            // half the keeper's blocking width
-function keeperSpan(){ return goalRect().gw*0.38; }             // how far it slides from centre
-function guarded(x){ return Math.abs(x-keeperX) < keeperReach(); }
+// goal-mouth → world helpers
+function keeperReachW(){ return 1.05; }                 // half the keeper's blocking width
+function keeperSpanW(){ return (GW-1.2)/2 - 0.3; }      // how far it slides from centre
+function guarded(x){ return Math.abs(x-keeperX) < keeperReachW(); }
 
 // ---- Targets ----
 const SLOTS=[{rx:.18,ry:.34},{rx:.82,ry:.34},{rx:.50,ry:.26},{rx:.18,ry:.74},{rx:.82,ry:.74},{rx:.50,ry:.74}];
@@ -358,26 +374,33 @@ function spawnTargets(stage){
   targets=[];
   for(let i=0;i<n;i++) targets.push({rx:SLOTS[i].rx, ry:SLOTS[i].ry, hp:each, maxHp:each, broken:false, flash:0});
 }
-function targetPos(t){ const G=goalRect(); return {x:G.gx+t.rx*G.gw, y:G.gtop+t.ry*G.gh}; }
+function target3D(t){ return {x:(t.rx-0.5)*(GW-1.2), y:0.55+(1-t.ry)*(GH-1.15), z:0.06}; }
 function aliveTargets(){ return targets.filter(t=>!t.broken); }
 
-function spawnVolley(){
-  const n = attr('multi');
+// quadratic-bezier flight (start → lifted control → landing)
+function bezier(p0,c,p1,t){ const u=1-t; return {
+  x:u*u*p0.x+2*u*t*c.x+t*t*p1.x, y:u*u*p0.y+2*u*t*c.y+t*t*p1.y, z:u*u*p0.z+2*u*t*c.z+t*t*p1.z }; }
+function ballPos(b){ return bezier(b.p0,b.c,b.p1,Math.min(1,b.t)); }
+
+function spawnVolley(shotRep){
   kickAnim=1;
-  for(let i=0;i<n;i++) spawnBall(false);
+  const multi=attr('multi'), C=Math.min(multi,VOLLEY_CAP);
+  const sf=(shotRep*multi)/C;     // each rendered ball carries the damage of the shots it represents
+  for(let i=0;i<C;i++) spawnBall(false, sf);
 }
-function spawnBall(special){
+function spawnBall(special, sf=1){
+  if(balls.length>=MAX_BALLS) return;
   const live=aliveTargets();
   if(!live.length) return;
   // aim at a target the keeper isn't guarding when possible
-  let pool=live.filter(t=>!guarded(targetPos(t).x));
+  let pool=live.filter(t=>!guarded(target3D(t).x));
   if(!pool.length) pool=live;
   const t=pool[Math.floor(Math.random()*pool.length)];
-  const tp=targetPos(t);
+  const tp=target3D(t);
   // accuracy roll — a missed shot sails wide of the target
   const hit = special || Math.random()<attr('accuracy');
   let tx=tp.x, ty=tp.y, miss=false;
-  if(!hit){ miss=true; tx=tp.x+(Math.random()<.5?-1:1)*(34+Math.random()*46); }
+  if(!hit){ miss=true; tx=tp.x+(Math.random()<.5?-1:1)*(0.9+Math.random()*1.1); ty=tp.y+(Math.random()*0.6-0.2); }
   // roll the damage now
   let dmg = attr('power')*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
   dmg *= 1+Math.min(attr('combo'), combo*0.02);
@@ -385,151 +408,264 @@ function spawnBall(special){
   if(!special && Math.random()<attr('critC')){dmg*=attr('critD'); crit=true;}
   if(!special && Math.random()<attr('power2')){dmg*=5; big=true;}
   if(special){dmg = attr('power')*attr('free')*attr('hype')*prestigeMult()*lifeMult('dmg'); big=true;}
+  dmg*=sf;
   const golden = !special && Math.random()<attr('gold');
-  // trajectory from striker to the landing point
-  const sx=W/2+(Math.random()*16-8), sy=strikerY()-10;
-  const dx=tx-sx, dy=ty-sy, dist=Math.hypot(dx,dy)||1, sp=360+attr('speed')*30+(special?160:0);
-  balls.push({x:sx, y:sy, vx:dx/dist*sp, vy:dy/dist*sp, ty,
-              tgt:targets.indexOf(t), miss, dmg, crit, big, golden, special, r:special?13:(big?9:7)});
+  // 3D trajectory from the striker's boot to the landing point
+  const p0={x:(Math.random()*0.5-0.25), y:0.35, z:STRIKER_Z-0.7};
+  const p1={x:tx, y:ty, z:0.05};
+  const c ={x:(p0.x+p1.x)/2, y:Math.max(p0.y,p1.y)+1.4, z:(p0.z+p1.z)/2};
+  const dist=Math.hypot(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z)||1;
+  const sp=11+attr('speed')*0.5+(special?5:0);          // world units / sec
+  balls.push({p0, c, p1, t:0, spd:sp/dist, tgt:targets.indexOf(t), miss, sf,
+              dmg, crit, big, golden, special, seed:Math.random()*7});
 }
 
 function resolveBall(b){
-  if(b.miss){ floater(b.x, b.ty-6, 'MISS', '#bcd3c4', 13); puff(b.x,b.ty,'#cfe0d4'); combo=0; return; }
+  const p=b.p1;
+  if(b.miss){ floater(p.x,p.y,p.z,'MISS','#bcd3c4',13); puff(p,'#cfe0d4'); combo=0; return; }
   const t=targets[b.tgt];
-  if(!t || t.broken){ puff(b.x,b.ty,'#ffffff'); return; }
-  const tp=targetPos(t);
+  if(!t || t.broken){ puff(p,'#ffffff'); return; }
+  const tp=target3D(t);
   // keeper save (free kicks beat the keeper)
   if(!b.special && guarded(tp.x) && Math.random()<SAVE_PROB){
-    floater(tp.x, tp.y-6, 'SAVE!', '#7af0ff', 15); puff(b.x,b.ty,'#7af0ff');
+    floater(tp.x,tp.y,tp.z,'SAVE!','#7af0ff',15); puff(tp,'#7af0ff');
     keeperShake=Math.min(8,keeperShake+4); return;
   }
   // lucky strike shatters a chunk of this target
   if(!b.special && Math.random()<attr('lucky')){
-    const tear=t.maxHp*0.04; t.hp-=tear; floater(tp.x, tp.y-4, 'TEAR -'+fmt(tear), '#7af0ff', 12);
+    const tear=t.maxHp*0.04; t.hp-=tear; floater(tp.x,tp.y+0.3,tp.z,'TEAR -'+fmt(tear),'#7af0ff',12);
   }
   t.hp-=b.dmg; t.flash=1; combo++;
-  S.cash += cashPerHit() * (b.golden?10:1);
-  for(let i=0;i<(b.big?8:4);i++) impact(b.x, b.y, b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
-  if(b.crit||b.big) floater(b.x, b.y-6, (b.special?'FREE KICK ':b.big?'POWER ':'CRIT ')+fmt(b.dmg), b.special?'#a685ff':'#ff9a3a', b.big?16:12);
+  S.cash += cashPerHit() * (b.golden?10:1) * b.sf;
+  for(let i=0;i<(b.big?8:4);i++) impact(tp, b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
+  if(b.crit||b.big) floater(tp.x,tp.y+0.3,tp.z,(b.special?'FREE KICK ':b.big?'POWER ':'CRIT ')+fmt(b.dmg), b.special?'#a685ff':'#ff9a3a', b.big?16:12);
   if(t.hp<=0) breakTarget(t);
 }
 function breakTarget(t){
   t.broken=true; t.hp=0;
-  const tp=targetPos(t);
-  floater(tp.x, tp.y, '⚽', '#fff', 22);
-  for(let i=0;i<10;i++) impact(tp.x, tp.y, '#ffcf3a');
+  const tp=target3D(t);
+  floater(tp.x,tp.y,tp.z,'⚽','#fff',22);
+  for(let i=0;i<10;i++) impact(tp,'#ffcf3a');
   if(aliveTargets().length===0) onStageClear();
 }
 function onStageClear(){
   goalFlash=1; netFlash=1; combo=0;
   const reward = stageReward(S.stage)*(1+attr('over')*0.6);
   S.cash += reward;
-  floater(W/2, goalRect().gy-10, 'GOAL! +'+fmt(reward), '#ffcf3a', 26);
+  floater(0,GH*0.7,0,'GOAL! +'+fmt(reward),'#ffcf3a',26);
   for(let i=0;i<26;i++) confetti();
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
   spawnTargets(S.stage);
 }
-function impact(x,y,c){particles.push({x,y,vx:(Math.random()*2-1)*120,vy:(Math.random()*-1-0.3)*120,life:.5,c,sz:2+Math.random()*2});}
-function puff(x,y,c){for(let i=0;i<5;i++)particles.push({x,y,vx:(Math.random()*2-1)*90,vy:(Math.random()*-1-0.2)*90,life:.4,c,sz:2+Math.random()*2});}
-function confetti(){particles.push({x:W/2+(Math.random()*120-60),y:goalRect().gy,vx:(Math.random()*2-1)*160,vy:(Math.random()*-1-0.5)*220,life:1.1,c:['#ffcf3a','#ff7a1a','#19aebb','#3fae6a','#fff'][Math.floor(Math.random()*5)],sz:3+Math.random()*3,conf:true});}
-function floater(x,y,txt,c,sz){floaters.push({x,y,txt,c,sz,life:1});}
+
+// ---- 2D FX overlay (text + sparks, projected from 3D) ----
+const _pv=new THREE.Vector3();
+function project(x,y,z){ _pv.set(x,y,z).project(camera); return {x:(_pv.x*0.5+0.5)*W, y:(-_pv.y*0.5+0.5)*Hh}; }
+function impact(w,c){ const s=project(w.x,w.y,w.z); for(let i=0;i<4;i++) particles.push({x:s.x,y:s.y,vx:(Math.random()*2-1)*120,vy:(Math.random()*-1-0.3)*120,life:.5,c,sz:2+Math.random()*2}); }
+function puff(w,c){ const s=project(w.x,w.y,w.z); for(let i=0;i<5;i++) particles.push({x:s.x,y:s.y,vx:(Math.random()*2-1)*90,vy:(Math.random()*-1-0.2)*90,life:.4,c,sz:2+Math.random()*2}); }
+function confetti(){ const s=project((Math.random()*GW-GW/2)*0.7, GH*0.6, -0.3); particles.push({x:s.x,y:s.y,vx:(Math.random()*2-1)*160,vy:(Math.random()*-1-0.5)*220,life:1.1,c:['#ffcf3a','#ff7a1a','#19aebb','#3fae6a','#fff'][Math.floor(Math.random()*5)],sz:3+Math.random()*3,conf:true}); }
+function floater(x,y,z,txt,c,sz){ const s=project(x,y,z); floaters.push({x:s.x,y:s.y,txt,c,sz,life:1}); }
 
 function update(dt){
   if(!targets.length) spawnTargets(S.stage);
   // passive income
   S.cash += attr('sponsor')*lifeMult('cash')*dt;
-  // auto fire
-  const bps = ballsPerSec();
-  if(bps>0){ shotTimer+=dt; const interval=1/attr('rate'); while(shotTimer>=interval){shotTimer-=interval; spawnVolley();} }
+  // auto fire — capped volley/sec; each rendered volley represents `shotRep` real shots
+  const rate=attr('rate');
+  if(rate>0){
+    const effInt=Math.max(1/MAX_VPS, 1/rate), shotRep=rate*effInt;
+    shotTimer+=dt; while(shotTimer>=effInt){ shotTimer-=effInt; spawnVolley(shotRep); }
+  }
   // free kick
   if(attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(true);} }
   // keeper sweep
-  const span=keeperSpan();
-  keeperX += keeperDir*60*dt;
-  if(keeperX>W/2+span){keeperX=W/2+span;keeperDir=-1;}
-  if(keeperX<W/2-span){keeperX=W/2-span;keeperDir=1;}
+  const span=keeperSpanW();
+  keeperX += keeperDir*KEEPER_SPEED*dt;
+  if(keeperX>span){keeperX=span;keeperDir=-1;}
+  if(keeperX<-span){keeperX=-span;keeperDir=1;}
   if(keeperShake>0) keeperShake=Math.max(0,keeperShake-dt*30);
   netFlash=Math.max(0,netFlash-dt*2.2); goalFlash=Math.max(0,goalFlash-dt*1.6); kickAnim=Math.max(0,kickAnim-dt*5);
   for(const t of targets) if(t.flash>0) t.flash=Math.max(0,t.flash-dt*4);
   // balls
   for(let i=balls.length-1;i>=0;i--){
-    const b=balls[i]; b.x+=b.vx*dt; b.y+=b.vy*dt;
-    if(b.y<=b.ty){ resolveBall(b); balls.splice(i,1); }
-    else if(b.y<-30 || b.x<-30 || b.x>W+30) balls.splice(i,1);
+    const b=balls[i]; b.t+=b.spd*dt;
+    if(b.t>=1){ resolveBall(b); balls.splice(i,1); }
   }
-  // particles
+  // 2D particles / floaters
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.conf)p.vy+=420*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
   for(let i=floaters.length-1;i>=0;i--){const f=floaters[i];f.y-=26*dt;f.life-=dt*0.9;if(f.life<=0)floaters.splice(i,1);}
 }
 
-function draw(){
-  // pitch stripes
-  const stripe=Hh/7;
-  for(let i=0;i<8;i++){ctx.fillStyle=(i%2)?'#1f7a3d':'#23873f';ctx.fillRect(0,i*stripe,W,stripe);}
-  const G=goalRect(), gy=G.gy, gx=G.gx, gw=G.gw, gtop=G.gtop, gh=G.gh;
-  // penalty box + arc (below the goal)
-  ctx.strokeStyle='rgba(234,255,240,.55)';ctx.lineWidth=2;
-  ctx.strokeRect(W*0.5-W*0.34,gy+6,W*0.68,Hh*0.26);
-  ctx.beginPath();ctx.arc(W/2,gy+6+Hh*0.26,W*0.16,Math.PI,0,true);ctx.stroke();
-  // net
-  if(netFlash>0){ctx.fillStyle=`rgba(255,255,255,${0.12+netFlash*0.25})`;ctx.fillRect(gx,gtop,gw,gh);}
-  ctx.strokeStyle='rgba(255,255,255,.26)';ctx.lineWidth=1;
-  for(let x=gx;x<=gx+gw;x+=12){ctx.beginPath();ctx.moveTo(x,gtop);ctx.lineTo(x,gy);ctx.stroke();}
-  for(let yy=gtop;yy<=gy;yy+=12){ctx.beginPath();ctx.moveTo(gx,yy);ctx.lineTo(gx+gw,yy);ctx.stroke();}
-  ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.lineCap='round';
-  ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx,gtop);ctx.lineTo(gx+gw,gtop);ctx.lineTo(gx+gw,gy);ctx.stroke();
-  // keeper
-  const kx=keeperX+(keeperShake?Math.sin(Date.now()*0.05)*keeperShake:0), ky=gy-6;
-  ctx.fillStyle='#ffe27a';
-  ctx.beginPath();ctx.arc(kx-20,ky-26,6,0,7);ctx.arc(kx+20,ky-26,6,0,7);ctx.fill();   // gloves
-  ctx.fillStyle=goalFlash>0?'#fff':'#16a0d8';
-  roundRect(kx-15,ky-40,30,38,8);ctx.fill();          // body
-  ctx.fillStyle='#f6c98a';ctx.beginPath();ctx.arc(kx,ky-46,9,0,7);ctx.fill(); // head
-  // targets
-  const tr=Math.min(15, gh*0.20);
-  for(const t of targets){
-    if(t.broken) continue;
-    const tp=targetPos(t), g2=guarded(tp.x), fr=Math.max(0,t.hp/t.maxHp);
-    ctx.lineWidth=3; ctx.strokeStyle=t.flash>0?'#fff':(g2?'#ff6a5a':'#ffcf3a');
-    ctx.beginPath();ctx.arc(tp.x,tp.y,tr,0,7);ctx.stroke();
-    ctx.fillStyle=g2?'rgba(255,106,90,.5)':'rgba(255,207,58,.85)';
-    ctx.beginPath();ctx.arc(tp.x,tp.y,Math.max(1.5,tr*0.7*fr),0,7);ctx.fill();
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(tp.x,tp.y,2,0,7);ctx.fill();
+// ======================= Scene construction =======================
+function setup3D(){
+  renderer=new THREE.WebGLRenderer({canvas:cv, antialias:true});
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.15;
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x05080c);
+  scene.fog=new THREE.Fog(0x05080c, 22, 48);
+  camera=new THREE.PerspectiveCamera(52, 1, 0.1, 200);
+  camera.position.set(0, 3.5, STRIKER_Z+4.3);
+  camera.lookAt(0, 1.45, 0);
+
+  // lights — floodlit night
+  scene.add(new THREE.HemisphereLight(0xbfd8ff, 0x1b3a22, 0.85));
+  const key=new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(4,12,8); scene.add(key);
+  const rim=new THREE.DirectionalLight(0x9fc6ff, 0.7); rim.position.set(-6,8,-6); scene.add(rim);
+  flashLight=new THREE.PointLight(0xfff2c0, 0, 30); flashLight.position.set(0, GH*0.7, 2.5); scene.add(flashLight);
+
+  const tl=new THREE.TextureLoader();
+  // pitch
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(70,80),
+    new THREE.MeshStandardMaterial({color:0x2f7d3f, roughness:1, metalness:0}));
+  ground.rotation.x=-Math.PI/2; ground.position.set(0,GROUND_Y,-6); scene.add(ground);
+  tl.load('assets/turf.jpg', tex=>{ tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(7,9); ground.material.map=tex; ground.material.color.set(0xffffff); ground.material.needsUpdate=true; });
+  // stadium backdrop
+  const back=new THREE.Mesh(new THREE.PlaneGeometry(80,40), new THREE.MeshBasicMaterial({color:0x0a1016, fog:false}));
+  back.position.set(0,9,-30); scene.add(back);
+  tl.load('assets/stadium.jpg', tex=>{ tex.colorSpace=THREE.SRGBColorSpace; back.material.map=tex; back.material.color.set(0xffffff); back.material.needsUpdate=true; });
+
+  // pitch markings (penalty box + arc lines on the ground)
+  const lineMat=new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:0.55});
+  const boxW=GW+5.5, boxD=6, pts=[[-boxW/2,0],[boxW/2,0],[boxW/2,boxD],[-boxW/2,boxD],[-boxW/2,0]];
+  const lpos=[]; for(let i=0;i<pts.length-1;i++){ lpos.push(pts[i][0],0.02,pts[i][1], pts[i+1][0],0.02,pts[i+1][1]); }
+  const arc=64; for(let i=0;i<arc;i++){ const a0=Math.PI*(i/arc), a1=Math.PI*((i+1)/arc); lpos.push(Math.cos(a0)*2.6,0.02,boxD-Math.sin(a0)*2.6, Math.cos(a1)*2.6,0.02,boxD-Math.sin(a1)*2.6); }
+  const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lpos,3));
+  scene.add(new THREE.LineSegments(lg, lineMat));
+
+  // goal frame (posts + crossbar)
+  const postMat=new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.45, emissive:0x223344, emissiveIntensity:0.4});
+  const postGeo=new THREE.CylinderGeometry(0.07,0.07,GH,12);
+  for(const sx of [-1,1]){ const pst=new THREE.Mesh(postGeo,postMat); pst.position.set(sx*GW/2, GH/2, 0); scene.add(pst); }
+  const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,GW+0.14,12), postMat);
+  bar.rotation.z=Math.PI/2; bar.position.set(0,GH,0); scene.add(bar);
+
+  // net (back panel + sides + roof as line grid)
+  netMat=new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:0.16});
+  const np=[]; const stepX=GW/10, stepY=GH/6;
+  for(let i=0;i<=10;i++){ const x=-GW/2+i*stepX; np.push(x,0,-NET_DEPTH, x,GH,-NET_DEPTH); }      // back verticals
+  for(let j=0;j<=6;j++){ const y=j*stepY; np.push(-GW/2,y,-NET_DEPTH, GW/2,y,-NET_DEPTH); }          // back horizontals
+  for(let j=0;j<=6;j++){ const y=j*stepY; np.push(-GW/2,y,0,-GW/2,y,-NET_DEPTH); np.push(GW/2,y,0,GW/2,y,-NET_DEPTH); } // sides
+  for(let i=0;i<=10;i++){ const x=-GW/2+i*stepX; np.push(x,GH,0,x,GH,-NET_DEPTH); }                   // roof
+  const ng=new THREE.BufferGeometry(); ng.setAttribute('position',new THREE.Float32BufferAttribute(np,3));
+  scene.add(new THREE.LineSegments(ng, netMat));
+
+  // target rings (max 6, toggled per stage)
+  for(let i=0;i<6;i++){
+    const grp=new THREE.Group();
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.46,0.08,10,28),
+      new THREE.MeshStandardMaterial({color:0xffcf3a, emissive:0xffcf3a, emissiveIntensity:0.6, roughness:0.4}));
+    const disk=new THREE.Mesh(new THREE.CircleGeometry(0.36,24),
+      new THREE.MeshStandardMaterial({color:0xffcf3a, emissive:0xffcf3a, emissiveIntensity:0.5, transparent:true, opacity:0.85}));
+    disk.position.z=-0.01;
+    grp.add(ring); grp.add(disk); grp.visible=false; scene.add(grp);
+    targetMeshes.push({grp,ring,disk});
   }
-  // targets-left label
-  ctx.fillStyle='#dff7e6';ctx.font='700 11px Fredoka';ctx.textAlign='center';
-  ctx.fillText('TARGETS '+aliveTargets().length+'/'+targets.length, W/2, gtop-7);
-  // striker
-  const sy=strikerY(), kick=kickAnim;
-  ctx.fillStyle='#ff7a1a';roundRect(W/2-12,sy-34,24,32,7);ctx.fill();
-  ctx.fillStyle='#f6c98a';ctx.beginPath();ctx.arc(W/2,sy-40,8,0,7);ctx.fill();
-  ctx.strokeStyle='#ff7a1a';ctx.lineWidth=5;ctx.lineCap='round'; // kicking leg
-  ctx.beginPath();ctx.moveTo(W/2,sy-6);ctx.lineTo(W/2+10+kick*14,sy+2-kick*10);ctx.stroke();
-  // balls
-  for(const b of balls){
-    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,7);
-    ctx.fillStyle=b.special?'#a685ff':b.golden?'#ffd84a':b.crit?'#ffd0a0':'#fff';ctx.fill();
-    ctx.lineWidth=1.5;ctx.strokeStyle='rgba(0,0,0,.25)';ctx.stroke();
-    if(b.golden||b.special){ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.3,0,7);ctx.fill();}
-  }
-  // particles
-  for(const p of particles){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.c;ctx.fillRect(p.x,p.y,p.sz,p.sz);}
-  ctx.globalAlpha=1;
-  // floaters
-  ctx.textAlign='center';
-  for(const f of floaters){ctx.globalAlpha=Math.max(0,f.life);ctx.fillStyle=f.c;ctx.font=`800 ${f.sz}px 'Baloo 2'`;
-    ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.strokeText(f.txt,f.x,f.y);ctx.fillText(f.txt,f.x,f.y);}
-  ctx.globalAlpha=1;
+
+  // ---- async model loads ----
+  const draco=new DRACOLoader(); draco.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+  const gltf=new GLTFLoader(); gltf.setDRACOLoader(draco);
+  // ball → instanced swarm
+  gltf.load('assets/ball.glb', g=>{
+    let mesh; g.scene.traverse(o=>{ if(o.isMesh && !mesh) mesh=o; });
+    if(!mesh) return;
+    ballGeo=mesh.geometry.clone(); ballGeo.computeBoundingSphere(); ballGeo.center();
+    const r=ballGeo.boundingSphere.radius||1; ballGeo.scale(BALL_R/r,BALL_R/r,BALL_R/r);
+    ballMat=mesh.material;
+    ballMesh=new THREE.InstancedMesh(ballGeo, ballMat, MAX_BALLS);
+    ballMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    ballMesh.frustumCulled=false;
+    const z=new THREE.Matrix4().makeScale(0,0,0); for(let i=0;i<MAX_BALLS;i++) ballMesh.setMatrixAt(i,z);
+    ballMesh.setColorAt(0,new THREE.Color(0xffffff));
+    scene.add(ballMesh);
+  }, undefined, e=>console.warn('ball load failed',e));
+  // keeper (faces the striker)
+  gltf.load('assets/keeper.glb', g=>{ keeperObj=placeChar(g.scene, 1.9, KEEPER_Z, 0); }, undefined, e=>console.warn('keeper load failed',e));
+  // striker (back to camera)
+  gltf.load('assets/striker.glb', g=>{ strikerObj=placeChar(g.scene, 1.9, STRIKER_Z, Math.PI); }, undefined, e=>console.warn('striker load failed',e));
 }
-function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function placeChar(root, targetH, baseZ, faceY){
+  root.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(root), size=new THREE.Vector3(); box.getSize(size);
+  const s=targetH/(size.y||1); root.scale.setScalar(s);
+  root.updateMatrixWorld(true);
+  const b2=new THREE.Box3().setFromObject(root), c=new THREE.Vector3(); b2.getCenter(c);
+  root.position.set(-c.x, -b2.min.y, -c.z);
+  const wrap=new THREE.Group(); wrap.add(root); wrap.position.set(0,GROUND_Y,baseZ); wrap.rotation.y=faceY;
+  scene.add(wrap); return wrap;
+}
+
+function resize(){
+  DPR=Math.min(2, window.devicePixelRatio||1);
+  const r=cv.getBoundingClientRect(); W=r.width; Hh=r.height;
+  if(renderer){ renderer.setPixelRatio(DPR); renderer.setSize(W,Hh,false); camera.aspect=W/Hh; camera.updateProjectionMatrix(); }
+  fx.width=W*DPR; fx.height=Hh*DPR; fxctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize);
+
+// ======================= Render =======================
+const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _s=new THREE.Vector3(), _p=new THREE.Vector3(), _col=new THREE.Color();
+function render3d(dt){
+  spin+=dt;
+  // balls (instanced)
+  if(ballMesh){
+    const n=Math.min(balls.length, MAX_BALLS);
+    for(let i=0;i<n;i++){ const b=balls[i], pos=ballPos(b);
+      const sc=(b.special?1.7:b.big?1.3:1)*(b.golden?1.15:1);
+      _q.setFromAxisAngle(AXIS, spin*7+b.seed); _s.setScalar(sc); _p.set(pos.x,pos.y,pos.z);
+      _m.compose(_p,_q,_s); ballMesh.setMatrixAt(i,_m);
+      _col.setHex(b.special?0xb79bff:b.golden?0xffd84a:b.crit?0xffcaa0:0xffffff); ballMesh.setColorAt(i,_col);
+    }
+    for(let i=n;i<MAX_BALLS;i++){ _m.makeScale(0,0,0); ballMesh.setMatrixAt(i,_m); }
+    ballMesh.count=MAX_BALLS; ballMesh.instanceMatrix.needsUpdate=true;
+    if(ballMesh.instanceColor) ballMesh.instanceColor.needsUpdate=true;
+  }
+  // targets
+  for(let i=0;i<targetMeshes.length;i++){
+    const tm=targetMeshes[i], t=targets[i];
+    if(!t || t.broken){ tm.grp.visible=false; continue; }
+    tm.grp.visible=true; const p=target3D(t); tm.grp.position.set(p.x,p.y,p.z);
+    const g2=guarded(p.x), fr=Math.max(0,t.hp/t.maxHp), hex=t.flash>0?0xffffff:(g2?0xff5a4d:0xffcf3a);
+    tm.ring.material.color.setHex(hex); tm.ring.material.emissive.setHex(hex); tm.ring.material.emissiveIntensity=t.flash>0?1.6:0.6;
+    tm.disk.material.color.setHex(g2?0xff5a4d:0xffcf3a); tm.disk.material.emissive.setHex(g2?0xff5a4d:0xffcf3a);
+    tm.disk.scale.setScalar(Math.max(0.06,fr));
+    tm.grp.rotation.z=Math.sin(spin*1.5+i)*0.06;
+  }
+  // keeper
+  if(keeperObj){ keeperObj.position.x=keeperX;
+    const bob=keeperShake>0?Math.sin(spin*40)*0.04*keeperShake:0; keeperObj.position.y=GROUND_Y+bob;
+    keeperObj.rotation.y=Math.sin(spin*1.2)*0.12; }
+  // striker — lean into the kick
+  if(strikerObj){ strikerObj.rotation.x=-kickAnim*0.32; strikerObj.position.y=GROUND_Y+kickAnim*0.05; }
+  // camera sway + goal flash
+  camera.position.x=Math.sin(spin*0.25)*0.5; camera.lookAt(0,1.45,0);
+  flashLight.intensity=goalFlash*9;
+  if(netMat) netMat.opacity=0.16+netFlash*0.4;
+  renderer.render(scene,camera);
+}
+
+function drawFX(){
+  fxctx.clearRect(0,0,W,Hh);
+  // particles
+  for(const p of particles){ fxctx.globalAlpha=Math.max(0,p.life); fxctx.fillStyle=p.c; fxctx.fillRect(p.x,p.y,p.sz,p.sz); }
+  fxctx.globalAlpha=1;
+  // floaters
+  fxctx.textAlign='center';
+  for(const f of floaters){ fxctx.globalAlpha=Math.max(0,Math.min(1,f.life)); fxctx.fillStyle=f.c; fxctx.font=`800 ${f.sz}px 'Baloo 2'`;
+    fxctx.lineWidth=3; fxctx.strokeStyle='rgba(0,0,0,.55)'; fxctx.strokeText(f.txt,f.x,f.y); fxctx.fillText(f.txt,f.x,f.y); }
+  fxctx.globalAlpha=1;
+  // targets-left label
+  fxctx.fillStyle='#dff7e6'; fxctx.font="700 12px Fredoka"; fxctx.textAlign='center';
+  fxctx.fillText('TARGETS '+aliveTargets().length+'/'+targets.length, W/2, 18);
+}
 
 // ======================= Loop =======================
 let last=0, running=false;
 function frame(t){
   if(!running)return;
   const dt=Math.min(0.05,(t-last)/1000||0); last=t;
-  update(dt); draw(); refreshHUD();
+  update(dt); render3d(dt); drawFX(); refreshHUD();
   requestAnimationFrame(frame);
 }
 
@@ -697,7 +833,7 @@ document.getElementById('collectBtn').addEventListener('click',()=>{
 // ======================= Boot =======================
 function start(){
   resize();
-  keeperX=W/2;
+  keeperX=0;
   spawnTargets(S.stage);
   buildUps(); refreshUps(); refreshLife();
   running=true; last=performance.now(); requestAnimationFrame(frame);
@@ -709,7 +845,9 @@ document.getElementById('playBtn').addEventListener('click',()=>{
   if(typeof window.trackEvent==='function') window.trackEvent('game_start',{stage:S.stage,legacy:S.legacy});
 });
 load();
-// pre-size canvas behind the start overlay
+// build the 3D scene + begin asset loads behind the start overlay
+setup3D();
+resize();
 window.addEventListener('load',resize);
 </script>
 
