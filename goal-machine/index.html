@@ -35,6 +35,12 @@
     background:rgba(6,48,26,.6);padding:5px 11px;border-radius:13px;transition:opacity .2s;
   }
   .back-link:hover{opacity:1;}
+  .reset-link{
+    position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));
+    z-index:120;color:#ffd0c2;font-size:12px;font-weight:600;opacity:.7;border:none;cursor:pointer;
+    background:rgba(60,18,12,.6);padding:5px 11px;border-radius:13px;transition:opacity .2s;font-family:'Fredoka',sans-serif;
+  }
+  .reset-link:hover{opacity:1;}
 
   /* ── HUD ── */
   .hud{
@@ -137,6 +143,7 @@
 </head>
 <body>
 <a href="../" class="back-link">← All Games</a>
+<button class="reset-link" id="resetBtn" title="Reset all progress">↺ Reset</button>
 <div id="app">
   <div class="hud">
     <div class="cash"><span class="coin"></span><span id="cash">0</span></div>
@@ -823,6 +830,16 @@ document.getElementById('tabLife').addEventListener('click',()=>setTab('life'));
 // ---- Serve (manual shoot) ----
 if(serveBtn) serveBtn.addEventListener('click',()=>{ if(!serving) serve(); });
 
+// ---- Reset progress ----
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  if(confirm('Reset ALL progress?\n\nThis wipes your cash, stage, upgrades, Legacy and Lifestyle. This cannot be undone.')){
+    wiped=true;
+    if(typeof window.trackEvent==='function') window.trackEvent('reset',{stage:S.stage,legacy:S.legacy});
+    try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+    location.reload();
+  }
+});
+
 // ---- Prestige ----
 const prestigeOv=document.getElementById('prestigeOv');
 document.getElementById('transferBtn').addEventListener('click',()=>{
@@ -842,7 +859,8 @@ document.getElementById('pConfirm').addEventListener('click',()=>{
 });
 
 // ======================= Save / Load / Offline =======================
-function save(){ S.lastSeen=Date.now(); try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){} }
+let wiped=false;   // set during a reset so the unload autosave can't re-persist
+function save(){ if(wiped) return; S.lastSeen=Date.now(); try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){} }
 function load(){ try{const r=localStorage.getItem(SAVE_KEY); if(r){S=Object.assign(newState(),JSON.parse(r));}}catch(e){} }
 setInterval(save,5000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
