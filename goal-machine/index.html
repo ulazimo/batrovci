@@ -209,8 +209,9 @@ const SUF = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td
 function fmt(n){
   if(!isFinite(n)) return '∞';
   if(n<1000) return n<10 && n%1!==0 ? n.toFixed(1) : Math.floor(n).toString();
-  let t=0; while(n>=1000 && t<SUF.length-1){n/=1000;t++;}
-  return (n<100?n.toFixed(2):n<1000?n.toFixed(1):Math.floor(n))+SUF[t];
+  let t=0,m=n; while(m>=1000 && t<SUF.length-1){m/=1000;t++;}
+  if(m>=1000) return n.toExponential(2).replace('e+','e');   // past the suffix table → clean scientific
+  return (m<100?m.toFixed(2):m<1000?m.toFixed(1):Math.floor(m))+SUF[t];
 }
 
 // ---- Attribute definitions (all numbers only go up) ----
@@ -309,8 +310,13 @@ function lifeMult(kind){
 const TGT_BASE=12, REWARD_C=0.5;
 function stageScale(stage){ return Math.pow(1.33, stage-1); }     // global difficulty/reward ramp
 function targetHP(){ return TGT_BASE*stageScale(S.stage)*attr('tgtHP')*(1-attr('scout')); }
+// per-kill reward multiplier — shared by the live payout and the income readout so they match.
+// Board fullness (+25%/extra target) makes More Targets pay; the Target Size term (+15%/level)
+// breaks the HP↔kill-rate cancellation so a bigger target is always worth more gold.
+function rewardMult(){ return attr('cashG')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5)
+  *(1+0.25*(targetCount()-1))*(1+0.15*lv('tgtHP')); }
 // gold for destroying a target — scales with its HP, so a stronger shot has visible value
-function targetReward(maxHP){ return REWARD_C*maxHP*attr('cashG')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5); }
+function targetReward(maxHP){ return REWARD_C*maxHP*rewardMult(); }
 function ballsPerSec(){return attr('rate')*attr('multi');}
 // share of fired balls that actually land on a target (accuracy minus keeper saves)
 function hitFrac(){return attr('accuracy')*(1-SAVE_FRAC);}
@@ -335,7 +341,7 @@ function cashPerHit(){return attr('coins')*(1+attr('gold')*9)*lifeMult('cash');}
 function incomePerSec(){
   // gold/s from clears is capped by min(DPS, HP×shots); raising Target HP toward your
   // shot damage stops overkill waste — the "value of a stronger shot".
-  const hp=targetHP(), K=REWARD_C*attr('cashG')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5);
+  const hp=targetHP(), K=REWARD_C*rewardMult();
   const clear = K*Math.min(analyticDPS(), hp*ballsPerSec()*hitFrac());
   const hits = cashPerHit()*ballsPerSec()*hitFrac();
   return attr('sponsor')*lifeMult('cash') + clear + hits;
