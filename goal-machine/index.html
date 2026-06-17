@@ -423,6 +423,7 @@ let keeperX=0, keeperDir=1, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0, 
 let combo=0;       // live combo counter (resets on a goal or a missed shot)
 let fkTimer=0, shotTimer=0;
 let serving=false; // firing only while a board is being served
+let pending=[], releaseTimer=0;   // queued shots, fired one-by-one
 const serveBtn=document.getElementById('serveBtn');
 
 // goal-mouth → world helpers
@@ -450,10 +451,9 @@ function bezier(p0,c,p1,t){ const u=1-t; return {
 function ballPos(b){ return bezier(b.p0,b.c,b.p1,Math.min(1,b.t)); }
 
 function spawnVolley(shotRep){
-  kickAnim=1;
   const multi=attr('multi'), C=Math.min(multi,VOLLEY_CAP);
   const sf=(shotRep*multi)/C;     // each rendered ball carries the damage of the shots it represents
-  for(let i=0;i<C;i++) spawnBall(false, sf);
+  for(let i=0;i<C;i++){ if(pending.length<MAX_BALLS) pending.push(sf); }   // queued, fired one-by-one
 }
 function spawnBall(special, sf=1){
   if(balls.length>=MAX_BALLS) return;
@@ -587,6 +587,17 @@ function update(dt){
   }
   // free kick
   if(serving && attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(true);} }
+  // release queued shots one at a time (gap tightens when the queue backs up at high fire rates)
+  if(pending.length){
+    releaseTimer+=dt;
+    while(pending.length){
+      const gap=Math.min(0.07, 0.3/pending.length);
+      if(releaseTimer<gap) break;
+      releaseTimer-=gap;
+      const sf=pending.shift();
+      if(balls.length<MAX_BALLS){ spawnBall(false, sf); kickAnim=1; }
+    }
+  } else releaseTimer=0;
   // keeper sweep (a frozen keeper holds still and can't save)
   if(keeperFreeze>0){ keeperFreeze=Math.max(0,keeperFreeze-dt); }
   else {
@@ -992,7 +1003,7 @@ document.getElementById('pConfirm').addEventListener('click',()=>{
   if(typeof window.trackEvent==='function') window.trackEvent('prestige',{legacy_gained:g,best_stage:S.bestStage});
   const keepLegacy=S.legacy+g, keepAssets=S.assets, keepFame=S.fame, keepFameLv=S.fameLv, keepQuests=S.quests;
   S=newState(); S.legacy=keepLegacy; S.assets=keepAssets; S.fame=keepFame; S.fameLv=keepFameLv; S.quests=keepQuests;
-  prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0; fkTimer=0; shotTimer=0; keeperFreeze=0;
+  prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];pending=[];combo=0; fkTimer=0; shotTimer=0; releaseTimer=0; keeperFreeze=0;
   serve();
   refreshUps(); refreshLife(); renderQuests(); save();
 });
