@@ -56,6 +56,13 @@
   .scene{flex:none;position:relative;height:36vh;min-height:200px;background:#060d12;}
   #cv{display:block;width:100%;height:100%;}
   #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  #serveBtn{position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);display:none;z-index:6;
+    font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;letter-spacing:.5px;color:#06301a;
+    background:linear-gradient(180deg,var(--gold),var(--gold-d));border:none;border-radius:16px;
+    padding:13px 34px;box-shadow:0 5px 0 #8a6406,0 6px 18px rgba(0,0,0,.45);cursor:pointer;
+    animation:servePulse 1s ease-in-out infinite;}
+  #serveBtn:active{box-shadow:0 2px 0 #8a6406;}
+  @keyframes servePulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.07)}}
   .dps-tag{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);z-index:5;
     background:rgba(6,40,22,.7);border:1px solid #2a6b40;border-radius:12px;padding:3px 12px;
     font-size:12px;font-weight:700;color:#dfffe9;pointer-events:none;}
@@ -143,6 +150,7 @@
   <div class="scene">
     <canvas id="cv"></canvas>
     <canvas id="fx"></canvas>
+    <button id="serveBtn">▶ SHOOT</button>
     <div class="dps-tag">DPS <b id="dps">0</b></div>
   </div>
 
@@ -163,7 +171,7 @@
 <div class="overlay" id="startOv">
   <div class="logo">GOAL<br><span class="g">MACHINE</span></div>
   <div class="tagline">Your striker never stops shooting.</div>
-  <div class="blurb">Auto-fire at the targets in the goal, beat the keeper, clear the stage. Train 21 attributes — including Placement, so fewer shots sail wide — then blow your fortune on cars, mansions and jets that boost you forever.</div>
+  <div class="blurb">Start with one target. Tap SHOOT to fire a board, beat the keeper, bank the gold. Buy more targets, fatter targets (bigger value), sharper aim and 23 other upgrades — grab Auto-Serve to go hands-free, then blow your fortune on cars, mansions and jets that boost you forever.</div>
   <button class="btn" id="playBtn">PLAY</button>
 </div>
 
@@ -181,7 +189,7 @@
 <div class="overlay hidden" id="prestigeOv">
   <div class="pmodal">
     <h2>📝 Transfer Window</h2>
-    <p>Sign for a bigger club: reset your stage and all 21 attributes, but keep a permanent boost to <b>damage &amp; cash</b>. Your <b>Lifestyle</b> stays yours.</p>
+    <p>Sign for a bigger club: reset your stage and all 24 upgrades, but keep a permanent boost to <b>damage &amp; cash</b>. Your <b>Lifestyle</b> stays yours.</p>
     <div class="gain">+<span id="pGain">0</span> 🏆 Legacy</div>
     <p style="font-size:12px;opacity:.85;">Each Legacy point = <b>+10%</b> to everything, forever.</p>
     <div class="row" style="justify-content:center;">
@@ -229,6 +237,13 @@ const ATTR = [
     cost:l=>900*Math.pow(1.30,l),     val:l=>l<1?0:8*(1+0.4*l), show:v=>v?'×'+fmt(v)+' pwr':'locked'},
   {id:'hype',   cat:'dmg', ic:'📣', nm:'Fan Hype',       desc:'global damage multiplier',
     cost:l=>240*Math.pow(1.17,l),     val:l=>1+0.03*l,       show:v=>'×'+v.toFixed(2)},
+  // TARGETS --------------------------------------------------------------
+  {id:'targets',cat:'board',ic:'🥅', nm:'Extra Targets',  desc:'targets on the goal',
+    cost:l=>l>=5?Infinity:600*Math.pow(7,l), val:l=>Math.min(6,1+l), show:v=>v+' target'+(v>1?'s':'')},
+  {id:'tgtHP',  cat:'board',ic:'🧱', nm:'Target Size',    desc:'HP per target — bigger = more gold',
+    cost:l=>140*Math.pow(1.22,l),     val:l=>1+0.6*l,        show:v=>'×'+v.toFixed(2)+' HP'},
+  {id:'auto',   cat:'board',ic:'🔁', nm:'Auto-Serve',     desc:'auto-restart boards + offline income',
+    cost:l=>l>=1?Infinity:2500,       val:l=>l>0?1:0,        show:v=>v?'active':'manual tap'},
   // ECONOMY --------------------------------------------------------------
   {id:'cashG',  cat:'cash', ic:'💰', nm:'Cash Per Goal', desc:'stage-clear reward',
     cost:l=>55*Math.pow(1.15,l),      val:l=>1+0.18*l,       show:v=>'×'+v.toFixed(2)},
@@ -255,7 +270,7 @@ const ATTR = [
     cost:l=>1200*Math.pow(1.40,l),    val:l=>1+0.08*l,       show:v=>'×'+v.toFixed(2)+' 🏆'},
 ];
 const AMAP = {}; ATTR.forEach(a=>AMAP[a.id]=a);
-const GROUPS = [['dmg','Attack'],['cash','Economy'],['util','Pitch']];
+const GROUPS = [['dmg','Attack'],['board','Targets'],['cash','Economy'],['util','Pitch']];
 
 // ---- Lifestyle: one-time purchases, permanent bonuses, kept through transfers ----
 const LIFESTYLE = [
@@ -290,15 +305,12 @@ function lifeMult(kind){
   }
   return kind==='dmg'?dmg:cash;
 }
-// total HP spread across all targets in a stage
-function stageHP(stage){
-  const base = 30*Math.pow(1.33,stage-1);
-  return base*(1-attr('scout'));
-}
-function stageReward(stage){
-  const base = 10*Math.pow(1.18,stage-1);
-  return base*attr('cashG')*prestigeMult()*lifeMult('cash');
-}
+// magic-archer model: you BUY target count & HP; Stage stays a global ×ramp.
+const TGT_BASE=12, REWARD_C=0.5;
+function stageScale(stage){ return Math.pow(1.33, stage-1); }     // global difficulty/reward ramp
+function targetHP(){ return TGT_BASE*stageScale(S.stage)*attr('tgtHP')*(1-attr('scout')); }
+// gold for destroying a target — scales with its HP, so a stronger shot has visible value
+function targetReward(maxHP){ return REWARD_C*maxHP*attr('cashG')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5); }
 function ballsPerSec(){return attr('rate')*attr('multi');}
 // share of fired balls that actually land on a target (accuracy minus keeper saves)
 function hitFrac(){return attr('accuracy')*(1-SAVE_FRAC);}
@@ -316,15 +328,15 @@ function analyticDPS(){
   const fk = attr('free');
   if(fk>0) dps += (attr('power')*fk*attr('hype')*prestigeMult()*lifeMult('dmg'))/9;
   // lucky strike: shatters 4% of a single target's max hp
-  const tHP = stageHP(S.stage)/targetCount(S.stage);
-  dps += attr('lucky')*ballsPerSec()*hitFrac()*0.04*tHP;
+  dps += attr('lucky')*ballsPerSec()*hitFrac()*0.04*targetHP();
   return dps;
 }
 function cashPerHit(){return attr('coins')*(1+attr('gold')*9)*lifeMult('cash');}
 function incomePerSec(){
-  const dps = analyticDPS();
-  const tClear = Math.max(0.25, stageHP(S.stage)/dps);
-  const clear = stageReward(S.stage)/tClear;
+  // gold/s from clears is capped by min(DPS, HP×shots); raising Target HP toward your
+  // shot damage stops overkill waste — the "value of a stronger shot".
+  const hp=targetHP(), K=REWARD_C*attr('cashG')*prestigeMult()*lifeMult('cash')*(1+attr('over')*0.5);
+  const clear = K*Math.min(analyticDPS(), hp*ballsPerSec()*hitFrac());
   const hits = cashPerHit()*ballsPerSec()*hitFrac();
   return attr('sponsor')*lifeMult('cash') + clear + hits;
 }
@@ -360,20 +372,25 @@ let balls=[], particles=[], floaters=[], targets=[];
 let keeperX=0, keeperDir=1, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0;
 let combo=0;       // live combo counter (resets on a goal or a missed shot)
 let fkTimer=0, shotTimer=0;
+let serving=false; // firing only while a board is being served
+const serveBtn=document.getElementById('serveBtn');
 
 // goal-mouth → world helpers
 function keeperReachW(){ return 1.05; }                 // half the keeper's blocking width
 function keeperSpanW(){ return (GW-1.2)/2 - 0.3; }      // how far it slides from centre
 function guarded(x){ return Math.abs(x-keeperX) < keeperReachW(); }
 
-// ---- Targets ----
-const SLOTS=[{rx:.18,ry:.34},{rx:.82,ry:.34},{rx:.50,ry:.26},{rx:.18,ry:.74},{rx:.82,ry:.74},{rx:.50,ry:.74}];
-function targetCount(stage){ return Math.min(6, 3+Math.floor((stage-1)/4)); }
-function spawnTargets(stage){
-  const n=targetCount(stage), each=stageHP(stage)/n;
+// ---- Targets ---- (slot order puts a single target dead-centre, then fills out)
+const SLOTS=[{rx:.50,ry:.34},{rx:.22,ry:.36},{rx:.78,ry:.36},{rx:.22,ry:.72},{rx:.78,ry:.72},{rx:.50,ry:.72}];
+function targetCount(){ return Math.round(attr('targets')); }
+function spawnTargets(){
+  const n=targetCount(), each=targetHP();
   targets=[];
   for(let i=0;i<n;i++) targets.push({rx:SLOTS[i].rx, ry:SLOTS[i].ry, hp:each, maxHp:each, broken:false, flash:0});
 }
+// serve loop: a board only fires while `serving`; clearing it stops (or auto-restarts)
+function serve(){ serving=true; spawnTargets(); showServeBtn(false); }
+function showServeBtn(v){ if(serveBtn) serveBtn.style.display = v?'block':'none'; }
 function target3D(t){ return {x:(t.rx-0.5)*(GW-1.2), y:0.55+(1-t.ry)*(GH-1.15), z:0.06}; }
 function aliveTargets(){ return targets.filter(t=>!t.broken); }
 
@@ -443,20 +460,20 @@ function resolveBall(b){
 }
 function breakTarget(t){
   t.broken=true; t.hp=0;
-  const tp=target3D(t);
-  floater(tp.x,tp.y,tp.z,'⚽','#fff',22);
+  const tp=target3D(t), rew=targetReward(t.maxHp);
+  S.cash += rew;
+  floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
   for(let i=0;i<10;i++) impact(tp,'#ffcf3a');
-  if(aliveTargets().length===0) onStageClear();
+  if(aliveTargets().length===0) onBoardClear();
 }
-function onStageClear(){
+function onBoardClear(){
   goalFlash=1; netFlash=1; combo=0;
-  const reward = stageReward(S.stage)*(1+attr('over')*0.6);
-  S.cash += reward;
-  floater(0,GH*0.7,0,'GOAL! +'+fmt(reward),'#ffcf3a',26);
+  floater(0,GH*0.72,0,'GOAL!','#ffcf3a',26);
   for(let i=0;i<26;i++) confetti();
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
-  spawnTargets(S.stage);
+  if(attr('auto')>=1) serve();                 // automation owned → next board immediately
+  else { serving=false; showServeBtn(true); }  // otherwise wait for a SHOOT tap
 }
 
 // ---- 2D FX overlay (text + sparks, projected from 3D) ----
@@ -468,17 +485,17 @@ function confetti(){ const s=project((Math.random()*GW-GW/2)*0.7, GH*0.6, -0.3);
 function floater(x,y,z,txt,c,sz){ const s=project(x,y,z); floaters.push({x:s.x,y:s.y,txt,c,sz,life:1}); }
 
 function update(dt){
-  if(!targets.length) spawnTargets(S.stage);
-  // passive income
+  if(!targets.length && serving) spawnTargets();
+  // passive income (sponsor always ticks while the tab is open)
   S.cash += attr('sponsor')*lifeMult('cash')*dt;
-  // auto fire — capped volley/sec; each rendered volley represents `shotRep` real shots
+  // auto fire — only while serving a board; capped volley/sec, each volley = `shotRep` real shots
   const rate=attr('rate');
-  if(rate>0){
+  if(serving && rate>0){
     const effInt=Math.max(1/MAX_VPS, 1/rate), shotRep=rate*effInt;
     shotTimer+=dt; while(shotTimer>=effInt){ shotTimer-=effInt; spawnVolley(shotRep); }
   }
   // free kick
-  if(attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(true);} }
+  if(serving && attr('free')>0){ fkTimer+=dt; if(fkTimer>=9){fkTimer=0; spawnBall(true);} }
   // keeper sweep
   const span=keeperSpanW();
   keeperX += keeperDir*KEEPER_SPEED*dt;
@@ -655,6 +672,15 @@ function drawFX(){
   for(const f of floaters){ fxctx.globalAlpha=Math.max(0,Math.min(1,f.life)); fxctx.fillStyle=f.c; fxctx.font=`800 ${f.sz}px 'Baloo 2'`;
     fxctx.lineWidth=3; fxctx.strokeStyle='rgba(0,0,0,.55)'; fxctx.strokeText(f.txt,f.x,f.y); fxctx.fillText(f.txt,f.x,f.y); }
   fxctx.globalAlpha=1;
+  // per-target HP numbers (so a stronger shot has visible value)
+  fxctx.font="800 12px 'Baloo 2'"; fxctx.textAlign='center'; fxctx.lineWidth=3;
+  for(const t of targets){
+    if(t.broken) continue;
+    const tp=target3D(t), s=project(tp.x,tp.y-0.62,tp.z);
+    const txt=fmt(Math.max(0,t.hp));
+    fxctx.strokeStyle='rgba(0,0,0,.6)'; fxctx.strokeText(txt,s.x,s.y);
+    fxctx.fillStyle=t.flash>0?'#ffffff':'#fff7d8'; fxctx.fillText(txt,s.x,s.y);
+  }
   // targets-left label
   fxctx.fillStyle='#dff7e6'; fxctx.font="700 12px Fredoka"; fxctx.textAlign='center';
   fxctx.fillText('TARGETS '+aliveTargets().length+'/'+targets.length, W/2, 18);
@@ -727,6 +753,7 @@ function buy(id){
   if(buyMode==='max' && maxAffordable(id)<1) return;
   if(S.cash<cost) return;
   S.cash-=cost; S.lv[id]=lv(id)+n;
+  if(id==='auto' && attr('auto')>=1 && !serving) serve();   // buying automation resumes play
   if(typeof window.trackEvent==='function') window.trackEvent('upgrade',{attr:id,level:S.lv[id]});
   refreshUps(); save();
 }
@@ -787,6 +814,9 @@ document.getElementById('modeBtn').addEventListener('click',()=>{
 document.getElementById('tabTrain').addEventListener('click',()=>setTab('train'));
 document.getElementById('tabLife').addEventListener('click',()=>setTab('life'));
 
+// ---- Serve (manual shoot) ----
+if(serveBtn) serveBtn.addEventListener('click',()=>{ if(!serving) serve(); });
+
 // ---- Prestige ----
 const prestigeOv=document.getElementById('prestigeOv');
 document.getElementById('transferBtn').addEventListener('click',()=>{
@@ -801,7 +831,7 @@ document.getElementById('pConfirm').addEventListener('click',()=>{
   const keepLegacy=S.legacy+g, keepAssets=S.assets;
   S=newState(); S.legacy=keepLegacy; S.assets=keepAssets;
   prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];combo=0; fkTimer=0; shotTimer=0;
-  spawnTargets(S.stage);
+  serve();
   refreshUps(); refreshLife(); save();
 });
 
@@ -815,7 +845,7 @@ window.addEventListener('beforeunload',save);
 function showOffline(){
   const elapsed=(Date.now()-(S.lastSeen||Date.now()))/1000;
   const rate=attr('offline');
-  if(elapsed<60 || rate<=0 || S.bestStage<2){ return false; }
+  if(elapsed<60 || rate<=0 || S.bestStage<2 || attr('auto')<1){ return false; }
   const capped=Math.min(elapsed, 12*3600);
   const earned=incomePerSec()*rate*capped;
   if(earned<1) return false;
@@ -834,7 +864,7 @@ document.getElementById('collectBtn').addEventListener('click',()=>{
 function start(){
   resize();
   keeperX=0;
-  spawnTargets(S.stage);
+  serve();
   buildUps(); refreshUps(); refreshLife();
   running=true; last=performance.now(); requestAnimationFrame(frame);
 }
