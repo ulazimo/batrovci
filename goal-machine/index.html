@@ -481,13 +481,29 @@ function keeperReachW(){ return 1.05; }                 // half the keeper's blo
 function keeperSpanW(){ return (GW-1.2)/2 - 0.3; }      // how far it slides from centre
 function guarded(x){ return keeperFreeze<=0 && Math.abs(x-keeperX) < keeperReachW(); }
 
-// ---- Targets ---- (slot order puts a single target dead-centre, then fills out)
-const SLOTS=[{rx:.50,ry:.34},{rx:.22,ry:.36},{rx:.78,ry:.36},{rx:.22,ry:.72},{rx:.78,ry:.72},{rx:.50,ry:.72}];
+// ---- Targets ----
 function targetCount(){ return Math.round(attr('targets')); }
+// per-stage target formation — purely cosmetic; the shape changes every level
+// (deterministic from the stage, so a board's targets stay put while you clear it).
+function boardLayout(stage, n){
+  const mode=((stage%5)+5)%5, single=n<=3, cols=single?n:Math.ceil(n/2), pts=[];
+  for(let i=0;i<n;i++){
+    const top=single||i<cols, inRow=single?n:(top?cols:n-cols), j=single?i:(top?i:i-cols);
+    const f=inRow<=1?0.5:j/(inRow-1);
+    const rx=0.22+f*0.56;
+    let ry=single?0.42:(top?0.30:0.74);
+    if(mode===1) ry+=(single?0.12:0.07)*Math.sin(f*Math.PI);          // arc
+    else if(mode===2) ry+=(single?0.16:0.08)*(f-0.5)*2;               // diagonal tilt
+    else if(mode===3) ry+=(j%2?1:-1)*(single?0.12:0.06);             // zigzag
+    else if(mode===4) ry+=(single?0.14:0.07)*Math.sin(f*Math.PI*2);   // wave
+    pts.push({rx, ry:Math.max(0.26,Math.min(0.76,ry))});
+  }
+  return pts;
+}
 function spawnTargets(){
-  const n=targetCount(), each=targetHP();
+  const n=targetCount(), each=targetHP(), L=boardLayout(S.stage,n);
   targets=[];
-  for(let i=0;i<n;i++) targets.push({rx:SLOTS[i].rx, ry:SLOTS[i].ry, hp:each, maxHp:each, broken:false, flash:0, burn:0, burnT:0});
+  for(let i=0;i<n;i++) targets.push({rx:L[i].rx, ry:L[i].ry, hp:each, maxHp:each, broken:false, flash:0, burn:0, burnT:0});
 }
 // serve loop: a board only fires while `serving`; clearing it stops (or auto-restarts)
 function serve(){ serving=true; spawnTargets(); showServeBtn(false); }
