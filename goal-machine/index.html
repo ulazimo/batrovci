@@ -227,7 +227,7 @@
       <div class="hud-sub">
         <span class="chip">🥅 <b id="tier">Sunday League</b>·<span id="stage">1</span></span>
         <span class="chip">⚡<b id="income">0</b>/s</span>
-        <span class="chip mp">🪄<b id="mp">0</b></span>
+        <span class="chip mp" id="mpChip" style="display:none">🪄<b id="mp">0</b></span>
         <button class="chip legacy" id="transferBtn" disabled>🏆<b id="legacy">0</b><span class="tgain" id="transferSub"></span></button>
         <span class="chip mastered" id="masteredChip" style="display:none">🏅 Mastered</span>
       </div>
@@ -709,6 +709,7 @@ function resolveBall(b){
 }
 function breakTarget(t, viaSpecial){
   t.broken=true; t.hp=0; t.burnT=0;
+  grantXP((9 + targetCount()*2)/targetCount());   // active XP per TARGET break → sums to the same per-board total
   const tp=target3D(t), rew=targetReward(t.maxHp);
   S.cash += rew;
   floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
@@ -721,8 +722,7 @@ function onBoardClear(){
   for(let i=0;i<26;i++) confetti();
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
-  grantXP(9 + targetCount()*2);                 // XP per board clear → rate self-limits with difficulty
-  checkMastery();                               // skills only level here, so test the mastery milestone here
+  checkMastery();                               // active XP now lands per target break; test the mastery milestone on clear
   const ti=tierIndex(S.stage);                  // career tier-up banner
   if(ti>(S.tier||0)){ S.tier=ti; floater(0,GH*0.96,0,TIERS[ti][1].toUpperCase()+'!','#9be7ff',30); }
   if(attr('auto')>=1) serve();                 // automation owned → next board immediately
@@ -749,7 +749,7 @@ function update(dt){
   if(!targets.length && serving) spawnTargets();
   // passive income: sponsor + background quests (both always tick while the tab is open)
   S.cash += (attr('sponsor')*lifeMult('cash')*vitMult() + questGoldPerSec())*dt;
-  S.mp += MP_RATE*magMult()*dt;     // Magic Points accrue passively
+  if(skUnlocked('mag')) S.mp += MP_RATE*magMult()*dt;   // Magic Points accrue only once Magic Affinity is unlocked
   questCheck();
   // running quests feed passive XP into their target skill (dual reward; works even when unfocused)
   for(const q of QUESTS){ const l=questLv(q.id); if(l>0 && questUnlocked(q)) grantXPTo(q.xp, q.xpr*l*dt); }
@@ -1217,12 +1217,13 @@ function refreshLife(){
 function refreshHUD(){
   els._c=els._c||{cash:document.getElementById('cash'),stage:document.getElementById('stage'),
     income:document.getElementById('income'),legacy:document.getElementById('legacy'),dps:document.getElementById('dps'),
-    mp:document.getElementById('mp'),tier:document.getElementById('tier'),
+    mp:document.getElementById('mp'),mpChip:document.getElementById('mpChip'),tier:document.getElementById('tier'),
     transferBtn:document.getElementById('transferBtn'),transferSub:document.getElementById('transferSub'),
     masteredChip:document.getElementById('masteredChip')};
   els._c.cash.textContent=fmt(S.cash);
   els._c.stage.textContent=S.stage;
   els._c.tier.textContent=tierName(S.stage);
+  els._c.mpChip.style.display=skUnlocked('mag')?'':'none';   // MP only shown once Magic is unlocked
   els._c.mp.textContent=fmt(S.mp||0);
   els._c.income.textContent=fmt(incomePerSec());
   els._c.legacy.textContent=fmt(S.legacy);
