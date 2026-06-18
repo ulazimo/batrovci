@@ -434,14 +434,15 @@ function unlockSkill(id){
 // ---- Quests: passive GOLD generators that unlock at skill thresholds (run in background) ----
 // Gated by SKILL LEVELS (gates follow the skill-unlock order so each quest is the next milestone).
 // Dual reward: passive gold (questGps) + passive XP into skill `xp` at `xpr`/s per quest level.
+// xpr = passive XP granted to skill `xp` per TARGET BREAK, per quest level (event-driven, not idle/time-based)
 const QUESTS = [
-  {id:'q1', nm:'Local Friendly',   req:['con',4],  xp:'con', xpr:0.4, gold:2},
-  {id:'q2', nm:'Cup Run',          req:['str',8],  xp:'con', xpr:0.7, gold:6},
-  {id:'q3', nm:'Sponsor Tour',     req:['dex',14], xp:'str', xpr:1.2, gold:15},
-  {id:'q4', nm:'League Wages',     req:['acc',20], xp:'dex', xpr:2.0, gold:34},
-  {id:'q5', nm:'Boot Endorsement', req:['vit',28], xp:'acc', xpr:3.2, gold:75},
-  {id:'q6', nm:'Champions Bonus',  req:['str',40], xp:'vit', xpr:5.0, gold:170},
-  {id:'q7', nm:'Global Icon',      req:['mag',30], xp:'mag', xpr:8.0, gold:400},
+  {id:'q1', nm:'Local Friendly',   req:['con',4],  xp:'con', xpr:1.2, gold:2},
+  {id:'q2', nm:'Cup Run',          req:['str',8],  xp:'con', xpr:2.1, gold:6},
+  {id:'q3', nm:'Sponsor Tour',     req:['dex',14], xp:'str', xpr:3.6, gold:15},
+  {id:'q4', nm:'League Wages',     req:['acc',20], xp:'dex', xpr:6.0, gold:34},
+  {id:'q5', nm:'Boot Endorsement', req:['vit',28], xp:'acc', xpr:9.6, gold:75},
+  {id:'q6', nm:'Champions Bonus',  req:['str',40], xp:'vit', xpr:15, gold:170},
+  {id:'q7', nm:'Global Icon',      req:['mag',30], xp:'mag', xpr:24, gold:400},
 ];
 function questUnlocked(q){ return sl(q.req[0])>=q.req[1]; }
 function questLv(id){ return (S.questLv&&S.questLv[id])||0; }
@@ -710,6 +711,8 @@ function resolveBall(b){
 function breakTarget(t, viaSpecial){
   t.broken=true; t.hp=0; t.burnT=0;
   grantXP((9 + targetCount()*2)/targetCount());   // active XP per TARGET break → sums to the same per-board total
+  // running quests also drip passive XP into their target skill — on each break, not idle/over time
+  for(const q of QUESTS){ const l=questLv(q.id); if(l>0 && questUnlocked(q)) grantXPTo(q.xp, q.xpr*l); }
   const tp=target3D(t), rew=targetReward(t.maxHp);
   S.cash += rew;
   floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
@@ -751,8 +754,6 @@ function update(dt){
   S.cash += (attr('sponsor')*lifeMult('cash')*vitMult() + questGoldPerSec())*dt;
   if(skUnlocked('mag')) S.mp += MP_RATE*magMult()*dt;   // Magic Points accrue only once Magic Affinity is unlocked
   questCheck();
-  // running quests feed passive XP into their target skill (dual reward; works even when unfocused)
-  for(const q of QUESTS){ const l=questLv(q.id); if(l>0 && questUnlocked(q)) grantXPTo(q.xp, q.xpr*l*dt); }
   // auto fire — only while serving a board; capped volley/sec, each volley = `shotRep` real shots
   const rate=skillRate();
   if(serving && rate>0){
