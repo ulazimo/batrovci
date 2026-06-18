@@ -97,6 +97,9 @@
   .tab{flex:1;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:11.5px;border:none;border-radius:10px 10px 0 0;
     padding:7px 3px;color:#9fd3b1;background:#0e3320;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;}
   .tab.on{background:var(--card);color:#fff;}
+  .tab.locked{display:none;}
+  .tab.justnew{animation:tabNew 1s ease-in-out infinite;}
+  @keyframes tabNew{0%,100%{box-shadow:0 0 0 0 rgba(155,231,255,0)}50%{box-shadow:0 0 0 4px rgba(155,231,255,.45)}}
   .up .price .mp{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#cbb0ff,#7b3ff0);border:1.5px solid #4a2a8a;}
   /* ── Skills ── */
   .skill{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid #235c39;border-radius:14px;
@@ -111,6 +114,12 @@
   .skill .bar i{display:block;height:100%;background:linear-gradient(90deg,#19aebb,#3fae6a);transition:width .2s;}
   .skill.foc{border-color:var(--gold);background:#1c3a24;}
   .focpill{font-size:9px;font-weight:800;color:#06301a;background:var(--gold);border-radius:6px;padding:1px 6px;letter-spacing:.4px;}
+  /* Locked-skill teaser — the single next skill you can unlock with gold */
+  .skill.lock{border-style:dashed;border-color:#356b46;background:#11331f;}
+  .skill.lock .eff{color:#88c7a0;}
+  .skill .lvl.new{color:#9be7ff;background:#10324a;}
+  .skill.lock.afford{border-color:var(--gold);background:#1c3a24;}
+  .xpb.unlock .xt{color:#cfe9d8;}
   .quest.on{border-color:#3fae6a;}
   .quest:not(.on){opacity:.55;}
 
@@ -241,7 +250,7 @@
 <div class="overlay" id="startOv">
   <div class="logo">GOAL<br><span class="g">MACHINE</span></div>
   <div class="tagline">Your striker never stops shooting.</div>
-  <div class="blurb">Tap SHOOT to fire a board, beat the keeper, bank the gold. Breaking targets trains the skill you <b>focus</b> — Strength, Dexterity, Accuracy &amp; more. Spend gold on gear, 🪄 Magic Points on infusions, unlock passive-gold quests, and climb from Sunday League to Legend.</div>
+  <div class="blurb">Tap SHOOT to fire a board, beat the keeper, bank the gold. Breaking targets trains the skill you <b>focus</b>. Start with Concentration and <b>unlock new skills one by one</b> with gold — each one you level triggers passive-cash quests, which in turn fund the next skill. Spend gold on gear, climb from Sunday League to Legend.</div>
   <button class="btn" id="playBtn">PLAY</button>
 </div>
 
@@ -365,17 +374,28 @@ function tierIndex(stage){ let i=0; for(let k=0;k<TIERS.length;k++) if(stage>=TI
 function tierName(stage){ return TIERS[tierIndex(stage)][1]; }
 
 // ---- Skills (XP-leveled; OWN the core stats; you focus XP into one at a time) ----
+// Listed in UNLOCK ORDER. Skills are gold-gated and revealed one at a time: you start with
+// Concentration only and buy the right to train each next skill (cost rises sharply).
 const SKILLS = [
-  {id:'str', ic:'💪', nm:'Strength',      desc:'shot damage'},
-  {id:'dex', ic:'⚡', nm:'Dexterity',     desc:'fire rate'},
-  {id:'acc', ic:'🎯', nm:'Accuracy',      desc:'chance to hit the target'},
-  {id:'vit', ic:'💰', nm:'Vitality',      desc:'gold per target & passive income'},
-  {id:'con', ic:'🧠', nm:'Concentration', desc:'XP gain for the focused skill'},
-  {id:'mag', ic:'🪄', nm:'Magic Affinity',desc:'Magic Points & infusion potency'},
+  {id:'con', ic:'🧠', nm:'Concentration', desc:'XP gain for the focused skill',     cost:0},
+  {id:'str', ic:'💪', nm:'Strength',      desc:'shot damage',                       cost:50},
+  {id:'dex', ic:'⚡', nm:'Dexterity',     desc:'fire rate',                         cost:300},
+  {id:'acc', ic:'🎯', nm:'Accuracy',      desc:'chance to hit the target',          cost:1100},
+  {id:'vit', ic:'💰', nm:'Vitality',      desc:'gold per target & passive income',  cost:9000},
+  {id:'mag', ic:'🪄', nm:'Magic Affinity',desc:'Magic Points & infusion potency',   cost:50000},
 ];
 const SKMAP={}; SKILLS.forEach(s=>SKMAP[s.id]=s);
-function ensureSkills(){ if(!S.skills)S.skills={}; for(const s of SKILLS) if(!S.skills[s.id]) S.skills[s.id]={lv:0,xp:0}; if(!S.focus||!SKMAP[S.focus]) S.focus='str'; }
+function ensureSkills(){
+  if(!S.skills)S.skills={};
+  for(const s of SKILLS){
+    const e=S.skills[s.id]||(S.skills[s.id]={lv:0,xp:0});
+    if(e.un===undefined) e.un = (s.cost===0) || e.lv>0;   // back-compat: skills already trained stay unlocked
+  }
+  S.skills.con.un=true;                                    // Concentration is always available
+  if(!S.focus||!SKMAP[S.focus]||!S.skills[S.focus].un) S.focus='con';
+}
 function sl(id){ return (S.skills&&S.skills[id])?S.skills[id].lv:0; }
+function skUnlocked(id){ return !!(S.skills&&S.skills[id]&&S.skills[id].un); }
 function skXpNeed(l){ return 10*Math.pow(1.14,l); }
 // skill → stat curves
 function skillDmg(){ return 5*Math.pow(1.14, sl('str')); }
@@ -398,6 +418,21 @@ function grantXP(amt){
   let need=skXpNeed(s.lv);
   while(s.xp>=need){ s.xp-=need; s.lv++; floater(0,GH*0.58,0,SKMAP[S.focus].nm+' Lv '+s.lv,'#9be7ff',16); need=skXpNeed(s.lv); }
 }
+// passive XP from a running quest — feeds a specific (unlocked) skill regardless of focus.
+// No Concentration/booster bonus: those amplify ACTIVE training only.
+function grantXPTo(id, amt){
+  if(!skUnlocked(id)) return; const s=S.skills[id]; if(!s) return;
+  s.xp += amt; let need=skXpNeed(s.lv);
+  while(s.xp>=need){ s.xp-=need; s.lv++; need=skXpNeed(s.lv); }
+}
+// buy the right to train the next skill (gold-gated; revealed one at a time)
+function unlockSkill(id){
+  const s=SKMAP[id]; if(!s||skUnlocked(id)||S.cash<s.cost) return;
+  S.cash-=s.cost; S.skills[id].un=true; S.focus=id;        // auto-focus the freshly unlocked skill
+  floater(0,GH*0.62,0,s.nm+' UNLOCKED','#ffe27a',20);
+  if(typeof window.trackEvent==='function') window.trackEvent('skill_unlock',{skill:id,cost:s.cost});
+  renderSkills(); refreshHUD(); applyTabVis(); save();
+}
 function buyXpBoost(id){
   const c=xpbCost(id);
   if(S.cash<c) return;
@@ -407,14 +442,16 @@ function buyXpBoost(id){
 }
 
 // ---- Quests: passive GOLD generators that unlock at skill thresholds (run in background) ----
+// Gated by SKILL LEVELS (gates follow the skill-unlock order so each quest is the next milestone).
+// Dual reward: passive gold (questGps) + passive XP into skill `xp` at `xpr`/s per quest level.
 const QUESTS = [
-  {id:'q1', nm:'Local Friendly',   req:['str',3],  gold:2},
-  {id:'q2', nm:'Cup Run',          req:['dex',5],  gold:6},
-  {id:'q3', nm:'Sponsor Tour',     req:['acc',6],  gold:15},
-  {id:'q4', nm:'League Wages',     req:['vit',8],  gold:34},
-  {id:'q5', nm:'Boot Endorsement', req:['con',10], gold:75},
-  {id:'q6', nm:'Champions Bonus',  req:['str',16], gold:170},
-  {id:'q7', nm:'Global Icon',      req:['mag',12], gold:400},
+  {id:'q1', nm:'Local Friendly',   req:['con',4],  xp:'con', xpr:0.4, gold:2},
+  {id:'q2', nm:'Cup Run',          req:['str',8],  xp:'con', xpr:0.7, gold:6},
+  {id:'q3', nm:'Sponsor Tour',     req:['dex',14], xp:'str', xpr:1.2, gold:15},
+  {id:'q4', nm:'League Wages',     req:['acc',20], xp:'dex', xpr:2.0, gold:34},
+  {id:'q5', nm:'Boot Endorsement', req:['vit',28], xp:'acc', xpr:3.2, gold:75},
+  {id:'q6', nm:'Champions Bonus',  req:['str',40], xp:'vit', xpr:5.0, gold:170},
+  {id:'q7', nm:'Global Icon',      req:['mag',30], xp:'mag', xpr:8.0, gold:400},
 ];
 function questUnlocked(q){ return sl(q.req[0])>=q.req[1]; }
 function questLv(id){ return (S.questLv&&S.questLv[id])||0; }
@@ -447,7 +484,7 @@ const LMAP = {}; LIFESTYLE.forEach(it=>LMAP[it.id]=it);
 // ---- State ----
 let S = newState();
 function newState(){
-  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'str', qseen:0, questLv:{}, xpBoost:{}, legacy:0, bestStage:1, assets:{}, tier:0, mastered:false, lastSeen:Date.now()};
+  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, xpBoost:{}, legacy:0, bestStage:1, assets:{}, tier:0, mastered:false, lastSeen:Date.now()};
 }
 // ---- Mastery: a definitive GDD-style milestone that coexists with prestige (one-time reward, permanent badge) ----
 const MASTERY_LV = 75, MASTERY_LEGACY = 25;
@@ -724,6 +761,8 @@ function update(dt){
   S.cash += (attr('sponsor')*lifeMult('cash')*vitMult() + questGoldPerSec())*dt;
   S.mp += MP_RATE*magMult()*dt;     // Magic Points accrue passively
   questCheck();
+  // running quests feed passive XP into their target skill (dual reward; works even when unfocused)
+  for(const q of QUESTS){ const l=questLv(q.id); if(l>0 && questUnlocked(q)) grantXPTo(q.xp, q.xpr*l*dt); }
   // auto fire — only while serving a board; capped volley/sec, each volley = `shotRep` real shots
   const rate=skillRate();
   if(serving && rate>0){
@@ -1025,7 +1064,26 @@ function buildUps(){
   upsEl.appendChild(lifeWrap);
 }
 const TABS=[['train','⚽'],['magic','🪄'],['quest','📜'],['life','💎']];
+// Tabs reveal as a consequence of progress, so the early game is just "Train".
+function tabVisible(k){
+  if(k==='train') return true;
+  if(k==='quest') return QUESTS.some(questUnlocked);                                   // first quest unlocked
+  if(k==='magic') return skUnlocked('mag');                                            // Magic Affinity bought
+  if(k==='life')  return (S.assets&&Object.keys(S.assets).length>0) || S.cash>=LMAP.boots.cost || S.bestStage>=8;
+  return true;
+}
+const shownTabs=new Set();
+function applyTabVis(){
+  for(const [k] of TABS){
+    const btn=document.getElementById('tab_'+k); if(!btn) continue;
+    const vis=tabVisible(k); btn.classList.toggle('locked',!vis);
+    if(vis && !shownTabs.has(k)){ shownTabs.add(k); if(k!=='train') btn.classList.add('justnew'); }
+  }
+  if(!tabVisible(tab)) setTab('train');
+}
 function setTab(t){
+  if(!tabVisible(t)) t='train';
+  document.getElementById('tab_'+t).classList.remove('justnew');
   tab=t;
   trainWrap.style.display=t==='train'?'':'none';
   magicWrap.style.display=t==='magic'?'':'none';
@@ -1053,21 +1111,35 @@ function renderMagicTree(){
   }).join('');
   magicTreeEl.querySelectorAll('[data-mid]').forEach(el=>el.addEventListener('click',()=>buy(el.dataset.mid)));
 }
-function setFocus(id){ S.focus=id; renderSkills(); save(); }
+function setFocus(id){ if(!skUnlocked(id)) return; S.focus=id; renderSkills(); save(); }
 function renderSkills(){
   if(!skillListEl) return; ensureSkills();
-  skillListEl.innerHTML = SKILLS.map(s=>{
-    const sk=S.skills[s.id], pct=Math.min(100,Math.round(100*sk.xp/skXpNeed(sk.lv))), foc=S.focus===s.id;
-    const xc=xpbCost(s.id), xaff=S.cash>=xc;
-    return `<div class="skill${foc?' foc':''}" data-sk="${s.id}"><div class="ic">${s.ic}</div>
-      <div class="mid"><div class="nm">${s.nm} <span class="lvl">Lv ${sk.lv}</span>${foc?'<span class="focpill">● FOCUS</span>':''}</div>
-        <div class="eff">${s.desc}: ${skillBonusText(s.id)}</div>
-        <div class="bar"><i style="width:${pct}%"></i></div></div>
-      <button class="xpb${xaff?' afford':''}" data-xpb="${s.id}" title="Boost this skill's XP gain">
-        <span class="xt">XP ×${xpBoostMult(s.id).toFixed(2)}</span><span class="xc"><span class="c"></span>${fmt(xc)}</span></button></div>`;
-  }).join('');
+  let html='';
+  for(const s of SKILLS){
+    if(skUnlocked(s.id)){
+      const sk=S.skills[s.id], pct=Math.min(100,Math.round(100*sk.xp/skXpNeed(sk.lv))), foc=S.focus===s.id;
+      const xc=xpbCost(s.id), xaff=S.cash>=xc;
+      html += `<div class="skill${foc?' foc':''}" data-sk="${s.id}"><div class="ic">${s.ic}</div>
+        <div class="mid"><div class="nm">${s.nm} <span class="lvl">Lv ${sk.lv}</span>${foc?'<span class="focpill">● FOCUS</span>':''}</div>
+          <div class="eff">${s.desc}: ${skillBonusText(s.id)}</div>
+          <div class="bar"><i style="width:${pct}%"></i></div></div>
+        <button class="xpb${xaff?' afford':''}" data-xpb="${s.id}" title="Boost this skill's XP gain">
+          <span class="xt">XP ×${xpBoostMult(s.id).toFixed(2)}</span><span class="xc"><span class="c"></span>${fmt(xc)}</span></button></div>`;
+    } else {
+      // preview ONLY the next locked skill — one new option at a time
+      const aff=S.cash>=s.cost;
+      html += `<div class="skill lock${aff?' afford':''}" data-unlock="${s.id}"><div class="ic">${s.ic}</div>
+        <div class="mid"><div class="nm">${s.nm} <span class="lvl new">🔒 NEW SKILL</span></div>
+          <div class="eff">Unlock to train · ${s.desc}</div></div>
+        <button class="xpb unlock${aff?' afford':''}" data-unlock="${s.id}">
+          <span class="xt">UNLOCK</span><span class="xc"><span class="c"></span>${fmt(s.cost)}</span></button></div>`;
+      break;
+    }
+  }
+  skillListEl.innerHTML = html;
   skillListEl.querySelectorAll('[data-sk]').forEach(el=>el.addEventListener('click',()=>setFocus(el.dataset.sk)));
   skillListEl.querySelectorAll('[data-xpb]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation(); buyXpBoost(el.dataset.xpb);}));
+  skillListEl.querySelectorAll('[data-unlock]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation(); unlockSkill(el.dataset.unlock);}));
 }
 function renderQuests(){
   if(!questListEl) return;
@@ -1170,7 +1242,7 @@ function refreshHUD(){
   els._c.transferBtn.classList.toggle('ready', lg>=1);
   els._c.masteredChip.style.display = S.mastered?'':'none';
   // keep affordability fresh as cash ticks in (throttled)
-  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now();
+  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now(); applyTabVis();
     if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else { renderSkills(); refreshUps(); } }
 }
 
@@ -1213,7 +1285,7 @@ document.getElementById('pConfirm').addEventListener('click',()=>{
   S=newState(); S.legacy=keepLegacy; S.assets=keepAssets; S.mastered=keepMastered; ensureSkills();
   prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];pending=[];combo=0; fkTimer=0; shotTimer=0; releaseTimer=0; keeperFreeze=0;
   serve();
-  refreshUps(); refreshLife(); renderSkills(); renderQuests(); renderMagicTree(); save();
+  refreshUps(); refreshLife(); renderSkills(); renderQuests(); renderMagicTree(); applyTabVis(); save();
 });
 
 // ======================= Save / Load / Offline =======================
@@ -1249,6 +1321,8 @@ function start(){
   ensureSkills();
   serve();
   buildUps(); refreshUps(); refreshLife(); renderSkills(); renderQuests(); renderMagicTree();
+  for(const [k] of TABS) if(tabVisible(k)) shownTabs.add(k);   // seed: already-visible tabs don't pulse on boot
+  applyTabVis();
   running=true; last=performance.now(); requestAnimationFrame(frame);
 }
 document.getElementById('playBtn').addEventListener('click',()=>{

@@ -30,7 +30,7 @@ const fn = new Function('THREE','document','window','localStorage','performance'
   code + '\n;__expose({get S(){return S}, setS:v=>{S=v}, newState, ATTR, AMAP, LIFESTYLE, LMAP, attr, lv, ' +
   'incomePerSec, analyticDPS, targetHP, targetReward, avgBallDmg, ballsPerSec, hitFrac, prestigeMult, legacyGain, ' +
   'stageScale, targetCount, cashPerHit, lifeMult, update, serve, spawnTargets, get serving(){return serving}, setServing:v=>{serving=v}, ' +
-  'SKILLS, sl, skillDmg, skillRate, skillAcc, vitMult, conMult, magMult, ensureSkills, grantXP, questGoldPerSec, QUESTS });');
+  'SKILLS, SKMAP, skUnlocked, unlockSkill, sl, skillDmg, skillRate, skillAcc, vitMult, conMult, magMult, ensureSkills, grantXP, questGoldPerSec, QUESTS });');
 fn(THREE, documentStub, windowStub, {getItem(){return null;},setItem(){}}, {now(){return 0;}}, ()=>{}, ()=>{}, function(){}, function(){}, a=>{API=a;});
 
 const G = API;
@@ -40,17 +40,21 @@ const S = () => G.S;
 
 // ===== simulated-player policy =====
 const PRIO = ['str','dex','acc','vit','con','mag'];
-function lowestFocus(){ // balanced player: keep skills roughly even (focus the lowest level)
+const UNLOCK_ORDER = ['str','dex','acc','vit','mag'];   // con is free at start
+function buySkillUnlocks(){ // grab the next gold-gated skill the moment it's affordable
+  for(const id of UNLOCK_ORDER){ if(!G.skUnlocked(id) && S().cash>=G.SKMAP[id].cost){ G.unlockSkill(id); } }
+}
+function lowestFocus(){ // balanced player: keep UNLOCKED skills roughly even (focus the lowest level)
   let best=null, bk=[1e9,9];
-  for(const s of G.SKILLS){ const l=G.sl(s.id), k=[l, PRIO.indexOf(s.id)];
+  for(const s of G.SKILLS){ if(!G.skUnlocked(s.id)) continue; const l=G.sl(s.id), k=[l, PRIO.indexOf(s.id)];
     if(k[0]<bk[0] || (k[0]===bk[0] && k[1]<bk[1])){ bk=k; best=s.id; } }
-  S().focus=best;
+  if(best) S().focus=best;
 }
 const chooseFocus = lowestFocus;
 function cashCost(id){ return G.AMAP[id].cost(G.lv(id)); }
 function buyCashAndMagic(){
-  // magic: buy any affordable infusion (cheap MP, always a dmg/utility gain)
-  for(const a of G.ATTR){ if(a.cur==='mp'){ const c=a.cost(G.lv(a.id)); if(isFinite(c)&&(S().mp||0)>=c){ S().mp-=c; S().magicLv[a.id]=(S().magicLv[a.id]||0)+1; } } }
+  // magic: buy any affordable infusion (Magic tab is gated behind the Magic Affinity skill)
+  if(G.skUnlocked('mag')) for(const a of G.ATTR){ if(a.cur==='mp'){ const c=a.cost(G.lv(a.id)); if(isFinite(c)&&(S().mp||0)>=c){ S().mp-=c; S().magicLv[a.id]=(S().magicLv[a.id]||0)+1; } } }
   // auto-serve: grab as soon as affordable
   if(!(S().lv.auto) && S().cash>=G.AMAP.auto.cost(0)){ S().cash-=G.AMAP.auto.cost(0); S().lv.auto=1; }
   // gear + lifestyle: greedy best income-ROI, buy as many as affordable this tick
@@ -79,7 +83,7 @@ function run(minutes){
     G.update(dt);
     if(!G.serving) G.serve();                 // attentive player taps SHOOT until Auto-Serve
     polT+=dt;
-    if(polT>=0.5){ polT=0; chooseFocus(); buyCashAndMagic(); }
+    if(polT>=0.5){ polT=0; buySkillUnlocks(); chooseFocus(); buyCashAndMagic(); }
     if(autoT==null && S().lv.auto) autoT=t;
     if(firstMagicT==null && S().magicLv && Object.values(S().magicLv).some(v=>v>0)) firstMagicT=t;
     if(firstPrestT==null && G.legacyGain()>=1) firstPrestT=t;
@@ -111,9 +115,9 @@ for(const s of r.snaps) console.log(`  @${String(Math.round(s.t/60)+'m').padEnd(
 function focusRun(minutes, policy){
   G.setS(G.newState()); G.ensureSkills(); G.serve();
   const dt=0.05; let t=0, polT=0;
-  while(t<minutes*60){ G.update(dt); if(!G.serving) G.serve(); polT+=dt; if(polT>=0.5){ polT=0; policy(); buyCashAndMagic(); } t+=dt; }
+  while(t<minutes*60){ G.update(dt); if(!G.serving) G.serve(); polT+=dt; if(polT>=0.5){ polT=0; buySkillUnlocks(); policy(); buyCashAndMagic(); } t+=dt; }
   return {stage:S().stage, dps:fmt(G.analyticDPS()), inc:fmt(G.incomePerSec()), sk:G.SKILLS.map(s=>s.id+':'+G.sl(s.id)).join(' ')};
 }
 console.log('\nFocus policy A/B (4 min each):');
-console.log('  all-into-Strength:', JSON.stringify(focusRun(4, ()=>{S().focus='str';})));
+console.log('  all-into-Strength:', JSON.stringify(focusRun(4, ()=>{ if(G.skUnlocked('str')) S().focus='str'; })));
 console.log('  balanced (lowest):', JSON.stringify(focusRun(4, chooseFocus)));
