@@ -4,13 +4,19 @@
 // with Magic Points, taps SHOOT until Auto-Serve. Reports how progression actually paces.
 //   run:  node balance-sim.js index.html
 const fs = require('fs');
+const path = require('path');
 const HTML = fs.readFileSync(process.argv[2], 'utf8');
 
-// ---- extract the module script, strip imports + 3D boot ----
+// ---- shared economy/config module: strip `export` so it concatenates into the runtime scope ----
+const econ = fs.readFileSync(path.join(path.dirname(process.argv[2]), 'economy.js'), 'utf8').replace(/\bexport\s+/g, '');
+
+// ---- extract the module script, strip imports (incl. the multi-line ./economy.js block) + 3D boot ----
 let code = HTML.match(/<script type="module">\s*\nimport \* as THREE[\s\S]*?<\/script>/)[0]
   .replace(/^<script type="module">/, '').replace(/<\/script>$/, '');
-code = code.split('\n').filter(l => !/^\s*import .* from /.test(l)).join('\n');
+code = code.replace(/import\s*\{[\s\S]*?\}\s*from\s*'\.\/economy\.js';/, '');   // multi-line economy import
+code = code.split('\n').filter(l => !/^\s*import .* from /.test(l)).join('\n');  // single-line THREE imports
 code = code.replace(/setup3D\(\);\s*\n\s*resize\(\);\s*\n\s*window\.addEventListener\('load',resize\);/, '');
+code = econ + '\n' + code;   // economy definitions first, then the runtime that consumes them
 
 // ---- minimal stubs ----
 const V = class { constructor(x,y,z){this.x=x||0;this.y=y||0;this.z=z||0;}
