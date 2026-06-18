@@ -589,7 +589,7 @@ function resolveBall(b){
 }
 function breakTarget(t, viaSpecial){
   t.broken=true; t.hp=0; t.burnT=0;
-  grantXP((9 + targetCount()*2)/targetCount());   // active XP per TARGET break → sums to the same per-board total
+  grantXP((7 + targetCount()*2)/targetCount());   // active XP per TARGET break (~2 breaks for the first level)
   // running quests also drip passive XP into their target skill — on each break, not idle/over time
   for(const q of QUESTS){ const l=questLv(q.id); if(l>0 && questUnlocked(q)) grantXPTo(q.xp, q.xpr*l); }
   const tp=target3D(t), rew=targetReward(t.maxHp);
