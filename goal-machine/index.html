@@ -237,9 +237,10 @@
   </div>
 
   <div class="tabs">
-    <button class="tab on" id="tab_train">⚽ Train</button>
-    <button class="tab" id="tab_magic">🪄 Magic</button>
+    <button class="tab on" id="tab_train">⚽ Skills</button>
+    <button class="tab" id="tab_shop">🛒 Shop</button>
     <button class="tab" id="tab_quest">📜 Quests</button>
+    <button class="tab" id="tab_magic">🪄 Magic</button>
     <button class="tab" id="tab_life">💎 Life</button>
     <button class="modepill" id="modeBtn">Buy ×1</button>
   </div>
@@ -407,14 +408,10 @@ function magMult(){ return Math.pow(1.10, sl('mag')); }
 function skillBonusText(id){ const v={str:skillDmg,dex:skillRate,acc:skillAcc,vit:vitMult,con:conMult,mag:magMult}[id]();
   return id==='str'?fmt(v)+' dmg':id==='dex'?v.toFixed(2)+'/s':id==='acc'?(v*100).toFixed(0)+'% hit':
     id==='vit'?'×'+v.toFixed(2)+' gold':id==='con'?'×'+v.toFixed(2)+' XP':'×'+v.toFixed(2)+' magic'; }
-// per-skill XP boosters (bought with gold; +25% XP per level for THAT skill while it's focused)
-function xpbLv(id){ return (S.xpBoost&&S.xpBoost[id])||0; }
-function xpBoostMult(id){ return 1+0.25*xpbLv(id); }
-function xpbCost(id){ return Math.ceil(120*Math.pow(2.1, xpbLv(id))); }
-// breaking a target funnels XP into the focused skill (×Concentration ×this skill's XP booster); level up on the way
+// breaking a target funnels XP into the focused skill (×Concentration); level up on the way
 function grantXP(amt){
   ensureSkills(); const s=S.skills[S.focus]; if(!s) return;
-  s.xp += amt*conMult()*xpBoostMult(S.focus);
+  s.xp += amt*conMult();
   let need=skXpNeed(s.lv);
   while(s.xp>=need){ s.xp-=need; s.lv++; floater(0,GH*0.58,0,SKMAP[S.focus].nm+' Lv '+s.lv,'#9be7ff',16); need=skXpNeed(s.lv); }
 }
@@ -432,13 +429,6 @@ function unlockSkill(id){
   floater(0,GH*0.62,0,s.nm+' UNLOCKED','#ffe27a',20);
   if(typeof window.trackEvent==='function') window.trackEvent('skill_unlock',{skill:id,cost:s.cost});
   renderSkills(); refreshHUD(); applyTabVis(); save();
-}
-function buyXpBoost(id){
-  const c=xpbCost(id);
-  if(S.cash<c) return;
-  S.cash-=c; (S.xpBoost=S.xpBoost||{})[id]=xpbLv(id)+1;
-  if(typeof window.trackEvent==='function') window.trackEvent('xpboost',{skill:id,level:S.xpBoost[id]});
-  renderSkills(); refreshHUD(); save();
 }
 
 // ---- Quests: passive GOLD generators that unlock at skill thresholds (run in background) ----
@@ -484,7 +474,7 @@ const LMAP = {}; LIFESTYLE.forEach(it=>LMAP[it.id]=it);
 // ---- State ----
 let S = newState();
 function newState(){
-  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, xpBoost:{}, legacy:0, bestStage:1, assets:{}, tier:0, mastered:false, lastSeen:Date.now()};
+  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, legacy:0, bestStage:1, assets:{}, tier:0, mastered:false, lastSeen:Date.now()};
 }
 // ---- Mastery: a definitive GDD-style milestone that coexists with prestige (one-time reward, permanent badge) ----
 const MASTERY_LV = 75, MASTERY_LEGACY = 25;
@@ -1006,7 +996,7 @@ let buyMode=1;     // 1 or 'max'
 let tab='train';   // 'train' or 'life'
 const upsEl=document.getElementById('ups');
 const els={}, lifeEls={};
-let trainWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl, magicTreeEl;
+let trainWrap, shopWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl, magicTreeEl;
 // Magic skill tree (top→bottom tiers). Each node maps to a magic ATTR; `req` is the parent that must be owned (Lv≥1) first.
 const MAGIC_TREE = [
   [{id:'mana', req:null}],
@@ -1025,15 +1015,18 @@ function upRow(a, coin){
 }
 function buildUps(){
   upsEl.innerHTML='';
-  // ── Train: Skills (XP/focus) on top, then gold equipment ──
+  // ── Skills: unlock one at a time, focus your XP. NOTHING else lives here. ──
   trainWrap=document.createElement('div');
   const sh=document.createElement('div');sh.className='grouphdr';sh.textContent='Skills — tap one to focus your XP';trainWrap.appendChild(sh);
   skillListEl=document.createElement('div');trainWrap.appendChild(skillListEl);
-  GROUPS.forEach(([cat,label])=>{
-    const h=document.createElement('div');h.className='grouphdr';h.textContent=label;trainWrap.appendChild(h);
-    ATTR.filter(a=>a.cat===cat).forEach(a=>trainWrap.appendChild(upRow(a,'c')));
-  });
   upsEl.appendChild(trainWrap);
+  // ── Shop: gold equipment, grouped by category ──
+  shopWrap=document.createElement('div');shopWrap.style.display='none';
+  GROUPS.forEach(([cat,label])=>{
+    const h=document.createElement('div');h.className='grouphdr';h.textContent=label;shopWrap.appendChild(h);
+    ATTR.filter(a=>a.cat===cat).forEach(a=>shopWrap.appendChild(upRow(a,'c')));
+  });
+  upsEl.appendChild(shopWrap);
   // ── Magic skill tree (Magic Points) ──
   magicWrap=document.createElement('div');magicWrap.style.display='none';
   const mh=document.createElement('div');mh.className='grouphdr';mh.textContent='Magic Tree';magicWrap.appendChild(mh);
@@ -1063,10 +1056,11 @@ function buildUps(){
   });
   upsEl.appendChild(lifeWrap);
 }
-const TABS=[['train','⚽'],['magic','🪄'],['quest','📜'],['life','💎']];
-// Tabs reveal as a consequence of progress, so the early game is just "Train".
+const TABS=[['train','⚽'],['shop','🛒'],['quest','📜'],['magic','🪄'],['life','💎']];
+// Tabs reveal as a consequence of progress, so the early game is just "Skills".
 function tabVisible(k){
   if(k==='train') return true;
+  if(k==='shop')  return skUnlocked('str');                                            // first paid skill bought
   if(k==='quest') return QUESTS.some(questUnlocked);                                   // first quest unlocked
   if(k==='magic') return skUnlocked('mag');                                            // Magic Affinity bought
   if(k==='life')  return (S.assets&&Object.keys(S.assets).length>0) || S.cash>=LMAP.boots.cost || S.bestStage>=8;
@@ -1086,11 +1080,13 @@ function setTab(t){
   document.getElementById('tab_'+t).classList.remove('justnew');
   tab=t;
   trainWrap.style.display=t==='train'?'':'none';
+  shopWrap.style.display =t==='shop'?'':'none';
   magicWrap.style.display=t==='magic'?'':'none';
   questWrap.style.display=t==='quest'?'':'none';
   lifeWrap.style.display =t==='life'?'':'none';
+  document.getElementById('modeBtn').style.display=t==='shop'?'':'none';   // Buy ×1/MAX only applies to the Shop
   for(const [k] of TABS) document.getElementById('tab_'+k).classList.toggle('on',k===t);
-  if(t==='quest') renderQuests(); else if(t==='life') refreshLife(); else if(t==='magic') renderMagicTree(); else { renderSkills(); refreshUps(); }
+  if(t==='quest') renderQuests(); else if(t==='life') refreshLife(); else if(t==='magic') renderMagicTree(); else if(t==='shop') refreshUps(); else renderSkills();
 }
 function renderMagicTree(){
   if(!magicTreeEl) return;
@@ -1118,13 +1114,10 @@ function renderSkills(){
   for(const s of SKILLS){
     if(skUnlocked(s.id)){
       const sk=S.skills[s.id], pct=Math.min(100,Math.round(100*sk.xp/skXpNeed(sk.lv))), foc=S.focus===s.id;
-      const xc=xpbCost(s.id), xaff=S.cash>=xc;
       html += `<div class="skill${foc?' foc':''}" data-sk="${s.id}"><div class="ic">${s.ic}</div>
         <div class="mid"><div class="nm">${s.nm} <span class="lvl">Lv ${sk.lv}</span>${foc?'<span class="focpill">● FOCUS</span>':''}</div>
           <div class="eff">${s.desc}: ${skillBonusText(s.id)}</div>
-          <div class="bar"><i style="width:${pct}%"></i></div></div>
-        <button class="xpb${xaff?' afford':''}" data-xpb="${s.id}" title="Boost this skill's XP gain">
-          <span class="xt">XP ×${xpBoostMult(s.id).toFixed(2)}</span><span class="xc"><span class="c"></span>${fmt(xc)}</span></button></div>`;
+          <div class="bar"><i style="width:${pct}%"></i></div></div></div>`;
     } else {
       // preview ONLY the next locked skill — one new option at a time
       const aff=S.cash>=s.cost;
@@ -1138,7 +1131,6 @@ function renderSkills(){
   }
   skillListEl.innerHTML = html;
   skillListEl.querySelectorAll('[data-sk]').forEach(el=>el.addEventListener('click',()=>setFocus(el.dataset.sk)));
-  skillListEl.querySelectorAll('[data-xpb]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation(); buyXpBoost(el.dataset.xpb);}));
   skillListEl.querySelectorAll('[data-unlock]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation(); unlockSkill(el.dataset.unlock);}));
 }
 function renderQuests(){
@@ -1243,7 +1235,7 @@ function refreshHUD(){
   els._c.masteredChip.style.display = S.mastered?'':'none';
   // keep affordability fresh as cash ticks in (throttled)
   if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now(); applyTabVis();
-    if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else { renderSkills(); refreshUps(); } }
+    if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else if(tab==='shop') refreshUps(); else renderSkills(); }
 }
 
 // ---- Buy mode toggle ----
@@ -1320,7 +1312,8 @@ function start(){
   keeperX=0; S.tier=tierIndex(S.stage);
   ensureSkills();
   serve();
-  buildUps(); refreshUps(); refreshLife(); renderSkills(); renderQuests(); renderMagicTree();
+  buildUps(); refreshLife(); renderQuests(); renderMagicTree();
+  setTab('train');                                            // normalize tab/wrap/modepill display state
   for(const [k] of TABS) if(tabVisible(k)) shownTabs.add(k);   // seed: already-visible tabs don't pulse on boot
   applyTabVis();
   running=true; last=performance.now(); requestAnimationFrame(frame);

@@ -55,10 +55,11 @@ function cashCost(id){ return G.AMAP[id].cost(G.lv(id)); }
 function buyCashAndMagic(){
   // magic: buy any affordable infusion (Magic tab is gated behind the Magic Affinity skill)
   if(G.skUnlocked('mag')) for(const a of G.ATTR){ if(a.cur==='mp'){ const c=a.cost(G.lv(a.id)); if(isFinite(c)&&(S().mp||0)>=c){ S().mp-=c; S().magicLv[a.id]=(S().magicLv[a.id]||0)+1; } } }
-  // auto-serve: grab as soon as affordable
-  if(!(S().lv.auto) && S().cash>=G.AMAP.auto.cost(0)){ S().cash-=G.AMAP.auto.cost(0); S().lv.auto=1; }
+  // gear (incl. auto-serve) lives in the Shop tab, gated behind the first paid skill (Strength)
+  const shop = G.skUnlocked('str');
+  if(shop && !(S().lv.auto) && S().cash>=G.AMAP.auto.cost(0)){ S().cash-=G.AMAP.auto.cost(0); S().lv.auto=1; }
   // gear + lifestyle: greedy best income-ROI, buy as many as affordable this tick
-  for(let guard=0;guard<80;guard++){
+  for(let guard=0;shop && guard<80;guard++){
     const base=G.incomePerSec(); let best=null,roi=0;
     for(const a of G.ATTR){ if(a.cur==='mp'||a.id==='auto') continue; const c=cashCost(a.id); if(!isFinite(c)||S().cash<c) continue;
       const b4=S().lv[a.id]||0; S().lv[a.id]=b4+1; const g=G.incomePerSec()-base; S().lv[a.id]=b4;
