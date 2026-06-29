@@ -23,7 +23,8 @@ const V = class { constructor(x,y,z){this.x=x||0;this.y=y||0;this.z=z||0;}
   set(x,y,z){this.x=x;this.y=y;this.z=z;return this;} project(){this.x=0;this.y=0;return this;}
   normalize(){return this;} setScalar(){return this;} copy(){return this;} };
 const THREE = { Vector3:V, Color:class{setHex(){return this;}}, Matrix4:class{makeScale(){return this;}compose(){return this;}},
-  Quaternion:class{setFromAxisAngle(){return this;}} };
+  Quaternion:class{setFromAxisAngle(){return this;}},
+  Raycaster:class{constructor(){this.ray={intersectPlane:()=>null};}setFromCamera(){}}, Plane:class{} };
 const ctxStub = new Proxy({}, { get:()=> ()=>{} });
 function el(){ return { style:{}, dataset:{}, classList:{add(){},remove(){},toggle(){},contains(){return false}},
   addEventListener(){}, appendChild(){}, querySelector(){return el();}, querySelectorAll(){return [];}, getContext(){return ctxStub;},

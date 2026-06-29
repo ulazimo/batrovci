@@ -32,12 +32,12 @@ export const ATTR = [
   {id:'hype',   cat:'dmg', ic:'📣', nm:'Fan Hype',       desc:'global damage multiplier',
     cost:l=>240*Math.pow(1.17,l),     val:l=>1+0.03*l,       show:v=>'×'+v.toFixed(2)},
   // TARGETS --------------------------------------------------------------
-  {id:'targets',cat:'board',ic:'🥅', nm:'Extra Targets',  desc:'targets on the goal',
-    cost:l=>l>=5?Infinity:600*Math.pow(7,l), val:l=>Math.min(6,1+l), show:v=>v+' target'+(v>1?'s':'')},
-  {id:'tgtHP',  cat:'board',ic:'🧱', nm:'Target Size',    desc:'HP per target — bigger = more gold',
+  {id:'targets',cat:'board',ic:'🥅', nm:'Bigger Stage',   desc:'more stage HP & gold',
+    cost:l=>l>=5?Infinity:600*Math.pow(7,l), val:l=>Math.min(6,1+l), show:v=>'×'+v+' HP'},
+  {id:'tgtHP',  cat:'board',ic:'🧱', nm:'Tougher Stage',  desc:'stage HP — bigger = more gold',
     cost:l=>140*Math.pow(1.22,l),     val:l=>1+0.6*l,        show:v=>'×'+v.toFixed(2)+' HP'},
-  {id:'auto',   cat:'board',ic:'🔁', nm:'Auto-Serve',     desc:'auto-restart boards + offline income',
-    cost:l=>l>=1?Infinity:450,        val:l=>l>0?1:0,        show:v=>v?'active':'manual tap'},
+  {id:'auto',   cat:'board',ic:'🔁', nm:'Auto-Shoot',     desc:'auto-fires at the goal + offline income',
+    cost:l=>l>=1?Infinity:450,        val:l=>l>0?1:0,        show:v=>v?'active':'click to shoot'},
   // MAGIC INFUSIONS — bought with Magic Points; potency scales with Magic Affinity. Arranged as a tree (see MAGIC_TREE).
   {id:'mana',   cat:'magic',cur:'mp',ic:'🔵', nm:'Mana Shot',     desc:'chance for a bonus magic shot (scales with Vitality)',
     cost:l=>l<1?2:Math.ceil(2*Math.pow(1.38,l-1)), val:l=>l<1?0:Math.min(0.8,0.08+0.04*(l-1)), show:v=>v?(v*100).toFixed(0)+'%':'locked'},
@@ -75,7 +75,7 @@ export const ATTR = [
     cost:l=>1200*Math.pow(1.40,l),    val:l=>1+0.08*l,       show:v=>'×'+v.toFixed(2)+' 🏆'},
 ];
 export const AMAP = {}; ATTR.forEach(a=>AMAP[a.id]=a);
-export const GROUPS = [['dmg','Attack'],['board','Targets'],['cash','Economy'],['util','Pitch']];
+export const GROUPS = [['dmg','Attack'],['board','Stage'],['cash','Economy'],['util','Pitch']];
 export const TIERS = [[1,'Sunday League'],[10,'Academy'],[25,'Semi-Pro'],[50,'Championship'],[100,'Pro Club'],[250,'International'],[500,'Legend']];
 export function tierIndex(stage){ let i=0; for(let k=0;k<TIERS.length;k++) if(stage>=TIERS[k][0]) i=k; return i; }
 export function tierName(stage){ return TIERS[tierIndex(stage)][1]; }
