@@ -37,7 +37,7 @@ const fn = new Function('THREE','document','window','localStorage','performance'
   code + '\n;__expose({get S(){return S}, setS:v=>{S=v}, newState, ATTR, AMAP, LIFESTYLE, LMAP, attr, lv, ' +
   'incomePerSec, analyticDPS, targetHP, targetReward, avgBallDmg, ballsPerSec, hitFrac, prestigeMult, legacyGain, ' +
   'stageScale, targetCount, cashPerHit, lifeMult, update, serve, spawnTargets, get serving(){return serving}, setServing:v=>{serving=v}, ' +
-  'SKILLS, SKMAP, skUnlocked, unlockSkill, sl, skillDmg, skillRate, skillAcc, vitMult, conMult, magMult, ensureSkills, grantXP, questGoldPerSec, QUESTS });');
+  'SKILLS, SKMAP, skUnlocked, unlockSkill, sl, skillDmg, skillRate, keeperSaveChance, vitMult, conMult, magMult, ensureSkills, grantXP, questGoldPerSec, QUESTS });');
 fn(THREE, documentStub, windowStub, {getItem(){return null;},setItem(){}}, {now(){return 0;}}, ()=>{}, ()=>{}, function(){}, function(){}, a=>{API=a;});
 
 const G = API;

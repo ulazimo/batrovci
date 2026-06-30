@@ -87,7 +87,7 @@ export const SKILLS = [
   {id:'con', ic:'🧠', nm:'Concentration', desc:'XP gain for the focused skill',     cost:0},
   {id:'str', ic:'💪', nm:'Strength',      desc:'shot damage',                       cost:50},
   {id:'dex', ic:'⚡', nm:'Dexterity',     desc:'fire rate',                         cost:300},
-  {id:'acc', ic:'🎯', nm:'Accuracy',      desc:'chance to hit the target',          cost:1100},
+  {id:'acc', ic:'🎯', nm:'Accuracy',      desc:'chance to beat the keeper',         cost:1100},
   {id:'vit', ic:'💰', nm:'Vitality',      desc:'gold per target & passive income',  cost:9000},
   {id:'mag', ic:'🪄', nm:'Magic Affinity',desc:'Magic Points & infusion potency',   cost:50000},
 ];
@@ -124,8 +124,11 @@ export const LMAP = {}; LIFESTYLE.forEach(it=>LMAP[it.id]=it);
 export const MASTERY_LV = 75, MASTERY_LEGACY = 25;
 
 // ---- Derived-stat tuning constants ----
-export const SAVE_PROB = 0.5;   // chance a ball on a guarded target is saved
-export const SAVE_FRAC = 0.12;  // approx share of shots the keeper saves (for analytics)
+// keeper save model: every shot is either saved or a goal (no accuracy "misses").
+// Accuracy is placement — each level lowers the keeper's save chance toward the floor.
+export const SAVE_BASE = 0.52;     // save chance at Accuracy 0
+export const SAVE_PER_ACC = 0.025; // each Accuracy level cuts the save chance
+export const SAVE_MIN = 0.12;      // floor — the keeper always has a chance
 export const BURN_MULT = 1.5, BURN_TIME = 2.0;     // Fireball: total burn = ball dmg × MULT over TIME
 export const CANNON_SPLASH = 0.5;                  // Cannonball: splash dmg to each other target
 export const FROST_TIME = 2.5;                     // Frostball: keeper frozen for this long

@@ -71,7 +71,7 @@
   @keyframes legacyPulse{0%,100%{box-shadow:0 0 0 0 rgba(160,107,255,.55)}50%{box-shadow:0 0 0 6px rgba(160,107,255,0)}}
 
   /* ── Scene ── */
-  .scene{flex:none;position:relative;height:clamp(170px,32vh,300px);background:#060d12;}
+  .scene{flex:none;position:relative;height:clamp(220px,44vh,440px);background:#060d12;}
   #cv{display:block;width:100%;height:100%;}
   #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
   #serveBtn{position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);display:none;z-index:6;
@@ -296,7 +296,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { fmt, ATTR, AMAP, GROUPS, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed,
   QUESTS, LIFESTYLE, LMAP, MASTERY_LV, MASTERY_LEGACY,
-  SAVE_PROB, SAVE_FRAC, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
+  SAVE_BASE, SAVE_PER_ACC, SAVE_MIN, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
   TGT_BASE, REWARD_C, stageScale } from './economy.js';
 // ======================= Goal Machine =======================
 // Pure economy/config (data tables, tuning constants, side-effect-free helpers) lives in economy.js.
@@ -315,12 +315,13 @@ function skUnlocked(id){ return !!(S.skills&&S.skills[id]&&S.skills[id].un); }
 // skill → stat curves
 function skillDmg(){ return 5*Math.pow(1.14, sl('str')); }
 function skillRate(){ return 1.0*Math.pow(1.055, sl('dex')); }
-function skillAcc(){ return Math.min(0.98, 0.55+0.03*sl('acc')); }
+// keeper save chance — Accuracy (placement) lowers it; a shot is only ever saved or a goal
+function keeperSaveChance(){ return Math.max(SAVE_MIN, SAVE_BASE - SAVE_PER_ACC*sl('acc')); }
 function vitMult(){ return Math.pow(1.12, sl('vit')); }
 function conMult(){ return Math.pow(1.12, sl('con')); }
 function magMult(){ return Math.pow(1.10, sl('mag')); }
-function skillBonusText(id){ const v={str:skillDmg,dex:skillRate,acc:skillAcc,vit:vitMult,con:conMult,mag:magMult}[id]();
-  return id==='str'?fmt(v)+' dmg':id==='dex'?v.toFixed(2)+'/s':id==='acc'?(v*100).toFixed(0)+'% hit':
+function skillBonusText(id){ const v={str:skillDmg,dex:skillRate,acc:()=>1-keeperSaveChance(),vit:vitMult,con:conMult,mag:magMult}[id]();
+  return id==='str'?fmt(v)+' dmg':id==='dex'?v.toFixed(2)+'/s':id==='acc'?(v*100).toFixed(0)+'% past keeper':
     id==='vit'?'×'+v.toFixed(2)+' gold':id==='con'?'×'+v.toFixed(2)+' XP':'×'+v.toFixed(2)+' magic'; }
 // breaking a target funnels XP into the focused skill (×Concentration); level up on the way
 function grantXP(amt){
@@ -400,7 +401,7 @@ function rewardMult(){ return attr('cashG')*vitMult()*prestigeMult()*lifeMult('c
 function targetReward(maxHP){ return REWARD_C*maxHP*rewardMult(); }
 function ballsPerSec(){return skillRate()*attr('multi');}
 // share of fired balls that land on a target (Accuracy skill; Spectral + Frost cut keeper saves)
-function hitFrac(){ const effSave=SAVE_FRAC*(1-attr('curve'))*(1-Math.min(0.9,attr('frost'))); return skillAcc()*(1-effSave); }
+function hitFrac(){ const effSave=keeperSaveChance()*(1-attr('curve'))*(1-Math.min(0.9,attr('frost'))); return 1-effSave; }
 // average damage per ball that lands (for DPS readout + offline estimate)
 function avgBallDmg(){
   const base = skillDmg()*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
@@ -457,7 +458,7 @@ let spin=0;
 // ---- sim state ----
 let balls=[], particles=[], floaters=[], targets=[];
 let keeperX=0, keeperShake=0, netFlash=0, goalFlash=0, kickAnim=0, keeperFreeze=0, keeperBusy=0, keeperTargetX=0;
-let combo=0;       // live combo counter (resets on a goal or a missed shot)
+let combo=0;       // live combo counter (resets on a goal or a keeper save)
 let fkTimer=0, shotTimer=0;
 let serving=false; // firing only while a board is being served
 let pending=[], releaseTimer=0;   // queued shots, fired one-by-one
@@ -518,7 +519,7 @@ function spawnVolley(shotRep, gx, gy){
   const multi=attr('multi'), C=Math.min(multi,VOLLEY_CAP);
   const sf=(shotRep*multi)/C;     // each rendered ball carries the damage of the shots it represents
   // keeper commits a dive the moment the shot leaves: toward it if it'll be saved, a random way otherwise
-  const willSave = keeperFreeze<=0 && Math.random()<SAVE_FRAC;
+  const willSave = keeperFreeze<=0 && Math.random()<keeperSaveChance();
   keeperDive(gx, willSave);
   for(let i=0;i<C;i++){ if(pending.length<MAX_BALLS) pending.push({sf, gx, gy, willSave}); }   // queued, fired one-by-one
 }
@@ -530,10 +531,7 @@ function spawnBall(special, sf=1, gx=0, gy=1.5, willSave=false){
   if(!live.length) return;
   // the shot flies to the aimed goal spot; it still damages one of the goal's HP chunks
   const t=live[Math.floor(Math.random()*live.length)];
-  // accuracy roll — a missed shot sails wide of the aim point
-  const hit = special || Math.random()<skillAcc();
-  let tx=gx, ty=gy, miss=false;
-  if(!hit){ miss=true; tx=gx+(Math.random()<.5?-1:1)*(0.9+Math.random()*1.1); ty=gy+(Math.random()*0.6-0.2); }
+  // every shot is on frame — it either beats the keeper (goal) or gets saved; no wide misses
   // roll the damage now (Strength skill is the base; cash upgrades multiply it)
   let dmg = skillDmg()*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
   dmg *= 1+Math.min(attr('combo'), combo*0.02);
@@ -555,17 +553,16 @@ function spawnBall(special, sf=1, gx=0, gy=1.5, willSave=false){
   const frost  = !special && Math.random()<attr('frost');
   // 3D trajectory from the striker's boot to the landing point
   const p0={x:(Math.random()*0.5-0.25), y:0.35, z:STRIKER_Z-0.7};
-  const p1={x:tx, y:ty, z:0.05};
+  const p1={x:gx, y:gy, z:0.05};
   const c ={x:(p0.x+p1.x)/2, y:Math.max(p0.y,p1.y)+1.4, z:(p0.z+p1.z)/2};
   const dist=Math.hypot(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z)||1;
   const sp=11+attr('speed')*0.5+(special?5:0);          // world units / sec
-  balls.push({p0, c, p1, t:0, spd:sp/dist, tgt:targets.indexOf(t), miss, sf, willSave,
+  balls.push({p0, c, p1, t:0, spd:sp/dist, tgt:targets.indexOf(t), sf, willSave,
               dmg, crit, big, golden, special, fire, curve, cannon, frost, mana, portal, seed:Math.random()*7});
 }
 
 function resolveBall(b){
   const p=b.p1;
-  if(b.miss){ floater(p.x,p.y,p.z,'MISS','#bcd3c4',13); puff(p,'#cfe0d4'); combo=0; return; }
   const t=targets[b.tgt];
   if(!t || t.broken){ puff(p,'#ffffff'); return; }
   if(b.frost){ keeperFreeze=FROST_TIME; floater(p.x,p.y+0.35,p.z,'FROZEN','#aef',14); }
@@ -601,8 +598,10 @@ function breakTarget(t, viaSpecial){
 }
 function onBoardClear(){
   goalFlash=1; netFlash=1; combo=0;
-  floater(0,GH*0.72,0,'GOAL!','#ffcf3a',26);
-  for(let i=0;i<26;i++) confetti();
+  floater(0,GH*0.62,0,'GOOAL!','#ffcf3a',40);
+  floater(0,GH*0.44,0,'⚽ SCORED ⚽','#fff',16);
+  for(let i=0;i<70;i++) confetti();
+  for(let i=0;i<24;i++) impact({x:(Math.random()*2-1)*GW*0.5, y:GH*(0.4+Math.random()*0.5), z:0}, ['#ffcf3a','#ff7a1a','#fff','#19aebb'][Math.floor(Math.random()*4)]);
   S.stage++;
   if(S.stage>S.bestStage) S.bestStage=S.stage;
   checkMastery();                               // active XP now lands per target break; test the mastery milestone on clear
@@ -683,9 +682,9 @@ function setup3D(){
   scene=new THREE.Scene();
   scene.background=new THREE.Color(0x05080c);
   scene.fog=new THREE.Fog(0x05080c, 22, 48);
-  camera=new THREE.PerspectiveCamera(52, 1, 0.1, 200);
-  camera.position.set(0, 3.5, STRIKER_Z+4.3);
-  camera.lookAt(0, 1.45, 0);
+  camera=new THREE.PerspectiveCamera(47, 1, 0.1, 200);
+  camera.position.set(0, 3.4, STRIKER_Z+3.6);
+  camera.lookAt(0, 1.7, 0);
 
   // lights — floodlit night
   scene.add(new THREE.HemisphereLight(0xbfd8ff, 0x1b3a22, 0.85));
@@ -805,7 +804,7 @@ function render3d(dt){
     strikerObj.rotation.z=rock;
   }
   // camera sway + goal flash
-  camera.position.x=Math.sin(spin*0.25)*0.5; camera.lookAt(0,1.45,0);
+  camera.position.x=Math.sin(spin*0.25)*0.5; camera.lookAt(0,1.7,0);
   flashLight.intensity=goalFlash*9;
   if(netMat) netMat.opacity=0.16+netFlash*0.4;
   renderer.render(scene,camera);
@@ -813,6 +812,12 @@ function render3d(dt){
 
 function drawFX(){
   fxctx.clearRect(0,0,W,Hh);
+  // goal celebration — gold flash radiating across the frame
+  if(goalFlash>0){
+    const g=fxctx.createRadialGradient(W/2,Hh*0.42,0,W/2,Hh*0.42,Math.max(W,Hh)*0.7);
+    g.addColorStop(0,'rgba(255,225,120,'+(goalFlash*0.45)+')'); g.addColorStop(1,'rgba(255,160,30,0)');
+    fxctx.fillStyle=g; fxctx.fillRect(0,0,W,Hh);
+  }
   // particles
   for(const p of particles){ fxctx.globalAlpha=Math.max(0,p.life); fxctx.fillStyle=p.c; fxctx.fillRect(p.x,p.y,p.sz,p.sz); }
   fxctx.globalAlpha=1;
@@ -821,11 +826,11 @@ function drawFX(){
   for(const f of floaters){ fxctx.globalAlpha=Math.max(0,Math.min(1,f.life)); fxctx.fillStyle=f.c; fxctx.font=`800 ${f.sz}px 'Baloo 2'`;
     fxctx.lineWidth=3; fxctx.strokeStyle='rgba(0,0,0,.55)'; fxctx.strokeText(f.txt,f.x,f.y); fxctx.fillText(f.txt,f.x,f.y); }
   fxctx.globalAlpha=1;
-  // stage HP bar — spans the crossbar, just above the goal
+  // stage HP bar — floats above the crossbar
   if(targets.length){
     let cur=0, max=0, flash=0, burning=false;
     for(const t of targets){ max+=t.maxHp; if(!t.broken){ cur+=Math.max(0,t.hp); if(t.flash>0)flash=1; if(t.burnT>0)burning=true; } }
-    const L=project(-GW/2, GH+0.3, 0), R=project(GW/2, GH+0.3, 0);
+    const L=project(-GW/2, GH+1.0, 0), R=project(GW/2, GH+1.0, 0);
     const x0=Math.min(L.x,R.x), w=Math.abs(R.x-L.x), y0=(L.y+R.y)/2, h=20, fr=max>0?Math.max(0,cur/max):0;
     fxctx.fillStyle='rgba(6,30,16,.92)'; fxctx.fillRect(x0,y0,w,h);
     fxctx.fillStyle=flash?'#ffffff':(burning?'#ff7a1a':'#ffcf3a'); fxctx.fillRect(x0+1.5,y0+1.5,Math.max(0,(w-3)*fr),h-3);
