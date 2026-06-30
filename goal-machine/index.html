@@ -188,6 +188,7 @@
   .mnode .mcost{font-size:11px;font-weight:700;margin-top:3px;color:#cbb0ff;}
   .mnode.afford{border-color:#a06bff;background:#241a3a;}
   .mnode.locked{opacity:.45;filter:grayscale(.5);cursor:default;border-style:dashed;}
+  .mnode.maxed{opacity:.6;cursor:default;border-color:var(--gold-d);}
   /* Mastered badge */
   .chip.mastered{background:rgba(58,44,8,.85);border-color:var(--gold-d);color:#ffe9a8;}
 
@@ -296,7 +297,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { fmt, ATTR, AMAP, GROUPS, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed,
   QUESTS, LIFESTYLE, LMAP, MASTERY_LV, MASTERY_LEGACY,
-  SAVE_BASE, SAVE_PER_ACC, SAVE_MIN, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
+  SAVE_BASE, ACC_BASE, ACC_PER, ACC_MAX, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
   TGT_BASE, REWARD_C, stageScale } from './economy.js';
 // ======================= Goal Machine =======================
 // Pure economy/config (data tables, tuning constants, side-effect-free helpers) lives in economy.js.
@@ -315,13 +316,15 @@ function skUnlocked(id){ return !!(S.skills&&S.skills[id]&&S.skills[id].un); }
 // skill → stat curves
 function skillDmg(){ return 5*Math.pow(1.14, sl('str')); }
 function skillRate(){ return 1.0*Math.pow(1.055, sl('dex')); }
-// keeper save chance — Accuracy (placement) lowers it; a shot is only ever saved or a goal
-function keeperSaveChance(){ return Math.max(SAVE_MIN, SAVE_BASE - SAVE_PER_ACC*sl('acc')); }
+// Accuracy = on-target placement: a wide shot misses the goal entirely (your skill, not the keeper)
+function skillAcc(){ return Math.min(ACC_MAX, ACC_BASE + ACC_PER*sl('acc')); }
+// keeper save chance — independent of Accuracy; lower early, cut further by Spectral/Frost magic
+function keeperSaveChance(){ return SAVE_BASE; }
 function vitMult(){ return Math.pow(1.12, sl('vit')); }
 function conMult(){ return Math.pow(1.12, sl('con')); }
 function magMult(){ return Math.pow(1.10, sl('mag')); }
-function skillBonusText(id){ const v={str:skillDmg,dex:skillRate,acc:()=>1-keeperSaveChance(),vit:vitMult,con:conMult,mag:magMult}[id]();
-  return id==='str'?fmt(v)+' dmg':id==='dex'?v.toFixed(2)+'/s':id==='acc'?(v*100).toFixed(0)+'% past keeper':
+function skillBonusText(id){ const v={str:skillDmg,dex:skillRate,acc:skillAcc,vit:vitMult,con:conMult,mag:magMult}[id]();
+  return id==='str'?fmt(v)+' dmg':id==='dex'?v.toFixed(2)+'/s':id==='acc'?(v*100).toFixed(0)+'% on target':
     id==='vit'?'×'+v.toFixed(2)+' gold':id==='con'?'×'+v.toFixed(2)+' XP':'×'+v.toFixed(2)+' magic'; }
 // breaking a target funnels XP into the focused skill (×Concentration); level up on the way
 function grantXP(amt){
@@ -358,7 +361,7 @@ function upgradeQuest(id){
 // ---- State ----
 let S = newState();
 function newState(){
-  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, legacy:0, bestStage:1, assets:{}, tier:0, mastered:false, lastSeen:Date.now()};
+  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, legacy:0, bestStage:1, assets:{}, shopSeen:{}, tier:0, mastered:false, lastSeen:Date.now()};
 }
 // ---- Mastery: a definitive GDD-style milestone that coexists with prestige (one-time reward, permanent badge) ----
 function checkMastery(){
@@ -400,8 +403,8 @@ function rewardMult(){ return attr('cashG')*vitMult()*prestigeMult()*lifeMult('c
 // gold for destroying a target — scales with its HP, so a stronger shot has visible value
 function targetReward(maxHP){ return REWARD_C*maxHP*rewardMult(); }
 function ballsPerSec(){return skillRate()*attr('multi');}
-// share of fired balls that land on a target (Accuracy skill; Spectral + Frost cut keeper saves)
-function hitFrac(){ const effSave=keeperSaveChance()*(1-attr('curve'))*(1-Math.min(0.9,attr('frost'))); return 1-effSave; }
+// share of shots that score: on-target (Accuracy) AND not saved (keeper save cut by Spectral/Frost)
+function hitFrac(){ const eff=keeperSaveChance()*(1-attr('curve'))*(1-Math.min(0.9,attr('frost'))); return skillAcc()*(1-eff); }
 // average damage per ball that lands (for DPS readout + offline estimate)
 function avgBallDmg(){
   const base = skillDmg()*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
@@ -449,7 +452,7 @@ const GW=7.32, GH=3.3;          // goal mouth width / height
 const NET_DEPTH=1.7;
 const STRIKER_Z=9.5, KEEPER_Z=0.4, GROUND_Y=0;
 const BALL_R=0.17;
-const MAX_BALLS=140, VOLLEY_CAP=12, MAX_VPS=18;   // swarm caps (visuals only)
+const MAX_BALLS=140, MAX_VPS=18;   // hard ball cap + minimum dive interval
 const AXIS=new THREE.Vector3(1,0.7,0.35).normalize();
 
 let renderer, scene, camera, ballMesh, ballGeo, ballMat, keeperObj, strikerObj, flashLight, netMat;
@@ -516,22 +519,24 @@ function aimLoY(){ return 0.55; }
 function aimHiY(){ return 0.55+(GH-1.15); }
 function randAim(){ return {x:(Math.random()*2-1)*aimHalfW(), y:aimLoY()+Math.random()*(aimHiY()-aimLoY())}; }
 function spawnVolley(shotRep, gx, gy){
-  const multi=attr('multi'), C=Math.min(multi,VOLLEY_CAP);
-  const sf=(shotRep*multi)/C;     // each rendered ball carries the damage of the shots it represents
+  const multi=attr('multi'), sf=shotRep*multi;   // ONE charged ball carries the whole shot's damage (no silly swarm)
   // keeper commits a dive the moment the shot leaves: toward it if it'll be saved, a random way otherwise
   const willSave = keeperFreeze<=0 && Math.random()<keeperSaveChance();
   keeperDive(gx, willSave);
-  for(let i=0;i<C;i++){ if(pending.length<MAX_BALLS) pending.push({sf, gx, gy, willSave}); }   // queued, fired one-by-one
+  if(pending.length<MAX_BALLS) pending.push({sf, gx, gy, willSave, power:multi});
 }
 // manual shot: a click at goal point (gx,gy) — blocked until the keeper finishes its dive
 function fireVolley(gx,gy){ if(keeperBusy>0 || !aliveTargets().length) return; spawnVolley(1, gx, gy); kickAnim=1; }
-function spawnBall(special, sf=1, gx=0, gy=1.5, willSave=false){
+function spawnBall(special, sf=1, gx=0, gy=1.5, willSave=false, power=1){
   if(balls.length>=MAX_BALLS) return;
   const live=aliveTargets();
   if(!live.length) return;
   // the shot flies to the aimed goal spot; it still damages one of the goal's HP chunks
   const t=live[Math.floor(Math.random()*live.length)];
-  // every shot is on frame — it either beats the keeper (goal) or gets saved; no wide misses
+  // Accuracy = placement: a non-special shot that's off-target sails WIDE of the goal (a real miss, your skill)
+  const onTarget = special || Math.random()<skillAcc();
+  let tx=gx, ty=gy, wide=false;
+  if(!onTarget){ wide=true; tx=gx+(Math.random()<.5?-1:1)*(0.9+Math.random()*1.1); ty=gy+(Math.random()*0.5-0.15); }
   // roll the damage now (Strength skill is the base; cash upgrades multiply it)
   let dmg = skillDmg()*attr('hype')*attr('speed')*attr('stagger')*prestigeMult()*lifeMult('dmg');
   dmg *= 1+Math.min(attr('combo'), combo*0.02);
@@ -553,16 +558,17 @@ function spawnBall(special, sf=1, gx=0, gy=1.5, willSave=false){
   const frost  = !special && Math.random()<attr('frost');
   // 3D trajectory from the striker's boot to the landing point
   const p0={x:(Math.random()*0.5-0.25), y:0.35, z:STRIKER_Z-0.7};
-  const p1={x:gx, y:gy, z:0.05};
+  const p1={x:tx, y:ty, z:0.05};
   const c ={x:(p0.x+p1.x)/2, y:Math.max(p0.y,p1.y)+1.4, z:(p0.z+p1.z)/2};
   const dist=Math.hypot(p1.x-p0.x,p1.y-p0.y,p1.z-p0.z)||1;
   const sp=11+attr('speed')*0.5+(special?5:0);          // world units / sec
-  balls.push({p0, c, p1, t:0, spd:sp/dist, tgt:targets.indexOf(t), sf, willSave,
+  balls.push({p0, c, p1, t:0, spd:sp/dist, tgt:targets.indexOf(t), sf, willSave, wide, power,
               dmg, crit, big, golden, special, fire, curve, cannon, frost, mana, portal, seed:Math.random()*7});
 }
 
 function resolveBall(b){
   const p=b.p1;
+  if(b.wide){ floater(p.x,p.y,p.z,'WIDE','#bcd3c4',13); puff(p,'#cfe0d4'); combo=0; return; }
   const t=targets[b.tgt];
   if(!t || t.broken){ puff(p,'#ffffff'); return; }
   if(b.frost){ keeperFreeze=FROST_TIME; floater(p.x,p.y+0.35,p.z,'FROZEN','#aef',14); }
@@ -578,7 +584,7 @@ function resolveBall(b){
   t.hp-=b.dmg; t.flash=1; combo++;
   S.cash += cashPerHit() * (b.golden?10:1) * b.sf;
   netFlash=Math.max(netFlash,0.5);                                        // per-goal ripple through the net
-  for(let i=0;i<(b.big?8:4);i++) impact(p, b.fire?'#ff7a1a':b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
+  for(let i=0;i<Math.min(22,(b.big?8:4)+Math.floor(b.power||1));i++) impact(p, b.fire?'#ff7a1a':b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
   // every shot that beats the keeper is a goal — celebrate it and show the damage dealt
   const goalLabel=b.special?'FREE KICK ':b.big?'POWER ':b.crit?'CRIT ':'GOAL ';
   const goalCol  =b.special?'#a685ff':(b.big||b.crit)?'#ff9a3a':'#ffcf3a';
@@ -652,7 +658,7 @@ function update(dt){
       if(releaseTimer<gap) break;
       releaseTimer-=gap;
       const it=pending.shift();
-      if(balls.length<MAX_BALLS){ spawnBall(false, it.sf, it.gx, it.gy, it.willSave); kickAnim=1; }
+      if(balls.length<MAX_BALLS){ spawnBall(false, it.sf, it.gx, it.gy, it.willSave, it.power); kickAnim=1; }
     }
   } else releaseTimer=0;
   // keeper: holds the dive it committed when the shot was fired, then recovers to centre (frozen keeper holds still)
@@ -781,7 +787,7 @@ function render3d(dt){
   if(ballMesh){
     const n=Math.min(balls.length, MAX_BALLS);
     for(let i=0;i<n;i++){ const b=balls[i], pos=ballPos(b);
-      const sc=(b.special?1.7:b.big?1.3:1)*(b.golden?1.15:1);
+      const sc=(b.special?1.7:b.big?1.3:1)*(b.golden?1.15:1)*(1+Math.min(1.2,((b.power||1)-1)*0.14));
       _q.setFromAxisAngle(AXIS, spin*7+b.seed); _s.setScalar(sc); _p.set(pos.x,pos.y,pos.z);
       _m.compose(_p,_q,_s); ballMesh.setMatrixAt(i,_m);
       _col.setHex(b.portal?0xc060ff:b.mana?0x4aa0ff:b.frost?0x8fd8ff:b.fire?0xff7a1a:b.cannon?0x7a4636:b.curve?0xb79bff:b.special?0xb79bff:b.golden?0xffd84a:b.crit?0xffcaa0:0xffffff); ballMesh.setColorAt(i,_col);
@@ -860,7 +866,7 @@ let buyMode=1;     // 1 or 'max'
 let tab='train';   // 'train' or 'life'
 const upsEl=document.getElementById('ups');
 const els={}, lifeEls={};
-let trainWrap, shopWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl, magicTreeEl;
+let trainWrap, shopWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl, magicTreeEl, shopHdrs={};
 // Magic skill tree (top→bottom tiers). Each node maps to a magic ATTR; `req` is the parent that must be owned (Lv≥1) first.
 const MAGIC_TREE = [
   [{id:'mana', req:null}],
@@ -886,8 +892,10 @@ function buildUps(){
   upsEl.appendChild(trainWrap);
   // ── Shop: gold equipment, grouped by category ──
   shopWrap=document.createElement('div');shopWrap.style.display='none';
+  shopHdrs={};
   GROUPS.forEach(([cat,label])=>{
     const h=document.createElement('div');h.className='grouphdr';h.textContent=label;shopWrap.appendChild(h);
+    shopHdrs[cat]=h;
     ATTR.filter(a=>a.cat===cat).forEach(a=>shopWrap.appendChild(upRow(a,'c')));
   });
   upsEl.appendChild(shopWrap);
@@ -957,15 +965,15 @@ function renderMagicTree(){
   magicTreeEl.innerHTML = MAGIC_TREE.map((tier,ti)=>{
     const conn = ti>0 ? '<div class="mconn"></div>' : '';
     const nodes = tier.map(node=>{
-      const a=AMAP[node.id], l=lv(node.id), open=magicUnlocked(node);
-      const cost=a.cost(l), afford=open&&(S.mp||0)>=cost;
-      const cls = !open?'locked':(afford?'afford':'');
+      const a=AMAP[node.id], l=lv(node.id), open=magicUnlocked(node), maxed=open&&isMaxed(a);
+      const cost=a.cost(l), afford=open&&!maxed&&(S.mp||0)>=cost;
+      const cls = !open?'locked':(maxed?'maxed':(afford?'afford':''));
       const eff = open ? (l<1 ? 'Unlock → '+a.show(a.val(1)) : a.show(a.val(l))) : '🔒 needs '+AMAP[node.req].nm;
-      return `<button class="mnode ${cls}" data-mid="${node.id}"${open?'':' disabled'}>
+      return `<button class="mnode ${cls}" data-mid="${node.id}"${(open&&!maxed)?'':' disabled'}>
         <div class="ic">${a.ic}</div><div class="nm">${a.nm}</div>
         <div class="lv">${l>0?('Lv '+l):'—'}</div>
         <div class="meff">${eff}</div>
-        <div class="mcost">${open?('🪄 '+fmt(cost)):''}</div></button>`;
+        <div class="mcost">${maxed?'MAX':(open?('🪄 '+fmt(cost)):'')}</div></button>`;
     }).join('');
     return conn+`<div class="mtier">${nodes}</div>`;
   }).join('');
@@ -1016,17 +1024,28 @@ function renderQuests(){
 }
 function buyCost(id,n){let c=0,l=lv(id);for(let i=0;i<n;i++)c+=AMAP[id].cost(l+i);return c;}
 function maxAffordable(id){let l=lv(id),c=0,n=0,cash=S.cash;while(n<9999){const nc=AMAP[id].cost(l+n);if(c+nc>cash)break;c+=nc;n++;}return n;}
+// an upgrade is maxed when its next level costs ∞ or its value can't increase any further
+function isMaxed(a){ const l=lv(a.id); return !isFinite(a.cost(l)) || a.val(l+1)<=a.val(l); }
+// drip-feed: an upgrade appears once you're ~70% of the way to affording it, then stays revealed
+const SHOP_REVEAL_FRAC=0.7;
+function shopRevealed(a){
+  if(lv(a.id)>0 || (S.shopSeen&&S.shopSeen[a.id])) return true;
+  if(S.cash >= a.cost(0)*SHOP_REVEAL_FRAC){ (S.shopSeen=S.shopSeen||{})[a.id]=true; return true; }
+  return false;
+}
 function buy(id){
   const a=AMAP[id];
   if(a.cur==='mp'){                                          // magic infusion (×1, paid in Magic Points)
     const node=MAGIC_TREE.flat().find(x=>x.id===id);          // tree gating: parent node must be owned first
     if(node && !magicUnlocked(node)) return;
+    if(isMaxed(a)) return;                                     // capped — no effect, don't spend
     const c=a.cost(lv(id));
     if(!isFinite(c) || (S.mp||0)<c) return;
     S.mp-=c; S.magicLv[id]=(S.magicLv[id]||0)+1;
     if(typeof window.trackEvent==='function') window.trackEvent('magic',{attr:id,level:S.magicLv[id]});
     renderMagicTree(); refreshHUD(); save(); return;
   }
+  if(isMaxed(a)) return;                                     // capped — stop selling levels with no effect
   const n = buyMode==='max'? Math.max(1,maxAffordable(id)) : 1;
   const cost=buyCost(id,n);
   if(buyMode==='max' && maxAffordable(id)<1) return;
@@ -1049,6 +1068,18 @@ function refreshUps(){
       d.querySelector('[data-lbl]').textContent=(l<1?'UNLOCK':'UPGRADE');
       return;
     }
+    // drip-feed: hide upgrades until you're close to affording them (revealed one-by-one as cash grows)
+    if(!shopRevealed(a)){ d.style.display='none'; return; }
+    d.style.display='';
+    if(isMaxed(a)){ d.classList.add('maxed'); d.classList.remove('afford');
+      d.querySelector('[data-lvl]').textContent=l;
+      d.querySelector('[data-eff]').textContent=a.desc+': '+a.show(a.val(l));
+      d.querySelector('[data-nx]').textContent='';
+      d.querySelector('[data-cost]').textContent='MAX';
+      d.querySelector('[data-lbl]').textContent='MAXED';
+      return;
+    }
+    d.classList.remove('maxed');
     const n = buyMode==='max'? Math.max(1,maxAffordable(a.id)) : 1;
     const cost=buyMode==='max'? buyCost(a.id, Math.max(1,maxAffordable(a.id))) : a.cost(l);
     const afford = buyMode==='max' ? maxAffordable(a.id)>=1 : S.cash>=cost;
@@ -1059,6 +1090,8 @@ function refreshUps(){
     d.querySelector('[data-cost]').textContent=fmt(cost);
     d.querySelector('[data-lbl]').textContent= buyMode==='max'? ('BUY ×'+Math.max(1,maxAffordable(a.id))) : 'UPGRADE';
   });
+  // category headers follow their items — hidden until at least one item in the group is revealed
+  GROUPS.forEach(([cat])=>{ if(shopHdrs[cat]) shopHdrs[cat].style.display = ATTR.some(a=>a.cat===cat&&a.cur!=='mp'&&shopRevealed(a))?'':'none'; });
 }
 function buyAsset(id){
   if(S.assets&&S.assets[id]) return;
