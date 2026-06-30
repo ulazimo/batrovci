@@ -104,9 +104,14 @@
             box-shadow:0 1px 3px rgba(0,0,0,.6);}
         .card .pwr.buffed{background:var(--green); color:#03130c; box-shadow:0 0 9px rgba(57,217,138,.7);}
         .card .pwr.nerfed{background:var(--red); color:#fff; box-shadow:0 0 9px rgba(255,77,109,.7);}
+        .card .pos{position:absolute; bottom:3px; left:3px; z-index:2; font-family:'Orbitron'; font-weight:700;
+            font-size:clamp(5.5px,.92vw,7.5px); letter-spacing:.04em; padding:1px 4px; border-radius:4px;
+            background:rgba(57,217,138,.92); color:#03130c; box-shadow:0 1px 2px rgba(0,0,0,.5);}
         .card .info{flex:1; min-height:0; display:flex; flex-direction:column; padding:1px 4px 5px;}
         .card .nm{font-size:clamp(8px,1.1vw,11px); font-weight:700; color:#eaf1f9; text-align:center; line-height:1.04;
             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+        .card .arch{font-size:clamp(6px,.82vw,8px); color:var(--muted); text-align:center; line-height:1;
+            margin-top:1px; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
         .card .abil{margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:2px; padding-top:3px;}
         .card .kind{font-family:'Orbitron'; font-weight:700; font-size:clamp(5.5px,.78vw,7.5px);
             letter-spacing:.05em; text-transform:uppercase; padding:1px 4px; border-radius:4px;}
@@ -127,6 +132,7 @@
         .card.lg .photo{height:clamp(58px,11.5vw,88px);}
         .card.lg .info{padding:2px 6px 7px;}
         .card.lg .nm{font-size:clamp(10px,2.4vw,12.5px);}
+        .card.lg .arch{font-size:clamp(7px,1.7vw,9px);}
         .card.lg .atxt{-webkit-line-clamp:4; font-size:clamp(8px,2vw,10px);}
         .card.lg .kind{font-size:clamp(7px,1.7vw,8.5px);}
 
@@ -178,6 +184,7 @@
         <ul class="howto">
             <li>Each turn you get <b>energy = turn number</b>. Play cards face-down into <b>Defense</b>, <b>Midfield</b> or <b>Attack</b>.</li>
             <li>Cards reveal <b>simultaneously</b> — so does the AI's. Highest total <b>power</b> wins a zone.</li>
+            <li>Field a card in its <b>natural zone</b> — defenders in Defense, mids in Midfield, forwards in Attack — for <b>+2 power</b>.</li>
             <li><b>Win 2 of 3 zones</b> after turn 6 to win the match. Zone conditions reveal on turns 1–3.</li>
             <li>Players have abilities tied to football — captains, pressing wingers, the late <b>super-sub</b>.</li>
         </ul>
@@ -224,30 +231,32 @@
 const ZONE_NAMES = ['Defense','Midfield','Attack'];
 const MAX_TURNS = 6, ZONE_CAP = 4;
 const FORWARDS = new Set(['winger','target','poacher','supersub']);
+const NATURAL_ZONE = {gk:0, def:0, mid:1, fwd:2};   // each line's home zone (Def/Mid/Att)
+const POS_BONUS = 2;                                // bonus for fielding a card in its natural zone
 
 // ---- Card templates (the 11-card squad) ----
 const SQUAD = [
-    {key:'keeper',  name:'Veteran Keeper',   role:'🧤', line:'gk',  cost:5, power:9, kind:'none',    abil:'A pure wall — no special ability.'},
-    {key:'sweeper', name:'Sweeper',          role:'🛡️', line:'def', cost:2, power:2, kind:'ongoing', abil:'+3 power while in the Defense zone.'},
-    {key:'fullback',name:'Overlapping Back', role:'🏃', line:'def', cost:2, power:2, kind:'reveal',  abil:'+3 power to one of your cards in an adjacent zone.'},
-    {key:'ballwin', name:'Ball-Winner',      role:'⚔️', line:'mid', cost:3, power:3, kind:'reveal',  abil:"−3 power to the enemy's weakest card here."},
-    {key:'captain', name:'Captain',          role:'🎖️', line:'mid', cost:3, power:3, kind:'ongoing', abil:'+2 power to your other cards in this zone.'},
-    {key:'playmkr', name:'Playmaker #10',    role:'🎩', line:'mid', cost:4, power:4, kind:'reveal',  abil:'+2 power to a card in each other zone.'},
-    {key:'wonder',  name:'Wonderkid',        role:'⭐', line:'mid', cost:1, power:1, kind:'ongoing', abil:'+2 power for every turn it stays on the pitch.'},
-    {key:'winger',  name:'Pressing Winger',  role:'⚡', line:'fwd', cost:2, power:3, kind:'ongoing', abil:'+4 power while in the Attack zone.'},
-    {key:'target',  name:'Target Man',       role:'🎯', line:'fwd', cost:4, power:4, kind:'reveal',  abil:'+2 power per other forward in this zone.'},
-    {key:'poacher', name:'Poacher',          role:'🦊', line:'fwd', cost:2, power:2, kind:'reveal',  abil:'+4 power if you are losing this zone.'},
-    {key:'supersub',name:'Super-Sub',        role:'🔥', line:'fwd', cost:3, power:3, kind:'reveal',  abil:'+6 power if played on turn 5 or 6.'},
+    {key:'keeper',  name:'Lev Yashin',          arch:'Veteran Keeper',   role:'🧤', line:'gk',  cost:5, power:9, kind:'none',    abil:'A pure wall — no special ability.'},
+    {key:'sweeper', name:'Franz Beckenbauer',   arch:'Sweeper',          role:'🛡️', line:'def', cost:2, power:2, kind:'ongoing', abil:'+3 power while in the Defense zone.'},
+    {key:'fullback',name:'Cafu',                arch:'Overlapping Back', role:'🏃', line:'def', cost:2, power:2, kind:'reveal',  abil:'+3 power to one of your cards in an adjacent zone.'},
+    {key:'ballwin', name:'Claude Makélélé',     arch:'Ball-Winner',      role:'⚔️', line:'mid', cost:3, power:3, kind:'reveal',  abil:"−3 power to the enemy's weakest card here."},
+    {key:'captain', name:'Steven Gerrard',      arch:'Captain',          role:'🎖️', line:'mid', cost:3, power:3, kind:'ongoing', abil:'+2 power to your other cards in this zone.'},
+    {key:'playmkr', name:'Zinedine Zidane',     arch:'Playmaker #10',    role:'🎩', line:'mid', cost:4, power:4, kind:'reveal',  abil:'+2 power to a card in each other zone.'},
+    {key:'wonder',  name:'Andrés Iniesta',      arch:'Wonderkid',        role:'⭐', line:'mid', cost:1, power:1, kind:'ongoing', abil:'+2 power for every turn it stays on the pitch.'},
+    {key:'winger',  name:'Cristiano Ronaldo',   arch:'Pressing Winger',  role:'⚡', line:'fwd', cost:2, power:3, kind:'ongoing', abil:'+4 power while in the Attack zone.'},
+    {key:'target',  name:'Zlatan Ibrahimović',  arch:'Target Man',       role:'🎯', line:'fwd', cost:4, power:4, kind:'reveal',  abil:'+2 power per other forward in this zone.'},
+    {key:'poacher', name:'Gerd Müller',         arch:'Poacher',          role:'🦊', line:'fwd', cost:2, power:2, kind:'reveal',  abil:'+4 power if you are losing this zone.'},
+    {key:'supersub',name:'Ole Gunnar Solskjær', arch:'Super-Sub',        role:'🔥', line:'fwd', cost:3, power:3, kind:'reveal',  abil:'+6 power if played on turn 5 or 6.'},
 ];
 const KIND = {reveal:{label:'On Reveal', cls:'k-rev'}, ongoing:{label:'Ongoing', cls:'k-ong'}, none:null};
 
 // ---- Zone conditions (per-card flat modifiers) ----
 const CONDITIONS = [
-    {name:'Home Advantage', desc:'+2 to all players here',           mod:()=>2},
-    {name:'Hostile Crowd',  desc:'-2 to all players here',           mod:()=>-2},
-    {name:'Wing Overload',  desc:'+3 each if you hold 3+ here',      mod:(c,side,z)=> zones[z].cards[side].length>=3 ? 3:0},
-    {name:'Open Space',     desc:'+3 if you have exactly 1 here',    mod:(c,side,z)=> zones[z].cards[side].length===1 ? 3:0},
-    {name:'End to End',     desc:'+2 to forwards here',              mod:(c)=> FORWARDS.has(c.key) ? 2:0},
+    {name:'Anfield Roar',         desc:'+2 to all players here',          mod:()=>2},
+    {name:'La Bombonera (Away)',  desc:'-2 to all players here',          mod:()=>-2},
+    {name:'Wembley (Wide Pitch)', desc:'+3 each if you hold 3+ here',     mod:(c,side,z)=> zones[z].cards[side].length>=3 ? 3:0},
+    {name:'Maracanã (Open Space)',desc:'+3 if you have exactly 1 here',   mod:(c,side,z)=> zones[z].cards[side].length===1 ? 3:0},
+    {name:'Bernabéu Counter',     desc:'+2 to forwards here',             mod:(c)=> FORWARDS.has(c.key) ? 2:0},
 ];
 
 // ---- State ----
@@ -287,6 +296,7 @@ function eff(card){
     let p = card.power + (card.bonus||0);
     const z = card.zoneIdx, side = card.side;
     if(z===undefined) return p;   // still in hand — base power only
+    if(NATURAL_ZONE[card.line]===z) p += POS_BONUS;   // in-position: defender in Defense, etc.
     if(card.key==='sweeper' && z===0) p += 3;
     if(card.key==='winger'  && z===2) p += 4;
     if(card.key==='wonder')  p += 2 * Math.max(0, turn - card.placedTurn);
@@ -365,6 +375,7 @@ function aiTurn(){
 }
 function aiScore(c,z,energy){
     let v = c.power;
+    if(NATURAL_ZONE[c.line]===z) v+=POS_BONUS;
     if(c.key==='winger' && z===2) v+=4;
     if(c.key==='sweeper' && z===0) v+=3;
     if(c.key==='supersub' && turn>=5) v+=6;
@@ -466,19 +477,22 @@ function cardHTML(c, opts){
     if(opts.faceDown) return `<div class="card back"></div>`;
     const p = eff(c), base = c.power;
     const pcls = p>base?' buffed':p<base?' nerfed':'';
+    const inPos = c.zoneIdx!==undefined && NATURAL_ZONE[c.line]===c.zoneIdx;
     const k = KIND[c.kind];
     let cls = 'card '+c.line;
     if(opts.lg) cls += ' lg';
     if(opts.sel) cls += ' sel';
     if(opts.recallable) cls += ' recallable';
     if(opts.played) cls += ' reveal-pop';
-    const tip = `${c.name} — Cost ${c.cost}, Power ${c.power}\n${k?k.label+': ':''}${c.abil}`;
+    const tip = `${c.name} · ${c.arch} — Cost ${c.cost}, Power ${c.power}\n${k?k.label+': ':''}${c.abil}`;
     return `<div class="${cls}" ${opts.click||''} title="${tip}">
         <div class="photo" style="background-image:url('art/${c.key}.jpg')">
             <span class="cost">${c.cost}</span><span class="pwr${pcls}">${p}</span>
+            ${inPos?'<span class="pos">✓ POS</span>':''}
         </div>
         <div class="info">
             <div class="nm">${c.name}</div>
+            <div class="arch">${c.arch}</div>
             <div class="abil">${k?`<span class="kind ${k.cls}">${k.label}</span>`:''}<span class="atxt">${c.abil}</span></div>
         </div>
     </div>`;
