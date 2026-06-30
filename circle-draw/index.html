@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circle Draw — World Cup 2026 Knockout</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{
+    color-scheme:light;
+    --bg:#ece8e2; --bg-flag:#ece8e2; --text:#111; --text-secondary:#444; --text-muted:#666;
+    --border:#ccc; --surface-muted:#ffffff73;
+    --btn-bg:#222; --btn-bg-hover:#333; --btn-text:#fff;
+    --connector-color:#c8c8c8; --dot-color:#111; --trophy-blend:darken;
+    --gold:#d8a531; --eliminated-filter:sepia(1) saturate(.7);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      color-scheme:dark;
+      --bg:#121316; --bg-flag:#121316; --text:#ede8e4; --text-secondary:#b8aea8; --text-muted:#8f8480;
+      --border:#3d3835; --surface-muted:#ffffff0a;
+      --btn-bg:#ede8e4; --btn-bg-hover:#fff; --btn-text:#161412;
+      --connector-color:#4b4d50; --dot-color:#73767a; --trophy-blend:normal;
+      --gold:#e8c25a; --eliminated-filter:saturate(.33);
+    }
+  }
+  html,body{min-height:100svh;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;}
+  body{display:flex;flex-direction:column;height:100svh;}
+
+  /* ── top bar ── */
+  .topbar{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;flex-wrap:wrap;flex-shrink:0;}
+  .back-link{color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:600;opacity:.85;}
+  .back-link:hover{opacity:1;}
+  .title-wrap{flex:1;min-width:160px;}
+  .title{font-size:1.05rem;font-weight:650;letter-spacing:-.01em;line-height:1.15;}
+  .subtitle{font-size:.78rem;color:var(--text-secondary);line-height:1.2;margin-top:1px;}
+  .subtitle a{color:inherit;}
+  .actions{display:flex;gap:.5rem;align-items:center;}
+  .btn{background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:.3rem;
+    padding:.45rem .8rem;font:inherit;font-size:.78rem;font-weight:550;cursor:pointer;line-height:1;}
+  .btn:hover{background:var(--btn-bg-hover);}
+  .hint{font-size:.72rem;color:var(--text-muted);}
+
+  /* ── champion banner ── */
+  #champion-banner{font-size:.82rem;color:var(--text-secondary);min-height:1em;}
+  #champion-banner b{color:var(--gold);}
+
+  /* ── stage ── */
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;padding:.5rem 1rem 1rem;}
+  .circle{position:relative;aspect-ratio:1;width:min(100% - 8px, 100svh - 150px);max-width:780px;
+    --flag-size:48px;--rot:0deg;color:var(--dot-color);cursor:grab;touch-action:none;}
+  .circle.grabbing{cursor:grabbing;}
+
+  /* rotating group */
+  .wheel{position:absolute;inset:0;transform:rotate(var(--rot));will-change:transform;}
+
+  .connector{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+  .connector line,.connector path{stroke:var(--connector-color);stroke-width:.15;fill:none;
+    vector-effect:non-scaling-stroke;}
+
+  .dot{position:absolute;width:6px;height:6px;border-radius:50%;background:currentColor;
+    transform:translate(-50%,-50%);pointer-events:none;z-index:1;transition:opacity .4s;}
+  .dot.filled{opacity:0;}
+
+  /* flags */
+  .flag{position:absolute;width:var(--flag-size);height:var(--flag-size);
+    transform:translate(-50%,-50%) rotate(calc(-1 * var(--rot)));
+    transition:left .55s cubic-bezier(.45,.05,.25,1),top .55s cubic-bezier(.45,.05,.25,1);
+    z-index:3;border-radius:50%;}
+  .flag img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;
+    background:var(--bg-flag);box-shadow:0 0 0 1px var(--surface-muted);
+    transition:filter .4s,opacity .4s;}
+  .flag.clickable{cursor:pointer;}
+  .flag.clickable:hover{z-index:20;}
+  .flag.clickable:hover img{box-shadow:0 0 0 2px var(--gold);}
+  .flag.eliminated img{filter:var(--eliminated-filter);opacity:.42;}
+  .flag.champion{z-index:8;}
+  .flag.champion img{box-shadow:0 0 0 2px var(--gold),0 0 14px 2px color-mix(in srgb,var(--gold) 60%,transparent);}
+
+  /* trophy at dead-center, stays upright */
+  .trophy{position:absolute;top:50%;left:50%;z-index:4;pointer-events:none;
+    transform:translate(-50%,-50%) rotate(calc(-1 * var(--rot)));}
+  .trophy img{width:40px;height:auto;display:block;mix-blend-mode:var(--trophy-blend);}
+  .trophy .t-dark{display:none;}
+  @media (prefers-color-scheme:dark){.trophy .t-light{display:none;}.trophy .t-dark{display:block;}}
+
+  @media (max-width:560px){
+    .title{font-size:.95rem;} .btn{padding:.4rem .65rem;}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="../" class="back-link">← All Games</a>
+    <div class="title-wrap">
+      <div class="title">Circle Draw</div>
+      <div class="subtitle">World Cup 2026 Knockout — <span id="champion-banner">tap a flag to advance it · drag to spin</span></div>
+    </div>
+    <div class="actions">
+      <span class="hint">drag wheel to rotate</span>
+      <button class="btn" id="reset-btn">Reset</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="circle" id="circle">
+      <div class="wheel" id="wheel">
+        <svg class="connector" viewBox="0 0 100 100" aria-hidden="true" id="connector"></svg>
+        <div id="dots"></div>
+        <div id="flags"></div>
+        <div class="trophy">
+          <img class="t-light" src="img/trophy-lm.png" alt="Trophy">
+          <img class="t-dark" src="img/trophy-dm.png" alt="Trophy">
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ───────────────────────── data ─────────────────────────
+// 32 teams in bracket-seed order (adjacent pairs are Round-of-32 matches)
+const TEAMS = [
+  {name:'Brazil',flag:'bra'}, {name:'Japan',flag:'jpn'}, {name:'Côte d’Ivoire',flag:'civ'}, {name:'Norway',flag:'nor'},
+  {name:'Mexico',flag:'mex'}, {name:'Ecuador',flag:'ecu'}, {name:'England',flag:'eng'}, {name:'DR Congo',flag:'cod'},
+  {name:'Argentina',flag:'arg'}, {name:'Cape Verde',flag:'cpv'}, {name:'Australia',flag:'aus'}, {name:'Egypt',flag:'egy'},
+  {name:'Switzerland',flag:'che'}, {name:'Algeria',flag:'dza'}, {name:'Colombia',flag:'col'}, {name:'Ghana',flag:'gha'},
+  {name:'Senegal',flag:'sen'}, {name:'Belgium',flag:'bel'}, {name:'United States',flag:'usa'}, {name:'Bosnia & Herz.',flag:'bih'},
+  {name:'Spain',flag:'esp'}, {name:'Austria',flag:'aut'}, {name:'Portugal',flag:'prt'}, {name:'Croatia',flag:'hrv'},
+  {name:'Netherlands',flag:'nld'}, {name:'Morocco',flag:'mar'}, {name:'Canada',flag:'can'}, {name:'South Africa',flag:'zaf'},
+  {name:'France',flag:'fra'}, {name:'Sweden',flag:'swe'}, {name:'Germany',flag:'deu'}, {name:'Paraguay',flag:'pry'},
+];
+
+// ──────────────────── geometry (from source) ────────────────────
+const RAD   = [50, 40.5, 31, 22, 13.5, 5.5];   // ring radii (% of half-size)
+const COUNT = [32, 32, 16, 8, 4, 2];           // points per ring
+
+// per-ring angular offset so each inner point sits between its two children
+const OFF = (() => {
+  const e = [];
+  for (let t = 0; t < COUNT.length; t++) {
+    const n = COUNT[t], r = 2 * Math.PI / n;
+    if (t === 0) { e.push(r / 2); continue; }
+    const i = COUNT[t - 1], a = e[t - 1], o = 2 * Math.PI / i;
+    e.push(n === i ? a : a + o / 2);
+  }
+  return e;
+})();
+
+const pt = (ring, idx) => {
+  const n = COUNT[ring], r = RAD[ring], o = 2 * Math.PI * idx / n + OFF[ring];
+  return { x: 50 + r * Math.sin(o), y: 50 - r * Math.cos(o) };
+};
+// midpoint of pair `t` along ring (radially aligned with the parent slot)
+const pairMid = (ring, t) => {
+  const n = COUNT[ring], r = RAD[ring], o = (2 * t + 0.5) * (2 * Math.PI / n) + OFF[ring];
+  return { x: 50 + r * Math.sin(o), y: 50 - r * Math.cos(o) };
+};
+const arc = (a, b, r) => `M ${a.x} ${a.y} A ${r} ${r} 0 0 1 ${b.x} ${b.y}`;
+
+// rounds → which ring holds that round's participants
+const ROUNDS = [
+  { ring: 0, n: 32, matches: 16 }, // Round of 32
+  { ring: 2, n: 16, matches: 8  }, // Round of 16
+  { ring: 3, n: 8,  matches: 4  }, // Quarter-finals
+  { ring: 4, n: 4,  matches: 2  }, // Semi-finals
+  { ring: 5, n: 2,  matches: 1  }, // Final
+];
+
+// ──────────────────── build static skeleton ────────────────────
+function buildConnectors() {
+  const out = [];
+  // 1. radial spokes ring0 → ring1 (one per team)
+  for (let p = 0; p < 32; p++) { const a = pt(0, p), b = pt(1, p); out.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`); }
+  // for each round transition: pair-arc on the elbow ring, then a line to the parent slot
+  // elbowRing[r] is the ring whose arcs feed round r+1's slots
+  const steps = [
+    { elbow: 1, pairs: 16, child: 2 },
+    { elbow: 2, pairs: 8,  child: 3 },
+    { elbow: 3, pairs: 4,  child: 4 },
+    { elbow: 4, pairs: 2,  child: 5 },
+  ];
+  for (const s of steps) {
+    for (let t = 0; t < s.pairs; t++) {
+      out.push(`<path d="${arc(pt(s.elbow, 2 * t), pt(s.elbow, 2 * t + 1), RAD[s.elbow])}"/>`);
+      const m = pairMid(s.elbow, t), c = pt(s.child, t);
+      out.push(`<line x1="${m.x}" y1="${m.y}" x2="${c.x}" y2="${c.y}"/>`);
+    }
+  }
+  // final: arc between the two finalists (ring5) + line to the trophy (centre)
+  out.push(`<path d="${arc(pt(5, 0), pt(5, 1), RAD[5])}"/>`);
+  const fm = pairMid(5, 0);
+  out.push(`<line x1="${fm.x}" y1="${fm.y}" x2="50" y2="50"/>`);
+  document.getElementById('connector').innerHTML = out.join('');
+}
+
+function buildDots() {
+  const out = [];
+  for (let ring = 0; ring < COUNT.length; ring++) {
+    for (let i = 0; i < COUNT[ring]; i++) {
+      const p = pt(ring, i);
+      out.push(`<div class="dot" data-ring="${ring}" data-idx="${i}" style="left:${p.x}%;top:${p.y}%"></div>`);
+    }
+  }
+  document.getElementById('dots').innerHTML = out.join('');
+}
+
+// flag elements — one per team, repositioned as the team advances
+const flagEls = [];
+function buildFlags() {
+  const frag = document.createDocumentFragment();
+  TEAMS.forEach((team, i) => {
+    const el = document.createElement('div');
+    el.className = 'flag';
+    el.dataset.team = i;
+    el.title = team.name;
+    el.innerHTML = `<img src="img/flags/${team.flag}.svg" alt="${team.name}" draggable="false">`;
+    flagEls.push(el);
+    frag.appendChild(el);
+  });
+  document.getElementById('flags').appendChild(frag);
+}
+
+// ──────────────────── bracket state ────────────────────
+// winners[r][m] = 0 | 1 (which side of match m won in round r), or null
+let winners = ROUNDS.map(r => new Array(r.matches).fill(null));
+
+// recompute the team occupying every slot of every round from `winners`
+function computeSlots() {
+  const slots = ROUNDS.map(r => new Array(r.n).fill(null));
+  slots[0] = TEAMS.map((_, i) => i);              // R32 fully seeded
+  for (let r = 0; r < ROUNDS.length - 1; r++) {
+    for (let m = 0; m < ROUNDS[r].matches; m++) {
+      const w = winners[r][m];
+      if (w !== null) slots[r + 1][m] = slots[r][2 * m + w];
+    }
+  }
+  let champ = null;
+  const fw = winners[ROUNDS.length - 1][0];
+  if (fw !== null) champ = slots[ROUNDS.length - 1][fw];
+  return { slots, champ };
+}
+
+// the innermost round/slot a team currently occupies
+function teamPosition(slots, teamIdx) {
+  for (let r = ROUNDS.length - 1; r >= 0; r--) {
+    const idx = slots[r].indexOf(teamIdx);
+    if (idx !== -1) return { round: r, slot: idx };
+  }
+  return null;
+}
+
+// clear any downstream picks that depended on the (now changed) winner of (r,m)
+function clearDownstream(r, m) {
+  if (r >= ROUNDS.length - 1) return;
+  const nr = r + 1, nm = Math.floor(m / 2);
+  if (winners[nr][nm] !== null) { winners[nr][nm] = null; clearDownstream(nr, nm); }
+}
+
+function pickWinner(teamIdx) {
+  const { slots } = computeSlots();
+  const pos = teamPosition(slots, teamIdx);
+  if (!pos) return;
+  const { round: r, slot: p } = pos;
+  const m = Math.floor(p / 2), side = p % 2;
+  // both participants of this match must be present
+  if (slots[r][2 * m] === null || slots[r][2 * m + 1] === null) return;
+  if (winners[r][m] === side) return;             // already the winner — no-op
+  if (winners[r][m] !== null) clearDownstream(r, m); // flipping result
+  winners[r][m] = side;
+  render();
+}
+
+// ──────────────────── render ────────────────────
+function render() {
+  const { slots, champ } = computeSlots();
+  const filled = new Set();
+
+  TEAMS.forEach((team, i) => {
+    const el = flagEls[i];
+    const pos = teamPosition(slots, i);
+    let ring, idx, isChampion = false;
+    if (champ === i) { ring = -1; isChampion = true; }
+    else { ring = ROUNDS[pos.round].ring; idx = pos.slot; }
+
+    let x, y;
+    if (isChampion) { x = 50; y = 50; }
+    else { const p = pt(ring, idx); x = p.x; y = p.y; filled.add(ring + ':' + idx); }
+    el.style.left = x + '%';
+    el.style.top = y + '%';
+
+    // eliminated = lost a decided match at its current position
+    const r = pos.round, m = Math.floor(pos.slot / 2), side = pos.slot % 2;
+    const decided = !isChampion && winners[r][m] !== null;
+    const eliminated = decided && winners[r][m] !== side;
+    // clickable = its current match has both teams and isn't the champion
+    const bothPresent = !isChampion && slots[r][2 * m] !== null && slots[r][2 * m + 1] !== null;
+
+    el.classList.toggle('eliminated', eliminated);
+    el.classList.toggle('champion', isChampion);
+    el.classList.toggle('clickable', bothPresent);
+  });
+
+  // hide the dot under any slot now occupied by a flag
+  document.querySelectorAll('.dot').forEach(d => {
+    d.classList.toggle('filled', filled.has(d.dataset.ring + ':' + d.dataset.idx));
+  });
+
+  const banner = document.getElementById('champion-banner');
+  if (champ !== null) banner.innerHTML = `Champion: <b>${TEAMS[champ].name}</b> 🏆`;
+  else banner.textContent = 'tap a flag to advance it · drag to spin';
+}
+
+// ──────────────────── rotation (drag to spin + momentum) ────────────────────
+const circle = document.getElementById('circle');
+let rot = 0;                 // current rotation, degrees
+let momentum = null;         // rAF id
+function setRot(v) { rot = v; circle.style.setProperty('--rot', v + 'deg'); }
+
+let drag = null;             // active drag session
+const norm = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+
+circle.addEventListener('pointerdown', e => {
+  if (momentum) { cancelAnimationFrame(momentum); momentum = null; }
+  const rect = circle.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  drag = {
+    cx, cy,
+    lastAng: Math.atan2(e.clientY - cy, e.clientX - cx),
+    startX: e.clientX, startY: e.clientY,
+    moved: false, vel: 0,
+    target: e.target.closest('.flag.clickable'),
+  };
+  circle.setPointerCapture(e.pointerId);
+});
+
+circle.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) > 6) {
+    drag.moved = true;
+    circle.classList.add('grabbing');
+  }
+  if (!drag.moved) return;
+  const ang = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
+  const d = norm(ang - drag.lastAng) * 180 / Math.PI;
+  drag.lastAng = ang;
+  drag.vel = d;               // deg per move (used for momentum)
+  setRot(rot + d);
+});
+
+circle.addEventListener('pointerup', e => {
+  if (!drag) return;
+  circle.classList.remove('grabbing');
+  if (!drag.moved && drag.target) {
+    pickWinner(+drag.target.dataset.team);
+  } else if (drag.moved && Math.abs(drag.vel) > 0.4) {
+    // fling momentum
+    let v = Math.max(-22, Math.min(22, drag.vel));
+    const spin = () => { setRot(rot + v); v *= 0.94; if (Math.abs(v) > 0.05) momentum = requestAnimationFrame(spin); else momentum = null; };
+    momentum = requestAnimationFrame(spin);
+  }
+  drag = null;
+});
+circle.addEventListener('pointercancel', () => { circle.classList.remove('grabbing'); drag = null; });
+
+// ──────────────────── responsive flag sizing ────────────────────
+function sizeFlags() {
+  const w = circle.clientWidth;
+  // keep 32 outer flags from overlapping: spacing ≈ π·w/32
+  const size = Math.max(22, Math.min(50, 0.78 * (Math.PI * w / 32)));
+  circle.style.setProperty('--flag-size', size.toFixed(1) + 'px');
+}
+new ResizeObserver(sizeFlags).observe(circle);
+
+// ──────────────────── init ────────────────────
+document.getElementById('reset-btn').addEventListener('click', () => {
+  winners = ROUNDS.map(r => new Array(r.matches).fill(null));
+  render();
+});
+
+buildConnectors();
+buildDots();
+buildFlags();
+sizeFlags();
+render();
+</script>
+
+<!-- Tracking -->
+<script type="module">
+  import { initTracking } from '../firebase-tracker.js';
+  initTracking('circle-draw');
+</script>
+<script type="module">
+  import { initAnalytics } from '../analytics.js';
+  initAnalytics('circle-draw');
+</script>
+</body>
+</html>
