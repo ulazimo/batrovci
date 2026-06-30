@@ -96,16 +96,15 @@ export function skXpNeed(l){ return 10*Math.pow(1.14,l); }
 
 // ---- Quests: passive GOLD generators that unlock at skill thresholds (run in background) ----
 // Gated by SKILL LEVELS (gates follow the skill-unlock order so each quest is the next milestone).
-// Dual reward: passive gold (questGps) + passive XP into skill `xp`.
-// xpr = passive XP granted to skill `xp` per TARGET BREAK, per quest level (event-driven, not idle/time-based).
+// Gold only — quests do NOT grant XP, so the focused skill is the only one that levels from play.
 export const QUESTS = [
-  {id:'q1', nm:'Local Friendly',   req:['con',4],  xp:'con', xpr:1.2, gold:2},
-  {id:'q2', nm:'Cup Run',          req:['str',8],  xp:'con', xpr:2.1, gold:6},
-  {id:'q3', nm:'Sponsor Tour',     req:['dex',14], xp:'str', xpr:3.6, gold:15},
-  {id:'q4', nm:'League Wages',     req:['acc',20], xp:'dex', xpr:6.0, gold:34},
-  {id:'q5', nm:'Boot Endorsement', req:['vit',28], xp:'acc', xpr:9.6, gold:75},
-  {id:'q6', nm:'Champions Bonus',  req:['str',40], xp:'vit', xpr:15, gold:170},
-  {id:'q7', nm:'Global Icon',      req:['mag',30], xp:'mag', xpr:24, gold:400},
+  {id:'q1', nm:'Local Friendly',   req:['con',4],  gold:2},
+  {id:'q2', nm:'Cup Run',          req:['str',8],  gold:6},
+  {id:'q3', nm:'Sponsor Tour',     req:['dex',14], gold:15},
+  {id:'q4', nm:'League Wages',     req:['acc',20], gold:34},
+  {id:'q5', nm:'Boot Endorsement', req:['vit',28], gold:75},
+  {id:'q6', nm:'Champions Bonus',  req:['str',40], gold:170},
+  {id:'q7', nm:'Global Icon',      req:['mag',30], gold:400},
 ];
 
 // ---- Lifestyle: one-time purchases, permanent bonuses, kept through transfers ----
