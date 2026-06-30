@@ -577,8 +577,12 @@ function resolveBall(b){
   }
   t.hp-=b.dmg; t.flash=1; combo++;
   S.cash += cashPerHit() * (b.golden?10:1) * b.sf;
+  netFlash=Math.max(netFlash,0.5);                                        // per-goal ripple through the net
   for(let i=0;i<(b.big?8:4);i++) impact(p, b.fire?'#ff7a1a':b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
-  if(b.crit||b.big) floater(p.x,p.y+0.3,p.z,(b.special?'FREE KICK ':b.big?'POWER ':'CRIT ')+fmt(b.dmg), b.special?'#a685ff':'#ff9a3a', b.big?16:12);
+  // every shot that beats the keeper is a goal — celebrate it and show the damage dealt
+  const goalLabel=b.special?'FREE KICK ':b.big?'POWER ':b.crit?'CRIT ':'GOAL ';
+  const goalCol  =b.special?'#a685ff':(b.big||b.crit)?'#ff9a3a':'#ffcf3a';
+  floater(p.x,p.y+0.3,p.z, goalLabel+'+'+fmt(b.dmg), goalCol, (b.special||b.big)?16:b.crit?13:12);
   if(b.fire){ t.burn=b.dmg*BURN_MULT/BURN_TIME; t.burnT=BURN_TIME; }       // Fireball: burn DoT
   if(b.cannon){ const sp=b.dmg*CANNON_SPLASH;                              // Cannonball: splash all HP chunks
     for(const o of targets){ if(o!==t && !o.broken){ o.hp-=sp; o.flash=1; if(o.hp<=0) breakTarget(o); } }
