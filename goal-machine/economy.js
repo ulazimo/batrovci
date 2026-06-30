@@ -108,20 +108,45 @@ export const QUESTS = [
 ];
 
 // ---- Lifestyle: one-time purchases, permanent bonuses, kept through transfers ----
+// star: each item also requires that many ★ Stars earned, so they unlock across the run (not all at once)
 export const LIFESTYLE = [
-  {id:'boots', ic:'👟', nm:'Golden Boots',    cost:1.2e3, b:{cash:.05}, blurb:'+5% cash'},
-  {id:'car',   ic:'🏎️', nm:'Sports Car',       cost:5e4,   b:{cash:.10}, blurb:'+10% cash'},
-  {id:'watch', ic:'⌚', nm:'Luxury Watch',     cost:4e5,   b:{dmg:.10},  blurb:'+10% damage'},
-  {id:'house', ic:'🏠', nm:'Mansion',          cost:2e6,   b:{cash:.15}, blurb:'+15% cash'},
-  {id:'yacht', ic:'🛥️', nm:'Yacht',            cost:8e7,   b:{dmg:.15},  blurb:'+15% damage'},
-  {id:'island',ic:'🏝️', nm:'Private Island',   cost:1.5e9, b:{all:.15},  blurb:'+15% everything'},
-  {id:'jet',   ic:'✈️', nm:'Private Jet',       cost:3e10,  b:{all:.20},  blurb:'+20% everything'},
-  {id:'club',  ic:'🏟️', nm:'Buy the Club',     cost:1e12,  b:{all:.30},  blurb:'+30% everything'},
+  {id:'boots', ic:'👟', nm:'Golden Boots',    cost:1.2e3, b:{cash:.05}, blurb:'+5% cash',       star:1},
+  {id:'car',   ic:'🏎️', nm:'Sports Car',       cost:5e4,   b:{cash:.10}, blurb:'+10% cash',      star:2},
+  {id:'watch', ic:'⌚', nm:'Luxury Watch',     cost:4e5,   b:{dmg:.10},  blurb:'+10% damage',    star:3},
+  {id:'house', ic:'🏠', nm:'Mansion',          cost:2e6,   b:{cash:.15}, blurb:'+15% cash',      star:4},
+  {id:'yacht', ic:'🛥️', nm:'Yacht',            cost:8e7,   b:{dmg:.15},  blurb:'+15% damage',    star:5},
+  {id:'island',ic:'🏝️', nm:'Private Island',   cost:1.5e9, b:{all:.15},  blurb:'+15% everything',star:6},
+  {id:'jet',   ic:'✈️', nm:'Private Jet',       cost:3e10,  b:{all:.20},  blurb:'+20% everything',star:7},
+  {id:'club',  ic:'🏟️', nm:'Buy the Club',     cost:1e12,  b:{all:.30},  blurb:'+30% everything',star:8},
 ];
 export const LMAP = {}; LIFESTYLE.forEach(it=>LMAP[it.id]=it);
 
 // ---- Mastery: a definitive GDD-style milestone that coexists with prestige ----
 export const MASTERY_LV = 75, MASTERY_LEGACY = 25;
+
+// ---- Stars: lifetime-earnings milestones — the "chase the next star" goal ladder ----
+// goal = total gross cash ever earned (never resets). Each star = a permanent global bonus + a content gate.
+export const STAR_BONUS = 0.05;   // permanent +5% damage & reward per star
+export const STARS = [
+  {n:1,goal:1e3},  {n:2,goal:1e5},  {n:3,goal:1e7},  {n:4,goal:1e9},
+  {n:5,goal:1e11}, {n:6,goal:1e13}, {n:7,goal:1e15}, {n:8,goal:1e18},
+  {n:9,goal:1e21}, {n:10,goal:1e24},{n:11,goal:1e28},{n:12,goal:1e32},
+];
+export function starsFor(earned){ let s=0; for(const st of STARS) if(earned>=st.goal) s=st.n; return s; }
+export function nextStar(earned){ for(const st of STARS) if(earned<st.goal) return st; return null; }
+
+// ---- Running discipline (Phase B): gold-bought upgrades; tap-to-dash + Auto-Run ----
+export const RUN_REWARD_C = 0.6;
+export const RUN_ATTR = [
+  {id:'rStart',ic:'🟢',nm:'Start Speed', desc:'speed you launch at',     cost:l=>50*Math.pow(1.18,l),  val:l=>2+0.5*l,   show:v=>v.toFixed(1)+' m/s'},
+  {id:'rAccel',ic:'⚡',nm:'Acceleration',desc:'how fast you reach top',   cost:l=>70*Math.pow(1.20,l),  val:l=>3+0.8*l,   show:v=>v.toFixed(1)+' m/s²'},
+  {id:'rMax',  ic:'🚀',nm:'Max Speed',   desc:'top sprint speed',         cost:l=>90*Math.pow(1.22,l),  val:l=>8+1.2*l,   show:v=>v.toFixed(1)+' m/s'},
+  {id:'rLen',  ic:'📏',nm:'Stamina',     desc:'lap length — more reward', cost:l=>110*Math.pow(1.19,l), val:l=>20+4*l,    show:v=>v.toFixed(0)+' m'},
+  {id:'rRew',  ic:'💰',nm:'Reward / Lap',desc:'cash per lap',             cost:l=>60*Math.pow(1.17,l),  val:l=>1+0.5*l,   show:v=>'×'+v.toFixed(1)},
+  {id:'rDash', ic:'💨',nm:'Dash Power',  desc:'tap-dash speed burst',     cost:l=>130*Math.pow(1.21,l), val:l=>1.5+0.2*l, show:v=>'×'+v.toFixed(2)},
+  {id:'rAuto', ic:'🔁',nm:'Auto-Run',    desc:'runs hands-free',          cost:l=>l>=1?Infinity:400,    val:l=>l>0?1:0,   show:v=>v?'active':'tap to run'},
+];
+export const RAMAP={}; RUN_ATTR.forEach(a=>RAMAP[a.id]=a);
 
 // ---- Derived-stat tuning constants ----
 // shot model: a shot can sail WIDE (Accuracy = on-target placement), be SAVED (keeper —

@@ -29,7 +29,7 @@ const ctxStub = new Proxy({}, { get:()=> ()=>{} });
 function el(){ return { style:{}, dataset:{}, classList:{add(){},remove(){},toggle(){},contains(){return false}},
   addEventListener(){}, appendChild(){}, querySelector(){return el();}, querySelectorAll(){return [];}, getContext(){return ctxStub;},
   getBoundingClientRect(){return {width:430,height:320};}, set innerHTML(v){}, set textContent(v){}, width:0,height:0, disabled:false }; }
-const documentStub = { getElementById(){return el();}, createElement(){return el();}, addEventListener(){} };
+const documentStub = { getElementById(){return el();}, createElement(){return el();}, querySelector(){return el();}, querySelectorAll(){return [];}, addEventListener(){} };
 const windowStub = { addEventListener(){}, devicePixelRatio:1 };
 
 let API;

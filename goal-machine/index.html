@@ -85,6 +85,10 @@
     background:rgba(6,40,22,.7);border:1px solid #2a6b40;border-radius:12px;padding:3px 12px;
     font-size:12px;font-weight:700;color:#dfffe9;pointer-events:none;}
   .dps-tag b{color:var(--orange-l);}
+  /* ── Discipline switcher (overlaid top of scene) ── */
+  .discsw{position:absolute;left:50%;top:calc(56px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:7;display:flex;gap:6px;pointer-events:auto;}
+  .discpill{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:12px;border:1px solid #2a6b40;border-radius:12px;padding:5px 12px;color:#bfeed0;background:rgba(10,35,22,.85);cursor:pointer;}
+  .discpill.on{background:linear-gradient(180deg,var(--teal),var(--teal-d));color:#fff;border-color:var(--teal);}
 
   /* ── Buy-mode pill (lives at the right of the tab row) ── */
   .modepill{flex:none;align-self:flex-end;min-width:62px;font-family:'Baloo 2',sans-serif;font-weight:700;
@@ -191,6 +195,9 @@
   .mnode.maxed{opacity:.6;cursor:default;border-color:var(--gold-d);}
   /* Mastered badge */
   .chip.mastered{background:rgba(58,44,8,.85);border-color:var(--gold-d);color:#ffe9a8;}
+  .chip.star{background:rgba(58,44,8,.85);border-color:var(--gold-d);color:#ffe9a8;}
+  .chip.star b{color:var(--gold);}
+  .up.locked{opacity:.55;border-style:dashed;cursor:default;}
 
   /* ── Overlays ── */
   .overlay{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -229,10 +236,12 @@
         <span class="chip">🥅 <b id="tier">Sunday League</b>·<span id="stage">1</span></span>
         <span class="chip">⚡<b id="income">0</b>/s</span>
         <span class="chip mp" id="mpChip" style="display:none">🪄<b id="mp">0</b></span>
+        <span class="chip star" id="starChip">★<b id="stars">0</b></span>
         <button class="chip legacy" id="transferBtn" disabled>🏆<b id="legacy">0</b><span class="tgain" id="transferSub"></span></button>
         <span class="chip mastered" id="masteredChip" style="display:none">🏅 Mastered</span>
       </div>
     </div>
+    <div class="discsw" id="discSw" style="display:none"></div>
     <button id="serveBtn">▶ SHOOT</button>
     <div class="dps-tag">DPS <b id="dps">0</b></div>
   </div>
@@ -273,6 +282,7 @@
     <p>Sign for a bigger club: reset your stage, skills, training &amp; magic, but keep a permanent boost to <b>damage &amp; cash</b>. Your <b>Lifestyle</b> stays yours.</p>
     <div class="gain">+<span id="pGain">0</span> 🏆 Legacy</div>
     <p style="font-size:12px;opacity:.85;">Each Legacy point = <b>+10%</b> to everything, forever.</p>
+    <p style="font-size:12px;opacity:.9;color:#ffe9a8;" id="pStar"></p>
     <div class="row" style="justify-content:center;">
       <button class="btn ghost" id="pCancel">Not yet</button>
       <button class="btn purple" id="pConfirm">Sign</button>
@@ -296,7 +306,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { fmt, ATTR, AMAP, GROUPS, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed,
-  QUESTS, LIFESTYLE, LMAP, MASTERY_LV, MASTERY_LEGACY,
+  QUESTS, LIFESTYLE, LMAP, MASTERY_LV, MASTERY_LEGACY, STARS, STAR_BONUS, starsFor, nextStar,
+  RUN_ATTR, RAMAP, RUN_REWARD_C,
   SAVE_BASE, ACC_BASE, ACC_PER, ACC_MAX, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
   TGT_BASE, REWARD_C, stageScale } from './economy.js';
 // ======================= Goal Machine =======================
@@ -361,7 +372,36 @@ function upgradeQuest(id){
 // ---- State ----
 let S = newState();
 function newState(){
-  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, legacy:0, bestStage:1, assets:{}, shopSeen:{}, tier:0, mastered:false, lastSeen:Date.now()};
+  return {cash:0, mp:0, stage:1, lv:{}, magicLv:{}, skills:{}, focus:'con', qseen:0, questLv:{}, legacy:0, bestStage:1, assets:{}, shopSeen:{}, career:{shooting:{earned:0,stars:0},running:{earned:0,stars:0}}, discipline:'shooting', run:{lv:{},laps:0}, tier:0, mastered:false, lastSeen:Date.now()};
+}
+// ---- Career: each discipline's lifetime earnings drive its OWN ★ Star ladder (survive every transfer) ----
+function ensureCareer(){
+  if(!S.career || typeof S.career.earned==='number'){            // missing or Phase-A flat shape → migrate
+    const old=(S.career && typeof S.career.earned==='number')?S.career:null;
+    S.career={ shooting:{earned:old?old.earned:0,stars:old?old.stars:0}, running:{earned:0,stars:0} };
+  }
+  for(const id of ['shooting','running']) if(!S.career[id]) S.career[id]={earned:0,stars:0};
+  if(!S.discipline) S.discipline='shooting';
+  if(!S.run) S.run={lv:{},laps:0};
+}
+function addCash(amt, disc){ S.cash+=amt; if(amt>0){ ensureCareer(); S.career[disc||S.discipline].earned+=amt; } }
+function discStars(id){ ensureCareer(); return S.career[id].stars; }
+function totalStars(){ ensureCareer(); return S.career.shooting.stars + S.career.running.stars; }
+function careerStars(){ return totalStars(); }                  // HUD / Lifestyle / star-bonus use the career-wide total
+function checkStars(){
+  ensureCareer(); let changed=false;
+  for(const id of ['shooting','running']){
+    const c=S.career[id], now=starsFor(c.earned);
+    while(c.stars<now){ c.stars++; changed=true;
+      if(id===S.discipline){ if(id==='running') runFloaters.push({txt:'★ STAR '+c.stars,t:1.8,c:'#ffe27a',sz:24}); else floater(0,GH*0.5,0,'★ STAR '+c.stars,'#ffe27a',24); } }
+  }
+  if(changed){ if(typeof window.trackEvent==='function') window.trackEvent('star',{total:totalStars()}); refreshLife(); applyTabVis(); buildDiscSwitcher(); save(); }
+}
+// shared per-frame tick (runs in every discipline): career passive income + magic points + star checks
+function sharedTick(dt){
+  addCash((attr('sponsor')*lifeMult('cash')*vitMult() + questGoldPerSec())*dt, 'shooting');   // shooting-economy passives are career income
+  if(skUnlocked('mag')) S.mp += MP_RATE*magMult()*dt;
+  questCheck(); checkStars();
 }
 // ---- Mastery: a definitive GDD-style milestone that coexists with prestige (one-time reward, permanent badge) ----
 function checkMastery(){
@@ -384,7 +424,7 @@ function manaBonus(){ return (0.5+0.05*sl('vit'))*magMult(); }
 function portalBonus(){ return PORTAL_K*(S.mp||0)*magMult(); }
 // extra average damage per ball from infusions (Fireball burn + Cannonball splash + Mana mult)
 function infusionDmgFactor(){ const m=magMult(); return 1 + (attr('fire')*BURN_MULT + attr('cannon')*CANNON_SPLASH*Math.max(0,targetCount()-1))*m + attr('mana')*manaBonus(); }
-function prestigeMult(){return 1+0.10*S.legacy;}
+function prestigeMult(){ return (1+0.10*S.legacy)*(1+STAR_BONUS*careerStars()); }
 function lifeMult(kind){
   let dmg=1, cash=1;
   for(const it of LIFESTYLE){
@@ -582,7 +622,7 @@ function resolveBall(b){
     const tear=t.maxHp*0.04; t.hp-=tear; floater(p.x,p.y+0.3,p.z,'TEAR -'+fmt(tear),'#7af0ff',12);
   }
   t.hp-=b.dmg; t.flash=1; combo++;
-  S.cash += cashPerHit() * (b.golden?10:1) * b.sf;
+  addCash(cashPerHit() * (b.golden?10:1) * b.sf);
   netFlash=Math.max(netFlash,0.5);                                        // per-goal ripple through the net
   for(let i=0;i<Math.min(22,(b.big?8:4)+Math.floor(b.power||1));i++) impact(p, b.fire?'#ff7a1a':b.golden?'#ffd84a':(b.crit?'#ff9a3a':'#ffffff'));
   // every shot that beats the keeper is a goal — celebrate it and show the damage dealt
@@ -601,7 +641,7 @@ function breakTarget(t, viaSpecial){
   t.broken=true; t.hp=0; t.burnT=0;
   grantXP((5 + targetCount()*2)/targetCount());   // active XP per TARGET break — only the FOCUSED skill levels
   const tp=target3D(t), rew=targetReward(t.maxHp);
-  S.cash += rew;
+  addCash(rew);
   floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
   for(let i=0;i<10;i++) impact(tp,'#ffcf3a');
   if(aliveTargets().length===0) onBoardClear();
@@ -638,10 +678,7 @@ function questCheck(){
 
 function update(dt){
   if(!targets.length) spawnTargets();                    // a stage's HP pool always exists
-  // passive income: sponsor + background quests (both always tick while the tab is open)
-  S.cash += (attr('sponsor')*lifeMult('cash')*vitMult() + questGoldPerSec())*dt;
-  if(skUnlocked('mag')) S.mp += MP_RATE*magMult()*dt;   // Magic Points accrue only once Magic Affinity is unlocked
-  questCheck();
+  sharedTick(dt);                                        // career passive income + magic points + star checks
   // Auto-Shoot (or sim): auto-fire at random goal spots at fire rate; manual play fires via clicks
   const rate=skillRate();
   if(serving && rate>0){
@@ -857,7 +894,9 @@ let last=0, running=false;
 function frame(t){
   if(!running)return;
   const dt=Math.min(0.05,(t-last)/1000||0); last=t;
-  update(dt); render3d(dt); drawFX(); refreshHUD();
+  if(S.discipline==='running'){ runUpdate(dt); runDraw(); }
+  else { update(dt); render3d(dt); drawFX(); }
+  refreshHUD();
   requestAnimationFrame(frame);
 }
 
@@ -866,7 +905,7 @@ let buyMode=1;     // 1 or 'max'
 let tab='train';   // 'train' or 'life'
 const upsEl=document.getElementById('ups');
 const els={}, lifeEls={};
-let trainWrap, shopWrap, magicWrap, questWrap, lifeWrap, skillListEl, questListEl, magicTreeEl, shopHdrs={};
+let trainWrap, shopWrap, magicWrap, questWrap, lifeWrap, runWrap, skillListEl, questListEl, magicTreeEl, shopHdrs={};
 // Magic skill tree (top→bottom tiers). Each node maps to a magic ATTR; `req` is the parent that must be owned (Lv≥1) first.
 const MAGIC_TREE = [
   [{id:'mana', req:null}],
@@ -927,6 +966,8 @@ function buildUps(){
     lifeEls[it.id]=d;
   });
   upsEl.appendChild(lifeWrap);
+  // ── Running discipline upgrades (Phase B; shown only while the Running discipline is active) ──
+  runWrap=document.createElement('div');runWrap.style.display='none';upsEl.appendChild(runWrap);
 }
 const TABS=[['train','⚽'],['shop','🛒'],['quest','📜'],['magic','🪄'],['life','💎']];
 // Tabs reveal as a consequence of progress, so the early game is just "Skills".
@@ -951,6 +992,7 @@ function setTab(t){
   if(!tabVisible(t)) t='train';
   document.getElementById('tab_'+t).classList.remove('justnew');
   tab=t;
+  if(runWrap) runWrap.style.display='none';
   trainWrap.style.display=t==='train'?'':'none';
   shopWrap.style.display =t==='shop'?'':'none';
   magicWrap.style.display=t==='magic'?'':'none';
@@ -1096,6 +1138,7 @@ function refreshUps(){
 function buyAsset(id){
   if(S.assets&&S.assets[id]) return;
   const it=LMAP[id];
+  if(careerStars() < (it.star||0)) return;   // gated behind ★ Stars (unlocks across the run)
   if(S.cash<it.cost) return;
   S.cash-=it.cost; (S.assets=S.assets||{})[id]=true;
   if(typeof window.trackEvent==='function') window.trackEvent('lifestyle',{asset:id});
@@ -1103,12 +1146,14 @@ function buyAsset(id){
 }
 function refreshLife(){
   LIFESTYLE.forEach(it=>{
-    const d=lifeEls[it.id]; const owned=!!(S.assets&&S.assets[it.id]);
+    const d=lifeEls[it.id]; if(!d) return; const owned=!!(S.assets&&S.assets[it.id]);
+    const locked = !owned && careerStars() < (it.star||0);
     d.classList.toggle('owned',owned);
-    d.classList.toggle('afford', !owned && S.cash>=it.cost);
-    d.querySelector('.price .c').style.display=owned?'none':'';
-    d.querySelector('[data-cost]').textContent=owned?'':fmt(it.cost);
-    d.querySelector('[data-lbl]').textContent=owned?'✓ OWNED':'BUY';
+    d.classList.toggle('locked',locked);
+    d.classList.toggle('afford', !owned && !locked && S.cash>=it.cost);
+    d.querySelector('.price .c').style.display=(owned||locked)?'none':'';
+    d.querySelector('[data-cost]').textContent=owned?'':(locked?('★'+it.star):fmt(it.cost));
+    d.querySelector('[data-lbl]').textContent=owned?'✓ OWNED':(locked?('NEEDS ★'+it.star):'BUY');
   });
 }
 function refreshHUD(){
@@ -1116,14 +1161,15 @@ function refreshHUD(){
     income:document.getElementById('income'),legacy:document.getElementById('legacy'),dps:document.getElementById('dps'),
     mp:document.getElementById('mp'),mpChip:document.getElementById('mpChip'),tier:document.getElementById('tier'),
     transferBtn:document.getElementById('transferBtn'),transferSub:document.getElementById('transferSub'),
-    masteredChip:document.getElementById('masteredChip')};
+    masteredChip:document.getElementById('masteredChip'),stars:document.getElementById('stars')};
   els._c.cash.textContent=fmt(S.cash);
-  els._c.stage.textContent=S.stage;
-  els._c.tier.textContent=tierName(S.stage);
+  if(S.discipline==='running'){ els._c.tier.textContent='Running'; els._c.stage.textContent=fmt((S.run&&S.run.laps)||0); }
+  else { els._c.tier.textContent=tierName(S.stage); els._c.stage.textContent=S.stage; }
   els._c.mpChip.style.display=skUnlocked('mag')?'':'none';   // MP only shown once Magic is unlocked
   els._c.mp.textContent=fmt(S.mp||0);
   els._c.income.textContent=fmt(incomePerSec());
   els._c.legacy.textContent=fmt(S.legacy);
+  els._c.stars.textContent=careerStars();
   els._c.dps.textContent=fmt(analyticDPS());
   // Legacy chip doubles as the Transfer button: glow + show the pending gain when it's worth signing
   const lg=legacyGain();
@@ -1132,8 +1178,10 @@ function refreshHUD(){
   els._c.transferBtn.classList.toggle('ready', lg>=1);
   els._c.masteredChip.style.display = S.mastered?'':'none';
   // keep affordability fresh as cash ticks in (throttled)
-  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now(); applyTabVis();
-    if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else if(tab==='shop') refreshUps(); else renderSkills(); }
+  if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now();
+    if(S.discipline==='running'){ renderRunUps(); }
+    else { applyTabVis();
+      if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else if(tab==='shop') refreshUps(); else renderSkills(); } }
 }
 
 // ---- Buy mode toggle ----
@@ -1157,6 +1205,7 @@ function aimFromEvent(e){
   return {x:Math.max(-aimHalfW(),Math.min(aimHalfW(),_hit.x)), y:Math.max(aimLoY(),Math.min(aimHiY(),_hit.y))};
 }
 cv.addEventListener('pointerdown',e=>{ const a=aimFromEvent(e); if(a) fireVolley(a.x,a.y); });
+document.querySelector('.scene').addEventListener('pointerdown',()=>{ if(S.discipline==='running') runDash(); });   // tap-to-dash in the Running discipline
 
 // ---- Reset progress ----
 document.getElementById('resetBtn').addEventListener('click',()=>{
@@ -1173,6 +1222,10 @@ const prestigeOv=document.getElementById('prestigeOv');
 document.getElementById('transferBtn').addEventListener('click',()=>{
   if(legacyGain()<1) return;
   document.getElementById('pGain').textContent=fmt(legacyGain());
+  ensureCareer(); const earned=S.career.shooting.earned, ns=nextStar(earned);
+  document.getElementById('pStar').textContent = ns
+    ? ('★ '+totalStars()+' total · next Shooting ★'+ns.n+': '+fmt(ns.goal)+' ('+Math.min(99,Math.floor(100*earned/Math.max(1,ns.goal)))+'%)')
+    : ('★ all Shooting stars earned!');
   prestigeOv.classList.remove('hidden');
 });
 document.getElementById('pCancel').addEventListener('click',()=>prestigeOv.classList.add('hidden'));
@@ -1180,17 +1233,18 @@ document.getElementById('mCollect').addEventListener('click',()=>{document.getEl
 document.getElementById('pConfirm').addEventListener('click',()=>{
   const g=legacyGain();
   if(typeof window.trackEvent==='function') window.trackEvent('prestige',{legacy_gained:g,best_stage:S.bestStage});
-  const keepLegacy=S.legacy+g, keepAssets=S.assets, keepMastered=S.mastered;
-  S=newState(); S.legacy=keepLegacy; S.assets=keepAssets; S.mastered=keepMastered; ensureSkills();
+  const keepLegacy=S.legacy+g, keepAssets=S.assets, keepMastered=S.mastered, keepCareer=S.career;
+  S=newState(); S.legacy=keepLegacy; S.assets=keepAssets; S.mastered=keepMastered; S.career=keepCareer; ensureSkills(); ensureCareer();
   prestigeOv.classList.add('hidden'); balls=[];particles=[];floaters=[];pending=[];combo=0; fkTimer=0; shotTimer=0; releaseTimer=0; keeperFreeze=0; keeperBusy=0;
+  runPos=0;runVel=0;runDir=1;runDashT=0;runRunT=0;runFloaters=[];
   spawnTargets(); serving = attr('auto')>=1;
-  refreshUps(); refreshLife(); renderSkills(); renderQuests(); renderMagicTree(); applyTabVis(); save();
+  refreshUps(); refreshLife(); renderSkills(); renderQuests(); renderMagicTree(); applyTabVis(); applyDisciplineView(); save();
 });
 
 // ======================= Save / Load / Offline =======================
 let wiped=false;   // set during a reset so the unload autosave can't re-persist
 function save(){ if(wiped) return; S.lastSeen=Date.now(); try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){} }
-function load(){ try{const r=localStorage.getItem(SAVE_KEY); if(r){S=Object.assign(newState(),JSON.parse(r));}}catch(e){} }
+function load(){ try{const r=localStorage.getItem(SAVE_KEY); if(r){S=Object.assign(newState(),JSON.parse(r));}}catch(e){} ensureCareer(); }
 setInterval(save,5000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
 window.addEventListener('beforeunload',save);
@@ -1202,7 +1256,7 @@ function showOffline(){
   const capped=Math.min(elapsed, 12*3600);
   const earned=incomePerSec()*rate*capped;
   if(earned<1) return false;
-  S.cash+=earned;
+  addCash(earned);
   document.getElementById('offAmt').textContent=fmt(earned);
   const hrs=Math.floor(capped/3600), mins=Math.floor((capped%3600)/60);
   document.getElementById('offTime').textContent=`away ${hrs}h ${mins}m · ${(rate*100).toFixed(0)}% rate`;
@@ -1214,6 +1268,92 @@ document.getElementById('collectBtn').addEventListener('click',()=>{
 });
 
 // ======================= Boot =======================
+// ======================= Running discipline (Phase B) =======================
+const DISCIPLINES=[
+  {id:'shooting', nm:'Shooting', ic:'⚽', unlockStar:0},
+  {id:'running',  nm:'Running',  ic:'🏃', unlockStar:2},
+];
+function discUnlocked(id){ const d=DISCIPLINES.find(x=>x.id===id); return !d || totalStars()>=d.unlockStar; }
+// run sim runtime
+let runPos=0, runVel=0, runDir=1, runDashT=0, runRunT=0, runFloaters=[];
+function rlv(id){ return (S.run&&S.run.lv&&S.run.lv[id])||0; }
+function rattr(id){ return RAMAP[id].val(rlv(id)); }
+function runAuto(){ return rattr('rAuto')>0; }
+function lapLen(){ return rattr('rLen'); }
+function lapReward(){ return RUN_REWARD_C*rattr('rLen')*rattr('rRew')*prestigeMult()*lifeMult('cash'); }
+function runDash(){ if(S.discipline!=='running') return; runDashT=0.6; runRunT=Math.max(runRunT,1.2); }
+function onLap(){ S.run.laps=(S.run.laps||0)+1; const rw=lapReward(); addCash(rw,'running'); runFloaters.push({txt:'LAP +'+fmt(rw),t:1,c:'#ffcf3a',sz:18}); }
+function runUpdate(dt){
+  sharedTick(dt);
+  if(runDashT>0) runDashT=Math.max(0,runDashT-dt);
+  const auto=runAuto();
+  if(auto) runRunT=1; else if(runRunT>0) runRunT=Math.max(0,runRunT-dt);
+  const active=auto||runRunT>0;
+  const maxV=rattr('rMax')*(runDashT>0?rattr('rDash'):1), startV=rattr('rStart'), acc=rattr('rAccel');
+  if(active){ if(runVel<startV) runVel=startV; runVel=Math.min(maxV, runVel+acc*dt); }
+  else runVel=Math.max(0, runVel-acc*1.5*dt);
+  runPos += runVel*runDir*dt;
+  const L=lapLen();
+  if(runPos>=L){ runPos=L; runDir=-1; onLap(); }
+  else if(runPos<=0 && runDir<0){ runPos=0; runDir=1; onLap(); }
+  for(let i=runFloaters.length-1;i>=0;i--){ runFloaters[i].t-=dt*0.9; if(runFloaters[i].t<=0) runFloaters.splice(i,1); }
+}
+function runDraw(){
+  fxctx.clearRect(0,0,W,Hh);
+  fxctx.fillStyle='#1f7a3d'; fxctx.fillRect(0,0,W,Hh);
+  fxctx.fillStyle='rgba(0,0,0,.06)'; for(let i=0;i<10;i++) if(i%2) fxctx.fillRect(0,i*Hh/10,W,Hh/10);
+  const m=26, x0=m, x1=W-m, ty=Hh*0.62;
+  fxctx.strokeStyle='rgba(255,255,255,.55)'; fxctx.lineWidth=3;
+  fxctx.beginPath(); fxctx.moveTo(x0,ty); fxctx.lineTo(x1,ty); fxctx.stroke();
+  for(const x of [x0,x1]){ fxctx.beginPath(); fxctx.moveTo(x,ty-24); fxctx.lineTo(x,ty+6); fxctx.stroke(); }
+  const L=lapLen(), fr=L>0?Math.max(0,Math.min(1,runPos/L)):0, rx=x0+(x1-x0)*fr;
+  if(runVel>0.5){ fxctx.strokeStyle='rgba(255,255,255,.4)'; fxctx.lineWidth=2;
+    for(let i=1;i<=3;i++){ fxctx.beginPath(); fxctx.moveTo(rx-runDir*i*9,ty-15); fxctx.lineTo(rx-runDir*i*17,ty-15); fxctx.stroke(); } }
+  fxctx.fillStyle=runDashT>0?'#ffd84a':'#ff7a1a'; fxctx.beginPath(); fxctx.arc(rx,ty-16,13,0,7); fxctx.fill();
+  fxctx.textAlign='center'; fxctx.fillStyle='#06301a'; fxctx.font='14px sans-serif'; fxctx.fillText('🏃',rx,ty-11);
+  fxctx.fillStyle='#fff'; fxctx.font="800 16px 'Baloo 2'";
+  fxctx.fillText('Lap '+fmt(S.run.laps||0)+'   ·   '+runVel.toFixed(1)+' m/s', W/2, 28);
+  fxctx.font="700 12px 'Fredoka'"; fxctx.fillStyle='rgba(255,255,255,.85)';
+  fxctx.fillText(runAuto()?'AUTO-RUN · tap to dash':'TAP TO RUN / DASH', W/2, Hh-14);
+  fxctx.font="800 16px 'Baloo 2'";
+  for(const f of runFloaters){ fxctx.globalAlpha=Math.max(0,Math.min(1,f.t)); fxctx.fillStyle=f.c; fxctx.fillText(f.txt, W/2, ty-44-(1-f.t)*30); }
+  fxctx.globalAlpha=1; fxctx.textAlign='left';
+}
+function buyRun(id){ const a=RAMAP[id], l=rlv(id), c=a.cost(l); if(!isFinite(c)||a.val(l+1)<=a.val(l)||S.cash<c) return; S.cash-=c; (S.run.lv=S.run.lv||{})[id]=l+1; renderRunUps(); refreshHUD(); save(); }
+function renderRunUps(){
+  if(S.discipline!=='running'||!runWrap) return;
+  const earned=S.career.running.earned, ns=nextStar(earned);
+  const star = ns? ('★ Running '+discStars('running')+' · next ★'+ns.n+': '+fmt(ns.goal)+' ('+Math.min(99,Math.floor(100*earned/Math.max(1,ns.goal)))+'%)') : ('★ all Running stars earned!');
+  runWrap.innerHTML='<div class="grouphdr">Running — tap to dash, buy speed</div>'
+    +'<div style="font-size:11.5px;color:#9fd3b1;margin:0 4px 8px;">'+star+'</div>'
+    + RUN_ATTR.map(a=>{ const l=rlv(a.id), maxed=!isFinite(a.cost(l))||a.val(l+1)<=a.val(l), cost=a.cost(l), aff=!maxed&&S.cash>=cost;
+      return `<div class="up${maxed?' maxed':(aff?' afford':'')}" data-run="${a.id}"><div class="ic">${a.ic}</div>
+        <div class="mid"><div class="nm">${a.nm}<span class="lvl">Lv ${l}</span></div>
+        <div class="eff">${a.desc}: ${a.show(a.val(l))}${maxed?'':' <span class="nx">→ '+a.show(a.val(l+1))+'</span>'}</div></div>
+        <div class="buy"><div class="price"><span class="c"></span>${maxed?'MAX':fmt(cost)}</div><div class="lbl">${maxed?'MAXED':((l<1&&a.id==='rAuto')?'UNLOCK':'UPGRADE')}</div></div></div>`;
+    }).join('');
+  runWrap.querySelectorAll('[data-run]').forEach(el=>el.addEventListener('click',()=>buyRun(el.dataset.run)));
+}
+function buildDiscSwitcher(){
+  const sw=document.getElementById('discSw'); if(!sw) return;
+  const open=DISCIPLINES.filter(d=>discUnlocked(d.id));
+  sw.style.display = open.length>1 ? 'flex' : 'none';
+  sw.innerHTML = open.map(d=>`<button class="discpill${S.discipline===d.id?' on':''}" data-disc="${d.id}">${d.ic} ${d.nm}</button>`).join('');
+  sw.querySelectorAll('[data-disc]').forEach(el=>el.addEventListener('click',()=>switchDiscipline(el.dataset.disc)));
+}
+function switchDiscipline(id){ if(!discUnlocked(id)) return; S.discipline=id; applyDisciplineView(); save(); }
+function applyDisciplineView(){
+  ensureCareer();
+  const running=S.discipline==='running';
+  cv.style.display=running?'none':'';
+  const tabsEl=document.querySelector('.tabs'); if(tabsEl) tabsEl.style.display=running?'none':'';
+  const dpsEl=document.querySelector('.dps-tag'); if(dpsEl) dpsEl.style.display=running?'none':'';
+  if(serveBtn) serveBtn.style.display='none';
+  buildDiscSwitcher();
+  if(running){ [trainWrap,shopWrap,magicWrap,questWrap,lifeWrap].forEach(w=>{ if(w) w.style.display='none'; }); if(runWrap) runWrap.style.display=''; renderRunUps(); }
+  else { if(runWrap) runWrap.style.display='none'; setTab(tab); }
+}
+
 function start(){
   resize();
   keeperX=0; S.tier=tierIndex(S.stage);
@@ -1223,6 +1363,7 @@ function start(){
   setTab('train');                                            // normalize tab/wrap/modepill display state
   for(const [k] of TABS) if(tabVisible(k)) shownTabs.add(k);   // seed: already-visible tabs don't pulse on boot
   applyTabVis();
+  ensureCareer(); buildDiscSwitcher(); applyDisciplineView();
   running=true; last=performance.now(); requestAnimationFrame(frame);
 }
 document.getElementById('playBtn').addEventListener('click',()=>{
