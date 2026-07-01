@@ -15,8 +15,8 @@ export function fmt(n){
 // cost(l): price to buy the (l+1)-th level.  val(l): effect at level l.
 export const ATTR = [
   // ATTACK — equipment that multiplies your Strength/Dexterity skills ----
-  {id:'multi',  cat:'dmg', ic:'⚽', nm:'Multi-Ball',     desc:'balls per shot',
-    cost:l=>180*Math.pow(2.35,l),     val:l=>1+l,            show:v=>v+' ball'+(v>1?'s':'')},
+  {id:'multi',  cat:'dmg', ic:'⚽', nm:'Charged Ball',   desc:'one bigger, harder ball',
+    cost:l=>180*Math.pow(2.35,l),     val:l=>1+l,            show:v=>'×'+v+' power'},
   {id:'critC',  cat:'dmg', ic:'🎯', nm:'Crit Chance',    desc:'chance to crit',
     cost:l=>70*Math.pow(1.21,l),      val:l=>Math.min(0.9,0.03*l), show:v=>(v*100).toFixed(0)+'%'},
   {id:'critD',  cat:'dmg', ic:'🔥', nm:'Crit Damage',    desc:'crit multiplier',
@@ -77,6 +77,17 @@ export const ATTR = [
 export const AMAP = {}; ATTR.forEach(a=>AMAP[a.id]=a);
 export const GROUPS = [['dmg','Attack'],['board','Stage'],['cash','Economy'],['util','Pitch']];
 export const TIERS = [[1,'Sunday League'],[10,'Academy'],[25,'Semi-Pro'],[50,'Championship'],[100,'Pro Club'],[250,'International'],[500,'Legend']];
+// Shop items unlock as you climb divisions — the best stage reached at which each becomes available.
+// Ordered basics → power → luxury, roughly tracking the tier ladder above.
+export const SHOP_UNLOCK = {
+  coins:1, cashG:1, critC:1, speed:1,          // Sunday League — the essentials
+  critD:3, tgtHP:3, sponsor:4,
+  multi:5, stagger:5,
+  gold:8, hype:8, auto:10,                      // Academy — Auto-Shoot
+  combo:12, over:15, power2:18, offline:20, lucky:22,
+  targets:25, scout:30,                         // Semi-Pro — Bigger Stage
+  free:40, agent:50,                            // Championship — Free Kick, Star Agent
+};
 export function tierIndex(stage){ let i=0; for(let k=0;k<TIERS.length;k++) if(stage>=TIERS[k][0]) i=k; return i; }
 export function tierName(stage){ return TIERS[tierIndex(stage)][1]; }
 

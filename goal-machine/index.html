@@ -86,21 +86,23 @@
     font-size:12px;font-weight:700;color:#dfffe9;pointer-events:none;}
   .dps-tag b{color:var(--orange-l);}
   /* ── Discipline switcher (overlaid top of scene) ── */
-  .discsw{position:absolute;left:50%;top:calc(56px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:7;display:flex;gap:6px;pointer-events:auto;}
-  .discpill{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:12px;border:1px solid #2a6b40;border-radius:12px;padding:5px 12px;color:#bfeed0;background:rgba(10,35,22,.85);cursor:pointer;}
+  .discsw{position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:8;display:flex;flex-direction:column;gap:6px;pointer-events:auto;}
+  .discpill{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:11px;border:1px solid #2a6b40;border-radius:12px;padding:6px 10px;color:#bfeed0;background:rgba(10,35,22,.9);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.4);}
   .discpill.on{background:linear-gradient(180deg,var(--teal),var(--teal-d));color:#fff;border-color:var(--teal);}
 
-  /* ── Buy-mode pill (lives at the right of the tab row) ── */
-  .modepill{flex:none;align-self:flex-end;min-width:62px;font-family:'Baloo 2',sans-serif;font-weight:700;
-    font-size:11.5px;border:none;border-radius:10px 10px 0 0;padding:7px 9px;color:#fff;cursor:pointer;
+  /* ── Buy-mode pill (lives inside the Shop tab) ── */
+  .shopbar{display:flex;justify-content:flex-end;align-items:center;gap:6px;padding:4px 4px 2px;}
+  .modepill{flex:none;min-width:72px;font-family:'Baloo 2',sans-serif;font-weight:700;
+    font-size:11.5px;border:none;border-radius:10px;padding:6px 13px;color:#fff;cursor:pointer;
     background:linear-gradient(180deg,var(--teal),var(--teal-d));white-space:nowrap;}
   .modepill:active{transform:translateY(1px);}
 
   /* ── Tabs ── */
   .tabs{flex:none;display:flex;align-items:flex-end;gap:4px;padding:7px 6px 0;background:#0a2316;}
   .tab{flex:1;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:11.5px;border:none;border-radius:10px 10px 0 0;
-    padding:7px 3px;color:#9fd3b1;background:#0e3320;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;}
-  .tab.on{background:var(--card);color:#fff;}
+    padding:7px 3px;color:#6f9c82;background:#0b2013;cursor:pointer;transition:background .15s,color .15s,opacity .15s;white-space:nowrap;opacity:.7;}
+  .tab:not(.on):hover{opacity:.9;color:#9fd3b1;}
+  .tab.on{background:#1d4d2c;color:#fff;opacity:1;box-shadow:inset 0 3px 0 var(--gold),0 -2px 8px rgba(0,0,0,.3);}
   .tab.locked{display:none;}
   .tab.justnew{animation:tabNew 1s ease-in-out infinite;}
   @keyframes tabNew{0%,100%{box-shadow:0 0 0 0 rgba(155,231,255,0)}50%{box-shadow:0 0 0 4px rgba(155,231,255,.45)}}
@@ -171,8 +173,9 @@
   .quest .qlbl{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:#79a98c;}
   .quest.afford .qlbl{color:#bff0cf;}
   /* ── Per-skill XP booster button (sits on each skill card) ── */
-  .xpb{flex:none;border:1px solid #235c39;background:#102a1b;border-radius:11px;padding:6px 8px;cursor:pointer;
+  .xpb{flex:none;min-width:84px;border:1px solid #235c39;background:#102a1b;border-radius:11px;padding:6px 10px;cursor:pointer;
     font-family:'Baloo 2',sans-serif;color:#9fd3b1;text-align:center;line-height:1.2;}
+  .xpb:active{transform:scale(.97);}
   .xpb .xt{display:block;font-size:11px;font-weight:700;color:#cfe9d8;}
   .xpb .xc{display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;margin-top:2px;color:#7fa68d;}
   .xpb .xc .c{width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe27a,var(--gold));border:1.5px solid var(--gold-d);}
@@ -252,7 +255,6 @@
     <button class="tab" id="tab_quest">📜 Quests</button>
     <button class="tab" id="tab_magic">🪄 Magic</button>
     <button class="tab" id="tab_life">💎 Life</button>
-    <button class="modepill" id="modeBtn">Buy ×1</button>
   </div>
   <div class="ups" id="ups"></div>
 </div>
@@ -305,7 +307,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { fmt, ATTR, AMAP, GROUPS, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed,
+import { fmt, ATTR, AMAP, GROUPS, SHOP_UNLOCK, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed,
   QUESTS, LIFESTYLE, LMAP, MASTERY_LV, MASTERY_LEGACY, STARS, STAR_BONUS, starsFor, nextStar,
   RUN_ATTR, RAMAP, RUN_REWARD_C,
   SAVE_BASE, ACC_BASE, ACC_PER, ACC_MAX, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
@@ -922,9 +924,8 @@ function upRow(a, coin){
   d.innerHTML=`<div class="ic">${a.ic}</div>
     <div class="mid"><div class="nm">${a.nm}<span class="lvl">Lv <i data-lvl></i></span></div>
     <div class="eff"><span data-eff></span> <span class="nx" data-nx></span></div></div>
-    <div class="buy"><div class="price"><span class="${coin}"></span><span data-cost></span></div>
-    <div class="lbl" data-lbl>UPGRADE</div></div>`;
-  d.addEventListener('click',()=>buy(a.id)); els[a.id]=d; return d;
+    <button class="xpb" data-buy="${a.id}"><span class="xt" data-lbl>UPGRADE</span><span class="xc"><span class="${coin}"></span><span data-cost></span></span></button>`;
+  d.querySelector('[data-buy]').addEventListener('click',e=>{e.stopPropagation();buy(a.id);}); els[a.id]=d; return d;
 }
 function buildUps(){
   upsEl.innerHTML='';
@@ -935,6 +936,12 @@ function buildUps(){
   upsEl.appendChild(trainWrap);
   // ── Shop: gold equipment, grouped by category ──
   shopWrap=document.createElement('div');shopWrap.style.display='none';
+  // buy-mode toggle lives at the top of the Shop tab (not in the tab row)
+  const shopbar=document.createElement('div');shopbar.className='shopbar';
+  const modeBtn=document.createElement('button');modeBtn.className='modepill';modeBtn.id='modeBtn';
+  modeBtn.textContent=buyMode==='max'?'Buy MAX':'Buy ×1';
+  modeBtn.addEventListener('click',()=>{ buyMode=buyMode===1?'max':1; modeBtn.textContent=buyMode==='max'?'Buy MAX':'Buy ×1'; refreshUps(); });
+  shopbar.appendChild(modeBtn);shopWrap.appendChild(shopbar);
   shopHdrs={};
   GROUPS.forEach(([cat,label])=>{
     const h=document.createElement('div');h.className='grouphdr';h.textContent=label;shopWrap.appendChild(h);
@@ -963,9 +970,8 @@ function buildUps(){
     const d=document.createElement('div');d.className='up life';d.dataset.id=it.id;
     d.innerHTML=`<div class="ic">${it.ic}</div>
       <div class="mid"><div class="nm">${it.nm}</div><div class="eff">${it.blurb}</div></div>
-      <div class="buy"><div class="price"><span class="c"></span><span data-cost></span></div>
-      <div class="lbl" data-lbl>BUY</div></div>`;
-    d.addEventListener('click',()=>buyAsset(it.id));
+      <button class="xpb" data-life="${it.id}"><span class="xt" data-lbl>BUY</span><span class="xc"><span class="c"></span><span data-cost></span></span></button>`;
+    d.querySelector('[data-life]').addEventListener('click',e=>{e.stopPropagation();buyAsset(it.id);});
     lifeWrap.appendChild(d);
     lifeEls[it.id]=d;
   });
@@ -1002,7 +1008,6 @@ function setTab(t){
   magicWrap.style.display=t==='magic'?'':'none';
   questWrap.style.display=t==='quest'?'':'none';
   lifeWrap.style.display =t==='life'?'':'none';
-  document.getElementById('modeBtn').style.display=t==='shop'?'':'none';   // Buy ×1/MAX only applies to the Shop
   for(const [k] of TABS) document.getElementById('tab_'+k).classList.toggle('on',k===t);
   if(t==='quest') renderQuests(); else if(t==='life') refreshLife(); else if(t==='magic') renderMagicTree(); else if(t==='shop') refreshUps(); else renderSkills();
 }
@@ -1060,10 +1065,10 @@ function renderQuests(){
       <span class="qr">🔒 ${sk.ic} ${sk.nm} ${q.req[1]}</span></div></div>`;
     const l=questLv(q.id), gps=questGps(q), cost=questUpCost(q), afford=S.cash>=cost;
     const nextGps=ramp(l+1)(q);
-    return `<div class="quest on${afford?' afford':''}" data-q="${q.id}">
+    return `<div class="quest on${afford?' afford':''}">
       <div class="qh"><span>${q.nm} <span class="qlv">Lv ${l}</span></span><span class="qr">+${fmt(gps)}/s</span></div>
       <div class="qp">→ Lv ${l+1}: +${fmt(nextGps)}/s</div>
-      <div class="qbuy"><span class="qcost"><span class="c"></span>${fmt(cost)}</span><span class="qlbl">LEVEL UP</span></div></div>`;
+      <div class="qbuy"><button class="xpb${afford?' afford':''}" data-q="${q.id}"><span class="xt">LEVEL UP</span><span class="xc"><span class="c"></span>${fmt(cost)}</span></button></div></div>`;
   }).join('');
   questListEl.querySelectorAll('[data-q]').forEach(el=>el.addEventListener('click',()=>upgradeQuest(el.dataset.q)));
   questDirty=false;
@@ -1072,13 +1077,13 @@ function buyCost(id,n){let c=0,l=lv(id);for(let i=0;i<n;i++)c+=AMAP[id].cost(l+i
 function maxAffordable(id){let l=lv(id),c=0,n=0,cash=S.cash;while(n<9999){const nc=AMAP[id].cost(l+n);if(c+nc>cash)break;c+=nc;n++;}return n;}
 // an upgrade is maxed when its next level costs ∞ or its value can't increase any further
 function isMaxed(a){ const l=lv(a.id); return !isFinite(a.cost(l)) || a.val(l+1)<=a.val(l); }
-// drip-feed: an upgrade appears once you're ~70% of the way to affording it, then stays revealed
-const SHOP_REVEAL_FRAC=0.7;
+// shop items unlock as you climb (best stage reached), then stay revealed forever (survives transfers)
 function shopRevealed(a){
   if(lv(a.id)>0 || (S.shopSeen&&S.shopSeen[a.id])) return true;
-  if(S.cash >= a.cost(0)*SHOP_REVEAL_FRAC){ (S.shopSeen=S.shopSeen||{})[a.id]=true; return true; }
+  if((S.bestStage||1) >= (SHOP_UNLOCK[a.id]||1)){ (S.shopSeen=S.shopSeen||{})[a.id]=true; return true; }
   return false;
 }
+function shopUnlockStage(a){ return SHOP_UNLOCK[a.id]||1; }
 function buy(id){
   const a=AMAP[id];
   if(a.cur==='mp'){                                          // magic infusion (×1, paid in Magic Points)
@@ -1091,6 +1096,7 @@ function buy(id){
     if(typeof window.trackEvent==='function') window.trackEvent('magic',{attr:id,level:S.magicLv[id]});
     renderMagicTree(); refreshHUD(); save(); return;
   }
+  if(!shopRevealed(a)) return;                              // still locked — climb to its unlock stage first
   if(isMaxed(a)) return;                                     // capped — stop selling levels with no effect
   const n = buyMode==='max'? Math.max(1,maxAffordable(id)) : 1;
   const cost=buyCost(id,n);
@@ -1102,6 +1108,10 @@ function buy(id){
   refreshUps(); save();
 }
 function refreshUps(){
+  // each category shows its NEXT locked item as a teaser (lowest unlock stage among the not-yet-revealed)
+  const teaser={};
+  GROUPS.forEach(([cat])=>{ const locked=ATTR.filter(a=>a.cat===cat&&a.cur!=='mp'&&!shopRevealed(a));
+    if(locked.length){ locked.sort((x,y)=>shopUnlockStage(x)-shopUnlockStage(y)); teaser[cat]=locked[0].id; } });
   ATTR.forEach(a=>{
     const d=els[a.id]; if(!d) return; const l=lv(a.id);
     if(a.cur==='mp'){                                         // magic rows (Magic Points, ×1)
@@ -1114,10 +1124,23 @@ function refreshUps(){
       d.querySelector('[data-lbl]').textContent=(l<1?'UNLOCK':'UPGRADE');
       return;
     }
-    // drip-feed: hide upgrades until you're close to affording them (revealed one-by-one as cash grows)
-    if(!shopRevealed(a)){ d.style.display='none'; return; }
-    d.style.display='';
-    if(isMaxed(a)){ d.classList.add('maxed'); d.classList.remove('afford');
+    // gated by progression: hide until unlocked; show the category's NEXT one as a locked "Stage N" teaser
+    const btn=d.querySelector('.xpb');
+    if(!shopRevealed(a)){
+      if(teaser[a.cat]===a.id){
+        d.style.display=''; d.classList.add('locked'); d.classList.remove('afford','maxed'); btn.classList.remove('afford');
+        d.querySelector('.xc .c').style.display='none';
+        d.querySelector('[data-lvl]').textContent=0;
+        d.querySelector('[data-eff]').textContent=a.desc;
+        d.querySelector('[data-nx]').textContent='';
+        d.querySelector('[data-cost]').textContent='🔒 Stage '+shopUnlockStage(a);
+        d.querySelector('[data-lbl]').textContent='LOCKED';
+      } else d.style.display='none';
+      return;
+    }
+    d.classList.remove('locked'); d.style.display='';
+    d.querySelector('.xc .c').style.display='';
+    if(isMaxed(a)){ d.classList.add('maxed'); d.classList.remove('afford'); btn.classList.remove('afford');
       d.querySelector('[data-lvl]').textContent=l;
       d.querySelector('[data-eff]').textContent=a.desc+': '+a.show(a.val(l));
       d.querySelector('[data-nx]').textContent='';
@@ -1129,15 +1152,15 @@ function refreshUps(){
     const n = buyMode==='max'? Math.max(1,maxAffordable(a.id)) : 1;
     const cost=buyMode==='max'? buyCost(a.id, Math.max(1,maxAffordable(a.id))) : a.cost(l);
     const afford = buyMode==='max' ? maxAffordable(a.id)>=1 : S.cash>=cost;
-    d.classList.toggle('afford',afford);
+    d.classList.toggle('afford',afford); btn.classList.toggle('afford',afford);
     d.querySelector('[data-lvl]').textContent=l;
     d.querySelector('[data-eff]').textContent=a.desc+': '+a.show(a.val(l));
     d.querySelector('[data-nx]').textContent='→ '+a.show(a.val(l+ (buyMode==='max'?Math.max(1,maxAffordable(a.id)):1) ));
     d.querySelector('[data-cost]').textContent=fmt(cost);
     d.querySelector('[data-lbl]').textContent= buyMode==='max'? ('BUY ×'+Math.max(1,maxAffordable(a.id))) : 'UPGRADE';
   });
-  // category headers follow their items — hidden until at least one item in the group is revealed
-  GROUPS.forEach(([cat])=>{ if(shopHdrs[cat]) shopHdrs[cat].style.display = ATTR.some(a=>a.cat===cat&&a.cur!=='mp'&&shopRevealed(a))?'':'none'; });
+  // headers show if the group has any revealed item OR a teaser to display
+  GROUPS.forEach(([cat])=>{ if(shopHdrs[cat]) shopHdrs[cat].style.display = (teaser[cat]||ATTR.some(a=>a.cat===cat&&a.cur!=='mp'&&shopRevealed(a)))?'':'none'; });
 }
 function buyAsset(id){
   if(S.assets&&S.assets[id]) return;
@@ -1152,10 +1175,12 @@ function refreshLife(){
   LIFESTYLE.forEach(it=>{
     const d=lifeEls[it.id]; if(!d) return; const owned=!!(S.assets&&S.assets[it.id]);
     const locked = !owned && careerStars() < (it.star||0);
+    const canBuy = !owned && !locked && S.cash>=it.cost;
     d.classList.toggle('owned',owned);
     d.classList.toggle('locked',locked);
-    d.classList.toggle('afford', !owned && !locked && S.cash>=it.cost);
-    d.querySelector('.price .c').style.display=(owned||locked)?'none':'';
+    d.classList.toggle('afford', canBuy);
+    const btn=d.querySelector('.xpb'); if(btn) btn.classList.toggle('afford',canBuy);
+    d.querySelector('.xc .c').style.display=(owned||locked)?'none':'';
     d.querySelector('[data-cost]').textContent=owned?'':(locked?('★'+it.star):fmt(it.cost));
     d.querySelector('[data-lbl]').textContent=owned?'✓ OWNED':(locked?('NEEDS ★'+it.star):'BUY');
   });
@@ -1188,12 +1213,6 @@ function refreshHUD(){
       if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else if(tab==='shop') refreshUps(); else renderSkills(); } }
 }
 
-// ---- Buy mode toggle ----
-document.getElementById('modeBtn').addEventListener('click',()=>{
-  buyMode = buyMode===1?'max':1;
-  document.getElementById('modeBtn').textContent = buyMode==='max'?'Buy MAX':'Buy ×1';
-  refreshUps();
-});
 
 // ---- Tabs ----
 for(const [k] of TABS) document.getElementById('tab_'+k).addEventListener('click',()=>setTab(k));
@@ -1331,10 +1350,10 @@ function renderRunUps(){
   runWrap.innerHTML='<div class="grouphdr">Running — tap to dash, buy speed</div>'
     +'<div style="font-size:11.5px;color:#9fd3b1;margin:0 4px 8px;">'+star+'</div>'
     + RUN_ATTR.map(a=>{ const l=rlv(a.id), maxed=!isFinite(a.cost(l))||a.val(l+1)<=a.val(l), cost=a.cost(l), aff=!maxed&&S.cash>=cost;
-      return `<div class="up${maxed?' maxed':(aff?' afford':'')}" data-run="${a.id}"><div class="ic">${a.ic}</div>
+      return `<div class="up${maxed?' maxed':''}"><div class="ic">${a.ic}</div>
         <div class="mid"><div class="nm">${a.nm}<span class="lvl">Lv ${l}</span></div>
         <div class="eff">${a.desc}: ${a.show(a.val(l))}${maxed?'':' <span class="nx">→ '+a.show(a.val(l+1))+'</span>'}</div></div>
-        <div class="buy"><div class="price"><span class="c"></span>${maxed?'MAX':fmt(cost)}</div><div class="lbl">${maxed?'MAXED':((l<1&&a.id==='rAuto')?'UNLOCK':'UPGRADE')}</div></div></div>`;
+        <button class="xpb${(!maxed&&aff)?' afford':''}" data-run="${a.id}"><span class="xt">${maxed?'MAXED':((l<1&&a.id==='rAuto')?'UNLOCK':'UPGRADE')}</span><span class="xc">${maxed?'MAX':'<span class="c"></span>'+fmt(cost)}</span></button></div>`;
     }).join('');
   runWrap.querySelectorAll('[data-run]').forEach(el=>el.addEventListener('click',()=>buyRun(el.dataset.run)));
 }
