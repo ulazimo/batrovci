@@ -108,9 +108,10 @@
             font-size:clamp(5.5px,.92vw,7.5px); letter-spacing:.04em; padding:1px 4px; border-radius:4px;
             background:rgba(57,217,138,.92); color:#03130c; box-shadow:0 1px 2px rgba(0,0,0,.5);}
         .card .info{flex:1; min-height:0; display:flex; flex-direction:column; padding:1px 4px 5px;}
-        .card .nm{font-size:clamp(8px,1.1vw,11px); font-weight:700; color:#eaf1f9; text-align:center; line-height:1.04;
+        .card .nm{font-size:clamp(8px,1.1vw,11px); font-weight:700; color:#eaf1f9; text-align:center; line-height:1.12; flex-shrink:0;
             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
-        .card .arch{font-size:clamp(6px,.82vw,8px); color:var(--muted); text-align:center; line-height:1;
+        .card .arch{display:none;}
+        .card.lg .arch{display:block; font-size:clamp(6px,.82vw,8px); color:var(--muted); text-align:center; line-height:1;
             margin-top:1px; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
         .card .abil{margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:2px; padding-top:3px;}
         .card .kind{font-family:'Orbitron'; font-weight:700; font-size:clamp(5.5px,.78vw,7.5px);
@@ -129,11 +130,11 @@
         @keyframes pop{0%{transform:scale(.55) rotateY(75deg); opacity:.1;} 60%{transform:scale(1.1);} 100%{transform:none; opacity:1;}}
         /* larger variant for the hand */
         .card.lg{width:clamp(80px,22vw,104px); height:clamp(116px,32vw,150px); padding:0;}
-        .card.lg .photo{height:clamp(58px,11.5vw,88px);}
+        .card.lg .photo{height:clamp(50px,9.5vw,74px);}
         .card.lg .info{padding:2px 6px 7px;}
         .card.lg .nm{font-size:clamp(10px,2.4vw,12.5px);}
         .card.lg .arch{font-size:clamp(7px,1.7vw,9px);}
-        .card.lg .atxt{-webkit-line-clamp:4; font-size:clamp(8px,2vw,10px);}
+        .card.lg .atxt{-webkit-line-clamp:3; font-size:clamp(8px,2vw,10px);}
         .card.lg .kind{font-size:clamp(7px,1.7vw,8.5px);}
 
         /* ---------- HAND / FOOTER ---------- */
