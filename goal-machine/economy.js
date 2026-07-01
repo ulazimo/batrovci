@@ -181,4 +181,4 @@ export const MP_RATE = 0.05;                       // base Magic Points per seco
 export const PORTAL_K = 0.30;                      // Portal Ball: bonus dmg per UNSPENT Magic Point (infinite scaler)
 // magic-archer model: you BUY target count & HP; Stage stays a global ×ramp.
 export const TGT_BASE = 12, REWARD_C = 0.5;
-export function stageScale(stage){ return Math.pow(1.33, stage-1); }     // global difficulty/reward ramp
+export function stageScale(stage){ return Math.pow(1.27, stage-1); }     // global difficulty/reward ramp (lower = levels climb faster)
