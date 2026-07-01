@@ -37,7 +37,12 @@ const fn = new Function('THREE','document','window','localStorage','performance'
   code + '\n;__expose({get S(){return S}, setS:v=>{S=v}, newState, ATTR, AMAP, LIFESTYLE, LMAP, attr, lv, ' +
   'incomePerSec, analyticDPS, targetHP, targetReward, avgBallDmg, ballsPerSec, hitFrac, prestigeMult, legacyGain, ' +
   'stageScale, targetCount, cashPerHit, lifeMult, update, serve, spawnTargets, get serving(){return serving}, setServing:v=>{serving=v}, ' +
-  'SKILLS, SKMAP, skUnlocked, unlockSkill, sl, skillDmg, skillRate, keeperSaveChance, vitMult, conMult, magMult, ensureSkills, grantXP, questGoldPerSec, QUESTS });');
+  'SKILLS, SKMAP, skUnlocked, unlockSkill, sl, skillDmg, skillRate, keeperSaveChance, vitMult, conMult, magMult, ensureSkills, grantXP, questGoldPerSec, QUESTS, ' +
+  // ---- Running discipline (Phase B) — exposed for the Running-vs-Shooting A/B ----
+  'RUN_ATTR, RAMAP, rlv, rattr, runAuto, runUpdate, lapReward, RUN_REWARD_C, DISCIPLINES, discUnlocked, totalStars, ensureCareer, ' +
+  'careerEarned(){ ensureCareer(); return S.career.shooting.earned + S.career.running.earned; }, ' +   // gross lifetime cash (what drives ★ Stars)
+  'resetRun(){ runVel=0; runPos=0; runDir=1; runDashT=0; runRunT=0; runLapT=0; }, ' +   // clear the module-scope run physics between measured windows
+  'RUN_PROGRESS_K, RUN_CAP_FRAC });');
 fn(THREE, documentStub, windowStub, {getItem(){return null;},setItem(){}}, {now(){return 0;}}, ()=>{}, ()=>{}, function(){}, function(){}, a=>{API=a;});
 
 const G = API;
@@ -129,3 +134,71 @@ function focusRun(minutes, policy){
 console.log('\nFocus policy A/B (4 min each):');
 console.log('  all-into-Strength:', JSON.stringify(focusRun(4, ()=>{ if(G.skUnlocked('str')) S().focus='str'; })));
 console.log('  balanced (lowest):', JSON.stringify(focusRun(4, chooseFocus)));
+
+// ===== Running vs Shooting A/B: is the Running discipline a viable alternate earner? =====
+// Bring a player up with the normal shooting policy until Running unlocks (★2 total), then FORK the
+// exact same state two ways for an equal window: keep shooting vs switch to Running. Compare GROSS
+// cash earned (career-wide — the thing that drives ★ Stars), so a detour into Running is measurable.
+const WIN = 5;   // minutes measured per branch
+
+// average lap speed accounting for the accel ramp from start speed → max over a lap of length L
+function avgLapSpeed(){
+  const s=G.rattr('rStart'), a=G.rattr('rAccel'), vmax=G.rattr('rMax'), L=G.rattr('rLen');
+  if(a<=0||L<=0) return s;
+  const dRamp=(vmax*vmax-s*s)/(2*a);                      // distance to reach max speed
+  if(dRamp>=L){ const vEnd=Math.sqrt(s*s+2*a*L); return L/((vEnd-s)/a); }   // never tops out
+  const tRamp=(vmax-s)/a;
+  return L/(tRamp + (L-dRamp)/vmax);
+}
+// steady-state Running income/sec = min(cap, K·rLen^0.4·rRew·avgSpeed)·shootingIncome. (reward∝rLen^1.4,
+// laps/sec∝1/rLen ⇒ net rLen^0.4 — so Stamina raises income, unlike the old linear cancel.) Drives buy-ROI.
+function runInc(){ return Math.min(G.RUN_CAP_FRAC, G.RUN_PROGRESS_K*Math.pow(G.rattr('rLen'),0.4)*G.rattr('rRew')*avgLapSpeed()) * G.incomePerSec(); }
+function buyRunning(){
+  if(!G.rlv('rAuto') && S().cash>=G.RAMAP.rAuto.cost(0)){ S().cash-=G.RAMAP.rAuto.cost(0); (S().run.lv=S().run.lv||{}).rAuto=1; }  // hands-free
+  for(let guard=0;guard<80;guard++){
+    const base=runInc(); let best=null,roi=0;
+    for(const a of G.RUN_ATTR){ if(a.id==='rAuto') continue; const l=G.rlv(a.id), c=a.cost(l); if(!isFinite(c)||S().cash<c) continue;
+      const b4=S().run.lv[a.id]||0; S().run.lv[a.id]=b4+1; const g=runInc()-base; S().run.lv[a.id]=b4;
+      const r=g/c; if(r>roi){ roi=r; best=a; } }
+    if(!best) break;
+    S().cash-=best.cost(G.rlv(best.id)); S().run.lv[best.id]=(S().run.lv[best.id]||0)+1;
+  }
+}
+// drive one branch for WIN minutes from a forked snapshot; return gross cash earned in the window
+function measureBranch(snap, mode){
+  G.setS(JSON.parse(JSON.stringify(snap))); G.ensureSkills(); G.ensureCareer();
+  const dt=0.05, e0=G.careerEarned(); let t=0,polT=0;
+  if(mode==='run'){ S().discipline='running'; G.resetRun(); } else { S().discipline='shooting'; G.serve(); }
+  while(t<WIN*60){
+    if(mode==='run') G.runUpdate(dt); else { G.update(dt); if(!G.serving) G.serve(); }
+    polT+=dt; if(polT>=0.5){ polT=0; buySkillUnlocks(); if(mode==='run') buyRunning(); else { chooseFocus(); buyCashAndMagic(); } }
+    t+=dt;
+  }
+  return G.careerEarned()-e0;
+}
+
+console.log('\nRunning vs Shooting (Phase B) — is Running a viable supplement?');
+G.setS(G.newState()); G.ensureSkills(); G.serve();
+{ const dt=0.05; let t=0,polT=0,unlockT=null;
+  while(t<45*60){ G.update(dt); if(!G.serving) G.serve(); polT+=dt;
+    if(polT>=0.5){ polT=0; buySkillUnlocks(); chooseFocus(); buyCashAndMagic(); }
+    if(G.totalStars()>=2){ unlockT=t; break; } t+=dt; }
+  if(unlockT==null){ console.log('  Running never unlocked (★2 not reached in 45m) — check star pacing.'); }
+  else {
+    const snap=JSON.parse(JSON.stringify(G.S));
+    // Running freezes your Shooting stage, so the fair test is the RATE ratio at the same progress level
+    // (target ≈ RUN_CAP_FRAC), NOT integrated earnings vs Shooting's exponential stage-climb (see note below).
+    G.setS(JSON.parse(JSON.stringify(snap))); G.ensureSkills(); G.ensureCareer();
+    const shootRate = G.incomePerSec();                                  // Shooting income/sec at the unlock stage
+    const runEarn = measureBranch(snap,'run'), runRate = runEarn/(WIN*60); // avg Running income/sec over the window
+    const runLevels = G.RUN_ATTR.map(a=>a.id+':'+G.rlv(a.id)).join(' ');   // what the greedy buyer invested in
+    const ratio = shootRate>0 ? runRate/shootRate : 0;
+    const shootEarn = measureBranch(snap,'shoot');                        // active stage-climb over the same window
+    console.log('  Running unlocks (★2) at:  '+ms(unlockT)+'   Shooting income/sec here = '+fmt(shootRate));
+    console.log('  After switching + investing, Running income/sec = '+fmt(runRate)+'  ('+(ratio*100).toFixed(0)+'% of Shooting rate, cap '+(G.RUN_CAP_FRAC*100)+'%)');
+    console.log('  Greedy running build: ['+runLevels+']');
+    console.log('  Supplement check: '+(ratio>=0.15&&ratio<=G.RUN_CAP_FRAC*1.15 ? 'GOOD — a meaningful capped supplement'
+      : ratio<0.15 ? 'TOO WEAK — Running barely earns vs same-stage Shooting' : 'TOO STRONG — exceeds the intended cap'));
+    console.log('  (Opportunity cost: actively climbing Shooting stages earns '+fmt(shootEarn)+' over '+WIN+'min vs the frozen-stage anchor — Running is for variety/★/idle, not max cash. Working as intended.)');
+  }
+}

@@ -104,6 +104,10 @@ export const SKILLS = [
 ];
 export const SKMAP={}; SKILLS.forEach(s=>SKMAP[s.id]=s);
 export function skXpNeed(l){ return 10*Math.pow(1.14,l); }
+// XP per target-break scales up with stage so the focused skill keeps leveling deep into the run
+// (else flat ~17 XP/clear stalls against skXpNeed's ×1.14/level and the run walls out mid-game).
+// Held at ×1 through the early Academy stages so early pacing is unchanged; grows linearly after.
+export function xpStageMult(stage){ return Math.max(1, stage/20); }
 
 // ---- Quests: passive GOLD generators that unlock at skill thresholds (run in background) ----
 // Gated by SKILL LEVELS (gates follow the skill-unlock order so each quest is the next milestone).
@@ -148,12 +152,18 @@ export function nextStar(earned){ for(const st of STARS) if(earned<st.goal) retu
 
 // ---- Running discipline (Phase B): gold-bought upgrades; tap-to-dash + Auto-Run ----
 export const RUN_REWARD_C = 0.6;
+// Lap reward rides your current SHOOTING earning power (incomePerSec) so Running stays relevant as the
+// economy goes exponential — and never self-feeds (anchor excludes Running's own income). Running upgrades
+// raise the raw rate; RUN_CAP_FRAC then clamps Running to a fraction of Shooting so it's a SUPPLEMENT, not a
+// rival: a change-of-pace earner + its own ★ ladder, never strictly better than shooting. Tune via the sim A/B.
+export const RUN_PROGRESS_K = 0.0015;   // raw-rate scale (× incomePerSec × rLen × rRew per lap)
+export const RUN_CAP_FRAC = 0.35;      // Running income/sec is capped at this fraction of Shooting income/sec
 export const RUN_ATTR = [
   {id:'rStart',ic:'🟢',nm:'Start Speed', desc:'speed you launch at',     cost:l=>50*Math.pow(1.18,l),  val:l=>2+0.5*l,   show:v=>v.toFixed(1)+' m/s'},
   {id:'rAccel',ic:'⚡',nm:'Acceleration',desc:'how fast you reach top',   cost:l=>70*Math.pow(1.20,l),  val:l=>3+0.8*l,   show:v=>v.toFixed(1)+' m/s²'},
   {id:'rMax',  ic:'🚀',nm:'Max Speed',   desc:'top sprint speed',         cost:l=>90*Math.pow(1.22,l),  val:l=>8+1.2*l,   show:v=>v.toFixed(1)+' m/s'},
   {id:'rLen',  ic:'📏',nm:'Stamina',     desc:'lap length — more reward', cost:l=>110*Math.pow(1.19,l), val:l=>20+4*l,    show:v=>v.toFixed(0)+' m'},
-  {id:'rRew',  ic:'💰',nm:'Reward / Lap',desc:'cash per lap',             cost:l=>60*Math.pow(1.17,l),  val:l=>1+0.5*l,   show:v=>'×'+v.toFixed(1)},
+  {id:'rRew',  ic:'💰',nm:'Reward / Lap',desc:'cash per lap',             cost:l=>l>=8?Infinity:60*Math.pow(1.17,l), val:l=>1+0.5*Math.min(l,8), show:v=>'×'+v.toFixed(1)},
   {id:'rDash', ic:'💨',nm:'Dash Power',  desc:'tap-dash speed burst',     cost:l=>130*Math.pow(1.21,l), val:l=>1.5+0.2*l, show:v=>'×'+v.toFixed(2)},
   {id:'rAuto', ic:'🔁',nm:'Auto-Run',    desc:'runs hands-free',          cost:l=>l>=1?Infinity:400,    val:l=>l>0?1:0,   show:v=>v?'active':'tap to run'},
 ];

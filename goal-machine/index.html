@@ -307,9 +307,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { fmt, ATTR, AMAP, GROUPS, SHOP_UNLOCK, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed,
+import { fmt, ATTR, AMAP, GROUPS, SHOP_UNLOCK, TIERS, tierIndex, tierName, SKILLS, SKMAP, skXpNeed, xpStageMult,
   QUESTS, LIFESTYLE, LMAP, MASTERY_LV, MASTERY_LEGACY, STARS, STAR_BONUS, starsFor, nextStar,
-  RUN_ATTR, RAMAP, RUN_REWARD_C,
+  RUN_ATTR, RAMAP, RUN_PROGRESS_K, RUN_CAP_FRAC,
   SAVE_BASE, ACC_BASE, ACC_PER, ACC_MAX, BURN_MULT, BURN_TIME, CANNON_SPLASH, FROST_TIME, MP_RATE, PORTAL_K,
   TGT_BASE, REWARD_C, stageScale } from './economy.js';
 // ======================= Goal Machine =======================
@@ -645,7 +645,7 @@ function resolveBall(b){
 }
 function breakTarget(t, viaSpecial){
   t.broken=true; t.hp=0; t.burnT=0;
-  grantXP((5 + targetCount()*2)/targetCount());   // active XP per TARGET break — only the FOCUSED skill levels
+  grantXP((5 + targetCount()*2)/targetCount() * xpStageMult(S.stage));   // active XP per TARGET break — only the FOCUSED skill levels; scales with stage
   const tp=target3D(t), rew=targetReward(t.maxHp);
   addCash(rew);
   floater(tp.x,tp.y,tp.z,'+'+fmt(rew),'#ffcf3a',16);
@@ -1208,7 +1208,7 @@ function refreshHUD(){
   els._c.masteredChip.style.display = S.mastered?'':'none';
   // keep affordability fresh as cash ticks in (throttled)
   if(!refreshHUD._t || Date.now()-refreshHUD._t>250){refreshHUD._t=Date.now();
-    if(S.discipline==='running'){ renderRunUps(); }
+    if(S.discipline==='running'){ renderRunUps(); if(lifeWrap&&lifeWrap.style.display!=='none') refreshLife(); }
     else { applyTabVis();
       if(tab==='life') refreshLife(); else if(tab==='quest') renderQuests(); else if(tab==='magic') renderMagicTree(); else if(tab==='shop') refreshUps(); else renderSkills(); } }
 }
@@ -1298,14 +1298,19 @@ const DISCIPLINES=[
 ];
 function discUnlocked(id){ const d=DISCIPLINES.find(x=>x.id===id); return !d || totalStars()>=d.unlockStar; }
 // run sim runtime
-let runPos=0, runVel=0, runDir=1, runDashT=0, runRunT=0, runFloaters=[];
+let runPos=0, runVel=0, runDir=1, runDashT=0, runRunT=0, runLapT=0, runFloaters=[];
 function rlv(id){ return (S.run&&S.run.lv&&S.run.lv[id])||0; }
 function rattr(id){ return RAMAP[id].val(rlv(id)); }
 function runAuto(){ return rattr('rAuto')>0; }
 function lapLen(){ return rattr('rLen'); }
-function lapReward(){ return RUN_REWARD_C*rattr('rLen')*rattr('rRew')*prestigeMult()*lifeMult('cash'); }
+// lap reward rides your current shooting income so Running scales with progress; capped at a fraction of it
+// (over the lap's duration) so Running stays a supplement, never a rival. lapT = seconds this lap took.
+// rLen^1.4 (super-linear) so Stamina raises income/sec even after laps/sec falls ∝1/rLen — a distinct lever
+// the speed upgrades can't replicate (they only raise avg speed). Cap keeps the total a supplement.
+function lapReward(lapT){ const raw = RUN_PROGRESS_K*incomePerSec()*Math.pow(rattr('rLen'),1.4)*rattr('rRew');
+  return (lapT==null) ? raw : Math.min(raw, RUN_CAP_FRAC*incomePerSec()*lapT); }
 function runDash(){ if(S.discipline!=='running') return; runDashT=0.6; runRunT=Math.max(runRunT,1.2); }
-function onLap(){ S.run.laps=(S.run.laps||0)+1; const rw=lapReward(); addCash(rw,'running'); runFloaters.push({txt:'LAP +'+fmt(rw),t:1,c:'#ffcf3a',sz:18}); }
+function onLap(lapT){ S.run.laps=(S.run.laps||0)+1; const rw=lapReward(lapT); addCash(rw,'running'); runFloaters.push({txt:'LAP +'+fmt(rw),t:1,c:'#ffcf3a',sz:18}); }
 function runUpdate(dt){
   sharedTick(dt);
   if(runDashT>0) runDashT=Math.max(0,runDashT-dt);
@@ -1316,9 +1321,12 @@ function runUpdate(dt){
   if(active){ if(runVel<startV) runVel=startV; runVel=Math.min(maxV, runVel+acc*dt); }
   else runVel=Math.max(0, runVel-acc*1.5*dt);
   runPos += runVel*runDir*dt;
+  runLapT += dt;
   const L=lapLen();
-  if(runPos>=L){ runPos=L; runDir=-1; onLap(); }
-  else if(runPos<=0 && runDir<0){ runPos=0; runDir=1; onLap(); }
+  // brake out of the turn and re-accelerate — so a longer lap (Stamina) spends more of its length at
+  // top speed → higher avg speed → more income/sec. Without this, avg speed ≈ rMax and lap length cancels.
+  if(runPos>=L){ runPos=L; runDir=-1; runVel=startV; onLap(runLapT); runLapT=0; }
+  else if(runPos<=0 && runDir<0){ runPos=0; runDir=1; runVel=startV; onLap(runLapT); runLapT=0; }
   for(let i=runFloaters.length-1;i>=0;i--){ runFloaters[i].t-=dt*0.9; if(runFloaters[i].t<=0) runFloaters.splice(i,1); }
 }
 function runDraw(){
@@ -1373,7 +1381,9 @@ function applyDisciplineView(){
   const dpsEl=document.querySelector('.dps-tag'); if(dpsEl) dpsEl.style.display=running?'none':'';
   if(serveBtn) serveBtn.style.display='none';
   buildDiscSwitcher();
-  if(running){ [trainWrap,shopWrap,magicWrap,questWrap,lifeWrap].forEach(w=>{ if(w) w.style.display='none'; }); if(runWrap) runWrap.style.display=''; renderRunUps(); }
+  if(running){ [trainWrap,shopWrap,magicWrap,questWrap].forEach(w=>{ if(w) w.style.display='none'; }); if(runWrap) runWrap.style.display=''; renderRunUps();
+    // keep Lifestyle spendable during Running so shared cash never becomes a dead pile
+    if(lifeWrap){ const showLife=tabVisible('life'); if(showLife) upsEl.appendChild(lifeWrap); lifeWrap.style.display=showLife?'':'none'; if(showLife) refreshLife(); } }
   else { if(runWrap) runWrap.style.display='none'; setTab(tab); }
 }
 
