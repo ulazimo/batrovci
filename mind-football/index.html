@@ -70,6 +70,17 @@ body {
 .rules .swatch.rest { background: rgba(255, 255, 255, 0.3); }
 .rules .swatch.goal { background: rgba(244, 67, 54, 0.85); }
 
+.back-link {
+  display: inline-block;
+  color: #94A3B8;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+.back-link:hover { opacity: 1; color: #00F0FF; }
+
 h1 { font-size: 22px; margin: 0 0 12px; }
 
 .scoreboard {
@@ -915,6 +926,10 @@ function render() {
 
   const celebration = renderCelebration();
   if (celebration) app.appendChild(celebration);
+
+  const back = el("a", "back-link", "← All Games");
+  back.href = "../";
+  app.appendChild(back);
 
   app.appendChild(el("h1", null, "Mind Football"));
   app.appendChild(renderScoreboard());
