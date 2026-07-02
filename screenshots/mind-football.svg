@@ -1,0 +1,81 @@
+<svg viewBox="0 0 1200 400" width="1200" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pitch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4caf50"/>
+      <stop offset="1" stop-color="#399143"/>
+    </linearGradient>
+    <radialGradient id="ballg" cx="0.35" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#ffca28"/>
+      <stop offset="1" stop-color="#e0a800"/>
+    </radialGradient>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- pitch -->
+  <rect width="1200" height="400" fill="url(#pitch)"/>
+
+  <!-- alternating stripes -->
+  <g fill="#ffffff" opacity="0.05">
+    <rect x="0"   y="0" width="150" height="400"/>
+    <rect x="300" y="0" width="150" height="400"/>
+    <rect x="600" y="0" width="150" height="400"/>
+    <rect x="900" y="0" width="150" height="400"/>
+  </g>
+
+  <!-- grid -->
+  <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.5">
+    <line x1="0" y1="50"  x2="1200" y2="50"/>
+    <line x1="0" y1="100" x2="1200" y2="100"/>
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="200" x2="1200" y2="200"/>
+    <line x1="0" y1="250" x2="1200" y2="250"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+    <line x1="0" y1="350" x2="1200" y2="350"/>
+    <line x1="150"  y1="0" x2="150"  y2="400"/>
+    <line x1="300"  y1="0" x2="300"  y2="400"/>
+    <line x1="450"  y1="0" x2="450"  y2="400"/>
+    <line x1="600"  y1="0" x2="600"  y2="400"/>
+    <line x1="750"  y1="0" x2="750"  y2="400"/>
+    <line x1="900"  y1="0" x2="900"  y2="400"/>
+    <line x1="1050" y1="0" x2="1050" y2="400"/>
+  </g>
+
+  <!-- halfway line + centre circle -->
+  <g stroke="#ffffff" stroke-opacity="0.85" stroke-width="3" fill="none">
+    <line x1="600" y1="0" x2="600" y2="400"/>
+    <circle cx="600" cy="200" r="70"/>
+  </g>
+
+  <!-- goal mouths (left & right) -->
+  <g stroke="#ffffff" stroke-opacity="0.9" stroke-width="4" fill="#ffffff" fill-opacity="0.12">
+    <rect x="0"    y="120" width="70" height="160"/>
+    <rect x="1130" y="120" width="70" height="160"/>
+  </g>
+
+  <!-- pieces: white (kings) -->
+  <g filter="url(#sh)">
+    <circle cx="250" cy="140" r="26" fill="#fafafa" stroke="#cccccc" stroke-width="3"/>
+    <circle cx="250" cy="260" r="26" fill="#fafafa" stroke="#cccccc" stroke-width="3"/>
+    <circle cx="430" cy="200" r="26" fill="#fafafa" stroke="#cccccc" stroke-width="3"/>
+    <!-- white goalkeeper -->
+    <circle cx="70" cy="200" r="26" fill="#fafafa" stroke="#ffd54f" stroke-width="5"/>
+    <text x="70" y="209" font-family="system-ui, sans-serif" font-size="26" font-weight="700" fill="#222" text-anchor="middle">G</text>
+  </g>
+
+  <!-- pieces: black (kings) -->
+  <g filter="url(#sh)">
+    <circle cx="770" cy="200" r="26" fill="#1a1a1a" stroke="#444444" stroke-width="3"/>
+    <circle cx="950" cy="140" r="26" fill="#1a1a1a" stroke="#444444" stroke-width="3"/>
+    <circle cx="950" cy="260" r="26" fill="#1a1a1a" stroke="#444444" stroke-width="3"/>
+    <!-- black goalkeeper -->
+    <circle cx="1130" cy="200" r="26" fill="#1a1a1a" stroke="#ffd54f" stroke-width="5"/>
+    <text x="1130" y="209" font-family="system-ui, sans-serif" font-size="26" font-weight="700" fill="#eee" text-anchor="middle">G</text>
+  </g>
+
+  <!-- pass line + ball -->
+  <line x1="430" y1="200" x2="600" y2="200" stroke="#ffeb3b" stroke-width="4" stroke-dasharray="10 8" opacity="0.85"/>
+  <circle cx="600" cy="200" r="17" fill="url(#ballg)" stroke="#b8860b" stroke-width="2" filter="url(#sh)"/>
+</svg>

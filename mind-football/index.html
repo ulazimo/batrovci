@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mind Football</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-1X91H99N2G');</script>
+<style>
+:root {
+  /* Board is 11 columns + a row label + borders inside the app padding.
+     Cap at 44px on desktop; shrink to fit the viewport on phones so the
+     board never overflows horizontally. */
+  --cell: min(44px, calc((100vw - 60px) / 11));
+  --green-light: #4caf50;
+  --green-dark: #43a047;
+  --line: rgba(255, 255, 255, 0.85);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #1b1b1f;
+  color: #eee;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.game {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.rules {
+  flex: 1 1 280px;
+  min-width: 260px;
+  max-width: 360px;
+  background: #232329;
+  border: 1px solid #34343c;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rules h2 { font-size: 16px; margin: 0 0 10px; }
+.rules h3 { font-size: 13px; margin: 16px 0 8px; opacity: 0.85; text-transform: uppercase; letter-spacing: 1px; }
+.rules ul { margin: 0; padding-left: 18px; }
+.rules li { margin-bottom: 7px; }
+.rules b { color: #fff; }
+
+.rules .legend { list-style: none; padding-left: 0; }
+.rules .legend li { display: flex; align-items: center; gap: 9px; }
+.rules .swatch {
+  width: 18px; height: 18px; border-radius: 4px; flex: none;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+.rules .swatch.move { background: rgba(255, 235, 59, 0.85); }
+.rules .swatch.pass { background: rgba(33, 150, 243, 0.7); }
+.rules .swatch.rest { background: rgba(255, 255, 255, 0.3); }
+.rules .swatch.goal { background: rgba(244, 67, 54, 0.85); }
+
+h1 { font-size: 22px; margin: 0 0 12px; }
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.score { font-weight: 700; padding: 4px 10px; border-radius: 6px; }
+.score.white { background: #f5f5f5; color: #111; }
+.score.black { background: #111; color: #f5f5f5; border: 1px solid #555; }
+.turn { font-size: 14px; opacity: 0.9; }
+.turn.white b { color: #fff; }
+.turn.black b { color: #bbb; }
+.winner {
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f9a825, #ffd54f);
+  color: #3e2723;
+  font-weight: 600;
+}
+
+.board-wrap { display: inline-block; }
+.board {
+  display: inline-block;
+  border: 3px solid var(--line);
+  background: var(--green-dark);
+}
+.row { display: flex; align-items: stretch; }
+.rowlabel {
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.collabels { display: flex; }
+.collabel {
+  width: var(--cell);
+  text-align: center;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.cell {
+  width: var(--cell);
+  height: var(--cell);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation; /* no double-tap zoom delay on taps */
+}
+.cell.light { background: var(--green-light); }
+.cell.dark { background: var(--green-dark); }
+.cell.box { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35); }
+.cell.gkzone { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6); }
+
+.cell.goalmouth {
+  background-image: linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+.goal-strip { display: flex; align-items: stretch; }
+.goal-spacer { display: inline-block; }
+.goal {
+  height: 22px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.55) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.55) 0 1px, transparent 1px 7px);
+  border: 3px solid var(--line);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.goal-strip:last-of-type .goal { border-bottom: 3px solid var(--line); border-top: none; }
+.goal-label { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+
+.cell.movehint { outline: 2px solid rgba(255, 235, 59, 0.9); outline-offset: -2px; }
+.cell.selected { outline: 3px solid #ffd54f; outline-offset: -3px; }
+.cell.ballhint.pass { background: rgba(33, 150, 243, 0.55); }
+.cell.ballhint.rest { background: rgba(255, 255, 255, 0.22); }
+.cell.ballhint.goal { background: rgba(244, 67, 54, 0.7); }
+
+.dot {
+  width: calc(var(--cell) * 0.27); height: calc(var(--cell) * 0.27);
+  border-radius: 50%;
+  background: rgba(255, 235, 59, 0.85);
+}
+
+.piece {
+  width: calc(var(--cell) * 0.68); height: calc(var(--cell) * 0.68);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--cell) * 0.28); font-weight: 700;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.piece.white { background: #fafafa; color: #222; border: 2px solid #ccc; }
+.piece.black { background: #1a1a1a; color: #eee; border: 2px solid #444; }
+.piece.gk { box-shadow: 0 0 0 2px #ffd54f, 0 1px 3px rgba(0,0,0,0.5); }
+
+.ball {
+  width: calc(var(--cell) * 0.32); height: calc(var(--cell) * 0.32);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff, #ffca28 70%);
+  border: 1px solid #b8860b;
+}
+.ball.onpiece {
+  position: absolute; right: -4px; top: -4px;
+  width: calc(var(--cell) * 0.28); height: calc(var(--cell) * 0.28);
+}
+
+.controls {
+  margin-top: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.controls .sep { flex: 1; }
+button {
+  background: #2e7d32; color: #fff; border: none; padding: 8px 14px;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+}
+button:hover { background: #388e3c; }
+select { margin-left: 4px; padding: 4px; border-radius: 4px; }
+label { font-size: 13px; }
+
+.note { font-size: 12px; opacity: 0.6; margin-top: 16px; line-height: 1.5; }
+
+/* ---- Goal celebration ---- */
+.score.bump { animation: scorebump 0.7s ease; }
+@keyframes scorebump {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.6); box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.7); }
+  100% { transform: scale(1); }
+}
+
+.celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+}
+.goal-banner {
+  margin-top: 14vh;
+  padding: 18px 44px;
+  border-radius: 16px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(135deg, #2e7d32, #66bb6a);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  animation: bannerpop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28),
+    bannerout 0.5s ease 2.1s forwards;
+}
+.goal-banner.white { background: linear-gradient(135deg, #e0e0e0, #ffffff); color: #1b5e20; }
+.goal-banner.black { background: linear-gradient(135deg, #212121, #424242); color: #fff; }
+.goal-text {
+  display: block;
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.goal-sub { display: block; font-size: 18px; opacity: 0.85; margin-top: 4px; }
+
+@keyframes bannerpop {
+  0% { transform: scale(0.4) translateY(-30px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes bannerout {
+  to { transform: scale(0.9) translateY(-20px); opacity: 0; }
+}
+
+.confetti { position: absolute; inset: 0; }
+.confetti .bit {
+  position: absolute;
+  top: -16px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: fall 2.4s linear forwards;
+}
+.confetti .b0 { background: #ffd54f; }
+.confetti .b1 { background: #ef5350; }
+.confetti .b2 { background: #42a5f5; }
+.confetti .b3 { background: #66bb6a; }
+.confetti .b4 { background: #ab47bc; }
+.confetti .bit:nth-child(odd) { animation-duration: 2.9s; width: 8px; height: 8px; border-radius: 50%; }
+@keyframes fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(540deg); opacity: 0.4; }
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 640px) {
+  .app { padding: 12px 8px 32px; }
+  h1 { font-size: 18px; margin-bottom: 8px; }
+
+  .game { gap: 16px; }
+  /* Board first, rules panel full-width beneath it. */
+  .rules { flex: 1 1 100%; max-width: none; min-width: 0; }
+
+  .scoreboard { gap: 8px; }
+  .turn, .winner { font-size: 13px; }
+
+  .controls { gap: 8px; }
+  .controls .sep { flex-basis: 100%; height: 0; } /* force controls onto their own row */
+  button { padding: 10px 14px; } /* larger tap target */
+
+  .goal-banner { padding: 14px 28px; }
+  .goal-text { font-size: 36px; letter-spacing: 2px; }
+  .goal-sub { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* =========================================================================
+ * Mind Football — engine + UI, ported from the React/TypeScript source to a
+ * single self-contained file. Rules unchanged (v1: local pass-and-play).
+ * ========================================================================= */
+
+/* ---- types.ts ---- */
+const ROWS = 12;          // A..L
+const COLS = 11;          // 1..11
+const GOALS_TO_WIN = 3;   // first team to this many goals wins
+const REPEAT_LIMIT = 3;   // a piece may not repeat the identical move this many times in a row
+
+const inBounds = (p) => p.row >= 0 && p.row < ROWS && p.col >= 0 && p.col < COLS;
+const posEq = (a, b) => a.row === b.row && a.col === b.col;
+const posLabel = (p) => `${String.fromCharCode(65 + p.row)}${p.col + 1}`;
+
+/* ---- board.ts ---- */
+const BOX_COLS = { from: 2, to: 8 };  // penalty box, 7 wide
+const GK_COLS = { from: 3, to: 7 };   // goalkeeper zone, 5 wide
+const GOAL_COLS = { from: 3, to: 7 }; // goal mouth, 5 wide
+const BOX_DEPTH = 3;                  // penalty box 3 rows deep
+const GK_DEPTH = 2;                   // goalkeeper zone 2 rows deep
+
+const goalRow = (team) => (team === "WHITE" ? 0 : ROWS - 1);
+
+function inGoalkeeperZone(team, p) {
+  if (p.col < GK_COLS.from || p.col > GK_COLS.to) return false;
+  if (team === "WHITE") return p.row >= 0 && p.row < GK_DEPTH;
+  return p.row <= ROWS - 1 && p.row > ROWS - 1 - GK_DEPTH;
+}
+
+function inPenaltyBox(team, p) {
+  if (p.col < BOX_COLS.from || p.col > BOX_COLS.to) return false;
+  if (team === "WHITE") return p.row >= 0 && p.row < BOX_DEPTH;
+  return p.row <= ROWS - 1 && p.row > ROWS - 1 - BOX_DEPTH;
+}
+
+// WHITE attacks toward L: opponent half is rows 6..11. BLACK is the reverse.
+const inOpponentHalf = (team, p) => (team === "WHITE" ? p.row >= ROWS / 2 : p.row < ROWS / 2);
+
+function opponentGoalMouth(team) {
+  const row = goalRow(team === "WHITE" ? "BLACK" : "WHITE");
+  const cells = [];
+  for (let c = GOAL_COLS.from; c <= GOAL_COLS.to; c++) cells.push({ row, col: c });
+  return cells;
+}
+
+function pieceAt(state, p) {
+  if (!inBounds(p)) return undefined;
+  for (const piece of Object.values(state.pieces)) {
+    if (piece.pos.row === p.row && piece.pos.col === p.col) return piece.id;
+  }
+  return undefined;
+}
+
+const isFree = (state, p) => inBounds(p) && pieceAt(state, p) === undefined;
+
+const ALL_DIRS = [
+  [-1, -1], [-1, 0], [-1, 1],
+  [0, -1],          [0, 1],
+  [1, -1], [1, 0], [1, 1],
+];
+
+/* ---- formations.ts ---- */
+const GK_SLOT = { kind: "GK", row: 0, col: 5 };
+
+const FORMATIONS = {
+  // Figure 2a: 4 defenders / 2 midfielders / 4 forwards
+  "4-2-4": [
+    GK_SLOT,
+    { kind: "FIELD", row: 1, col: 2 },
+    { kind: "FIELD", row: 1, col: 4 },
+    { kind: "FIELD", row: 1, col: 6 },
+    { kind: "FIELD", row: 1, col: 8 },
+    { kind: "FIELD", row: 3, col: 4 },
+    { kind: "FIELD", row: 3, col: 6 },
+    { kind: "FIELD", row: 5, col: 1 },
+    { kind: "FIELD", row: 5, col: 4 },
+    { kind: "FIELD", row: 5, col: 6 },
+    { kind: "FIELD", row: 5, col: 9 },
+  ],
+  // Figure 2b: WM (3-2-2-3)
+  "WM": [
+    GK_SLOT,
+    { kind: "FIELD", row: 1, col: 3 },
+    { kind: "FIELD", row: 1, col: 5 },
+    { kind: "FIELD", row: 1, col: 7 },
+    { kind: "FIELD", row: 2, col: 4 },
+    { kind: "FIELD", row: 2, col: 6 },
+    { kind: "FIELD", row: 4, col: 4 },
+    { kind: "FIELD", row: 4, col: 6 },
+    { kind: "FIELD", row: 5, col: 2 },
+    { kind: "FIELD", row: 5, col: 5 },
+    { kind: "FIELD", row: 5, col: 8 },
+  ],
+  // Figure 2c: 4 defenders / 4 midfielders / 2 forwards
+  "4-4-2": [
+    GK_SLOT,
+    { kind: "FIELD", row: 1, col: 2 },
+    { kind: "FIELD", row: 1, col: 4 },
+    { kind: "FIELD", row: 1, col: 6 },
+    { kind: "FIELD", row: 1, col: 8 },
+    { kind: "FIELD", row: 3, col: 2 },
+    { kind: "FIELD", row: 3, col: 4 },
+    { kind: "FIELD", row: 3, col: 6 },
+    { kind: "FIELD", row: 3, col: 8 },
+    { kind: "FIELD", row: 5, col: 4 },
+    { kind: "FIELD", row: 5, col: 6 },
+  ],
+};
+
+function teamSlots(team, formation) {
+  const base = FORMATIONS[formation];
+  if (team === "WHITE") return base.map((s) => ({ ...s }));
+  return base.map((s) => ({ ...s, row: ROWS - 1 - s.row }));
+}
+
+/* ---- rules.ts ---- */
+function isAdjacent(a, b) {
+  const dr = Math.abs(a.row - b.row);
+  const dc = Math.abs(a.col - b.col);
+  return dr <= 1 && dc <= 1 && !(dr === 0 && dc === 0);
+}
+
+function repeatsSameMove(history, pieceId, from, to) {
+  let count = 0;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const h = history[i];
+    if (h.pieceId !== pieceId) continue;
+    if (posEq(h.from, from) && posEq(h.to, to)) {
+      if (++count >= REPEAT_LIMIT - 1) return true;
+    } else if (!(posEq(h.from, to) && posEq(h.to, from))) {
+      break;
+    }
+  }
+  return false;
+}
+
+function legalPieceMoves(state, pieceId) {
+  const piece = state.pieces[pieceId];
+  if (!piece) return [];
+  const queenLike = piece.kind === "GK" && inGoalkeeperZone(piece.team, piece.pos);
+  const out = [];
+  for (const [dr, dc] of ALL_DIRS) {
+    let r = piece.pos.row + dr;
+    let c = piece.pos.col + dc;
+    while (inBounds({ row: r, col: c }) && isFree(state, { row: r, col: c })) {
+      if (queenLike && !inGoalkeeperZone(piece.team, { row: r, col: c })) break;
+      const cell = { row: r, col: c };
+      if (!repeatsSameMove(state.history, pieceId, piece.pos, cell)) out.push(cell);
+      if (!queenLike) break;
+      r += dr;
+      c += dc;
+    }
+  }
+  return out;
+}
+
+function teamHoldsBall(state, team) {
+  const h = state.ball.holder;
+  return h != null && state.pieces[h] && state.pieces[h].team === team;
+}
+
+function legalBallMoves(state) {
+  const team = state.turn;
+  if (!teamHoldsBall(state, team)) return [];
+  const from = state.ball.pos;
+  const goalMouth = opponentGoalMouth(team);
+  const moves = [];
+
+  for (const [dr, dc] of ALL_DIRS) {
+    let r = from.row + dr;
+    let c = from.col + dc;
+    while (inBounds({ row: r, col: c })) {
+      const cell = { row: r, col: c };
+      const occupant = pieceAt(state, cell);
+      if (occupant === undefined) {
+        const isGoal = goalMouth.some((g) => posEq(g, cell)) && inOpponentHalf(team, from);
+        moves.push({ to: cell, type: isGoal ? "goal" : "rest" });
+        r += dr;
+        c += dc;
+        continue;
+      }
+      const occPiece = state.pieces[occupant];
+      if (occPiece.team === team) moves.push({ to: cell, type: "pass" });
+      break;
+    }
+  }
+  return moves;
+}
+
+function shouldCaptureBall(state, movedPiece) {
+  if (state.ball.holder && state.pieces[state.ball.holder] &&
+      state.pieces[state.ball.holder].team === movedPiece.team) {
+    return false;
+  }
+  return isAdjacent(movedPiece.pos, state.ball.pos) || posEq(movedPiece.pos, state.ball.pos);
+}
+
+/* ---- game.ts ---- */
+function clone(state) {
+  return {
+    pieces: Object.fromEntries(
+      Object.entries(state.pieces).map(([id, p]) => [id, { ...p, pos: { ...p.pos } }]),
+    ),
+    ball: { pos: { ...state.ball.pos }, holder: state.ball.holder },
+    turn: state.turn,
+    score: { ...state.score },
+    formations: { ...state.formations },
+    winner: state.winner,
+    history: state.history.map((m) => ({
+      pieceId: m.pieceId,
+      from: { ...m.from },
+      to: { ...m.to },
+    })),
+  };
+}
+
+function buildPieces(formations) {
+  const pieces = {};
+  ["WHITE", "BLACK"].forEach((team) => {
+    teamSlots(team, formations[team]).forEach((slot, i) => {
+      const id = `${team[0]}${i}`;
+      pieces[id] = { id, team, kind: slot.kind, pos: { row: slot.row, col: slot.col } };
+    });
+  });
+  return pieces;
+}
+
+function kickoffHolder(pieces, team) {
+  const center = 5;
+  const field = Object.values(pieces).filter((p) => p.team === team && p.kind === "FIELD");
+  field.sort((a, b) => {
+    const byRow = team === "WHITE" ? b.pos.row - a.pos.row : a.pos.row - b.pos.row;
+    if (byRow !== 0) return byRow;
+    return Math.abs(a.pos.col - center) - Math.abs(b.pos.col - center);
+  });
+  return field[0];
+}
+
+function createGame(whiteFormation = "4-2-4", blackFormation = "4-2-4") {
+  const formations = { WHITE: whiteFormation, BLACK: blackFormation };
+  const pieces = buildPieces(formations);
+  const holder = kickoffHolder(pieces, "WHITE");
+  return {
+    pieces,
+    ball: { pos: { ...holder.pos }, holder: holder.id },
+    turn: "WHITE",
+    score: { WHITE: 0, BLACK: 0 },
+    formations,
+    winner: null,
+    history: [],
+  };
+}
+
+function applyPieceMove(state, pieceId, to) {
+  if (state.winner) throw new Error("Game is over");
+  const legal = legalPieceMoves(state, pieceId);
+  if (!legal.some((p) => posEq(p, to))) {
+    throw new Error(`Illegal piece move ${pieceId} -> ${posLabel(to)}`);
+  }
+  const next = clone(state);
+  const piece = next.pieces[pieceId];
+  const from = { ...piece.pos };
+  piece.pos = { ...to };
+  next.history.push({ pieceId, from, to: { ...to } });
+
+  if (shouldCaptureBall(next, piece)) {
+    next.ball.holder = piece.id;
+    next.ball.pos = { ...piece.pos };
+  } else if (next.ball.holder === piece.id) {
+    next.ball.pos = { ...piece.pos };
+  }
+  return next;
+}
+
+function applyBallMove(state, move) {
+  if (state.winner) throw new Error("Game is over");
+  const legal = legalBallMoves(state);
+  if (!legal.some((m) => m.type === move.type && posEq(m.to, move.to))) {
+    throw new Error(`Illegal ball move -> ${posLabel(move.to)} (${move.type})`);
+  }
+  const next = clone(state);
+
+  if (move.type === "goal") {
+    const scorer = state.turn;
+    next.score[scorer] += 1;
+    if (next.score[scorer] >= GOALS_TO_WIN) {
+      next.winner = scorer;
+      return next;
+    }
+    return resetAfterGoal(next, scorer);
+  }
+
+  next.ball.pos = { ...move.to };
+  if (move.type === "pass") {
+    const receiver = Object.values(next.pieces).find((p) => posEq(p.pos, move.to));
+    next.ball.holder = receiver ? receiver.id : null;
+  } else {
+    next.ball.holder = null;
+  }
+  return next;
+}
+
+function resetAfterGoal(state, scorer) {
+  const conceding = scorer === "WHITE" ? "BLACK" : "WHITE";
+  const pieces = buildPieces(state.formations);
+  const holder = kickoffHolder(pieces, conceding);
+  state.pieces = pieces;
+  state.ball = { pos: { ...holder.pos }, holder: holder.id };
+  state.turn = conceding;
+  state.history = [];
+  return state;
+}
+
+function endTurn(state) {
+  const next = clone(state);
+  next.turn = state.turn === "WHITE" ? "BLACK" : "WHITE";
+  return next;
+}
+
+/* =========================================================================
+ * UI — vanilla DOM, mirrors the React App/Board components.
+ * ========================================================================= */
+const TEAM_LABEL = { WHITE: "White", BLACK: "Black" };
+const GOAL_WIDTH = GOAL_COLS.to - GOAL_COLS.from + 1;
+
+const ui = {
+  whiteFormation: "4-2-4",
+  blackFormation: "4-2-4",
+  state: createGame(),
+  phase: "move",       // "move" | "pass"
+  selected: null,      // piece id
+  celebration: null,   // { team } while a goal banner is showing
+};
+let celebrationTimer = null;
+
+const root = document.getElementById("root");
+
+function currentPieceMoves() {
+  return ui.phase === "move" && ui.selected ? legalPieceMoves(ui.state, ui.selected) : [];
+}
+function currentBallMoves() {
+  return ui.phase === "pass" ? legalBallMoves(ui.state) : [];
+}
+
+function celebrate(team) {
+  ui.celebration = { team };
+  if (celebrationTimer) clearTimeout(celebrationTimer);
+  celebrationTimer = setTimeout(() => { ui.celebration = null; render(); }, 2600);
+}
+
+function newGame() {
+  ui.state = createGame(ui.whiteFormation, ui.blackFormation);
+  ui.phase = "move";
+  ui.selected = null;
+  if (window.trackEvent) window.trackEvent("game_start", {});
+  render();
+}
+
+function finishTurn() {
+  ui.state = endTurn(ui.state);
+  ui.phase = "move";
+  ui.selected = null;
+  render();
+}
+
+function onCellClick(pos) {
+  if (ui.state.winner) return;
+
+  if (ui.phase === "move") {
+    const pieceMoves = currentPieceMoves();
+    const target = pieceMoves.find((m) => posEq(m, pos));
+    if (ui.selected && target) {
+      const next = applyPieceMove(ui.state, ui.selected, pos);
+      ui.selected = null;
+      if (teamHoldsBall(next, next.turn)) {
+        ui.state = next;
+        ui.phase = "pass";
+      } else {
+        ui.state = endTurn(next);
+        ui.phase = "move";
+      }
+      render();
+      return;
+    }
+    // select one of your own pieces
+    const piece = Object.values(ui.state.pieces).find(
+      (p) => posEq(p.pos, pos) && p.team === ui.state.turn,
+    );
+    ui.selected = piece ? piece.id : null;
+    render();
+    return;
+  }
+
+  // phase === "pass"
+  const ballMoves = currentBallMoves();
+  const move = ballMoves.find((m) => posEq(m.to, pos));
+  if (!move) return;
+  const scorer = ui.state.turn;
+  const next = applyBallMove(ui.state, move);
+  if (move.type === "pass") {
+    ui.state = next;
+  } else if (move.type === "goal") {
+    celebrate(scorer);
+    if (window.trackEvent) {
+      window.trackEvent("goal", { team: scorer });
+      if (next.winner) window.trackEvent("game_win", { team: next.winner });
+    }
+    ui.state = next;
+    ui.phase = "move";
+  } else {
+    ui.state = endTurn(next);
+    ui.phase = "move";
+  }
+  render();
+}
+
+/* ---- rendering helpers ---- */
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+function goalStrip(team) {
+  const strip = el("div", "goal-strip");
+  strip.appendChild(el("span", "rowlabel"));
+  const spacer = el("span", "goal-spacer");
+  spacer.style.width = `calc(${GOAL_COLS.from} * var(--cell))`;
+  strip.appendChild(spacer);
+  const goal = el("div", "goal");
+  goal.style.width = `calc(${GOAL_WIDTH} * var(--cell))`;
+  goal.appendChild(el("span", "goal-label", team === "WHITE" ? "White goal" : "Black goal"));
+  strip.appendChild(goal);
+  return strip;
+}
+
+function renderBoard() {
+  const pieceMoves = currentPieceMoves();
+  const ballMoves = currentBallMoves();
+  const state = ui.state;
+  const selectedPos = ui.selected ? (state.pieces[ui.selected] || {}).pos : undefined;
+
+  const wrap = el("div", "board-wrap");
+  wrap.appendChild(goalStrip("WHITE"));
+
+  const board = el("div", "board");
+  for (let r = 0; r < ROWS; r++) {
+    const rowEl = el("div", "row");
+    rowEl.appendChild(el("span", "rowlabel", String.fromCharCode(65 + r)));
+
+    for (let c = 0; c < COLS; c++) {
+      const pos = { row: r, col: c };
+      const piece = Object.values(state.pieces).find((p) => posEq(p.pos, pos));
+      const ballOnPiece = posEq(state.ball.pos, pos) && state.ball.holder !== null;
+      const isBall = posEq(state.ball.pos, pos) && state.ball.holder === null;
+
+      const isMove = pieceMoves.some((m) => posEq(m, pos));
+      const ballMove = ballMoves.find((m) => posEq(m.to, pos));
+      const isSelected = selectedPos && posEq(selectedPos, pos);
+
+      const inBoxW = inPenaltyBox("WHITE", pos);
+      const inBoxB = inPenaltyBox("BLACK", pos);
+      const inGkW = inGoalkeeperZone("WHITE", pos);
+      const inGkB = inGoalkeeperZone("BLACK", pos);
+      const isGoalMouth = (r === 0 || r === ROWS - 1) && c >= GOAL_COLS.from && c <= GOAL_COLS.to;
+
+      const classes = [
+        "cell",
+        (r + c) % 2 === 0 ? "light" : "dark",
+        inGkW || inGkB ? "gkzone" : inBoxW || inBoxB ? "box" : "",
+        isGoalMouth ? "goalmouth" : "",
+        isMove ? "movehint" : "",
+        ballMove ? `ballhint ${ballMove.type}` : "",
+        isSelected ? "selected" : "",
+      ].filter(Boolean).join(" ");
+
+      const cell = el("div", classes);
+      cell.title = posLabel(pos);
+      cell.addEventListener("click", () => onCellClick(pos));
+
+      if (piece) {
+        const p = el("span", `piece ${piece.team.toLowerCase()} ${piece.kind.toLowerCase()}`,
+          piece.kind === "GK" ? "G" : "");
+        if (ballOnPiece) p.appendChild(el("span", "ball onpiece"));
+        cell.appendChild(p);
+      }
+      if (isBall) cell.appendChild(el("span", "ball"));
+      if (isMove && !piece) cell.appendChild(el("span", "dot"));
+
+      rowEl.appendChild(cell);
+    }
+    board.appendChild(rowEl);
+  }
+  wrap.appendChild(board);
+  wrap.appendChild(goalStrip("BLACK"));
+
+  const collabels = el("div", "collabels");
+  collabels.appendChild(el("span", "rowlabel"));
+  for (let c = 0; c < COLS; c++) collabels.appendChild(el("span", "collabel", String(c + 1)));
+  wrap.appendChild(collabels);
+
+  return wrap;
+}
+
+function renderRulesPanel() {
+  const aside = el("aside", "rules");
+  aside.appendChild(el("h2", null, "Quick rules"));
+
+  const ul = el("ul");
+  ul.innerHTML = `
+    <li><b>Player:</b> moves 1 cell in any direction (like a king).</li>
+    <li><b>Goalkeeper:</b> moves like a queen inside its zone, 1 cell outside.</li>
+    <li><b>Ball:</b> passed like a queen along free straight lines &amp; diagonals.</li>
+    <li><b>Win the ball:</b> move a player next to it (also off an opponent).</li>
+    <li><b>A turn:</b> move one piece &rarr; if you hold the ball you may pass (chain) &rarr; <i>End turn</i>.</li>
+    <li><b>Score:</b> only from the opponent's half, with a clear line to the goal mouth.</li>
+    <li><b>After a goal:</b> teams reset to formation; the conceding team kicks off.</li>
+    <li><b>Win:</b> first team to <b>3 goals</b> wins.</li>`;
+  aside.appendChild(ul);
+
+  aside.appendChild(el("h3", null, "Board hints"));
+  const legend = el("ul", "legend");
+  legend.innerHTML = `
+    <li><span class="swatch move"></span> legal moves for the selected piece</li>
+    <li><span class="swatch pass"></span> pass the ball to your player</li>
+    <li><span class="swatch rest"></span> move the ball to a free cell</li>
+    <li><span class="swatch goal"></span> goal! click to score</li>`;
+  aside.appendChild(legend);
+
+  return aside;
+}
+
+function renderScoreboard() {
+  const state = ui.state;
+  const bar = el("div", "scoreboard");
+
+  const white = el("span",
+    `score white ${ui.celebration && ui.celebration.team === "WHITE" ? "bump" : ""}`.trim(),
+    `White ${state.score.WHITE}`);
+  const black = el("span",
+    `score black ${ui.celebration && ui.celebration.team === "BLACK" ? "bump" : ""}`.trim(),
+    `Black ${state.score.BLACK}`);
+  bar.appendChild(white);
+  bar.appendChild(black);
+
+  if (state.winner) {
+    const win = el("span", "winner");
+    win.innerHTML = `&#127942; <b>${TEAM_LABEL[state.winner]} wins!</b> &mdash; start a New game`;
+    bar.appendChild(win);
+  } else {
+    const turn = el("span", `turn ${state.turn.toLowerCase()}`);
+    turn.innerHTML = `To move: <b>${TEAM_LABEL[state.turn]}</b>` +
+      (ui.phase === "pass" ? " &mdash; passing (click a player/cell or End turn)" : "");
+    bar.appendChild(turn);
+  }
+  return bar;
+}
+
+function renderControls() {
+  const controls = el("div", "controls");
+
+  if (ui.phase === "pass") {
+    const endBtn = el("button", null, "End turn");
+    endBtn.addEventListener("click", finishTurn);
+    controls.appendChild(endBtn);
+  }
+  controls.appendChild(el("span", "sep"));
+
+  const makeSelect = (labelText, value, onChange) => {
+    const label = el("label", null, labelText);
+    const select = el("select");
+    Object.keys(FORMATIONS).forEach((f) => {
+      const opt = el("option", null, f);
+      opt.value = f;
+      if (f === value) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.addEventListener("change", (e) => onChange(e.target.value));
+    label.appendChild(select);
+    return label;
+  };
+
+  controls.appendChild(makeSelect("White:", ui.whiteFormation, (v) => { ui.whiteFormation = v; }));
+  controls.appendChild(makeSelect("Black:", ui.blackFormation, (v) => { ui.blackFormation = v; }));
+
+  const newBtn = el("button", null, "New game");
+  newBtn.addEventListener("click", newGame);
+  controls.appendChild(newBtn);
+
+  return controls;
+}
+
+function renderCelebration() {
+  if (!ui.celebration) return null;
+  const wrap = el("div", "celebration");
+  const banner = el("div", `goal-banner ${ui.celebration.team.toLowerCase()}`);
+  banner.appendChild(el("span", "goal-text", "GOAL!"));
+  banner.appendChild(el("span", "goal-sub", `${TEAM_LABEL[ui.celebration.team]} scores`));
+  wrap.appendChild(banner);
+
+  const confetti = el("div", "confetti");
+  for (let i = 0; i < 40; i++) {
+    const bit = el("span", `bit b${i % 5}`);
+    bit.style.left = `${(i * 2.5) % 100}%`;
+    confetti.appendChild(bit);
+  }
+  wrap.appendChild(confetti);
+  return wrap;
+}
+
+function render() {
+  root.textContent = "";
+  const app = el("div", "app");
+
+  const celebration = renderCelebration();
+  if (celebration) app.appendChild(celebration);
+
+  app.appendChild(el("h1", null, "Mind Football"));
+  app.appendChild(renderScoreboard());
+
+  const game = el("div", "game");
+  game.appendChild(renderBoard());
+  game.appendChild(renderRulesPanel());
+  app.appendChild(game);
+
+  app.appendChild(renderControls());
+
+  const note = el("p", "note",
+    "v1 — local play (pass-and-play), basic rules only. Formation positions and goal lanes are approximate.");
+  app.appendChild(note);
+
+  root.appendChild(app);
+}
+
+render();
+</script>
+
+<!-- Tracking -->
+<script type="module">
+  import { initTracking } from '../firebase-tracker.js';
+  initTracking('mind-football');
+</script>
+<script type="module">
+  import { initAnalytics } from '../analytics.js';
+  initAnalytics('mind-football');
+</script>
+</body>
+</html>
