@@ -159,12 +159,20 @@ function showPreLevelUI() {
     document.getElementById('pre-level').classList.add('active');
     return;
   }
-  if (sectionTitle) sectionTitle.style.display = '';
-  grid.style.display = '';
   const comboMap = getComboMapping();
   const orderedSpecs = comboMap
     .map(m => SPECIAL_TYPES.find(s => s.id === m.specialId))
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter(spec => (progress.specialInventory[spec.id] || 0) > 0);
+  // Nothing owned to deploy (bombs are power-ups now) — hide the whole section
+  if (orderedSpecs.length === 0) {
+    if (sectionTitle) sectionTitle.style.display = 'none';
+    grid.style.display = 'none';
+    document.getElementById('pre-level').classList.add('active');
+    return;
+  }
+  if (sectionTitle) sectionTitle.style.display = '';
+  grid.style.display = '';
   orderedSpecs.forEach(spec => {
     const stock = progress.specialInventory[spec.id] || 0;
     const card = document.createElement('div');
@@ -238,7 +246,7 @@ function startGame(preplacedSpecials) {
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   lastRevealedCards = [];
   remnantHintShown = false;
-  bankProgress = 0; bankBombPlacement = false; boardEl.classList.remove('bomb-placement');
+  bankProgress = 0; bankBombPlacement = false; clearBombPlacement();
   consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));

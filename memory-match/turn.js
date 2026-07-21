@@ -13,22 +13,14 @@ function onCardClick(index) {
   const card = board[index];
   if (!card || turns <= 0) return;
 
-  // Bank → Baby Bomb placement mode
+  // Bank → Baby Bomb placement mode: tap a card to detonate (destroy) there
   if (bankBombPlacement) {
-    if (card.special || card.locked || card.flipped) return; // only allow valid cells
-    board[index] = createSpecialCard(index, 'cross');
-    replaceCell(index);
-    const placedEl = getCardEl(index);
-    if (placedEl) {
-      placedEl.classList.add('bomb-placed');
-      placedEl.addEventListener('animationend', () => placedEl.classList.remove('bomb-placed'), { once: true });
-    }
-    SFX.special();
+    if (card.special || card.locked) return; // only allow valid cells
     bankBombPlacement = false;
     bankProgress = 0;
-    boardEl.classList.remove('bomb-placement');
+    clearBombPlacement();
     updateBankProgress();
-    updateBankButton();
+    detonateBombAt(index, 'cross');
     return;
   }
 
@@ -36,7 +28,13 @@ function onCardClick(index) {
   dismissNudge();
   clearNudgeTimer();
 
-  if (activeBooster) { if (card.special) return; executeBoosterTap(activeBooster, index); return; }
+  if (activeBooster) {
+    const ab = BOOSTERS.find(x => x.id === activeBooster);
+    if (ab && ab.bomb) { detonateBoosterBomb(index); return; }
+    if (card.special) return;
+    executeBoosterTap(activeBooster, index);
+    return;
+  }
 
   // Spotlight mode: next tap on a face-down card permanently reveals it
   if (spotlightMode && !card.special && !card.flipped && !card.locked) {
@@ -306,9 +304,9 @@ function endTurn(manual, perfectSweep, remnantSweep) {
     toRemove = [...matched];
     if (combo===2) pts=50; else if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
-    if (!perfectSweep && !remnantSweep) newST = getSpecialForCombo(combo);
-    if (newST) { newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1); advanceTutorial('comboReward'); }
-    if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
+    // Completing a chain of 3+ grants a power-up (Peek / Baby Bomb / BIG Bomb) —
+    // no special card is left on the board anymore.
+    if (combo >= 3) grantChainReward(combo);
   }
   if (specialActivated) toRemove.push(...specialsUsed);
 
@@ -401,7 +399,6 @@ function endTurn(manual, perfectSweep, remnantSweep) {
       bombCards.forEach(idx => explodeBomb(idx));
       const bombExplodeDelay = bombCards.length > 0 ? 450 : 0;
       setTimeout(() => {
-        if (newSP>=0) { const bColor = (getRule('coloredBombs') && isBombType(newST)) ? chainColor : null; board[newSP]=createSpecialCard(newSP,newST,bColor); replaceCell(newSP); const spEl=getCardEl(newSP); if(spEl){spEl.classList.add('grow-in');spEl.addEventListener('animationend',()=>spEl.classList.remove('grow-in'),{once:true});} }
         // Step 1: Reveal bomb targets (stay face-up, no auto-hide)
         if (revealTargets.length > 0) {
           revealCardsNoHide(revealTargets);

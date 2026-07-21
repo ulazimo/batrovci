@@ -22,7 +22,6 @@ const SPECIAL_TYPES = [
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
   { id: 'diamond',   icon: '☢︎',  name: 'Nuke!',   desc: 'Reveal 12 cards in extended cross',                power: 'high',   needsTap: false,
     offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]] },
-  { id: 'wild',      icon: '🌈', name: 'Wild',      desc: 'Matches any color — acts as a wildcard in combos', power: 'medium', needsTap: false, isWild: true },
 ];
 
 function getSpecialType(id) { return SPECIAL_TYPES.find(s => s.id === id); }
@@ -51,19 +50,34 @@ function setLevelRewards(rewards) {
   saveProgress();
 }
 
+// Bombs are power-ups now, and Wild is gone — migrate legacy special rewards to boosters.
+const SPECIAL_REWARD_MIGRATION = { cross: 'babybomb', ring: 'bigbomb', diamond: 'bigbomb' };
+
 function grantLevelRewards(levelId) {
   const rewards = getLevelRewards().filter(r => r.afterLevel === levelId);
   if (rewards.length === 0) return [];
+  const granted = [];
   rewards.forEach(r => {
-    if ((r.type || 'booster') === 'special') {
+    const migrated = (r.type === 'special') && SPECIAL_REWARD_MIGRATION[r.specialId];
+    if (migrated) {
+      // Legacy bomb special reward → grant the equivalent bomb power-up (respecting its cap)
+      const cap = getBoosterMax(migrated);
+      boosterCounts[migrated] = Math.min(cap, (boosterCounts[migrated] || 0) + r.qty);
+      const b = BOOSTERS.find(x => x.id === migrated);
+      granted.push({ type: 'booster', boosterId: migrated, qty: r.qty, _icon: b ? b.icon : '💣', _name: b ? b.name : migrated });
+    } else if ((r.type || 'booster') === 'special') {
+      // Wild is retired — skip it; other specials still go to the deploy inventory
+      if (r.specialId === 'wild') return;
       progress.specialInventory[r.specialId] = (progress.specialInventory[r.specialId] || 0) + r.qty;
+      granted.push(r);
     } else {
       boosterCounts[r.boosterId] = (boosterCounts[r.boosterId] || 0) + r.qty;
+      granted.push(r);
     }
   });
   saveBoosterCounts();
   saveProgress();
-  return rewards;
+  return granted;
 }
 
 // ============================================================

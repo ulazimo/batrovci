@@ -7,6 +7,8 @@
 
 const BOOSTERS = [
   { id:'peek',      icon:'👁',  name:'Peek',        desc:'Reveal one card by tapping it. Long-press any card for a quick peek!', needsTap:true  },
+  { id:'babybomb',  icon:'💣',  name:'Baby Bomb',   desc:'Place on the board to destroy that card and its 4 neighbours',  needsTap:true, bomb:'cross', max:3, startQty:0 },
+  { id:'bigbomb',   icon:'💥',  name:'BIG Bomb',    desc:'Place on the board to destroy a whole 3×3 block of cards',      needsTap:true, bomb:'ring',  max:1, startQty:0 },
   { id:'random3',   icon:'🎲',  name:'Random 3',    desc:'Reveal 3 random face-down cards',                             needsTap:false },
   { id:'cross',     icon:'✚',  name:'Cross Reveal', desc:'Reveal cards in a cross around the card you tap',              needsTap:true  },
   { id:'row',       icon:'↔',  name:'Row Reveal',   desc:'Reveal the entire row of the card you tap',                    needsTap:true  },
@@ -32,6 +34,8 @@ function initBoosters() {
     } else {
       boosterCounts[b.id] = s.qty;
     }
+    // Enforce per-booster inventory cap (bombs are capped low)
+    boosterCounts[b.id] = Math.min(boosterCounts[b.id], getBoosterMax(b.id));
     const btn = document.createElement('div');
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
     btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
@@ -77,15 +81,73 @@ function hideTooltip() { tooltipEl.classList.remove('visible'); }
 function activateBooster(id) {
   if (inputLocked || !hasBooster(id)) return;
   dismissNudge(); clearNudgeTimer();
-  if (activeBooster === id) { activeBooster = null; updateBoosterUI(); updateChainIndicator(); return; }
   const b = BOOSTERS.find(x => x.id === id);
+  // Toggle off (also clears any bomb-placement glow)
+  if (activeBooster === id) {
+    activeBooster = null;
+    clearBombPlacement();
+    updateBoosterUI(); updateChainIndicator(); return;
+  }
   SFX.booster();
+  clearBombPlacement(); // clear glow if switching from another bomb
+  // Bomb power-ups (Baby Bomb / BIG Bomb): enter placement mode like Bank-It "Place Bomb"
+  if (b.bomb) {
+    activeBooster = id;
+    boardEl.classList.add('bomb-placement');
+    if (b.bomb === 'ring') boardEl.classList.add('bomb-place-big'); // BIG Bomb → distinct colour
+    showTutorialHint(`Tap a card to drop the ${b.name} — it destroys the cards around it!`);
+    updateBoosterUI(); updateChainIndicator(); return;
+  }
   if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
   consumeBooster(id);
   if (id === 'random3')   executeRandom3();
   else if (id === 'neighbor')  executeNeighbor();
   else if (id === 'colorpick') executeColorPick();
   else if (id === 'shield') { shieldCharges += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
+}
+
+// ============================================================
+// CHAIN REWARDS — completing a chain grants a power-up (no board special)
+//   chain 3-4 → Peek, 5-6 → Baby Bomb, 7+ → BIG Bomb (highest tier only)
+// ============================================================
+function getChainRewardBooster(comboLen) {
+  if (comboLen >= 7) return 'bigbomb';
+  if (comboLen >= 5) return 'babybomb';
+  if (comboLen >= 3) return 'peek';
+  return null;
+}
+
+function grantChainReward(comboLen) {
+  const id = getChainRewardBooster(comboLen);
+  if (!id) return;
+  const max = getBoosterMax(id);
+  const before = boosterCounts[id] || 0;
+  boosterCounts[id] = Math.min(max, before + 1);
+  saveBoosterCounts();
+  updateBoosterUI();
+  // Silent reward — just pulse the earned power-up's button (no top text notification)
+  if (boosterCounts[id] > before) flashBoosterButton(id);
+}
+
+function flashBoosterButton(id) {
+  const btn = boosterBar.querySelector(`.booster-btn[data-booster="${id}"]`);
+  if (!btn) return;
+  btn.classList.add('reward-flash');
+  btn.addEventListener('animationend', () => btn.classList.remove('reward-flash'), { once: true });
+}
+
+// Detonate a bomb power-up at `index`: destroy (collect) that card and its pattern.
+function detonateBoosterBomb(index) {
+  const id = activeBooster;
+  const b = BOOSTERS.find(x => x.id === id);
+  if (!b || !b.bomb) return;
+  const card = board[index];
+  if (!card || card.special || card.locked) return; // must land on a normal card
+  consumeBooster(id);
+  activeBooster = null;
+  clearBombPlacement();
+  updateBoosterUI();
+  detonateBombAt(index, b.bomb);
 }
 
 function executePeek(index) {

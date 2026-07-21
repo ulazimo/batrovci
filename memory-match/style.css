@@ -172,7 +172,7 @@ body {
 ================================================================ */
 #board-container {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 8px; width: 100%; max-width: 500px;
+  padding: 8px; width: 100%; max-width: 500px; position: relative;
 }
 #board-row-wrap { display: flex; align-items: stretch; width: 100%; }
 #board {
@@ -519,9 +519,9 @@ body {
   100% { transform:scale(1) rotate(0deg);     opacity:1; }
 }
 @keyframes bombGlow {
-  0%   { box-shadow:0 0 0 0 rgba(155,89,182,0); }
-  30%  { box-shadow:0 0 20px 8px rgba(155,89,182,.7); }
-  100% { box-shadow:0 0 0 0 rgba(155,89,182,0); }
+  0%   { box-shadow:0 0 0 0 rgba(230,126,34,0); }
+  30%  { box-shadow:0 0 20px 8px rgba(230,126,34,.75); }
+  100% { box-shadow:0 0 0 0 rgba(230,126,34,0); }
 }
 .card.bomb-placed { animation: bombPlace .5s cubic-bezier(.34,1.56,.64,1) forwards; }
 .card.bomb-placed::after {
@@ -530,10 +530,23 @@ body {
   animation: bombGlow .7s ease-out forwards;
 }
 
-/* Bomb placement mode — subtle highlight on placeable cards */
-#board.bomb-placement .card:not(.special):not(.locked):not(.flipped) .card-back {
-  box-shadow:0 0 8px rgba(155,89,182,.5);border:1px solid rgba(155,89,182,.4);
+/* Bomb placement mode — Baby Bomb = orange highlight on placeable cards */
+#board.bomb-placement .card:not(.special):not(.locked) .card-back,
+#board.bomb-placement .card:not(.special):not(.locked) .card-front {
+  box-shadow:0 0 10px rgba(230,126,34,.7);border:1px solid rgba(230,126,34,.6);
 }
+/* BIG Bomb placement = red highlight (distinct from Baby Bomb) */
+#board.bomb-placement.bomb-place-big .card:not(.special):not(.locked) .card-back,
+#board.bomb-placement.bomb-place-big .card:not(.special):not(.locked) .card-front {
+  box-shadow:0 0 12px rgba(231,76,60,.8);border:1px solid rgba(231,76,60,.7);
+}
+
+/* Chain-reward earned — pulse the booster button */
+@keyframes rewardFlash {
+  0%,100% { box-shadow:0 0 0 0 rgba(230,126,34,0); transform:scale(1); }
+  30%     { box-shadow:0 0 16px 5px rgba(230,126,34,.85); transform:scale(1.18); }
+}
+.booster-btn.reward-flash { animation: rewardFlash .7s ease-out 2; }
 
 /* ================================================================
    RECALL BUTTON
@@ -702,19 +715,22 @@ body {
 .settings-gear:hover { color:#fff;background:rgba(255,255,255,.1); }
 
 /* Tutorial hint (non-blocking) */
+/* Overlay at the top of the board — floats over the cards so it never shifts the board down */
 #tutorial-hint {
-  width:100%;max-width:500px;
-  background:linear-gradient(135deg,rgba(15,52,96,.95),rgba(83,52,131,.9));
-  color:#fff; padding:10px 20px;
+  position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  width:calc(100% - 24px); max-width:460px; box-sizing:border-box;
+  background:linear-gradient(135deg,rgba(15,52,96,.97),rgba(83,52,131,.94));
+  color:#fff; padding:12px 20px;
   font-size:15px; font-weight:700; z-index:250;
-  pointer-events:none; opacity:0; height:0; overflow:hidden;
-  transition:opacity .3s, height .3s ease;
-  text-align:center;
-  border-bottom:2px solid rgba(79,195,247,.4);
+  pointer-events:none; opacity:0; visibility:hidden;
+  transition:opacity .3s;
+  text-align:center; border-radius:12px;
+  border:2px solid rgba(79,195,247,.4);
+  box-shadow:0 6px 20px rgba(0,0,0,.45);
 }
-#tutorial-hint.visible { opacity:1; height:auto; padding:12px 20px; animation:tutHintIn .4s ease-out; }
+#tutorial-hint.visible { opacity:1; visibility:visible; animation:tutHintIn .4s ease-out; }
 #tutorial-hint.hiding { opacity:0; transition:opacity .5s; }
-@keyframes tutHintIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes tutHintIn { from{opacity:0;transform:translate(-50%,-10px)} to{opacity:1;transform:translate(-50%,0)} }
 
 /* Special card / booster tutorial popup */
 @keyframes tutPopIn {

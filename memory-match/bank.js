@@ -116,12 +116,57 @@ function updateBankProgress() {
   }
 }
 
+// Clear any bomb-placement highlight (both bomb-type variants)
+function clearBombPlacement() {
+  boardEl.classList.remove('bomb-placement', 'bomb-place-big');
+}
+
 function activateBombPlacement() {
   if (bankProgress < 3 || bankBombPlacement) return;
   bankBombPlacement = true;
-  showTutorialHint('💣 Tap a face-down card to place a Baby Bomb!');
-  // Highlight placeable cells
+  showTutorialHint('💣 Tap a card to drop a Baby Bomb — it destroys the cards around it!');
+  // Highlight placeable cells (Bank bomb is a Baby Bomb — orange)
+  clearBombPlacement();
   boardEl.classList.add('bomb-placement');
+}
+
+// Detonate a bomb at `index`: destroy (collect) that card plus its pattern
+// (Baby Bomb = ＋ of 5, BIG Bomb = 3×3 of 9). Cards fly to the score and clear,
+// counting toward goals; cleared slots refill from the deck on Cleaning levels.
+function detonateBombAt(index, bombType) {
+  inputLocked = true;
+  const cells = [index, ...getRevealPattern(bombType, index)];
+  const targets = [...new Set(cells)].filter(i => i >= 0 && board[i] && !board[i].special && !board[i].locked);
+  if (targets.length === 0) { inputLocked = false; updateBoosterUI(); updateBankButton(); return; }
+
+  // Reveal what's being destroyed (with a flash), then boom
+  targets.forEach(i => { const c = board[i]; if (c && !c.flipped) { c.flipped = true; const el = getCardEl(i); if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); } } });
+  SFX.boom();
+  const centerCell = boardEl.children[index];
+  if (centerCell) spawnBombVFX(centerCell);
+  shakeBoard();
+  // Count toward color/marked/coverage goals; combo 0 so it isn't treated as a chain
+  updateGoalProgress(targets, 0);
+  lastRevealedCards = [...targets];
+
+  // Hold on the revealed cards so the player can read them, THEN collect (slower than before)
+  setTimeout(() => {
+    flyCardsToGoal(targets, targets.length * 25, () => {
+      const nc = placeNewCards(targets, -1);
+      updateGoalHUD(); updateDeckHUD();
+      if (checkAllGoalsMet()) { levelWon(); return; }
+      const finish = () => { inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator(); };
+      // Refilled cards drop in face-up (like a normal clear), then hide after a beat
+      if (nc.length > 0 && !getRule('hiddenNewCards')) {
+        revealCardsNoHide(nc);
+        lastRevealedCards = [...nc];
+        setTimeout(() => {
+          nc.forEach(i => { const c = board[i]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(i); if (el) el.classList.remove('flipped'); } });
+          finish();
+        }, 2000);
+      } else finish();
+    });
+  }, 700);
 }
 
 function bankChain() {
