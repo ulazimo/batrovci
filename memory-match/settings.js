@@ -33,8 +33,8 @@ const GAMEPLAY_RULES = [
   { id: 'unlimitedPowerUps', name: 'Unlimited Power-Ups', icon: '♾️',
     desc: 'All power-ups have unlimited uses — counts never decrease',
     default: false },
-  { id: 'match2Mode', name: 'Match-2 Mode', icon: '✌️',
-    desc: 'A chain of just 2 same-colored cards is enough to score and clear them (instead of the usual 3+). Turns the game into Match-2.',
+  { id: 'legacyMatch3', name: 'Legacy Match-3', icon: '3️⃣',
+    desc: 'Play the original rule: a chain of 3+ is required to score and clear. Off = Match-2 (the default) — just 2 same-colored cards are enough.',
     default: false },
 ];
 

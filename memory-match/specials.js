@@ -84,8 +84,8 @@ function setComboMapping(map) {
   saveProgress();
 }
 
-// Minimum chain length that scores + clears. 2 in Match-2 mode, otherwise 3.
-function getMinCombo() { return getRule('match2Mode') ? 2 : 3; }
+// Min chain length that scores + clears. Default 2 (Match-2); Legacy Match-3 setting → 3.
+function getMinCombo() { return getRule('legacyMatch3') ? 3 : 2; }
 
 function getSpecialForCombo(comboLen) {
   const map = getComboMapping();
