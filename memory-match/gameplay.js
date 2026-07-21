@@ -1611,6 +1611,9 @@ function setComboMapping(map) {
   saveProgress();
 }
 
+// Minimum chain length that scores + clears. 2 in Match-2 mode, otherwise 3.
+function getMinCombo() { return getRule('match2Mode') ? 2 : 3; }
+
 function getSpecialForCombo(comboLen) {
   const map = getComboMapping();
   // Check exact matches first, then find highest N+ rule that applies
@@ -2033,7 +2036,7 @@ function updateBankButton() {
   const btn = document.getElementById('bank-btn');
   if (!btn || !getRule('bankButton')) return;
   const comboLen = chainCards.length + specialsUsed.length;
-  const canBank = turnActive && !inputLocked && comboLen >= 3;
+  const canBank = turnActive && !inputLocked && comboLen >= getMinCombo();
   // Button stays enabled when bomb is ready (3 charges), even without an active chain
   const bombReady = bankProgress >= 3 && !bankBombPlacement;
   const enabled = canBank || bombReady;
@@ -2108,7 +2111,7 @@ function bankChain() {
   if (bankProgress >= 3) { activateBombPlacement(); return; }
   if (!turnActive || inputLocked) return;
   const comboLen = chainCards.length + specialsUsed.length;
-  if (comboLen < 3) return;
+  if (comboLen < getMinCombo()) return;
   inputLocked = true;
   endTurn(true);
 
@@ -2216,7 +2219,7 @@ function executePeek(index) {
       // Check if all cards of chain color are found
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
       const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-      if (remaining.length === 0 && chainLen >= 3) {
+      if (remaining.length === 0 && chainLen >= getMinCombo()) {
         stopChainTimer();
         inputLocked = true;
         if (isSweepRevealActive()) {
@@ -2392,7 +2395,7 @@ function pickColor(color) {
       // Check if all cards of chain color are found
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
       const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-      if (remaining.length === 0 && chainLen >= 3) {
+      if (remaining.length === 0 && chainLen >= getMinCombo()) {
         stopChainTimer();
         inputLocked = true;
         if (isSweepRevealActive()) {
@@ -2609,7 +2612,7 @@ function onCardClick(index) {
     // Check if all cards of ALL active chain colors have been found
     const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
     const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-    if (remaining.length === 0 && chainLen >= 3) {
+    if (remaining.length === 0 && chainLen >= getMinCombo()) {
       stopChainTimer();
       inputLocked = true;
       if (isSweepRevealActive()) {
@@ -2710,14 +2713,15 @@ function endTurn(manual, perfectSweep) {
   let pts=0, toRemove=[], newST=null, newSP=-1;
   const PERFECT_SWEEP_BONUS = 0;
 
+  const minCombo = getMinCombo();
   // Track failed combos for nudge system
-  if (combo >= 3) { consecutiveFailedCombos = 0; }
+  if (combo >= minCombo) { consecutiveFailedCombos = 0; }
   else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge && hasAnyBoosters()) showNudge('booster'); }, 2000); }
 
-  if (combo >= 3) {
+  if (combo >= minCombo) {
     updateGoalProgress(matched, combo);
     toRemove = [...matched];
-    if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
+    if (combo===2) pts=50; else if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
     if (!perfectSweep) newST = getSpecialForCombo(combo);
     if (newST) { newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1); advanceTutorial('comboReward'); }

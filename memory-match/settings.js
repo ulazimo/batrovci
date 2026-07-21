@@ -33,6 +33,9 @@ const GAMEPLAY_RULES = [
   { id: 'unlimitedPowerUps', name: 'Unlimited Power-Ups', icon: '♾️',
     desc: 'All power-ups have unlimited uses — counts never decrease',
     default: false },
+  { id: 'match2Mode', name: 'Match-2 Mode', icon: '✌️',
+    desc: 'A chain of just 2 same-colored cards is enough to score and clear them (instead of the usual 3+). Turns the game into Match-2.',
+    default: false },
 ];
 
 function getRule(id) {
