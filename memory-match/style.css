@@ -204,6 +204,7 @@ body {
 #row-indicators .cov-ind.done { background:rgba(46,204,113,.25);color:#2ecc71; }
 .cell { perspective: 400px; cursor: pointer; aspect-ratio: 1; }
 .cell.disabled-cell { cursor: default; pointer-events: none; background: transparent; }
+.cell.cleared-cell { cursor: default; pointer-events: none; background: rgba(255,255,255,0.03); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
 .card {
   width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
   transition: transform 0.35s ease; border-radius: 4px;

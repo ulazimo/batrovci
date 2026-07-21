@@ -8,9 +8,10 @@ const REWARDS_DEFAULT = DEFAULT_LEVEL_REWARDS;
 
 function applyProgression(style) {
   const PRESETS = {
-    default: { levels: LEVELS_DEFAULT,  progression: PROGRESSION_UNLOCK_DEFAULTS, rewards: REWARDS_DEFAULT },
-    short:   { levels: LEVELS_SHORT, progression: PROGRESSION_SHORT,         rewards: PROGRESSION_SHORT.levelRewards },
-    long:    { levels: LEVELS_LONG,  progression: PROGRESSION_LONG,          rewards: PROGRESSION_LONG.levelRewards },
+    default:  { levels: LEVELS_DEFAULT,  progression: PROGRESSION_UNLOCK_DEFAULTS, rewards: REWARDS_DEFAULT },
+    short:    { levels: LEVELS_SHORT,    progression: PROGRESSION_SHORT,           rewards: PROGRESSION_SHORT.levelRewards },
+    cleaning: { levels: LEVELS_CLEANING, progression: PROGRESSION_CLEANING,        rewards: PROGRESSION_CLEANING.levelRewards },
+    long:     { levels: LEVELS_LONG,     progression: PROGRESSION_LONG,            rewards: PROGRESSION_LONG.levelRewards },
   };
   const preset = PRESETS[style];
   if (!preset) return;
@@ -137,6 +138,7 @@ let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = 
 let turnActive = false, inputLocked = false;
 let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 let lastRevealedCards = []; // indices of most recently revealed cards (for recall)
+let remnantHintShown = false; // one-time per-level hint for Cleaning remnant collection
 
 // Nudge system
 let consecutiveFailedCombos = 0;
@@ -272,6 +274,10 @@ function initLevelGoals() {
       case 'breakLocks':
         progress.breakLocks = { total: board.filter(c => c && c.locked).length, broken: 0 };
         break;
+      case 'clearAll':
+        // Clear every normal (non-special) card off the board. Specials don't count.
+        progress.clearAll = { total: board.filter(c => c && !c.special).length };
+        break;
     }
   });
   levelGoals = { definitions: defs, progress };
@@ -382,6 +388,7 @@ function checkAllGoalsMet() {
       case 'rowCoverage':   { const t = getRowTargets(g); return levelGoals.progress.rowCoverage.every((c, i) => c >= t[i]); }
       case 'colCoverage':   { const t = getColTargets(g); return levelGoals.progress.colCoverage.every((c, i) => c >= t[i]); }
       case 'breakLocks':   return levelGoals.progress.breakLocks.broken >= levelGoals.progress.breakLocks.total;
+      case 'clearAll':     return !board.some(c => c && !c.special);
       default: return true;
     }
   });
@@ -396,7 +403,7 @@ function capColor(c) { return c.charAt(0).toUpperCase() + c.slice(1); }
 function goalIcon(type) {
   return { score:'🎯', colorCollect:'🎨', specificCombos:'🔗', markedCards:'⭐',
            orderedCards:'🔢', colorAvoid:'🚫', rowCoverage:'↔', colCoverage:'↕',
-           breakLocks:'🔓' }[type] || '📋';
+           breakLocks:'🔓', clearAll:'🧹' }[type] || '📋';
 }
 
 function goalDescription(g) {
@@ -410,6 +417,7 @@ function goalDescription(g) {
     case 'rowCoverage':   { const t = getRowTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every row ${u[0]} time${u[0]>1?'s':''}` : `Use rows (${t.join(',')} times)`; }
     case 'colCoverage':   { const t = getColTargets(g); const u = [...new Set(t)]; return u.length === 1 ? `Use every column ${u[0]} time${u[0]>1?'s':''}` : `Use cols (${t.join(',')} times)`; }
     case 'breakLocks':   return `Break all ${g.locked ? g.locked.length : ''} locked tiles`;
+    case 'clearAll':     return 'Clear every card off the board';
     default: return '';
   }
 }
@@ -451,6 +459,11 @@ function getGoalDisplay(g) {
     }
     case 'breakLocks':
       return { icon:'🔓', label:'Locks', current: p.breakLocks.broken, target: p.breakLocks.total, done: p.breakLocks.broken >= p.breakLocks.total };
+    case 'clearAll': {
+      const total = p.clearAll.total;
+      const remaining = board.filter(c => c && !c.special).length;
+      return { icon:'🧹', label:'Cleared', current: total - remaining, target: total, done: remaining === 0 };
+    }
     default: return { icon:'📋', label:'', current: 0, target: 0, done: true };
   }
 }
@@ -1417,6 +1430,7 @@ function startGame(preplacedSpecials) {
   turnActive = false; inputLocked = false;
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
   lastRevealedCards = [];
+  remnantHintShown = false;
   bankProgress = 0; bankBombPlacement = false; boardEl.classList.remove('bomb-placement');
   consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
@@ -1457,6 +1471,13 @@ function startGame(preplacedSpecials) {
         board[idx].locked = true;
       }
     });
+  }
+
+  // Cleaning (no-refill) levels: re-roll colors so the board is guaranteed clearable
+  if (lvl.noRefill) {
+    const fillable = board.map((c, i) => (c && !c.special) ? i : -1).filter(i => i >= 0);
+    const colors = generateClearableColors(fillable.length, ACTIVE_COLORS);
+    fillable.forEach((idx, k) => { board[idx].color = colors[k]; });
   }
 
   targetEl.textContent = TARGET > 0 ? TARGET : '—';
@@ -1637,6 +1658,20 @@ function getSpecialForCombo(comboLen) {
 // ============================================================
 function randomColor() { return ACTIVE_COLORS[Math.floor(Math.random() * ACTIVE_COLORS.length)]; }
 function createCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: false }; }
+
+// Build a color assignment for `n` cards where every color used appears at least
+// 3 times — so a clear-all (no-refill) board is always fully clearable with perfect
+// play (any count >=3 decomposes into chains of 3+; counts of 1 or 2 can never clear).
+function generateClearableColors(n, colors) {
+  const m = Math.max(1, Math.min(colors.length, Math.floor(n / 3)));
+  const counts = new Array(m).fill(Math.floor(n / m));
+  const rem = n - counts.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < rem; i++) counts[i]++;
+  const arr = [];
+  for (let i = 0; i < m; i++) for (let k = 0; k < counts[i]; k++) arr.push(colors[i]);
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
 function createLockedCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: true }; }
 function createSpecialCard(i, type, bombColor) { SFX.pop(); return { color: null, flipped: false, special: type, index: i, bombColor: bombColor || null }; }
 function isBombType(type) { return ['cross','ring','diamond'].includes(type); }
@@ -1761,7 +1796,12 @@ boardEl.addEventListener('click', e => {
 
 function getCardEl(i) { return boardEl.querySelector(`.card[data-index="${i}"]`); }
 function updateUI()   { scoreEl.textContent = score; turnsEl.textContent = turns; }
-function replaceCell(i) { boardEl.children[i].innerHTML = buildCardHTML(board[i]); }
+function replaceCell(i) {
+  const cell = boardEl.children[i];
+  if (!cell) return;
+  if (board[i] === null) { cell.className = 'cell cleared-cell'; cell.innerHTML = ''; return; }
+  cell.innerHTML = buildCardHTML(board[i]);
+}
 
 function updateStatusBadge() {
   let h = '';
@@ -2596,8 +2636,8 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); advanceTutorial('firstFlip'); startNudgeIdleTimer(); return; }
-  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); startNudgeIdleTimer(); return; }
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); advanceTutorial('firstFlip'); startNudgeIdleTimer(); tryAutoResolveColor(); return; }
+  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); startNudgeIdleTimer(); tryAutoResolveColor(); return; }
   // Match: primary chain color OR any parallel chain color (colored bombs)
   const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
   if (colorMatch) {
@@ -2609,22 +2649,9 @@ function onCardClick(index) {
     if (chainLen === 3) { startChainTimer(); advanceTutorial('chainOf3'); }
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
-    // Check if all cards of ALL active chain colors have been found
-    const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-    const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-    if (remaining.length === 0 && chainLen >= getMinCombo()) {
-      stopChainTimer();
-      inputLocked = true;
-      if (isSweepRevealActive()) {
-        setTimeout(() => endTurn(true, true), 300);
-      } else {
-        // Show "all color found" banner, then resolve normally with special card spawn
-        showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
-        setTimeout(() => {
-          hideBoardBanner(() => endTurn(true, false));
-        }, 1200);
-      }
-    }
+    // All cards of the chain colour opened? Resolve the sweep. (Cleaning waives the
+    // combo minimum when only 1-2 of the colour remained — handled in tryAutoResolveColor.)
+    tryAutoResolveColor();
     // Check all-colors-active bonus
     if (getRule('coloredBombs') && chainColors.size >= ACTIVE_COLORS.length) {
       checkAllColorsBonus();
@@ -2671,7 +2698,9 @@ function onCardClick(index) {
 // ============================================================
 // END TURN
 // ============================================================
-function endTurn(manual, perfectSweep) {
+// remnantSweep: the chain opened every remaining card of a colour that only had 1-2
+// left (Cleaning journey) — collect them even though the combo is below the 3-minimum.
+function endTurn(manual, perfectSweep, remnantSweep) {
   stopChainTimer();
   // Kill chain tension immediately — turn is resolving, no more pulsing
   boardEl.removeAttribute('data-tension');
@@ -2714,16 +2743,16 @@ function endTurn(manual, perfectSweep) {
   const PERFECT_SWEEP_BONUS = 0;
 
   const minCombo = getMinCombo();
-  // Track failed combos for nudge system
-  if (combo >= minCombo) { consecutiveFailedCombos = 0; }
+  // Track failed combos for nudge system (a remnant sweep is a successful collect)
+  if (combo >= minCombo || remnantSweep) { consecutiveFailedCombos = 0; }
   else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge && hasAnyBoosters()) showNudge('booster'); }, 2000); }
 
-  if (combo >= minCombo) {
+  if (combo >= minCombo || remnantSweep) {
     updateGoalProgress(matched, combo);
     toRemove = [...matched];
     if (combo===2) pts=50; else if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
     if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
-    if (!perfectSweep) newST = getSpecialForCombo(combo);
+    if (!perfectSweep && !remnantSweep) newST = getSpecialForCombo(combo);
     if (newST) { newSP = lastSelectedIdx >= 0 ? lastSelectedIdx : (matched.length>0 ? matched[matched.length-1] : -1); advanceTutorial('comboReward'); }
     if (newSP>=0) toRemove = toRemove.filter(i=>i!==newSP);
   }
@@ -2861,8 +2890,15 @@ function endTurn(manual, perfectSweep) {
 // Place new cards on the board (with drop animation) but don't reveal them yet
 function placeNewCards(toRemove, skip) {
   const nc = [];
+  const noRefill = LEVELS[currentLevelIndex]?.noRefill;
   toRemove.forEach(idx => {
     if (idx===skip || board[idx]===null) return;
+    if (noRefill) {
+      // Cleaning journey: cleared slots stay empty (no card drops in)
+      board[idx] = null;
+      replaceCell(idx);
+      return;
+    }
     board[idx]=createCard(idx); replaceCell(idx); nc.push(idx);
     const el=getCardEl(idx);
     if (el) { el.classList.add('dropping'); el.addEventListener('animationend',()=>el.classList.remove('dropping'),{once:true}); }
@@ -2925,8 +2961,13 @@ function showBoardBanner(type, title, sub) {
 function hideBoardBanner(cb) {
   const banner = boardContainerEl.querySelector('.board-banner');
   if (!banner) { inputLocked = false; cb?.(); return; }
+  // animationend can silently fail to fire (reduced motion, backgrounded tab, interrupted
+  // paint) — a fallback timeout guarantees we never leave the game locked behind a banner.
+  let done = false;
+  const finish = () => { if (done) return; done = true; banner.remove(); inputLocked = false; cb?.(); };
   banner.classList.add('hiding');
-  banner.addEventListener('animationend', () => { banner.remove(); inputLocked = false; cb?.(); }, { once: true });
+  banner.addEventListener('animationend', finish, { once: true });
+  setTimeout(finish, 550);
 }
 
 function showGoalIntroBanner(cb) {
@@ -2950,8 +2991,11 @@ function showGoalIntroBanner(cb) {
 
   // Hold then dismiss
   setTimeout(() => {
+    let done = false;
+    const finish = () => { if (done) return; done = true; banner.remove(); cb?.(); };
     banner.classList.add('hiding');
-    banner.addEventListener('animationend', () => { banner.remove(); cb?.(); }, { once: true });
+    banner.addEventListener('animationend', finish, { once: true });
+    setTimeout(finish, 550); // fallback if animationend doesn't fire
   }, 1800);
 }
 
@@ -3027,6 +3071,47 @@ function finishTurn() {
   updateChainIndicator(); updateBoosterUI(); updateRecallButton(); updateGoalHUD();
   if (checkAllGoalsMet()) levelWon();
   else if (turns <= 0) levelFailed();
+}
+
+// Cleaning journey: how many collectable (normal, unlocked) cards of a color are still
+// on the board. A color at <=2 can never form a 3-chain, so those become "remnants".
+function colorCountOnBoard(color) {
+  let n = 0;
+  for (const c of board) if (c && !c.special && !c.locked && c.color === color) n++;
+  return n;
+}
+function isRemnantColor(color) { return colorCountOnBoard(color) <= 2; }
+
+// Called after a card joins the current (single-colour) chain. If every remaining card
+// of that colour is now open, resolve the turn as a sweep. Normally that needs a 3+
+// chain; on Cleaning levels the 3-minimum is waived when the colour only had 1-2 left
+// (a "remnant"), so its cards can be collected in their own pure chain. Returns true if
+// it resolved the turn.
+function tryAutoResolveColor() {
+  if (chainColor === null) return false;
+  const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+  const stillClosed = board.some(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
+  if (stillClosed) return false; // not every card of the colour is open yet
+  const chainLen = chainCards.length + specialsUsed.length;
+  const minCombo = getMinCombo();
+  const remnant = LEVELS[currentLevelIndex]?.noRefill && chainColors.size <= 1 && isRemnantColor(chainColor);
+  if (chainLen < minCombo && !remnant) return false; // below the combo minimum and not a remnant
+  stopChainTimer();
+  inputLocked = true;
+  if (remnant && chainLen < minCombo) {
+    if (!remnantHintShown) { remnantHintShown = true; showTutorialHint('🧹 Only 1-2 of that colour left — collected without a combo'); }
+    setTimeout(() => endTurn(true, false, true), 300); // remnant sweep: collect below the 3-minimum
+  } else if (LEVELS[currentLevelIndex]?.noRefill) {
+    // Cleaning journey: sweeping a colour clean is the core action — resolve it directly
+    // (no "all colours" banner, which is neither accurate nor wanted here).
+    setTimeout(() => endTurn(true, false), 300);
+  } else if (isSweepRevealActive()) {
+    setTimeout(() => endTurn(true, true), 300);
+  } else {
+    showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
+    setTimeout(() => { hideBoardBanner(() => endTurn(true, false)); }, 1200);
+  }
+  return true;
 }
 
 function levelWon() {
