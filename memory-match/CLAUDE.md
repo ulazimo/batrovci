@@ -30,9 +30,10 @@ portfolio repo of ~20 mini-games). No build step, no framework, no npm.
 
 - **Pure vanilla JS + HTML + CSS.** No framework, no bundler, no dependencies.
 - Global-scoped functions and mutable module-level `let` state (scripts share one
-  global namespace via `<script>` tags — order matters, see `index.html:204-212`).
+  global namespace via `<script>` tags — order matters, see the `<script src=...>`
+  block near the end of [index.html](index.html) and the load-order rules in §12).
 - **Sound** is generated programmatically via the Web Audio API (`const SFX` in
-  [gameplay.js:565](gameplay.js)), plus a few `audio/*.mp3` files. No external libs.
+  [audio.js](audio.js)), plus a few `audio/*.mp3` files. No external libs.
 - **Persistence** is `localStorage` under the key `mm_progress`
   ([settings.js:303-309](settings.js)).
 - **Assets**: card art in `blocks/` (`block_<color>_<1-6>.png`), power-up/goal
@@ -49,9 +50,31 @@ statically). There is no test suite and no lint config for this game.
 
 | File | Lines | Role |
 |------|-------|------|
-| `index.html` | ~226 | DOM skeleton: HUD, board container, all overlay screens (home, journey picker, level select, pre-level, win/fail, settings, tutorials). Loads all scripts in order. |
-| `gameplay.js` | ~3250 | **The engine.** All runtime logic: state, board, turn loop, scoring, specials, boosters, goals, win/fail, animations, tutorials. |
+| `index.html` | ~242 | DOM skeleton: HUD, board container, all overlay screens (home, journey picker, level select, pre-level, win/fail, settings, tutorials). Loads all scripts in order. |
 | `settings.js` | ~660 | Config layer: `GAMEPLAY_RULES` toggles, win-streak config, persistence (`progress`), the in-game **Settings panel** UI, combo→special mapping UI, level-rewards UI. |
+
+**The engine** (formerly one ~3,370-line `gameplay.js`) is now split by concern into
+16 files, all loaded as ordered `<script>` tags sharing one global namespace. They are
+loaded in this order after `settings.js` (see [index.html](index.html)):
+
+| File | Role |
+|------|------|
+| `state.js` | **Loads first.** All cross-cutting shared state (`board`, `score`, `turns`, `chainColor`, `chainCards`, `specialsUsed`, `turnActive`, `inputLocked`, `shieldCharges`, `deck`, `COLS/ROWS/TOTAL`, `currentLevelIndex`, `levelGoals`, …) + top-level DOM refs (`boardEl`, `scoreEl`, …) + progression-data consts. |
+| `audio.js` | `SFX` — Web Audio API programmatic sound. |
+| `vfx.js` | Juice/animation: particles, `flyCardsToGoal`, confetti, `animateScore`, board/sweep banners, score popup, initial board reveal. |
+| `progression.js` | Journeys: load/save/restore snapshots, `applyProgression`, `playFromHome`. |
+| `specials.js` | `SPECIAL_TYPES`, level rewards, combo→special mapping, `getMinCombo`, `getSpecialForCombo`. |
+| `goals.js` | Level goals: `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet`, goal HUD. |
+| `board.js` | Card model/factory, `renderBoard`, board-cell UI, chain tension/faces/indicators, long-press peek, `boardEl` event listeners. |
+| `chain-timer.js` | Optional chain countdown timer. |
+| `boosters.js` | `BOOSTERS`, booster inventory/consume/UI + booster execution actions. |
+| `bank.js` | Bank-It button + baby-bomb placement. |
+| `tutorials.js` | Main tutorial, feature/special/booster popups, level-select grid. |
+| `ui-nudges.js` | Idle-nudge/hint system, `closeAllOverlays`. |
+| `level.js` | Level lifecycle: `initLevelConfig`, pre-level prep UI, `startGame`, retry/test/next. |
+| `turn.js` | **Core loop:** `onCardClick`, `endTurn`, `placeNewCards`/reveal helpers. |
+| `endgame.js` | `recallCards`, `finishTurn`, win/fail overlays, continue-with-coins. |
+| `boot.js` | **Loads last.** `boot()` IIFE — restores progression, shows home. |
 | `config.js` | 4 | `ALL_COLORS = ['red','green','blue','yellow']`. |
 | `style.css` | ~750 | All styling + CSS animations (flips, particles, banners, nudges). |
 | `levels_default.js` / `_short.js` / `_long.js` | — | Level definitions per **journey** (16 / 40 / 253 levels). `.json` twins exist for the editor. |
@@ -314,10 +337,21 @@ and unlock-all-levels. It's essentially a live design/tuning console.
 
 - **Global namespace.** All functions/vars are global; scripts load via ordered
   `<script>` tags. `config.js` → level data → progression data → `settings.js` →
-  `gameplay.js`. Don't reorder without checking dependencies (e.g. `progress` is
-  defined in `settings.js` but used everywhere; `SPECIAL_TYPES` is used by
-  `settings.js` UI but defined in `gameplay.js` — hence `initInventoryDefaults()`
-  deferral).
+  engine files (`state.js` … `boot.js`). Because these are **classic** scripts,
+  top-level `function`/`let`/`const` share one global lexical scope across files, so
+  any engine file can call any other and read the shared state in `state.js`.
+  **Load-order rules when adding/reordering engine files:**
+  1. **No name may be declared twice** across all files (a duplicate top-level
+     `function`/`let`/`const` throws at load). Each name lives in exactly one file.
+  2. Ordering only matters for code that runs *at load time* (not functions, which
+     run later). So **`state.js` must stay first** (declares shared state + DOM refs;
+     its `currentLevelIndex = progress.highestUnlocked` needs `progress` from the
+     earlier `settings.js`) and **`boot.js` must stay last**. The one other load-time
+     call, `initInventoryDefaults()` in `specials.js`, only needs `SPECIAL_TYPES`
+     (same file). Files in between are call-time-only and order-independent.
+- **Line-number citations below** (e.g. `gameplay.js:2414`) predate the split and are
+  approximate — use the file map in §3 and the function index in §13 to find the file
+  that now owns a given concern.
 - **`inputLocked` discipline.** Almost every animation sets it. Any new branch
   that returns early during a turn must eventually clear it, or input dies.
 - **Data-driven extensibility.** Add a special card to `SPECIAL_TYPES`, a booster
@@ -328,7 +362,7 @@ and unlock-all-levels. It's essentially a live design/tuning console.
   `getGoalDisplay`.
 - **Level files are generated.** Edit levels/progression through `level-editor/`
   (or update both the `.js` and `.json` twins). The game only loads the `.js`.
-- **`nextLevel()` has a legacy "all 10 levels" string** ([gameplay.js:1528](gameplay.js))
+- **`nextLevel()` has a legacy "all 10 levels" string** (in [level.js](level.js))
   even though journeys have 16/40/253 levels — cosmetic end-of-journey message.
 - **No build/test/lint.** Verify changes by opening `index.html` and playing.
   Use the Settings panel + "🧪 Test Level" / "🔓 Unlock All" to reach states fast.
@@ -339,15 +373,21 @@ and unlock-all-levels. It's essentially a live design/tuning console.
 
 ## 13. Quick function index
 
-| Concern | Entry points |
-|---------|--------------|
-| Boot / journeys | `boot()` [gameplay.js:3239], `applyProgression`, `loadProgression` |
-| Start a level | `showPreLevel` → `confirmPreLevel` → `startGame` [1413]; `startLevel`/`initLevelConfig` [1118] |
-| Core loop | `onCardClick` [2414], `endTurn` [2671], `finishTurn` [3019] |
-| Scoring/combos | `endTurn` [2717-2725], `getSpecialForCombo` [1614], `getComboMapping` |
-| Specials | `SPECIAL_TYPES` [1539], `getRevealPattern` [1643], `createSpecialCard` [1638] |
-| Boosters | `BOOSTERS` [535], `activateBooster` [2176], `executeBoosterTap` [2243] |
-| Goals | `initLevelGoals` [228], `updateGoalProgress` [280], `checkAllGoalsMet` [372] |
-| Win/fail | `levelWon` [3028], `levelFailed` [3085], `continueLevelWithCoins` [3147] |
-| Config/rules | `GAMEPLAY_RULES` + `getRule` [settings.js:5/38], `showSettings` [352] |
-| Persistence | `loadProgress`/`saveProgress` [settings.js:303] |
+| Concern | File | Entry points |
+|---------|------|--------------|
+| Boot / journeys | `boot.js` / `progression.js` | `boot()`, `applyProgression`, `loadProgression`, `playFromHome` |
+| Start a level | `level.js` | `showPreLevel` → `confirmPreLevel` → `startGame`; `initLevelConfig` |
+| Core loop | `turn.js` | `onCardClick`, `endTurn`, `placeNewCards` |
+| Turn finish | `endgame.js` | `finishTurn`, `recallCards` |
+| Scoring/combos | `turn.js` / `specials.js` | `endTurn` (scoring block), `getSpecialForCombo`, `getComboMapping`, `getMinCombo` |
+| Specials | `specials.js` / `board.js` | `SPECIAL_TYPES`, `getRevealPattern`, `createSpecialCard` |
+| Boosters | `boosters.js` | `BOOSTERS`, `activateBooster`, `executeBoosterTap` |
+| Bank It | `bank.js` | `bankChain`, `updateBankButton`, `activateBombPlacement` |
+| Goals | `goals.js` | `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet` |
+| Win/fail | `endgame.js` | `levelWon`, `levelFailed`, `continueLevelWithCoins` |
+| Board render / UI | `board.js` | `renderBoard`, `buildCardHTML`, `updateChainIndicator` |
+| VFX / animation | `vfx.js` | `flyCardsToGoal`, `spawnParticles`, `animateScore`, `sweepRevealBoard` |
+| Tutorials | `tutorials.js` | `advanceTutorial`, `showNextItemTutorial`, `buildLevelGrid` |
+| Shared state / DOM refs | `state.js` | `board`, `score`, `turns`, `chainCards`, `inputLocked`, `boardEl`, … |
+| Config/rules | `settings.js` | `GAMEPLAY_RULES` + `getRule`, `showSettings` |
+| Persistence | `settings.js` | `loadProgress`/`saveProgress` |

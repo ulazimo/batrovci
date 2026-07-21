@@ -215,7 +215,24 @@
 <script src="progression_cleaning.js"></script>
 <script src="progression_long.js"></script>
 <script src="settings.js"></script>
-<script src="gameplay.js"></script>
+<!-- Former gameplay.js, split by concern. state.js MUST be first, boot.js MUST be last.
+     All files share one global namespace (classic scripts). See CLAUDE.md §3/§12. -->
+<script src="state.js"></script>
+<script src="audio.js"></script>
+<script src="vfx.js"></script>
+<script src="progression.js"></script>
+<script src="specials.js"></script>
+<script src="goals.js"></script>
+<script src="board.js"></script>
+<script src="chain-timer.js"></script>
+<script src="boosters.js"></script>
+<script src="bank.js"></script>
+<script src="tutorials.js"></script>
+<script src="ui-nudges.js"></script>
+<script src="level.js"></script>
+<script src="turn.js"></script>
+<script src="endgame.js"></script>
+<script src="boot.js"></script>
 
 <!-- FIREBASE TRACKING -->
 <script type="module">
