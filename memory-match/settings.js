@@ -344,11 +344,18 @@ const MAX_BOOSTER_QTY = 9;
 
 if (!progress.boosterSettings) progress.boosterSettings = {};
 
-const DISABLED_BY_DEFAULT_BOOSTERS = ['cross', 'shield', 'neighbor'];
+const DISABLED_BY_DEFAULT_BOOSTERS = ['cross', 'shield', 'neighbor', 'row', 'col', 'joker', 'colorpick'];
+// Per-booster inventory cap (undefined = MAX_BOOSTER_QTY). Bombs are capped low to push use.
+function getBoosterMax(id) {
+  const def = (typeof BOOSTERS !== 'undefined') ? BOOSTERS.find(b => b.id === id) : null;
+  return def && def.max !== undefined ? Math.min(MAX_BOOSTER_QTY, def.max) : MAX_BOOSTER_QTY;
+}
 function getBoosterSetting(id) {
   if (!progress.boosterSettings[id]) {
     const enabled = !DISABLED_BY_DEFAULT_BOOSTERS.includes(id);
-    progress.boosterSettings[id] = { enabled, qty: DEFAULT_BOOSTER_QTY };
+    const def = (typeof BOOSTERS !== 'undefined') ? BOOSTERS.find(b => b.id === id) : null;
+    const qty = def && def.startQty !== undefined ? def.startQty : DEFAULT_BOOSTER_QTY;
+    progress.boosterSettings[id] = { enabled, qty };
   }
   return progress.boosterSettings[id];
 }
@@ -632,7 +639,7 @@ function adjustQty(id, delta) {
   const s = getBoosterSetting(id);
   if (!s.enabled) return;
   const current = boosterCounts[id] !== undefined ? boosterCounts[id] : s.qty;
-  const newVal = Math.max(0, Math.min(MAX_BOOSTER_QTY, current + delta));
+  const newVal = Math.max(0, Math.min(getBoosterMax(id), current + delta));
   boosterCounts[id] = newVal;
   s.qty = newVal;
   progress.boosterCounts[id] = newVal;
