@@ -30,6 +30,7 @@ const GOAL_TYPES = [
   { id: 'rowCoverage',    name: 'Row Coverage',     icon: '↔️' },
   { id: 'colCoverage',    name: 'Column Coverage',  icon: '↕️' },
   { id: 'breakLocks',     name: 'Break Locks',      icon: '🔓' },
+  { id: 'clearAll',       name: 'Clear Board',      icon: '🧹' },
 ];
 const ALL_COLORS = ['red', 'green', 'blue', 'yellow'];
 
@@ -49,6 +50,8 @@ const propCols       = document.getElementById('prop-cols');
 const propRows       = document.getElementById('prop-rows');
 const propColors     = document.getElementById('prop-colors');
 const propTurns      = document.getElementById('prop-turns');
+const propClearBoard = document.getElementById('prop-clearboard');
+const propDeck       = document.getElementById('prop-deck');
 
 // ============================================================
 // INIT
@@ -89,6 +92,13 @@ function bindEvents() {
   propTurns.addEventListener('change', () => {
     updateLevelProperty('turns', parseInt(propTurns.value));
   });
+  propClearBoard.addEventListener('change', () => {
+    updateLevelProperty('clearBoard', propClearBoard.checked);
+    propDeck.disabled = !propClearBoard.checked;
+  });
+  propDeck.addEventListener('change', () => {
+    updateLevelProperty('deck', Math.max(0, parseInt(propDeck.value) || 0));
+  });
   document.getElementById('btn-add-goal').addEventListener('click', addGoal);
 
   // Keyboard shortcuts
@@ -119,6 +129,8 @@ function loadFromJSON(e) {
         colorCount: Math.max(1, Math.min(4, lvl.colorCount || 3)),
         turns: lvl.turns || 10,
         target: lvl.target || 500,
+        clearBoard: !!lvl.clearBoard,
+        deck: Math.max(0, lvl.deck || 0),
         locked:    Array.isArray(lvl.locked)    ? lvl.locked    : [],
         disabled:  Array.isArray(lvl.disabled)  ? lvl.disabled  : [],
         goals:     Array.isArray(lvl.goals)     ? lvl.goals     : (lvl.target ? [{ type: 'score', target: lvl.target }] : []),
@@ -146,6 +158,8 @@ function buildLevelsOutput() {
       colorCount: lvl.colorCount,
       turns: lvl.turns,
     };
+    // Cleaning journey: clear-the-board mode + finite refill deck
+    if (lvl.clearBoard) { obj.clearBoard = true; obj.deck = Math.max(0, lvl.deck || 0); }
     // Sync breakLocks goal locked array from board locked cells
     if (lvl.goals) {
       const blg = lvl.goals.find(g => g.type === 'breakLocks');
@@ -203,7 +217,7 @@ function renderLevelList() {
       <span class="level-label">Level ${lvl.id}</span>
       ${buildMiniGrid(lvl)}
       <span class="level-goals">${(lvl.goals||[]).map(g => { const d = GOAL_TYPES.find(t=>t.id===g.type); return d ? d.icon : ''; }).join(' ')}</span>
-      <span class="level-info">${lvl.cols}×${lvl.rows} | ${lvl.colorCount} colors | ${lvl.turns} turns</span>
+      <span class="level-info">${lvl.cols}×${lvl.rows} | ${lvl.colorCount} colors | ${lvl.turns} turns${lvl.clearBoard ? ` | 🃏 ${lvl.deck || 0}` : ''}</span>
     `;
     card.addEventListener('click', (e) => {
       if (e.target.closest('.delete-btn')) return;
@@ -275,6 +289,9 @@ function loadLevelIntoEditor() {
   propRows.value = lvl.rows;
   propColors.value = lvl.colorCount;
   propTurns.value = lvl.turns;
+  propClearBoard.checked = !!lvl.clearBoard;
+  propDeck.value = lvl.deck || 0;
+  propDeck.disabled = !lvl.clearBoard;
   renderBoard();
   renderGoals();
 }
@@ -298,6 +315,8 @@ function addLevel() {
     colorCount: 4,
     turns: 10,
     target: 500,
+    clearBoard: false,
+    deck: 0,
     locked: [],
     disabled: [],
     goals: [{ type: 'score', target: 500 }],
@@ -310,6 +329,7 @@ function insertLevel(atIndex) {
   const newLevel = {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
+    clearBoard: false, deck: 0,
     locked: [], disabled: [],
     goals: [{ type: 'score', target: 500 }],
   };
@@ -737,6 +757,8 @@ function buildGoalPropsHTML(goal, gi, lvl) {
     }
     case 'breakLocks':
       return `<label>${(lvl.locked || []).length} locked cells <span style="color:#888;font-size:10px">(use Locked tool on board)</span></label>`;
+    case 'clearAll':
+      return `<span style="color:#888;font-size:10px">Clear every card. Enable Clear-Board & set Deck above for refills.</span>`;
     default:
       return `<span style="color:#888">Unknown goal type</span>`;
   }

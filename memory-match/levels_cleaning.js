@@ -1,524 +1,564 @@
-// Auto-generated — Cleaning journey (derived from Short: clear-all goal, no refill, turns +50%)
+// Auto-generated — Cleaning journey. clearBoard + finite refill deck; goal is to clear every card. Turns scale to total cards.
 LEVELS_CLEANING = [
   {
     "id": 1,
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 23,
+    "turns": 22,
+    "clearBoard": true,
+    "deck": 8,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 2,
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 18,
+    "turns": 22,
+    "clearBoard": true,
+    "deck": 8,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 3,
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 18,
+    "turns": 22,
+    "clearBoard": true,
+    "deck": 8,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 4,
     "cols": 4,
     "rows": 4,
     "colorCount": 4,
-    "turns": 23,
+    "turns": 22,
+    "clearBoard": true,
+    "deck": 8,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 5,
     "cols": 5,
     "rows": 5,
     "colorCount": 3,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 6,
     "cols": 4,
     "rows": 4,
     "colorCount": 3,
-    "turns": 18,
+    "turns": 22,
+    "clearBoard": true,
+    "deck": 8,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 7,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 8,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 9,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 23,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 10,
     "cols": 5,
     "rows": 4,
     "colorCount": 3,
-    "turns": 17,
+    "turns": 27,
+    "clearBoard": true,
+    "deck": 10,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 11,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 21,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 12,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 13,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 14,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 15,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 21,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 16,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 17,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 18,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 19,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 57,
+    "clearBoard": true,
+    "deck": 21,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 20,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 21,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 21,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 23,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 22,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 23,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 17,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 24,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 21,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 25,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 26,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 17,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 27,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 21,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 28,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 29,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 17,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 30,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 31,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 32,
     "cols": 8,
     "rows": 5,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 54,
+    "clearBoard": true,
+    "deck": 20,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 33,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 34,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 57,
+    "clearBoard": true,
+    "deck": 21,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 35,
     "cols": 5,
     "rows": 5,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 35,
+    "clearBoard": true,
+    "deck": 13,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 36,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 37,
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 20,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 18,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 38,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
-    "turns": 18,
+    "turns": 57,
+    "clearBoard": true,
+    "deck": 21,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 39,
     "cols": 8,
     "rows": 6,
     "colorCount": 4,
-    "turns": 21,
+    "turns": 65,
+    "clearBoard": true,
+    "deck": 24,
     "goals": [
       {
         "type": "clearAll"
       }
-    ],
-    "noRefill": true
+    ]
   },
   {
     "id": 40,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
-    "turns": 30,
+    "turns": 37,
+    "clearBoard": true,
+    "deck": 14,
     "goals": [
       {
         "type": "clearAll"
       }
     ],
-    "noRefill": true,
     "disabled": [
       [
         0,

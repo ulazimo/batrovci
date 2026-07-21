@@ -256,7 +256,7 @@ function adjustSweepRevealStartLevel(delta) {
 function isSweepRevealActive() {
   // No-refill (Cleaning) levels have no incoming board to reveal, and re-rolling
   // the survivors' colors would break the clear-all distribution — skip it.
-  if (LEVELS[currentLevelIndex]?.noRefill) return false;
+  if (LEVELS[currentLevelIndex]?.clearBoard) return false;
   return getRule('sweepReveal') && LEVELS[currentLevelIndex].id >= getSweepRevealStartLevel();
 }
 
