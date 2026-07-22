@@ -1,10 +1,43 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: #1a1a2e; color: #eee; min-height: 100vh;
-  display: flex; flex-direction: column; align-items: center;
+  background: #0c0c13; color: #eee; min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 12px 0;
   overflow-x: hidden; -webkit-tap-highlight-color: transparent; user-select: none;
   transition: background 0.3s;
+}
+
+/* ================================================================
+   DEVICE FRAME (phone bezel) + switcher
+================================================================ */
+#device-switcher { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 0 8px; z-index: 5; }
+.device-btn {
+  padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
+  background: #1a1a2e; border: 1px solid #333a55; color: #9aa4c0; font-family: inherit; transition: all .15s;
+}
+.device-btn:hover { border-color: #4fc3f7; color: #dbe7ff; }
+.device-btn.active { background: #0f3460; border-color: #4fc3f7; color: #4fc3f7; }
+
+#device-frame {
+  --device-h: 852px; --device-aspect: 393/852; --device-radius: 52px;
+  position: relative; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  height: min(var(--device-h), calc(100dvh - 72px));
+  aspect-ratio: var(--device-aspect); width: auto; max-width: calc(100vw - 16px);
+  background: #16213e; overflow: hidden;
+  border: 12px solid #0a0a0c; border-radius: var(--device-radius);
+  box-shadow: 0 18px 50px rgba(0,0,0,.65), inset 0 0 0 2px #1c1c22;
+}
+
+/* On a real phone: fill the screen, drop the bezel + switcher. */
+@media (max-width: 520px) {
+  body { padding: 0; gap: 0; }
+  #device-switcher { display: none; }
+  #device-frame {
+    width: 100%; height: 100dvh; max-width: 100%; aspect-ratio: auto;
+    border: 0; border-radius: 0; box-shadow: none;
+  }
 }
 
 /* ================================================================
@@ -15,7 +48,8 @@ body {
   padding: 5px 16px; display: flex; align-items: center; justify-content: space-between;
 }
 #level-banner .level-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #4fc3f7; text-transform: uppercase; flex:1; }
-#level-banner .settings-gear { flex:1; text-align:right; }
+/* level label takes the left half; hearts/coins/gear sit grouped in the right half */
+#level-banner .settings-gear { margin-left: 10px; text-align:right; }
 #level-banner .level-dots { display: flex; gap: 4px; }
 #level-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6a; }
 .lives-pill {
@@ -47,6 +81,13 @@ body {
 @keyframes turns-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.25); } }
 #turns-value.danger-pulse { animation: turns-pulse .45s ease-in-out 2; }
 #target-value { color: #aaa; }
+
+/* Cleaning journey: the objective is always "clear the board", so hide Score + the
+   Goals HUD and show just Turns + Deck, slightly larger, spread across the width. */
+.journey-cleaning #stat-score { display: none; }
+.journey-cleaning #goal-hud { display: none !important; }
+.journey-cleaning #header .stat-value { font-size: 26px; }
+.journey-cleaning #header .stat-label { font-size: 11px; }
 
 /* ================================================================
    CHAIN INDICATOR
@@ -137,13 +178,37 @@ body {
 }
 .pre-level-goal-pill .goal-pill-icon { font-size:16px; }
 
+/* Chain bar — bottom pill with slot positions */
 #chain-indicator {
-  width: 100%; max-width: 500px; height: 34px; display: flex; align-items: center;
-  justify-content: center; background: #16213e; font-size: 13px; font-weight: 600;
-  color: #ccc; border-bottom: 1px solid #0f3460; gap: 6px;
+  width: auto; max-width: calc(100% - 24px); align-self: center;
+  margin: 4px auto 18px; display: flex; align-items: center; gap: 14px;
+  padding: 10px 18px; background: rgba(0,0,0,.28); border-radius: 18px;
+  font-size: 13px; font-weight: 600; color: #8b93ad;
 }
-#chain-indicator .chain-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
-#chain-indicator .chain-color-row { display: flex; align-items: center; gap: 3px; margin: 2px 0; }
+#chain-indicator.chain-prompt { font-weight: 600; color: #cdd4e6; letter-spacing: .2px; }
+.chain-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  color: #7f879e; text-transform: uppercase; flex-shrink: 0;
+}
+.chain-slots {
+  display: flex; align-items: center; gap: 8px;
+  overflow-x: auto; max-width: 100%; padding: 2px; scrollbar-width: none;
+}
+.chain-slots::-webkit-scrollbar { display: none; }
+.chain-slot { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; transition: transform .12s ease; display: flex; align-items: center; justify-content: center; }
+.chain-slot.empty { border: 2px dashed rgba(255,255,255,.22); background: transparent; }
+.chain-slot.filled { box-shadow: inset 0 -2px 4px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.35); }
+.chain-slot-reward { font-size: 15px; line-height: 1; pointer-events: none; }
+.chain-slot.empty.reward .chain-slot-reward { filter: grayscale(1) brightness(.7); opacity: .45; }
+.chain-slot.filled.reward .chain-slot-reward { opacity: 1; filter: drop-shadow(0 0 3px rgba(0,0,0,.55)); }
+.chain-min-line {
+  width: 0; height: 30px; flex-shrink: 0; align-self: center;
+  border-left: 3px dashed #2ecc71; border-radius: 2px;
+  filter: drop-shadow(0 0 3px rgba(46,204,113,.6));
+}
+
+/* Bank It button is hidden in this build (chain now lives in the bottom bar). */
+#bank-bar { display: none !important; }
 
 /* Chain timer bar */
 #chain-timer-wrap { width:100%; max-width:500px; height:6px; background:#111; display:none; position:relative; overflow:hidden; }
@@ -437,24 +502,26 @@ body {
 ================================================================ */
 #booster-bar {
   width:100%;max-width:500px;background:#16213e;border-top:2px solid #0f3460;
-  padding:6px 4px;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;
+  padding:8px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
   position:relative;overflow:visible;
 }
 #booster-bar.highlight { animation:boosterBarPulse 1.5s ease-in-out 3; }
 @keyframes boosterBarPulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px 4px rgba(240,192,64,.6), inset 0 0 8px rgba(240,192,64,.3)} }
 .booster-btn {
-  width:calc((100% - 16px) / 5);max-width:52px;aspect-ratio:1;border-radius:8px;
+  width:calc((100% - 30px) / 4);max-width:76px;aspect-ratio:1;border-radius:12px;
   border:2px solid #3a3a6a;background:#2a2a4a;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:20px;
+  display:flex;align-items:center;justify-content:center;font-size:28px;
   position:relative;transition:all .15s;flex-shrink:0;
 }
+/* Recall tile reuses .recall-wrap for nudge hooks — keep it laid out like a tile. */
+.booster-btn.recall-wrap { flex-direction:row;gap:0;justify-content:center; }
 .booster-btn:active { transform:scale(.9); }
 .booster-btn.active   { border-color:#f0c040;background:#3a3a5a;box-shadow:0 0 10px rgba(240,192,64,.4); }
 .booster-btn.disabled { opacity:.3;pointer-events:none; }
 .booster-btn .badge   { position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
 .booster-tooltip { display:none;position:fixed;background:#222;color:#ddd;padding:10px 14px;border-radius:8px;font-size:13px;max-width:220px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.6);border:1px solid #444;line-height:1.4;text-align:center; }
 .booster-tooltip.visible { display:block; }
-.status-badge { position:fixed;top:95px;right:10px;z-index:90;display:flex;flex-direction:column;gap:4px;align-items:flex-end; }
+.status-badge { position:absolute;top:95px;right:10px;z-index:90;display:flex;flex-direction:column;gap:4px;align-items:flex-end; }
 .status-pill  { background:rgba(0,0,0,.7);padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px; }
 .status-pill.shield { border:1px solid #4fc3f7;color:#4fc3f7; }
 
@@ -581,7 +648,7 @@ body {
 /* ================================================================
    OVERLAYS — base
 ================================================================ */
-.overlay-screen { display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;flex-direction:column; }
+.overlay-screen { display:none;position:absolute;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;flex-direction:column; }
 .overlay-screen.active { display:flex; }
 .overlay-box { background:#16213e;border:1px solid #0f3460;border-radius:16px;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:92%;text-align:center; }
 .overlay-box h1 { font-size:26px;font-weight:800; }
@@ -634,7 +701,7 @@ body {
 /* ================================================================
    COLOR PICKER
 ================================================================ */
-#color-picker { display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:250;align-items:center;justify-content:center; }
+#color-picker { display:none;position:absolute;inset:0;background:rgba(0,0,0,.8);z-index:250;align-items:center;justify-content:center; }
 #color-picker.active { display:flex; }
 #color-picker .overlay-box { gap:16px; }
 .color-choices { display:flex;gap:12px; }

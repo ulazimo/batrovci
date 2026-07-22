@@ -20,11 +20,25 @@ const BOOSTERS = [
 ];
 let boosterCounts = {};
 
+// Only these boosters get a tile in the tray (Recall is added separately as the
+// first spot). These are the power-ups players can earn via chain rewards, so the
+// tray stays at 4 spots: Recall · Peek · Baby Bomb · BIG Bomb. Hidden boosters
+// still keep their inventory counts — see below.
+const VISIBLE_BOOSTERS = ['peek', 'babybomb', 'bigbomb'];
+
 // ============================================================
 // BOOSTERS
 // ============================================================
 function initBoosters() {
   boosterBar.innerHTML = '';
+  // Recall is the first of the four tray spots (folded in from the old recall bar).
+  if (isRecallActive()) {
+    const rc = document.createElement('div');
+    rc.className = 'booster-btn recall-wrap'; rc.id = 'recall-btn';
+    rc.innerHTML = `<span>🔄</span>`;
+    rc.addEventListener('click', () => recallCards());
+    boosterBar.appendChild(rc);
+  }
   BOOSTERS.forEach(b => {
     const s = getBoosterSetting(b.id);
     if (!s.enabled) { boosterCounts[b.id] = 0; return; }
@@ -36,6 +50,8 @@ function initBoosters() {
     }
     // Enforce per-booster inventory cap (bombs are capped low)
     boosterCounts[b.id] = Math.min(boosterCounts[b.id], getBoosterMax(b.id));
+    // Keep the count bookkeeping above, but only render tiles for visible boosters.
+    if (!VISIBLE_BOOSTERS.includes(b.id)) return;
     const btn = document.createElement('div');
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
     btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
@@ -64,6 +80,7 @@ function consumeBooster(id) {
 function updateBoosterUI() {
   boosterBar.querySelectorAll('.booster-btn').forEach(btn => {
     const id = btn.dataset.booster;
+    if (!id) return; // recall tile — managed by updateRecallButton()
     btn.querySelector('.badge').textContent = boosterCounts[id];
     btn.classList.toggle('disabled', !hasBooster(id) || inputLocked);
     btn.classList.toggle('active', activeBooster === id);

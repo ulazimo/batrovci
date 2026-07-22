@@ -18,6 +18,17 @@
 <body>
 <a href="../index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">← All Games</a>
 
+<!-- Device frame switcher (desktop only; hidden on real phones) -->
+<div id="device-switcher">
+  <button class="device-btn" data-device="ip15pro"    onclick="setDevice('ip15pro')">iPhone 15 Pro</button>
+  <button class="device-btn" data-device="galaxys24p" onclick="setDevice('galaxys24p')">Galaxy S24+</button>
+  <button class="device-btn" data-device="pixel8"     onclick="setDevice('pixel8')">Pixel 8</button>
+  <button class="device-btn" data-device="ipad"       onclick="setDevice('ipad')">iPad</button>
+</div>
+
+<!-- Phone frame — wraps the whole game so it renders inside a device bezel -->
+<div id="device-frame">
+
 <!-- Level banner -->
 <div id="level-banner">
   <span class="level-label" id="banner-level">Level 1</span>
@@ -28,13 +39,12 @@
 
 <!-- Stats header -->
 <div id="header">
-  <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="score-value">0</div></div>
-  <div class="stat"><div class="stat-label">Turns</div><div class="stat-value" id="turns-value">12</div></div>
-  <div class="stat"><div class="stat-label" id="target-label">Target</div><div class="stat-value" id="target-value">250</div></div>
+  <div class="stat" id="stat-score"><div class="stat-label">Score</div><div class="stat-value" id="score-value">0</div></div>
+  <div class="stat" id="stat-turns"><div class="stat-label">Turns</div><div class="stat-value" id="turns-value">12</div></div>
+  <div class="stat" id="stat-target"><div class="stat-label" id="target-label">Target</div><div class="stat-value" id="target-value">250</div></div>
 </div>
 
 <div id="goal-hud"></div>
-<div id="chain-indicator">Tap a card to begin</div>
 <div id="chain-timer-wrap"><div id="chain-timer-bar"></div></div>
 <div id="sweep-countdown"></div>
 <div class="status-badge" id="status-badge"></div>
@@ -54,12 +64,7 @@
     <span class="bank-pip"></span>
   </div>
 </div>
-<div id="recall-bar">
-  <div class="recall-wrap">
-    <span class="recall-label">Recall</span>
-    <button id="recall-btn" class="recall-btn disabled" onclick="recallCards()">🔄</button>
-  </div>
-</div>
+<div id="chain-indicator" class="chain-bar"></div>
 <div id="booster-bar"></div>
 
 <!-- ===== OVERLAYS ===== -->
@@ -205,6 +210,8 @@
   </div>
 </div>
 
+</div><!-- /#device-frame -->
+
 <script src="config.js"></script>
 <script src="levels_default.js"></script>
 <script src="levels_short.js"></script>
@@ -233,6 +240,29 @@
 <script src="turn.js"></script>
 <script src="endgame.js"></script>
 <script src="boot.js"></script>
+
+<!-- Device frame switcher: pick which phone bezel to render the game inside -->
+<script>
+  const DEVICE_PRESETS = {
+    ip15pro:    { h: 852,  aspect: '393/852',  radius: 55 },
+    galaxys24p: { h: 832,  aspect: '384/832',  radius: 30 },
+    pixel8:     { h: 915,  aspect: '412/915',  radius: 34 },
+    ipad:       { h: 1180, aspect: '820/1180', radius: 20 },
+  };
+  function setDevice(id) {
+    const d = DEVICE_PRESETS[id] || DEVICE_PRESETS.ip15pro;
+    const f = document.getElementById('device-frame');
+    if (f) {
+      f.style.setProperty('--device-h', d.h + 'px');
+      f.style.setProperty('--device-aspect', d.aspect);
+      f.style.setProperty('--device-radius', d.radius + 'px');
+    }
+    document.querySelectorAll('#device-switcher .device-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.device === id));
+    try { localStorage.setItem('mm_device', id); } catch (e) {}
+  }
+  setDevice((() => { try { const s = localStorage.getItem('mm_device'); return DEVICE_PRESETS[s] ? s : 'ip15pro'; } catch (e) { return 'ip15pro'; } })());
+</script>
 
 <!-- FIREBASE TRACKING -->
 <script type="module">

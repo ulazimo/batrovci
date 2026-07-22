@@ -23,6 +23,12 @@ function applyProgression(style) {
     sweepRevealStartLevel: preset.progression.sweepRevealStartLevel || 1,
   };
   DEFAULT_LEVEL_REWARDS = preset.rewards || [];
+
+  // Reflect the active journey on <body> for journey-specific styling (e.g. cleaning hides score/goals).
+  if (document.body) {
+    document.body.classList.remove('journey-default', 'journey-short', 'journey-cleaning', 'journey-long');
+    document.body.classList.add('journey-' + style);
+  }
 }
 
 // Save current journey's progress into progress.journeys[style]

@@ -64,8 +64,10 @@ function updateBankButton() {
     btn.classList.remove('holding');
     if (_bankHoldTimer) { clearTimeout(_bankHoldTimer); _bankHoldTimer = null; }
   }
-  // Show tutorial the first time the button becomes enabled
-  if (canBank && wasDisabled) {
+  // Show tutorial the first time the button becomes enabled — but only if the
+  // Bank bar is actually visible (it's hidden in this build).
+  const bankVisible = btn.offsetParent !== null;
+  if (canBank && wasDisabled && bankVisible) {
     if (!progress.seenFeatures) progress.seenFeatures = [];
     if (!progress.seenFeatures.includes('bankButton')) {
       itemTutorialQueue.push({

@@ -352,47 +352,51 @@ function updateChainIndicator() {
   updateChainFaces();
   updateSweepCountdown();
   updateBankButton();
-  if (!turnActive) {
-    chainEl.innerHTML = spotlightMode
-      ? '🔦 Tap a face-down card to reveal it'
-      : activeBooster
-      ? `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}`
-      : 'Tap a card to begin';
+
+  // Booster / spotlight targeting takes over the bar with a prompt.
+  if (spotlightMode) {
+    chainEl.className = 'chain-bar chain-prompt';
+    chainEl.innerHTML = '🔦 Tap a face-down card to reveal it';
     return;
   }
-  const isWild = (i) => board[i]?.special && getSpecialType(board[i].special)?.isWild;
-  const nc = chainCards.filter(i => !board[i].special || isWild(i)).length;
-  const sc = specialsUsed.length;
-  let extra = '';
-  if (shieldCharges > 0) extra += ' 🛡' + shieldCharges;
-
-  // Group chain dots by color, one line per color
-  if (getRule('coloredBombs') && chainColors.size > 1) {
-    const sDots = specialsUsed.map(i => {
-      const bc = board[i]?.bombColor;
-      return `<span class="chain-dot" style="background:${bc ? cssColor(bc) : '#fff'};border:2px solid ${bc ? cssColor(bc) : '#999'}">⚡</span>`;
-    }).join('');
-    let lines = '';
-    // Wild cards shown as rainbow dots
-    const wildCards = chainCards.filter(i => isWild(i));
-    const wildDots = wildCards.map(() =>
-      `<span class="chain-dot" style="background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#e74c3c);border:1px solid #fff"></span>`).join('');
-    [...chainColors].forEach(color => {
-      const colorCards = chainCards.filter(i => !board[i].special && board[i].color === color);
-      if (colorCards.length === 0) return;
-      const dots = colorCards.map(() =>
-        `<span class="chain-dot" style="background:${cssColor(color)}"></span>`).join('');
-      lines += `<div class="chain-color-row">${dots} <span style="color:${cssColor(color)}">(${colorCards.length})</span></div>`;
-    });
-    chainEl.innerHTML = `Chain: ${lines}${wildDots?`<div class="chain-color-row">${wildDots}</div>`:''}<div class="chain-color-row">${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span></div>`;
-  } else {
-    const nDots = chainCards.filter(i => !board[i].special || isWild(i)).map(i =>
-      isWild(i)
-        ? `<span class="chain-dot" style="background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#e74c3c);border:1px solid #fff"></span>`
-        : `<span class="chain-dot" style="background:${cssColor(board[i].color || chainColor)}"></span>`
-    ).join('');
-    const sDots = specialsUsed.map(() =>
-      `<span class="chain-dot" style="background:#fff;border:2px solid #999"></span>`).join('');
-    chainEl.innerHTML = `Chain: ${nDots}${sDots} <span>(${nc}${sc>0?'+'+sc+'⚡':''}${extra})</span>`;
+  if (activeBooster) {
+    chainEl.className = 'chain-bar chain-prompt';
+    chainEl.innerHTML = `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}`;
+    return;
   }
+  chainEl.className = 'chain-bar';
+
+  const isWild = (i) => board[i]?.special && getSpecialType(board[i].special)?.isWild;
+
+  // Ordered list of filled slots: normal/wild chain cards first, then specials used.
+  const filled = [];
+  chainCards.forEach(i => {
+    if (board[i].special && !isWild(i)) return;
+    filled.push(isWild(i) ? { wild: true } : { color: board[i].color || chainColor });
+  });
+  specialsUsed.forEach(() => filled.push({ special: true }));
+
+  const MIN_LINE_AFTER = 2; // green line fixed between the 2nd and 3rd slot (Match-2 reminder)
+  const REWARD_SLOT = 4;    // 5th slot earns a Baby Bomb once the chain reaches it
+  const totalSlots = Math.max(5, filled.length); // at least 5 positions; grows + scrolls beyond
+  let slots = '';
+  for (let k = 0; k < totalSlots; k++) {
+    if (k === MIN_LINE_AFTER) slots += '<span class="chain-min-line"></span>';
+    const rewardCls = k === REWARD_SLOT ? ' reward' : '';
+    const reward = k === REWARD_SLOT ? '<span class="chain-slot-reward">💣</span>' : '';
+    if (k < filled.length) {
+      const f = filled[k];
+      const style = f.wild
+        ? 'background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#e74c3c)'
+        : f.special ? 'background:#fff' : `background:${cssColor(f.color)}`;
+      slots += `<span class="chain-slot filled${rewardCls}" style="${style}">${reward}</span>`;
+    } else {
+      slots += `<span class="chain-slot empty${rewardCls}">${reward}</span>`;
+    }
+  }
+  chainEl.innerHTML = `<span class="chain-label">Chain</span><div class="chain-slots">${slots}</div>`;
+
+  // Keep the newest slot in view once the chain runs past the visible positions.
+  const wrap = chainEl.querySelector('.chain-slots');
+  if (wrap) wrap.scrollLeft = wrap.scrollWidth;
 }

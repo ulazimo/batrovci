@@ -29,7 +29,7 @@ const GAMEPLAY_RULES = [
     default: true },
   { id: 'bankButton', name: 'Bank It Button', icon: '💰',
     desc: 'Show a button below the board to manually resolve a 3+ chain, keeping all matched cards',
-    default: true },
+    default: false },
   { id: 'unlimitedPowerUps', name: 'Unlimited Power-Ups', icon: '♾️',
     desc: 'All power-ups have unlimited uses — counts never decrease',
     default: false },
