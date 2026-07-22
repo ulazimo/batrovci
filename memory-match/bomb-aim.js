@@ -164,7 +164,8 @@ function renderBombSilhouette(idx) {
   const valid = isValidBombCenter(idx);
   const cells = [idx, ...getRevealPattern(bombAim.type, idx)];
   [...new Set(cells)]
-    .filter(i => i >= 0 && board[i] !== null && boardEl.children[i])
+    // Skip active-chain cards — the bomb won't collect them, so don't preview them.
+    .filter(i => i >= 0 && board[i] !== null && boardEl.children[i] && !chainCards.includes(i))
     .forEach(i => {
       const cell = boardEl.children[i];
       cell.classList.add('bomb-aim-cell');

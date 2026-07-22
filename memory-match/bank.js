@@ -139,7 +139,10 @@ function activateBombPlacement() {
 function detonateBombAt(index, bombType) {
   inputLocked = true;
   const cells = [index, ...getRevealPattern(bombType, index)];
-  const targets = [...new Set(cells)].filter(i => i >= 0 && board[i] && !board[i].special && !board[i].locked);
+  // Don't collect cards already flipped into the active chain — leave them to
+  // resolve with the chain (also keeps chainCards indices valid).
+  const targets = [...new Set(cells)].filter(i =>
+    i >= 0 && board[i] && !board[i].special && !board[i].locked && !chainCards.includes(i));
   if (targets.length === 0) { inputLocked = false; updateBoosterUI(); updateBankButton(); return; }
 
   // Reveal what's being destroyed (with a flash), then boom
