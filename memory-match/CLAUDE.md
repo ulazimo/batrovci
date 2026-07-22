@@ -54,7 +54,7 @@ statically). There is no test suite and no lint config for this game.
 | `settings.js` | ~660 | Config layer: `GAMEPLAY_RULES` toggles, win-streak config, persistence (`progress`), the in-game **Settings panel** UI, combo→special mapping UI, level-rewards UI. |
 
 **The engine** (formerly one ~3,370-line `gameplay.js`) is now split by concern into
-16 files, all loaded as ordered `<script>` tags sharing one global namespace. They are
+17 files, all loaded as ordered `<script>` tags sharing one global namespace. They are
 loaded in this order after `settings.js` (see [index.html](index.html)):
 
 | File | Role |
@@ -68,7 +68,8 @@ loaded in this order after `settings.js` (see [index.html](index.html)):
 | `board.js` | Card model/factory, `renderBoard`, board-cell UI, chain tension/faces/indicators, long-press peek, `boardEl` event listeners. |
 | `chain-timer.js` | Optional chain countdown timer. |
 | `boosters.js` | `BOOSTERS`, booster inventory/consume/UI + booster execution actions. |
-| `bank.js` | Bank-It button + baby-bomb placement. |
+| `bank.js` | Bank-It button + `detonateBombAt` (bomb blast + refill). |
+| `bomb-aim.js` | **Drag-to-place** for Baby/BIG bombs: press a bomb button (or Bank-It "Place Bomb") and drag; a live blast silhouette snaps to the tile under the pointer. Drives commit → `detonateBombAt`. Owns board input while `isBombAiming()`. |
 | `tutorials.js` | Main tutorial, feature/special/booster popups, level-select grid. |
 | `ui-nudges.js` | Idle-nudge/hint system, `closeAllOverlays`. |
 | `level.js` | Level lifecycle: `initLevelConfig`, pre-level prep UI, `startGame`, retry/test/next. |
@@ -213,6 +214,8 @@ cards (specials live on the board; boosters are inventory buttons).
 | id | icon | Effect | needsTap |
 |----|------|--------|:--------:|
 | `peek` | 👁 | Reveal one tapped card (also long-press any card if `longPressPeek`). | yes |
+| `babybomb` | 💣 | Destroy a tapped card + its 4 neighbours (`cross` blast). **Drag-to-place** (see below). | drag |
+| `bigbomb` | 💥 | Destroy a 3×3 block (`ring` blast). **Drag-to-place**. | drag |
 | `random3` | 🎲 | Reveal 3 random face-down cards. | no |
 | `cross` | ✚ | Reveal a cross around the tapped card. | yes |
 | `row` | ↔ | Reveal the tapped card's whole row. | yes |
@@ -229,6 +232,15 @@ cards (specials live on the board; boosters are inventory buttons).
 - **Recall** (🔄) is a free re-reveal of `lastRevealedCards`, unlocked from a
   configurable level. **Bank It** (💰) manually resolves a 3+ chain and, after 3
   banks, lets you place a Baby Bomb.
+- **Bombs are drag-only** ([bomb-aim.js](bomb-aim.js)): press the Baby/BIG bomb
+  button (or Bank-It's "Place Bomb") and drag in **one gesture** — a live blast
+  **silhouette** snaps to the tile under the pointer so the player sees exactly
+  what will be destroyed; release on a valid tile to drop. Any other release
+  (off-board, invalid tile, a plain tap that never reached a valid tile, or a
+  cancelled pointer) just aborts — there is **no tap-to-place fallback**. While a
+  drag is active, `isBombAiming()` is true and it owns board input (`onCardClick` /
+  long-press peek bail out); commit routes to `detonateBombAt`. Bombs no longer use
+  the old tap-then-tap `bomb-placement` glow or `activeBooster`.
 
 ---
 
@@ -382,7 +394,8 @@ and unlock-all-levels. It's essentially a live design/tuning console.
 | Scoring/combos | `turn.js` / `specials.js` | `endTurn` (scoring block), `getSpecialForCombo`, `getComboMapping`, `getMinCombo` |
 | Specials | `specials.js` / `board.js` | `SPECIAL_TYPES`, `getRevealPattern`, `createSpecialCard` |
 | Boosters | `boosters.js` | `BOOSTERS`, `activateBooster`, `executeBoosterTap` |
-| Bank It | `bank.js` | `bankChain`, `updateBankButton`, `activateBombPlacement` |
+| Bomb drag-to-place | `bomb-aim.js` | `startBombBoosterDrag`, `startBankBombDrag`, `renderBombSilhouette`, `commitBombAim`, `isBombAiming` |
+| Bank It | `bank.js` | `bankChain`, `updateBankButton`, `detonateBombAt` |
 | Goals | `goals.js` | `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet` |
 | Win/fail | `endgame.js` | `levelWon`, `levelFailed`, `continueLevelWithCoins` |
 | Board render / UI | `board.js` | `renderBoard`, `buildCardHTML`, `updateChainIndicator` |

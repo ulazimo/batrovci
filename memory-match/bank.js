@@ -22,14 +22,15 @@ function initBankButton() {
 
   // Remove old listeners by replacing node
   const fresh = btn.cloneNode(true);
+  fresh.style.touchAction = 'none';
   btn.replaceWith(fresh);
 
   fresh.addEventListener('pointerdown', (e) => {
     if (fresh.classList.contains('disabled')) return;
     e.preventDefault();
-    // Bomb ready — instant click, no hold needed
+    // Bomb ready — drag the Baby Bomb from here onto the board (bomb-aim.js)
     if (bankProgress >= 3) {
-      bankChain();
+      startBankBombDrag(e);
       return;
     }
     fresh.classList.add('holding');

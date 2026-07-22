@@ -125,6 +125,7 @@ function removePeekProgress() {
 
 boardEl.addEventListener('pointerdown', e => {
   longPressTriggered = false;
+  if (isBombAiming()) return; // bomb drag-to-place owns board input
   if (!getRule('longPressPeek')) return;
   const el = e.target.closest('.card');
   if (!el) return;
@@ -158,6 +159,8 @@ boardEl.addEventListener('pointerleave', () => {
 
 boardEl.addEventListener('click', e => {
   if (longPressTriggered) { longPressTriggered = false; return; }
+  // Swallow the click that trails a bomb drop / while aiming.
+  if (isBombAiming() || consumeBombClickSwallow()) return;
   const el = e.target.closest('.card');
   if (!el) return;
   const i = parseInt(el.dataset.index, 10);
@@ -234,36 +237,9 @@ function tensionPulseLoop() {
 }
 
 function updateComboSpawnIndicator() {
-  // Remove any existing indicator and badge
+  // Clear any indicator/badge left on cards (badge display disabled — no spawn icon on opened cards)
   document.querySelectorAll('.combo-spawn-indicator').forEach(el => el.classList.remove('combo-spawn-indicator'));
   document.querySelectorAll('.combo-spawn-badge').forEach(el => el.remove());
-  if (!turnActive) return;
-  const combo = chainCards.length + specialsUsed.length;
-  // Find the minimum combo that produces a special
-  const map = getComboMapping();
-  const minCombo = Math.min(...map.map(m => typeof m.combo === 'number' ? m.combo : parseInt(m.combo)));
-  if (combo < minCombo) return;
-  // Check that this combo length actually yields a special
-  const specialId = getSpecialForCombo(combo);
-  if (!specialId) return;
-  // The spawn position is the last selected card (matching endTurn logic)
-  if (lastSelectedIdx < 0) return;
-  const spawnIdx = lastSelectedIdx;
-  const el = getCardEl(spawnIdx);
-  if (el) {
-    el.classList.add('combo-spawn-indicator');
-    // Add icon badge in top-right corner
-    const badge = document.createElement('span');
-    badge.className = 'combo-spawn-badge';
-    const imgPath = specialBadgeImage(specialId);
-    if (imgPath) {
-      badge.style.backgroundImage = `url('${imgPath}')`;
-    } else {
-      badge.textContent = specialIcon(specialId);
-    }
-    const front = el.querySelector('.card-front');
-    (front || el).appendChild(badge);
-  }
 }
 
 function checkAllColorsBonus() {

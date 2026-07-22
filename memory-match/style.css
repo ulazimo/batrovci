@@ -267,7 +267,7 @@ body {
   background:rgba(255,255,255,.08);color:#666;transition:all .3s;
 }
 #row-indicators .cov-ind.done { background:rgba(46,204,113,.25);color:#2ecc71; }
-.cell { perspective: 400px; cursor: pointer; aspect-ratio: 1; }
+.cell { perspective: 400px; cursor: pointer; aspect-ratio: 1; position: relative; }
 .cell.disabled-cell { cursor: default; pointer-events: none; background: transparent; }
 .cell.cleared-cell { cursor: default; pointer-events: none; background: rgba(255,255,255,0.03); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
 .card {
@@ -607,6 +607,59 @@ body {
 #board.bomb-placement.bomb-place-big .card:not(.special):not(.locked) .card-front {
   box-shadow:0 0 12px rgba(231,76,60,.8);border:1px solid rgba(231,76,60,.7);
 }
+
+/* ================================================================
+   BOMB DRAG-TO-PLACE — live blast silhouette that snaps to tiles
+   (bomb-aim.js). Baby Bomb = orange, BIG Bomb = red.
+================================================================ */
+body.bomb-aiming { touch-action: none; }
+body.bomb-aiming #board { touch-action: none; }
+
+/* Every tile the blast would cover gets a translucent footprint overlay */
+@keyframes bombAimPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.cell.bomb-aim-cell::after {
+  content:''; position:absolute; inset:2px; border-radius:6px;
+  z-index:6; pointer-events:none;
+  background: rgba(230,126,34,.30);
+  border: 2px solid rgba(230,126,34,.95);
+  box-shadow: 0 0 12px rgba(230,126,34,.7), inset 0 0 8px rgba(230,126,34,.4);
+  animation: bombAimPulse .8s ease-in-out infinite;
+}
+/* Centre (drop) tile — stronger fill so the aim point is obvious */
+.cell.bomb-aim-center::after {
+  inset: 0; border-width: 3px; background: rgba(230,126,34,.46);
+}
+/* BIG Bomb footprint → red */
+#board.bomb-aim-big .cell.bomb-aim-cell::after {
+  background: rgba(231,76,60,.30);
+  border-color: rgba(231,76,60,.95);
+  box-shadow: 0 0 14px rgba(231,76,60,.8), inset 0 0 8px rgba(231,76,60,.45);
+}
+#board.bomb-aim-big .cell.bomb-aim-center::after { background: rgba(231,76,60,.48); }
+/* Drop tile isn't a valid target (special / locked) → greyed, can't drop */
+.cell.bomb-aim-invalid::after {
+  background: rgba(120,120,130,.42) !important;
+  border-color: rgba(170,170,180,.9) !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+/* The button being aimed */
+.booster-btn.aiming, #bank-btn.aiming {
+  box-shadow: 0 0 0 3px rgba(255,215,0,.85), 0 0 16px rgba(255,215,0,.6);
+  transform: scale(1.06);
+}
+
+/* Floating bomb that follows the pointer during the drag */
+.bomb-drag-ghost {
+  position: fixed; left: 0; top: 0; z-index: 9999;
+  transform: translate(-50%, -50%);
+  font-size: 34px; line-height: 1; pointer-events: none;
+  opacity: 0; transition: opacity .12s ease;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.6));
+  will-change: left, top;
+}
+.bomb-drag-ghost.visible { opacity: 1; }
 
 /* Chain-reward earned — pulse the booster button */
 @keyframes rewardFlash {

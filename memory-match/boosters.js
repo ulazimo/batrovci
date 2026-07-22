@@ -56,10 +56,20 @@ function initBoosters() {
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
     btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
     btn.addEventListener('click', () => activateBooster(b.id));
-    let pt = null;
-    btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt='shown'; }, 400); });
-    btn.addEventListener('pointerup',    () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
-    btn.addEventListener('pointerleave', () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
+    // Bomb power-ups are drag-to-place: press the button and drag the blast
+    // silhouette onto the board (see bomb-aim.js). activateBooster no-ops for them.
+    if (b.bomb) {
+      btn.style.touchAction = 'none';
+      btn.addEventListener('pointerdown', (e) => startBombBoosterDrag(b, e));
+    }
+    // Hold-to-preview tooltip — skipped for bombs (drag would fight the tooltip;
+    // the drag hint text covers it instead).
+    if (!b.bomb) {
+      let pt = null;
+      btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt='shown'; }, 400); });
+      btn.addEventListener('pointerup',    () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
+      btn.addEventListener('pointerleave', () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
+    }
     boosterBar.appendChild(btn);
   });
 }
@@ -105,16 +115,10 @@ function activateBooster(id) {
     clearBombPlacement();
     updateBoosterUI(); updateChainIndicator(); return;
   }
+  // Bomb power-ups (Baby Bomb / BIG Bomb) are handled by drag-to-place
+  // (pointerdown → startBombBoosterDrag). Ignore plain clicks here.
+  if (b.bomb) return;
   SFX.booster();
-  clearBombPlacement(); // clear glow if switching from another bomb
-  // Bomb power-ups (Baby Bomb / BIG Bomb): enter placement mode like Bank-It "Place Bomb"
-  if (b.bomb) {
-    activeBooster = id;
-    boardEl.classList.add('bomb-placement');
-    if (b.bomb === 'ring') boardEl.classList.add('bomb-place-big'); // BIG Bomb → distinct colour
-    showTutorialHint(`Tap a card to drop the ${b.name} — it destroys the cards around it!`);
-    updateBoosterUI(); updateChainIndicator(); return;
-  }
   if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
   consumeBooster(id);
   if (id === 'random3')   executeRandom3();

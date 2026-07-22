@@ -9,20 +9,10 @@
 // CARD CLICK
 // ============================================================
 function onCardClick(index) {
+  if (isBombAiming()) return; // bomb drag-to-place owns board input while active
   if (inputLocked) return;
   const card = board[index];
   if (!card || turns <= 0) return;
-
-  // Bank → Baby Bomb placement mode: tap a card to detonate (destroy) there
-  if (bankBombPlacement) {
-    if (card.special || card.locked) return; // only allow valid cells
-    bankBombPlacement = false;
-    bankProgress = 0;
-    clearBombPlacement();
-    updateBankProgress();
-    detonateBombAt(index, 'cross');
-    return;
-  }
 
   // Nudge: dismiss on any action, restart idle timer
   dismissNudge();
