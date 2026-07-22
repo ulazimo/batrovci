@@ -8,11 +8,14 @@
 // ============================================================
 // RECALL — re-reveal the last shown cards
 // ============================================================
+const RECALL_COST = 10; // coins per use
 function recallCards() {
   dismissNudge(); clearNudgeTimer();
   if (inputLocked || !lastRevealedCards.length) return;
   const targets = lastRevealedCards.filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
   if (!targets.length) return;
+  if ((progress.coins || 0) < RECALL_COST) { updateRecallButton(); return; }
+  progress.coins -= RECALL_COST; saveProgress(); updateCoinDisplay();
   SFX.booster();
   inputLocked = true;
   targets.forEach(idx => {
@@ -30,7 +33,8 @@ function updateRecallButton() {
   const btn = document.getElementById('recall-btn');
   if (!btn) return;
   const hasCards = lastRevealedCards.some(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
-  btn.classList.toggle('disabled', !hasCards || inputLocked);
+  const canAfford = (progress.coins || 0) >= RECALL_COST;
+  btn.classList.toggle('disabled', !hasCards || inputLocked || !canAfford);
 }
 
 // ============================================================

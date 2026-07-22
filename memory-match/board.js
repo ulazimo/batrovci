@@ -322,6 +322,17 @@ function updateSweepCountdown() {
   }
 }
 
+// Sliding-window chain bar geometry
+const CHAIN_STEP = 38;        // slot width (30) + gap (8)
+const CHAIN_MIN_LINE_POS = 2; // green line between track positions 2 & 3 (Match-2 minimum)
+const CHAIN_REWARD_POS = 5;   // Baby Bomb reward at track position 5
+let _chainLastLen = 0;        // last rendered chain length (drives the pop-then-slide)
+
+// How many positions have scrolled off the left for a chain of `len`.
+// Cards 1-3 sit in a static 5-wide window; from the 4th on, the newest card
+// settles into visible slot 3 (window = last 3 opened + 2 upcoming).
+function chainOffsetFor(len) { return Math.max(0, len - 3); }
+
 function updateChainIndicator() {
   updateChainTension();
   updateComboSpawnIndicator();
@@ -333,11 +344,13 @@ function updateChainIndicator() {
   if (spotlightMode) {
     chainEl.className = 'chain-bar chain-prompt';
     chainEl.innerHTML = '🔦 Tap a face-down card to reveal it';
+    _chainLastLen = 0;
     return;
   }
   if (activeBooster) {
     chainEl.className = 'chain-bar chain-prompt';
     chainEl.innerHTML = `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}`;
+    _chainLastLen = 0;
     return;
   }
   chainEl.className = 'chain-bar';
@@ -351,28 +364,53 @@ function updateChainIndicator() {
     filled.push(isWild(i) ? { wild: true } : { color: board[i].color || chainColor });
   });
   specialsUsed.forEach(() => filled.push({ special: true }));
+  const len = filled.length;
 
-  const MIN_LINE_AFTER = 2; // green line fixed between the 2nd and 3rd slot (Match-2 reminder)
-  const REWARD_SLOT = 4;    // 5th slot earns a Baby Bomb once the chain reaches it
-  const totalSlots = Math.max(5, filled.length); // at least 5 positions; grows + scrolls beyond
+  const newOffset = chainOffsetFor(len);
+  const nSlots = newOffset + 5; // always render enough to fill the 5-wide window
+
+  // Red limit "]" = total cards of the active chain color currently on the board.
+  let limitPos = 0;
+  if (turnActive && chainColor) {
+    limitPos = board.filter(c => c && !c.special && !c.locked && c.color === chainColor).length;
+  }
+
   let slots = '';
-  for (let k = 0; k < totalSlots; k++) {
-    if (k === MIN_LINE_AFTER) slots += '<span class="chain-min-line"></span>';
-    const rewardCls = k === REWARD_SLOT ? ' reward' : '';
-    const reward = k === REWARD_SLOT ? '<span class="chain-slot-reward">💣</span>' : '';
-    if (k < filled.length) {
-      const f = filled[k];
+  for (let p = 1; p <= nSlots; p++) {
+    const rewardCls = p === CHAIN_REWARD_POS ? ' reward' : '';
+    const reward = p === CHAIN_REWARD_POS ? '<span class="chain-slot-reward">💣</span>' : '';
+    if (p <= len) {
+      const f = filled[p - 1];
       const style = f.wild
         ? 'background:conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#e74c3c)'
         : f.special ? 'background:#fff' : `background:${cssColor(f.color)}`;
-      slots += `<span class="chain-slot filled${rewardCls}" style="${style}">${reward}</span>`;
+      const justAdded = (p === len && len > _chainLastLen) ? ' just-added' : '';
+      slots += `<span class="chain-slot filled${rewardCls}${justAdded}" style="${style}">${reward}</span>`;
     } else {
       slots += `<span class="chain-slot empty${rewardCls}">${reward}</span>`;
     }
   }
-  chainEl.innerHTML = `<span class="chain-label">Chain</span><div class="chain-slots">${slots}</div>`;
 
-  // Keep the newest slot in view once the chain runs past the visible positions.
-  const wrap = chainEl.querySelector('.chain-slots');
-  if (wrap) wrap.scrollLeft = wrap.scrollWidth;
+  // Markers ride inside the track (absolutely positioned) so they slide with it.
+  const lineX = (CHAIN_MIN_LINE_POS - 1) * CHAIN_STEP + 34;
+  let markers = `<span class="chain-min-line" style="left:${lineX}px"></span>`;
+  if (limitPos > 0) {
+    markers += `<span class="chain-limit" style="left:${(limitPos - 1) * CHAIN_STEP}px"></span>`;
+  }
+
+  chainEl.innerHTML =
+    `<span class="chain-label">Chain</span>` +
+    `<div class="chain-slots"><div class="chain-track">${slots}${markers}</div></div>`;
+
+  // Slide animation: start at the previous offset (newest pops in at slot 4),
+  // then transition to the new offset (slides left so it settles at slot 3).
+  const track = chainEl.querySelector('.chain-track');
+  const startOffset = (len > _chainLastLen && len >= 4) ? Math.max(0, len - 4) : newOffset;
+  track.style.transition = 'none';
+  track.style.transform = `translateX(${-startOffset * CHAIN_STEP}px)`;
+  void track.offsetWidth; // force reflow so the next transform animates
+  track.style.transition = 'transform .35s cubic-bezier(.22,.61,.36,1)';
+  track.style.transform = `translateX(${-newOffset * CHAIN_STEP}px)`;
+
+  _chainLastLen = len;
 }

@@ -20,38 +20,28 @@ const BOOSTERS = [
 ];
 let boosterCounts = {};
 
-// Only these boosters get a tile in the tray (Recall is added separately as the
-// first spot). These are the power-ups players can earn via chain rewards, so the
-// tray stays at 4 spots: Recall · Peek · Baby Bomb · BIG Bomb. Hidden boosters
-// still keep their inventory counts — see below.
-const VISIBLE_BOOSTERS = ['peek', 'babybomb', 'bigbomb'];
+// Tray tiles, in display order: Peek · Random 3 · Baby Bomb · BIG Bomb.
+// Recall lives in its own bar above the chain (not in the tray). Hidden boosters
+// still keep their inventory counts — see initBoosters.
+const VISIBLE_BOOSTERS = ['peek', 'random3', 'babybomb', 'bigbomb'];
 
 // ============================================================
 // BOOSTERS
 // ============================================================
 function initBoosters() {
   boosterBar.innerHTML = '';
-  // Recall is the first of the four tray spots (folded in from the old recall bar).
-  if (isRecallActive()) {
-    const rc = document.createElement('div');
-    rc.className = 'booster-btn recall-wrap'; rc.id = 'recall-btn';
-    rc.innerHTML = `<span>🔄</span>`;
-    rc.addEventListener('click', () => recallCards());
-    boosterBar.appendChild(rc);
-  }
+  // Count bookkeeping for ALL boosters (hidden ones keep their inventory).
   BOOSTERS.forEach(b => {
     const s = getBoosterSetting(b.id);
     if (!s.enabled) { boosterCounts[b.id] = 0; return; }
-    // Use persisted count if available, otherwise fall back to settings qty
-    if (progress.boosterCounts[b.id] !== undefined) {
-      boosterCounts[b.id] = progress.boosterCounts[b.id];
-    } else {
-      boosterCounts[b.id] = s.qty;
-    }
+    boosterCounts[b.id] = (progress.boosterCounts[b.id] !== undefined) ? progress.boosterCounts[b.id] : s.qty;
     // Enforce per-booster inventory cap (bombs are capped low)
     boosterCounts[b.id] = Math.min(boosterCounts[b.id], getBoosterMax(b.id));
-    // Keep the count bookkeeping above, but only render tiles for visible boosters.
-    if (!VISIBLE_BOOSTERS.includes(b.id)) return;
+  });
+  // Render only the tray boosters, in VISIBLE_BOOSTERS order.
+  VISIBLE_BOOSTERS.forEach(id => {
+    const b = BOOSTERS.find(x => x.id === id);
+    if (!b || !getBoosterSetting(b.id).enabled) return;
     const btn = document.createElement('div');
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
     btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
@@ -61,10 +51,8 @@ function initBoosters() {
     if (b.bomb) {
       btn.style.touchAction = 'none';
       btn.addEventListener('pointerdown', (e) => startBombBoosterDrag(b, e));
-    }
-    // Hold-to-preview tooltip — skipped for bombs (drag would fight the tooltip;
-    // the drag hint text covers it instead).
-    if (!b.bomb) {
+    } else {
+      // Hold-to-preview tooltip — skipped for bombs (drag would fight the tooltip).
       let pt = null;
       btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt='shown'; }, 400); });
       btn.addEventListener('pointerup',    () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
