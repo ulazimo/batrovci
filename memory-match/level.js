@@ -304,7 +304,7 @@ function startGame(preplacedSpecials) {
   if (tLabel) tLabel.textContent = lvl.clearBoard ? 'Deck' : 'Target';
   initLevelGoals();
   updateDeckHUD();
-  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); initCollection(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
 
   // Booster hint flag — will be shown after all popups are done
   const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);

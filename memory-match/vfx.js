@@ -81,9 +81,14 @@ function spawnParticles(indices, color) {
 
 // Fly matched cards to score element with staggered ding + score
 function flyCardsToGoal(indices, ptsTotal, cb) {
-  const scoreTarget = document.getElementById('score-value');
+  // Fly toward the Collection graveyard when it's active; otherwise the score.
+  const useCollection = (typeof collectionEnabled === 'function') && collectionEnabled();
+  const scoreTarget = document.getElementById(useCollection ? 'collection-stack' : 'score-value');
+  // Capture colours before the cards are removed, so the graveyard shows real tiles.
+  const flyColors = indices.map(idx => board[idx] && !board[idx].special ? board[idx].color : null);
   if (!scoreTarget || indices.length === 0) {
     indices.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.add('exploding'); });
+    if (useCollection) flyColors.forEach(c => addToCollection(c));
     if (cb) setTimeout(cb, 450);
     return;
   }
@@ -135,10 +140,13 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
         clone.classList.add('burst');
         setTimeout(() => clone.remove(), 300);
 
-        // Pop the score element
+        // Pop the target element
         scoreTarget.style.transition = 'transform 0.15s ease-out';
         scoreTarget.style.transform = 'scale(1.25)';
         setTimeout(() => { scoreTarget.style.transform = 'scale(1)'; }, 150);
+
+        // Drop the tile into the graveyard as it lands.
+        if (useCollection) addToCollection(flyColors[i]);
 
         const cardPts = ptsPerCard + (i === indices.length - 1 ? remainder : 0);
         if (cardPts > 0) {

@@ -42,6 +42,31 @@ function updateDeckHUD() {
   if (targetEl) targetEl.textContent = deck.length;
 }
 
+// ============================================================
+// COLLECTION — a "graveyard" stack of tiles cleared/bombed this level.
+// Shown top-left on Cleaning levels; toggled by the `collectionTray` rule.
+// ============================================================
+let collectionStack = [];
+function collectionEnabled() { return !!LEVELS[currentLevelIndex]?.clearBoard && getRule('collectionTray'); }
+function initCollection() { collectionStack = []; updateCollectionVisibility(); renderCollection(); }
+function updateCollectionVisibility() {
+  const el = document.getElementById('stat-collection');
+  if (el) el.style.display = collectionEnabled() ? 'block' : 'none';
+}
+function addToCollection(color) {
+  if (!collectionEnabled() || !color) return;
+  collectionStack.push(color);
+  renderCollection(true);
+}
+function renderCollection(pop) {
+  const wrap = document.getElementById('collection-stack');
+  if (!wrap) return;
+  const recent = collectionStack.slice(-4); // show the last few on the pile
+  const tiles = recent.map((c, i) => `<span class="collection-tile" style="background:${cssColor(c)};--i:${i}"></span>`).join('');
+  wrap.innerHTML = `<span class="collection-pile">${tiles}</span><span class="collection-count">${collectionStack.length}</span>`;
+  if (pop) { const top = wrap.querySelector('.collection-tile:last-of-type'); if (top) top.classList.add('just-collected'); }
+}
+
 function createLockedCard(i) { return { color: randomColor(), flipped: false, special: null, index: i, locked: true }; }
 function createSpecialCard(i, type, bombColor) { SFX.pop(); return { color: null, flipped: false, special: type, index: i, bombColor: bombColor || null }; }
 function isBombType(type) { return ['cross','ring','diamond'].includes(type); }

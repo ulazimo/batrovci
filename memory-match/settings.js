@@ -48,6 +48,9 @@ const GAMEPLAY_RULES = [
   { id: 'blueTheme', name: 'Blue Theme (Classic)', icon: '🎨',
     desc: 'Use the original blue color theme instead of the default purple.',
     default: false },
+  { id: 'collectionTray', name: 'Collection Tray', icon: '🪦',
+    desc: 'Show a "graveyard" stack of cleared/bombed tiles in the top-left (Cleaning levels).',
+    default: true },
 ];
 
 function getRule(id) {
@@ -74,6 +77,7 @@ function toggleRule(id) {
   document.getElementById('rule-row-' + id).classList.toggle('disabled', !progress.gameplayRules[id]);
   saveProgress();
   if (id === 'blueTheme' && typeof applyTheme === 'function') applyTheme();
+  if (id === 'collectionTray' && typeof updateCollectionVisibility === 'function') updateCollectionVisibility();
 }
 
 // ============================================================

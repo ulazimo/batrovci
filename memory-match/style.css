@@ -91,6 +91,21 @@ body {
 /* Turns gets a slightly larger value in every theme (Deck stays as is). */
 #header #turns-value { font-size: 32px; }
 
+/* Collection graveyard (top-left). Hidden by default; JS shows it on Cleaning
+   levels when the collectionTray rule is on. */
+#stat-collection { display: none; }
+.collection-stack { display: flex; align-items: center; justify-content: center; gap: 7px; height: 30px; transition: transform .15s ease-out; }
+.collection-pile { position: relative; width: 30px; height: 28px; }
+.collection-tile {
+  position: absolute; bottom: 0; left: 0; width: 22px; height: 22px; border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.5);
+  transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px));
+}
+.collection-tile.just-collected { animation: collectPop .28s ease-out; }
+@keyframes collectPop { 0% { transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px)) scale(1.5); } 100% { transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px)) scale(1); } }
+.collection-count { font-size: 17px; font-weight: 800; color: #cfc3e6; }
+.theme-purple .collection-count { color: #e7dcff; }
+
 /* ================================================================
    CHAIN INDICATOR
 ================================================================ */
