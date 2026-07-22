@@ -347,8 +347,58 @@ function boosterReveal(indices) {
 }
 
 function executeRandom3() {
-  const fd = board.filter(c=>c&&!c.flipped&&!c.special).map(c=>c.index).sort(()=>Math.random()-.5);
-  boosterReveal(fd.slice(0,3));
+  const fd = board.filter(c=>c&&!c.flipped&&!c.special&&!c.locked).map(c=>c.index).sort(()=>Math.random()-.5);
+  const picks = fd.slice(0,3);
+  if (!picks.length) { inputLocked = false; updateBoosterUI(); return; }
+
+  const matches = idx => turnActive && (board[idx].color === chainColor || (getRule('coloredBombs') && chainColors.has(board[idx].color)));
+  const nonMatching = picks.filter(idx => !matches(idx));
+
+  // No chain active or nothing matches — behave like a plain reveal
+  if (picks.every(idx => !matches(idx))) { boosterReveal(picks); return; }
+
+  inputLocked = true;
+  pauseChainTimer();
+
+  // Flip all picked cards with a staggered flash; matching ones join the chain
+  picks.forEach((idx, i) => {
+    setTimeout(() => {
+      board[idx].flipped = true;
+      const el = getCardEl(idx);
+      if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+      SFX.cardFlip();
+      if (matches(idx) && !chainCards.includes(idx)) {
+        chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1);
+        SFX.match();
+        spawnParticles([idx], board[idx].color);
+      }
+    }, i * 80);
+  });
+
+  // After the reveal: hide non-matching cards, resolve chain state
+  setTimeout(() => {
+    nonMatching.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
+    const chainLen = chainCards.length + specialsUsed.length;
+    if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
+    else if (chainLen > 3) resetChainTimer();
+    inputLocked = false;
+    resumeChainTimer();
+    updateBoosterUI();
+    updateChainIndicator();
+    // Check if all cards of chain color are found
+    const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+    const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
+    if (remaining.length === 0 && chainLen >= getMinCombo()) {
+      stopChainTimer();
+      inputLocked = true;
+      if (isSweepRevealActive()) {
+        setTimeout(() => endTurn(false, true), 600);
+      } else {
+        showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
+        setTimeout(() => hideBoardBanner(() => endTurn(false, false)), 1200);
+      }
+    }
+  }, picks.length * 80 + 1500);
 }
 function executeNeighbor() {
   const last = [...chainCards].reverse().find(i=>!board[i].special);
