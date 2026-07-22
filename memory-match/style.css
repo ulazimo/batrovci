@@ -88,6 +88,8 @@ body {
 .journey-cleaning #goal-hud { display: none !important; }
 .journey-cleaning #header .stat-value { font-size: 26px; }
 .journey-cleaning #header .stat-label { font-size: 11px; }
+/* Turns gets a slightly larger value in every theme (Deck stays as is). */
+#header #turns-value { font-size: 32px; }
 
 /* ================================================================
    CHAIN INDICATOR
@@ -257,7 +259,7 @@ body {
 }
 #board-row-wrap { display: flex; align-items: stretch; width: 100%; }
 #board {
-  display: grid; gap: 4px; flex: 1;
+  display: grid; gap: 8px; flex: 1;
   max-width: calc(100vh - 220px);
 }
 
@@ -288,14 +290,14 @@ body {
 .cell.cleared-cell { cursor: default; pointer-events: none; background: rgba(255,255,255,0.03); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
 .card {
   width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
-  transition: transform 0.35s ease; border-radius: 4px;
+  transition: transform 0.35s ease; border-radius: 14px;
 }
 .card.flipped { transform: rotateY(180deg); }
 
 
 .card-face {
   position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
 }
 .card-back {
   background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
@@ -304,7 +306,7 @@ body {
 .card-back::after { content:'?'; font-size:clamp(10px,2.5vw,18px); color:#6a6a9a; font-weight:700; font-size: 2rem; }
 .card-front { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,0.3); }
 .card-front.red, .card-front.green, .card-front.blue, .card-front.yellow { background: transparent; border: none; }
-.card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+.card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
 
 @keyframes jellyPop {
   0%   { transform: scale(0.6); }
@@ -916,3 +918,38 @@ body.bomb-aiming #board { touch-action: none; }
    SCROLLBAR (chain indicator overflow)
 ================================================================ */
 ::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ================================================================
+   THEME: PURPLE  (experimental — add class "theme-purple" to <body>)
+   Colour/font only; no layout changes.
+================================================================ */
+.theme-purple {
+  font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+}
+/* Backgrounds — deep, saturated purple */
+.theme-purple #device-frame { background: #271539; }
+.theme-purple #level-banner { background: #1b0f2b; }
+.theme-purple #header { background: #271539; border-bottom-color: #3a2358; }
+/* Darker panels behind the power-ups, recall and chain */
+.theme-purple .booster-btn { background: #190c2a; border-color: #3a2358; }
+.theme-purple .recall-btn  { background: #190c2a; border-color: #3a2358; color: #d8c9f0; }
+.theme-purple #chain-indicator { background: #150a24; color: #9f93b8; }
+.theme-purple .chain-label { color: #9f93b8; }
+/* White face-down cards with a dark question mark (revealed colour tiles untouched) */
+.theme-purple .card-back {
+  background: #ffffff; border: 2px solid rgba(0,0,0,.10);
+  box-shadow: 0 2px 5px rgba(0,0,0,.28);
+}
+.theme-purple .card-back::after { color: #2a2440; }
+/* White count badges with black text */
+.theme-purple .booster-btn .badge { background: #ffffff; color: #1a1a2a; }
+/* Top-bar text + pills */
+.theme-purple #level-banner .level-label { color: #c9b3f0; }
+.theme-purple #turns-value { color: #ffffff; }
+.theme-purple #turns-value.danger { color: #ff6b8a; text-shadow: 0 0 8px rgba(255,107,138,.6); }
+.theme-purple #target-value { color: #a99cc4; }
+.theme-purple .stat-label { color: #8b7fa5; }
+.theme-purple #level-banner .settings-gear { color: #c9b3f0; }
+.theme-purple .lives-pill, .theme-purple .coin-pill {
+  background: rgba(0,0,0,.28); font-family: inherit;
+}

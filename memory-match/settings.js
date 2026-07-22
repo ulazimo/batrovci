@@ -45,6 +45,9 @@ const GAMEPLAY_RULES = [
   { id: 'cumulativeChainRewards', name: 'Stacked Chain Rewards', icon: '🎁',
     desc: 'A long chain awards every power-up tier it passed, not just the highest. E.g. a 7+ chain grants both the Baby Bomb (5+) and the BIG Bomb (7+). Off = only the highest tier is awarded.',
     default: false },
+  { id: 'blueTheme', name: 'Blue Theme (Classic)', icon: '🎨',
+    desc: 'Use the original blue color theme instead of the default purple.',
+    default: false },
 ];
 
 function getRule(id) {
@@ -70,6 +73,7 @@ function toggleRule(id) {
   document.getElementById('rule-toggle-' + id).classList.toggle('on', progress.gameplayRules[id]);
   document.getElementById('rule-row-' + id).classList.toggle('disabled', !progress.gameplayRules[id]);
   saveProgress();
+  if (id === 'blueTheme' && typeof applyTheme === 'function') applyTheme();
 }
 
 // ============================================================
