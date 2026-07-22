@@ -42,6 +42,9 @@ const GAMEPLAY_RULES = [
   { id: 'legacyMatch3', name: 'Legacy Match-3', icon: '3️⃣',
     desc: 'Play the original rule: a chain of 3+ is required to score and clear. Off = Match-2 (the default) — just 2 same-colored cards are enough.',
     default: false },
+  { id: 'cumulativeChainRewards', name: 'Stacked Chain Rewards', icon: '🎁',
+    desc: 'A long chain awards every power-up tier it passed, not just the highest. E.g. a 7+ chain grants both the Baby Bomb (5+) and the BIG Bomb (7+). Off = only the highest tier is awarded.',
+    default: false },
 ];
 
 function getRule(id) {

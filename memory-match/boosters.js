@@ -130,25 +130,44 @@ function activateBooster(id) {
 // ============================================================
 // CHAIN REWARDS — completing a chain grants a power-up (no board special)
 //   chain 3-4 → wrong-color ✕ hint (instant, mid-chain — see applyChainColorHint),
-//   chain 5-6 → Baby Bomb, 7+ → BIG Bomb (highest tier only, granted at end of turn)
+//   chain 5-6 → Baby Bomb, 7+ → BIG Bomb (granted at end of turn).
+// By default only the highest tier is awarded; the `cumulativeChainRewards` rule
+// awards every tier the chain passed (e.g. a 7+ chain grants Baby Bomb AND BIG Bomb).
+// Tiers are listed ascending by `min` so the last qualifying one is the highest.
 // ============================================================
+const CHAIN_REWARD_TIERS = [
+  { min: 5, id: 'babybomb' },
+  { min: 7, id: 'bigbomb' },
+];
+
+// Every reward tier the chain qualified for (cumulative rule) or just the highest.
+function getChainRewardBoosters(comboLen) {
+  const qualifying = CHAIN_REWARD_TIERS.filter(t => comboLen >= t.min).map(t => t.id);
+  if (getRule('cumulativeChainRewards')) return qualifying;
+  return qualifying.length ? [qualifying[qualifying.length - 1]] : [];
+}
+
+// Highest single reward tier for a combo (null if none) — kept for callers that
+// only need the top reward.
 function getChainRewardBooster(comboLen) {
-  if (comboLen >= 7) return 'bigbomb';
-  if (comboLen >= 5) return 'babybomb';
-  // chain 3-4 no longer grants a Peek — reaching 3 fires the instant ✕ hint instead
-  return null;
+  const ids = getChainRewardBoosters(comboLen);
+  return ids.length ? ids[ids.length - 1] : null;
 }
 
 function grantChainReward(comboLen) {
-  const id = getChainRewardBooster(comboLen);
-  if (!id) return;
-  const max = getBoosterMax(id);
-  const before = boosterCounts[id] || 0;
-  boosterCounts[id] = Math.min(max, before + 1);
+  const ids = getChainRewardBoosters(comboLen);
+  if (!ids.length) return;
+  const flashed = [];
+  ids.forEach(id => {
+    const max = getBoosterMax(id);
+    const before = boosterCounts[id] || 0;
+    boosterCounts[id] = Math.min(max, before + 1);
+    if (boosterCounts[id] > before) flashed.push(id);
+  });
   saveBoosterCounts();
   updateBoosterUI();
-  // Silent reward — just pulse the earned power-up's button (no top text notification)
-  if (boosterCounts[id] > before) flashBoosterButton(id);
+  // Silent reward — just pulse each earned power-up's button (no top text notification)
+  flashed.forEach(flashBoosterButton);
 }
 
 function flashBoosterButton(id) {
