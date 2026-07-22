@@ -139,19 +139,45 @@ function activateBombPlacement() {
 function detonateBombAt(index, bombType) {
   inputLocked = true;
   const cells = [index, ...getRevealPattern(bombType, index)];
-  // Don't collect cards already flipped into the active chain — leave them to
-  // resolve with the chain (also keeps chainCards indices valid).
-  const targets = [...new Set(cells)].filter(i =>
+  // Candidate cards in the blast: normal, unlocked, and not already flipped into the
+  // active chain — leaving existing chain cards untouched keeps chainCards indices valid.
+  const blast = [...new Set(cells)].filter(i =>
     i >= 0 && board[i] && !board[i].special && !board[i].locked && !chainCards.includes(i));
-  if (targets.length === 0) { inputLocked = false; updateBoosterUI(); updateBankButton(); return; }
 
-  // Reveal what's being destroyed (with a flash), then boom
-  targets.forEach(i => { const c = board[i]; if (c && !c.flipped) { c.flipped = true; const el = getCardEl(i); if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); } } });
+  // Chain-color cards in the blast can be pulled into the active chain and left on the
+  // board (resolve with the chain) instead of being collected — the `bombChainStay` rule.
+  const matchesChain = i => turnActive && (board[i].color === chainColor || (getRule('coloredBombs') && chainColors.has(board[i].color)));
+  const joinChain = getRule('bombChainStay') ? blast.filter(matchesChain) : [];
+  const targets = blast.filter(i => !joinChain.includes(i));
+
+  if (targets.length === 0 && joinChain.length === 0) { inputLocked = false; updateBoosterUI(); updateBankButton(); return; }
+
+  // Reveal everything the bomb touches (with a flash)
+  [...targets, ...joinChain].forEach(i => { const c = board[i]; if (c && !c.flipped) { c.flipped = true; const el = getCardEl(i); if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); } } });
+
+  // Chain-color cards join the active chain and stay on the board
+  if (joinChain.length > 0) {
+    joinChain.forEach(i => { if (!chainCards.includes(i)) { chainCards.push(i); lastSelectedIdx = i; SFX.shepard(chainCards.length + specialsUsed.length - 1); } });
+    SFX.match();
+    spawnParticles(joinChain, chainColor || 'red');
+    const chainLen = chainCards.length + specialsUsed.length;
+    if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
+    else if (chainLen > 3) resetChainTimer();
+    updateChainIndicator();
+  }
+
   SFX.boom();
   const centerCell = boardEl.children[index];
   if (centerCell) spawnBombVFX(centerCell);
   shakeBoard();
-  // Count toward color/marked/coverage goals; combo 0 so it isn't treated as a chain
+
+  // Whole blast joined the chain — nothing to collect
+  if (targets.length === 0) {
+    setTimeout(() => { inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator(); }, 400);
+    return;
+  }
+
+  // Count collected cards toward color/marked/coverage goals; combo 0 so it isn't treated as a chain
   updateGoalProgress(targets, 0);
   lastRevealedCards = [...targets];
 
@@ -163,7 +189,7 @@ function detonateBombAt(index, bombType) {
       if (checkAllGoalsMet()) { levelWon(); return; }
       const finish = () => { inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator(); };
       // Refilled cards drop in face-up (like a normal clear), then hide after a beat
-      if (nc.length > 0 && !getRule('hiddenNewCards')) {
+      if (nc.length > 0 && getRule('bombRevealNewCards')) {
         revealCardsNoHide(nc);
         lastRevealedCards = [...nc];
         setTimeout(() => {
