@@ -240,7 +240,10 @@ function onCardClick(index) {
   }
 
   const comboLen = chainCards.length + specialsUsed.length;
-  if (comboLen < 3) { SFX.mismatch(); shakeBoard(); }
+  // Only a genuine miss (chain below the scoring minimum) gets the fail buzz + shake.
+  // A completed collect that ends on a wrong flip (e.g. Match-2's 2-chain + wrong 3rd)
+  // is a success and must feel like one — no negative feedback.
+  if (comboLen < getMinCombo()) { SFX.mismatch(); shakeBoard(); }
   advanceTutorial('mismatch');
   chainCards.push(index); inputLocked = true;
   updateChainFaces(index);

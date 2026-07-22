@@ -70,7 +70,8 @@ function chainTimerTick() {
     stopChainTimer();
     if (turnActive && !inputLocked) {
       const comboLen = chainCards.length + specialsUsed.length;
-      if (comboLen < 3) { SFX.mismatch(); shakeBoard(); }
+      // Timer expiry only "fails" if the chain never reached the scoring minimum.
+      if (comboLen < getMinCombo()) { SFX.mismatch(); shakeBoard(); }
       inputLocked = true;
       setTimeout(() => endTurn(false), 500);
     }
