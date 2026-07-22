@@ -199,9 +199,9 @@ function showLevelSelect() {
   buildLevelGrid();
   document.getElementById('level-select').classList.add('active');
   const streak = progress.winStreak;
-  const pct = getStreakRevealPct();
+  const cards = getStreakRevealCount();
   document.getElementById('ls-streak').textContent = streak > 0
-    ? `🔥 Win Streak: ${streak} (${Math.round(pct * 100)}% board reveal)`
+    ? `🔥 Win Streak: ${streak} (👁 ${cards} card${cards !== 1 ? 's' : ''} revealed)`
     : '';
 }
 

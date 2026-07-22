@@ -112,8 +112,8 @@ function showPreLevelUI() {
     const effect = getStreakEffect();
     if (streak > 0) {
       if (effect === 'reveal') {
-        const pct = getStreakRevealPct();
-        streakEl.textContent = `🔥 Win Streak: ${streak} — 👁 ${Math.round(pct * 100)}% board reveal`;
+        const cards = getStreakRevealCount();
+        streakEl.textContent = `🔥 Win Streak: ${streak} — 👁 ${cards} card${cards !== 1 ? 's' : ''} revealed`;
       } else {
         const shields = getStreakShields();
         streakEl.textContent = `🔥 Win Streak: ${streak} — 🛡 ${shields} shield${shields !== 1 ? 's' : ''}`;
@@ -121,14 +121,15 @@ function showPreLevelUI() {
     } else {
       streakEl.textContent = 'No win streak active';
     }
-    breakdownEl.innerHTML = WIN_STREAK_LEVELS.map(lvl => {
-      const active = streak >= lvl.streak;
-      const value = effect === 'reveal'
-        ? `${Math.round(lvl.revealPct * 100)}%`
-        : `🛡${lvl.shields}`;
-      return `<span style="color:${active ? '#f0c040' : '#555'}">` +
-        `${lvl.streak === 0 ? 'No streak' : '🔥' + lvl.streak}: ${value}</span>`;
-    }).join(' &nbsp;→&nbsp; ');
+    const cards = getWinStreakCards();
+    const ladder = [];
+    for (let lvl = 0; lvl < cards.length; lvl++) {
+      const active = streak >= lvl;
+      const value = effect === 'reveal' ? `👁${cards[lvl]}` : `🛡${lvl}`;
+      ladder.push(`<span style="color:${active ? '#f0c040' : '#555'}">` +
+        `${lvl === 0 ? 'No streak' : '🔥' + lvl}: ${value}</span>`);
+    }
+    breakdownEl.innerHTML = ladder.join(' &nbsp;→&nbsp; ');
   } else {
     streakEl.textContent = '';
     breakdownEl.innerHTML = '';

@@ -152,9 +152,12 @@ function showWinOverlay() {
   document.getElementById('win-title').textContent = `Level ${LEVELS[currentLevelIndex].id} Complete!`;
   document.getElementById('win-stars').textContent = '★'.repeat(stars)+'☆'.repeat(3-stars);
   document.getElementById('win-score').textContent  = `Score: ${score}  •  ${turns} turn${turns!==1?'s':''} remaining`;
-  const nextPct = getStreakRevealPct();
+  const effect = getStreakEffect();
+  const nextBoost = effect === 'reveal'
+    ? `👁 ${getStreakRevealCount()} card${getStreakRevealCount() !== 1 ? 's' : ''} revealed`
+    : `🛡 ${getStreakShields()} shield${getStreakShields() !== 1 ? 's' : ''}`;
   const streakMsg = progress.winStreak > 0
-    ? `🔥 Win Streak: ${progress.winStreak} — ${Math.round(nextPct * 100)}% board reveal next game`
+    ? `🔥 Win Streak: ${progress.winStreak} — ${nextBoost} next game`
     : '';
   document.getElementById('win-streak').textContent = streakMsg;
 

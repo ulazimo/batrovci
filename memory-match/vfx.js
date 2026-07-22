@@ -300,19 +300,19 @@ function showScorePopup(pts, indices, extraMsg) {
 // ============================================================
 function revealEntireBoard(onComplete) {
   inputLocked = true;
-  const pct = isWinStreakActive() ? getStreakRevealPct() : 0;
+  const revealCount = isWinStreakActive() ? getStreakRevealCount() : 0;
   const revealMs  = Math.min(1500 + progress.winStreak * 250, 3500);
   const staggerMs = 50;
 
   // Decide which cards get the streak pre-reveal (stay face-up permanently)
   const streakIndices = new Set();
-  if (pct > 0) {
+  if (revealCount > 0) {
     const indices = board.map((_, i) => i).filter(i => board[i] && !board[i].locked && !board[i].special);
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
-    const count = Math.min(Math.ceil(TOTAL * pct), TOTAL);
+    const count = Math.min(revealCount, indices.length);
     indices.slice(0, count).forEach(idx => streakIndices.add(idx));
   }
 

@@ -201,25 +201,85 @@ function addLevelReward() {
 }
 
 // ============================================================
-// WIN STREAK CONFIG — add/remove levels here to expand
-// Each entry: { streak, revealPct, shields }
+// WIN STREAK CONFIG
+// The Reveal effect shows a per-level number of cards you choose in the
+// Settings panel — one editable value per streak level (no formula).
+// `winStreakCards[level]` = cards revealed at that streak level; index 0
+// (no streak) is always 0. Array length−1 = the number of streak levels.
+// The Shield effect grants `level` shields (capped at the same max).
 // ============================================================
-const WIN_STREAK_LEVELS = [
-  { streak: 0, revealPct: 0,    shields: 0 },
-  { streak: 1, revealPct: 0.1,  shields: 1 },
-  { streak: 2, revealPct: 0.25, shields: 2 },
-  { streak: 3, revealPct: 0.50, shields: 3 },
-  { streak: 4, revealPct: 0.75, shields: 4 },
-  { streak: 5, revealPct: 1.0,  shields: 5 },
-];
+const WIN_STREAK_CARDS_DEFAULT = [0, 3, 4, 5, 7, 10, 12, 15, 17, 20, 25]; // index = streak level
+const WIN_STREAK_MAX_LEVELS_CAP = 20;
 const KEEP_STREAK_COST = 90;
 const STREAK_EFFECTS = [
-  { id: 'reveal', name: 'Reveal', icon: '👁', desc: 'Reveal a % of the board at level start' },
+  { id: 'reveal', name: 'Reveal', icon: '👁', desc: 'Reveal cards at level start (set per streak level below)' },
   { id: 'shield', name: 'Shield', icon: '🛡', desc: 'Start with shields that protect your combo' },
 ];
 
 function getStreakEffect() { return progress.streakEffect || 'reveal'; }
 function setStreakEffect(id) { progress.streakEffect = id; saveProgress(); }
+
+// Per-level reveal amounts. Index = streak level; index 0 is always 0.
+function getWinStreakCards() {
+  const arr = progress.winStreakCards;
+  if (Array.isArray(arr) && arr.length >= 1) return arr;
+  return WIN_STREAK_CARDS_DEFAULT.slice();
+}
+function setWinStreakCards(arr) { progress.winStreakCards = arr; saveProgress(); }
+
+function getWinStreakMaxLevels() { return getWinStreakCards().length - 1; }
+
+// Add/remove a streak level. New levels default to the previous level's value.
+function adjustWinStreakMaxLevels(delta) {
+  const arr = getWinStreakCards().slice();
+  if (delta > 0) {
+    if (arr.length - 1 >= WIN_STREAK_MAX_LEVELS_CAP) return;
+    arr.push(arr[arr.length - 1] || 0);
+  } else if (delta < 0) {
+    if (arr.length <= 1) return; // keep index 0 (no streak)
+    arr.pop();
+  } else return;
+  setWinStreakCards(arr);
+  // Don't let a live streak sit above the new cap.
+  if ((progress.winStreak || 0) > arr.length - 1) { progress.winStreak = arr.length - 1; saveProgress(); }
+  const el = document.getElementById('ws-max-levels'); if (el) el.textContent = arr.length - 1;
+  renderWinStreakLevels();
+}
+
+// Change the card count for one streak level.
+function adjustWinStreakLevelCards(level, delta) {
+  const arr = getWinStreakCards().slice();
+  if (level < 1 || level >= arr.length) return;
+  arr[level] = Math.max(0, Math.min(99, (arr[level] || 0) + delta));
+  setWinStreakCards(arr);
+  const el = document.getElementById('ws-cards-' + level); if (el) el.textContent = arr[level];
+}
+
+// Render the per-level "cards revealed" rows into the settings container.
+function renderWinStreakLevels() {
+  const container = document.getElementById('ws-levels-container');
+  if (!container) return;
+  const arr = getWinStreakCards();
+  let html = '';
+  for (let lvl = 1; lvl < arr.length; lvl++) {
+    html += `
+      <div class="setting-row">
+        <span class="setting-icon">🔥</span>
+        <div class="setting-info">
+          <div class="setting-name">Streak Level ${lvl}</div>
+          <div class="setting-desc">Cards revealed at match start</div>
+        </div>
+        <div class="setting-controls">
+          <div class="qty-control">
+            <button class="qty-btn" onclick="adjustWinStreakLevelCards(${lvl}, -1)">−</button>
+            <span class="qty-value" id="ws-cards-${lvl}">${arr[lvl]}</span>
+            <button class="qty-btn" onclick="adjustWinStreakLevelCards(${lvl}, 1)">+</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
 
 function getWinStreakStartLevel() { return progress.winStreakStartLevel || PROGRESSION_UNLOCK_LEVELS?.winStreakStartLevel || 1; }
 function setWinStreakStartLevel(lvl) { progress.winStreakStartLevel = lvl; saveProgress(); }
@@ -277,30 +337,56 @@ function updateRecallBar() {
   if (bar) bar.style.display = isRecallActive() ? '' : 'none';
 }
 
-function getStreakRevealPct() {
+// Effective streak level, capped at the configured max.
+function getStreakLevel() {
+  return Math.min(progress.winStreak || 0, getWinStreakMaxLevels());
+}
+
+// Number of cards the Reveal effect shows at level start (per-level config).
+function getStreakRevealCount() {
   if (getStreakEffect() !== 'reveal') return 0;
-  let pct = 0;
-  for (const lvl of WIN_STREAK_LEVELS) {
-    if (progress.winStreak >= lvl.streak) pct = lvl.revealPct;
-  }
-  return pct;
+  return getWinStreakCards()[getStreakLevel()] || 0;
 }
 
 function getStreakShields() {
   if (getStreakEffect() !== 'shield') return 0;
-  let shields = 0;
-  for (const lvl of WIN_STREAK_LEVELS) {
-    if (progress.winStreak >= lvl.streak) shields = lvl.shields;
-  }
-  return shields;
+  return getStreakLevel();
 }
 
-function getStreakLevel() {
-  let level = 0;
-  for (let i = WIN_STREAK_LEVELS.length - 1; i >= 0; i--) {
-    if (progress.winStreak >= WIN_STREAK_LEVELS[i].streak) { level = i; break; }
+// ------------------------------------------------------------
+// Console commands to tune the live win streak on the fly.
+//   winStreakUp()      → +1 streak (capped at max)
+//   winStreakDown()    → -1 streak (floored at 0)
+//   setWinStreak(n)    → set streak directly
+// ------------------------------------------------------------
+function _logWinStreak() {
+  const max = getWinStreakMaxLevels();
+  const effect = getStreakEffect() === 'reveal'
+    ? `👁 ${getStreakRevealCount()} cards`
+    : `🛡 ${getStreakShields()} shields`;
+  console.log(`🔥 Win Streak: ${progress.winStreak}/${max} — ${effect} next game`);
+  return progress.winStreak;
+}
+function _refreshStreakUI() {
+  const ls = document.getElementById('ls-streak');
+  if (ls) {
+    const streak = progress.winStreak;
+    ls.textContent = streak > 0
+      ? `🔥 Win Streak: ${streak} (👁 ${getStreakRevealCount()} card reveal)`
+      : '';
   }
-  return level;
+}
+function winStreakUp(n = 1) {
+  progress.winStreak = Math.min(getWinStreakMaxLevels(), (progress.winStreak || 0) + n);
+  saveProgress(); _refreshStreakUI(); return _logWinStreak();
+}
+function winStreakDown(n = 1) {
+  progress.winStreak = Math.max(0, (progress.winStreak || 0) - n);
+  saveProgress(); _refreshStreakUI(); return _logWinStreak();
+}
+function setWinStreak(n) {
+  progress.winStreak = Math.max(0, Math.min(getWinStreakMaxLevels(), Math.floor(n) || 0));
+  saveProgress(); _refreshStreakUI(); return _logWinStreak();
 }
 
 // ============================================================
@@ -437,6 +523,31 @@ function showSettings(returnTo) {
       </div>
     `;
     list.appendChild(wsStartRow);
+
+    // Winstreak number of levels
+    const wsMaxRow = document.createElement('div');
+    wsMaxRow.className = 'setting-row';
+    wsMaxRow.innerHTML = `
+      <span class="setting-icon">🪜</span>
+      <div class="setting-info">
+        <div class="setting-name">Streak Levels</div>
+        <div class="setting-desc">How many levels the win streak can reach</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustWinStreakMaxLevels(-1)">−</button>
+          <span class="qty-value" id="ws-max-levels">${getWinStreakMaxLevels()}</span>
+          <button class="qty-btn" onclick="adjustWinStreakMaxLevels(1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(wsMaxRow);
+
+    // Per-level cards-revealed config (one editable row per streak level)
+    const wsLevelsContainer = document.createElement('div');
+    wsLevelsContainer.id = 'ws-levels-container';
+    list.appendChild(wsLevelsContainer);
+    renderWinStreakLevels();
 
     const currentEffect = getStreakEffect();
     STREAK_EFFECTS.forEach(eff => {
