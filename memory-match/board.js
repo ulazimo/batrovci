@@ -395,7 +395,9 @@ function updateChainIndicator() {
   const lineX = (CHAIN_MIN_LINE_POS - 1) * CHAIN_STEP + 34;
   let markers = `<span class="chain-min-line" style="left:${lineX}px"></span>`;
   if (limitPos > 0) {
-    markers += `<span class="chain-limit" style="left:${(limitPos - 1) * CHAIN_STEP}px"></span>`;
+    const limitCol = cssColor(chainColor); // bracket matches the color being collected
+    markers += `<span class="chain-limit" style="left:${(limitPos - 1) * CHAIN_STEP}px;` +
+               `border-color:${limitCol};filter:drop-shadow(0 0 3px ${limitCol})"></span>`;
   }
 
   chainEl.innerHTML =
