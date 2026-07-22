@@ -129,12 +129,13 @@ function activateBooster(id) {
 
 // ============================================================
 // CHAIN REWARDS — completing a chain grants a power-up (no board special)
-//   chain 3-4 → Peek, 5-6 → Baby Bomb, 7+ → BIG Bomb (highest tier only)
+//   chain 3-4 → wrong-color ✕ hint (instant, mid-chain — see applyChainColorHint),
+//   chain 5-6 → Baby Bomb, 7+ → BIG Bomb (highest tier only, granted at end of turn)
 // ============================================================
 function getChainRewardBooster(comboLen) {
   if (comboLen >= 7) return 'bigbomb';
   if (comboLen >= 5) return 'babybomb';
-  if (comboLen >= 3) return 'peek';
+  // chain 3-4 no longer grants a Peek — reaching 3 fires the instant ✕ hint instead
   return null;
 }
 
@@ -155,6 +156,41 @@ function flashBoosterButton(id) {
   if (!btn) return;
   btn.classList.add('reward-flash');
   btn.addEventListener('animationend', () => btn.classList.remove('reward-flash'), { once: true });
+}
+
+// ============================================================
+// CHAIN-3 WRONG-COLOR HINT — instant reward for reaching a chain of 3.
+// Marks up to getChainHintCount() random face-down cards that DON'T match the
+// active chain color with an ✕, so the player knows which cards to avoid.
+// ============================================================
+function applyChainColorHint() {
+  const count = getChainHintCount();
+  if (count <= 0) return;
+  if (boardEl.querySelector('.card.wrong-color-hint')) return; // already shown this chain
+  // Active chain color(s): with colored bombs a chain can track several colors.
+  const colors = getRule('coloredBombs') ? [...chainColors] : (chainColor ? [chainColor] : []);
+  if (colors.length === 0) return; // pure-wild chain with no color yet — nothing to compare
+  // Candidates: face-down, normal, unlocked cards whose color isn't in the chain.
+  const candidates = [];
+  board.forEach((c, i) => {
+    if (c && !c.special && !c.flipped && !c.locked && !colors.includes(c.color)) candidates.push(i);
+  });
+  // Fisher-Yates shuffle, then take the first `count`.
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  candidates.slice(0, count).forEach(markWrongColorHint);
+}
+
+function markWrongColorHint(i) {
+  const el = getCardEl(i);
+  if (!el || el.classList.contains('wrong-color-hint')) return;
+  el.classList.add('wrong-color-hint'); // drives the ember glow on .card-back (see style.css)
+}
+
+function clearChainColorHints() {
+  boardEl.querySelectorAll('.card.wrong-color-hint').forEach(el => el.classList.remove('wrong-color-hint'));
 }
 
 // Detonate a bomb power-up at `index`: destroy (collect) that card and its pattern.
@@ -191,7 +227,7 @@ function executePeek(index) {
       SFX.match();
       spawnParticles([index], card.color);
       const chainLen = chainCards.length + specialsUsed.length;
-      if (chainLen === 3) startChainTimer();
+      if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
       else if (chainLen > 3) resetChainTimer();
       inputLocked = false;
       resumeChainTimer();
@@ -367,7 +403,7 @@ function pickColor(color) {
     });
     setTimeout(() => {
       const chainLen = chainCards.length + specialsUsed.length;
-      if (chainLen === 3) startChainTimer();
+      if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
       else if (chainLen > 3) resetChainTimer();
       inputLocked = false;
       resumeChainTimer();

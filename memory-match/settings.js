@@ -49,6 +49,13 @@ function getChainTimerDuration() {
   return progress.chainTimerDuration || DEFAULT_CHAIN_TIMER;
 }
 
+// How many non-matching face-down cards get an ✕ hint on reaching a chain of 3 (0 disables it).
+const DEFAULT_CHAIN_HINT_COUNT = 3;
+function getChainHintCount() {
+  const v = progress.chainHintCount;
+  return (v === undefined || v === null) ? DEFAULT_CHAIN_HINT_COUNT : v;
+}
+
 function toggleRule(id) {
   progress.gameplayRules[id] = !getRule(id);
   document.getElementById('rule-toggle-' + id).classList.toggle('on', progress.gameplayRules[id]);
@@ -499,6 +506,25 @@ function showSettings(returnTo) {
       list.appendChild(timerRow);
     }
 
+    // Chain-3 wrong-color hint count (always shown)
+    const hintRow = document.createElement('div');
+    hintRow.className = 'setting-row';
+    hintRow.innerHTML = `
+      <span class="setting-icon">✕</span>
+      <div class="setting-info">
+        <div class="setting-name">Chain-3 Wrong-Color Marks</div>
+        <div class="setting-desc">On reaching a chain of 3, mark this many face-down cards that DON'T match the chain color with an ✕ (0 = off)</div>
+      </div>
+      <div class="setting-controls">
+        <div class="qty-control">
+          <button class="qty-btn" onclick="adjustChainHintCount(-1)">−</button>
+          <span class="qty-value" id="chain-hint-count-val">${getChainHintCount()}</span>
+          <button class="qty-btn" onclick="adjustChainHintCount(1)">+</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(hintRow);
+
     // Winstreak Effect section
     const wsHeader = document.createElement('div');
     wsHeader.style.cssText = 'font-size:13px;font-weight:700;color:#f0c040;margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px;';
@@ -763,6 +789,13 @@ function adjustChainTimer(delta) {
   const current = getChainTimerDuration();
   progress.chainTimerDuration = Math.max(3, Math.min(30, current + delta));
   document.getElementById('chain-timer-val').textContent = progress.chainTimerDuration + 's';
+  saveProgress();
+}
+
+function adjustChainHintCount(delta) {
+  const current = getChainHintCount();
+  progress.chainHintCount = Math.max(0, Math.min(10, current + delta));
+  document.getElementById('chain-hint-count-val').textContent = progress.chainHintCount;
   saveProgress();
 }
 

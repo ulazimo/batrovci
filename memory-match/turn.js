@@ -55,7 +55,7 @@ function onCardClick(index) {
       lastSelectedIdx = index;
       SFX.shepard(chainCards.length + specialsUsed.length - 1);
       const chainLen = chainCards.length + specialsUsed.length;
-      if (chainLen === 3) startChainTimer();
+      if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
       else if (chainLen > 3) resetChainTimer();
       updateChainIndicator();
       return;
@@ -72,7 +72,7 @@ function onCardClick(index) {
         chainColors.add(card.bombColor);
       }
       const chainLen = chainCards.length + specialsUsed.length;
-      if (chainLen === 3) startChainTimer();
+      if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
       else if (chainLen > 3) resetChainTimer();
       updateChainIndicator();
     }
@@ -151,7 +151,7 @@ function onCardClick(index) {
         if (bombAutoChain.length > 0) {
           bombAutoChain.forEach(idx => { if (!chainCards.includes(idx)) { chainCards.push(idx); SFX.shepard(chainCards.length + specialsUsed.length - 1); } });
           const chainLen = chainCards.length + specialsUsed.length;
-          if (chainLen === 3) startChainTimer();
+          if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
           else if (chainLen > 3) resetChainTimer();
           // Check all-colors bonus
           if (chainColors.size >= ACTIVE_COLORS.length) { checkAllColorsBonus(); return; }
@@ -188,7 +188,7 @@ function onCardClick(index) {
     if (chainColor === null) { chainColor = card.color; chainColors.add(card.color); }
     const chainLen = chainCards.length + specialsUsed.length;
     if (chainLen === 2) advanceTutorial('firstMatch');
-    if (chainLen === 3) { startChainTimer(); advanceTutorial('chainOf3'); }
+    if (chainLen === 3) { startChainTimer(); advanceTutorial('chainOf3'); applyChainColorHint(); }
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
     // All cards of the chain colour opened? Resolve the sweep. (Cleaning waives the
@@ -247,6 +247,7 @@ function onCardClick(index) {
 // left (Cleaning journey) — collect them even though the combo is below the 3-minimum.
 function endTurn(manual, perfectSweep, remnantSweep) {
   stopChainTimer();
+  clearChainColorHints(); // remove the chain-3 wrong-color ✕ marks — the chain is resolving
   // Kill chain tension immediately — turn is resolving, no more pulsing
   boardEl.removeAttribute('data-tension');
   if (tensionRAF) { cancelAnimationFrame(tensionRAF); tensionRAF = null; }
