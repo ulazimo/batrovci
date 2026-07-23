@@ -221,6 +221,10 @@ function showGoalIntroBanner(cb) {
   const defs = levelGoals.definitions;
   if (defs.length === 0) { cb?.(); return; }
 
+  // Cleaning journeys: the objective is always "clear the board", so the goal
+  // description under the "Level X" title is redundant — show just the title.
+  const cleaning = !!LEVELS[currentLevelIndex]?.clearBoard;
+
   // Build goal pills HTML with full descriptions
   const pills = defs.map(g => {
     const d = getGoalDisplay(g);
@@ -232,7 +236,8 @@ function showGoalIntroBanner(cb) {
   if (banner) banner.remove();
   banner = document.createElement('div');
   banner.className = 'board-banner goal-intro';
-  banner.innerHTML = `<div class="banner-title">Level ${LEVELS[currentLevelIndex].id}</div><div class="banner-goals">${pills}</div>`;
+  banner.innerHTML = `<div class="banner-title">Level ${LEVELS[currentLevelIndex].id}</div>` +
+    (cleaning ? '' : `<div class="banner-goals">${pills}</div>`);
   boardContainerEl.appendChild(banner);
 
   // Hold then dismiss

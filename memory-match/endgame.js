@@ -79,8 +79,12 @@ function levelWon() {
   saveProgress();
   updateBanner();
 
-  // Show win banner over the board, then open overlay
-  showBoardBanner('win', '🎉 LEVEL COMPLETE!', `Score: ${score} · +${coinsEarned} <img src="icons/coin_icon.png" class="coin-icon" alt="coins">`);
+  // Show win banner over the board, then open overlay.
+  // Cleaning journeys hide Score, so skip the score/coins subtitle under the banner.
+  const winSub = LEVELS[currentLevelIndex]?.clearBoard
+    ? ''
+    : `Score: ${score} · +${coinsEarned} <img src="icons/coin_icon.png" class="coin-icon" alt="coins">`;
+  showBoardBanner('win', '🎉 LEVEL COMPLETE!', winSub);
   setTimeout(() => hideBoardBanner(() => showWinOverlay()), 1800);
   SFX.win();
   launchConfetti();

@@ -128,6 +128,49 @@ function renderBoard() {
     }
     boardEl.appendChild(cell);
   });
+  fitBoard();
+}
+
+// Scale the board so the full grid (any number of rows) fits inside the space
+// #board-container is given, keeping cells square. Without this a tall board
+// (e.g. 4×6) sizes itself purely from its square cells and grows past the frame,
+// pushing the power-up bar off screen.
+const BOARD_GAP = 8; // must match the `gap` on #board in style.css
+function fitBoard() {
+  if (!COLS || !ROWS || !boardEl || !boardContainerEl) return;
+  const cs = getComputedStyle(boardContainerEl);
+  let availW = boardContainerEl.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  let availH = boardContainerEl.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom);
+
+  // Coverage-goal indicators sit above / beside the board and eat into the space.
+  const colInd = document.getElementById('col-indicators');
+  if (colInd && colInd.classList.contains('active')) {
+    const m = getComputedStyle(colInd);
+    availH -= colInd.offsetHeight + parseFloat(m.marginTop) + parseFloat(m.marginBottom);
+  }
+  const rowInd = document.getElementById('row-indicators');
+  if (rowInd && rowInd.classList.contains('active')) {
+    const m = getComputedStyle(rowInd);
+    availW -= rowInd.offsetWidth + parseFloat(m.marginLeft) + parseFloat(m.marginRight);
+  }
+  if (availW <= 0 || availH <= 0) return;
+
+  const cell = Math.min(
+    (availW - BOARD_GAP * (COLS - 1)) / COLS,
+    (availH - BOARD_GAP * (ROWS - 1)) / ROWS
+  );
+  if (!(cell > 0)) return;
+  boardEl.style.flex = '0 0 auto';
+  boardEl.style.maxWidth = 'none';
+  boardEl.style.width  = Math.floor(cell * COLS + BOARD_GAP * (COLS - 1)) + 'px';
+  boardEl.style.height = Math.floor(cell * ROWS + BOARD_GAP * (ROWS - 1)) + 'px';
+}
+
+// Refit whenever the container's box changes: device-switcher, orientation,
+// window resize, or HUD height changes. Setting the board's own size never
+// changes the container's (flex:1 + min-height:0), so this can't loop.
+if (typeof ResizeObserver !== 'undefined' && boardContainerEl) {
+  new ResizeObserver(() => fitBoard()).observe(boardContainerEl);
 }
 
 // Long-press peek

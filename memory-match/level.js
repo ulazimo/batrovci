@@ -305,6 +305,7 @@ function startGame(preplacedSpecials) {
   initLevelGoals();
   updateDeckHUD();
   renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); initCollection(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  fitBoard(); // re-fit now that goal HUD / coverage indicators are in place (renderBoard's own call ran before them)
 
   // Booster hint flag — will be shown after all popups are done
   const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);
