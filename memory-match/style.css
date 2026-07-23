@@ -583,7 +583,9 @@ body {
 .booster-btn:active { transform:scale(.9); }
 .booster-btn.active   { border-color:#f0c040;background:#3a3a5a;box-shadow:0 0 10px rgba(240,192,64,.4); }
 .booster-btn.disabled { opacity:.3;pointer-events:none; }
-.booster-btn .badge   { position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+.booster-btn .badge   { position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:flex;align-items:center;justify-content:center; }
+/* At capacity (bombs only) — green badge so "full" reads at a glance. */
+.booster-btn.full .badge { background:#2ecc71;color:#fff; }
 .booster-tooltip { display:none;position:fixed;background:#222;color:#ddd;padding:10px 14px;border-radius:8px;font-size:13px;max-width:220px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.6);border:1px solid #444;line-height:1.4;text-align:center; }
 .booster-tooltip.visible { display:block; }
 .status-badge { position:absolute;top:95px;right:10px;z-index:90;display:flex;flex-direction:column;gap:4px;align-items:flex-end; }
@@ -732,6 +734,13 @@ body.bomb-aiming #board { touch-action: none; }
   30%     { box-shadow:0 0 16px 5px rgba(230,126,34,.85); transform:scale(1.18); }
 }
 .booster-btn.reward-flash { animation: rewardFlash .7s ease-out 2; }
+
+/* Earned a bomb while already at max capacity — green "full" pulse, nothing gained */
+@keyframes fullFlash {
+  0%,100% { box-shadow:0 0 0 0 rgba(46,204,113,0); transform:scale(1); }
+  30%     { box-shadow:0 0 16px 5px rgba(46,204,113,.85); transform:scale(1.12); }
+}
+.booster-btn.full-flash { animation: fullFlash .6s ease-out 2; }
 
 /* ================================================================
    RECALL BUTTON
@@ -977,6 +986,8 @@ body.bomb-aiming #board { touch-action: none; }
 .theme-purple .card-back::after { color: #2a2440; }
 /* White count badges with black text */
 .theme-purple .booster-btn .badge { background: #ffffff; color: #1a1a2a; }
+/* …but a bomb at max capacity stays green so "full" reads in the purple theme too */
+.theme-purple .booster-btn.full .badge { background: #2ecc71; color: #fff; }
 /* Top-bar text + pills */
 .theme-purple #level-banner .level-label { color: #c9b3f0; }
 .theme-purple #turns-value { color: #ffffff; }

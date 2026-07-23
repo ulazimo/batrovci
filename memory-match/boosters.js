@@ -20,6 +20,19 @@ const BOOSTERS = [
 ];
 let boosterCounts = {};
 
+// Badge text for a booster tile. Capacity-limited boosters (the bombs) show
+// count/max — e.g. "2/3" / "0/1"; uncapped boosters show just the count.
+function boosterBadgeText(id) {
+  const max = getBoosterMax(id);
+  const count = boosterCounts[id] || 0;
+  return Number.isFinite(max) ? `${count}/${max}` : `${count}`;
+}
+// A capacity-limited booster sitting at its cap — drives the "full" badge state.
+function isBoosterFull(id) {
+  const max = getBoosterMax(id);
+  return Number.isFinite(max) && (boosterCounts[id] || 0) >= max;
+}
+
 // Tray tiles, in display order: Peek · Random 3 · Baby Bomb · BIG Bomb.
 // Recall lives in its own bar above the chain (not in the tray). Hidden boosters
 // still keep their inventory counts — see initBoosters.
@@ -44,7 +57,8 @@ function initBoosters() {
     if (!b || !getBoosterSetting(b.id).enabled) return;
     const btn = document.createElement('div');
     btn.className = 'booster-btn'; btn.dataset.booster = b.id;
-    btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterCounts[b.id]}</span>`;
+    btn.innerHTML = `<span>${b.icon}</span><span class="badge">${boosterBadgeText(b.id)}</span>`;
+    btn.classList.toggle('full', isBoosterFull(b.id));
     btn.addEventListener('click', () => activateBooster(b.id));
     // Bomb power-ups are drag-to-place: press the button and drag the blast
     // silhouette onto the board (see bomb-aim.js). activateBooster no-ops for them.
@@ -79,7 +93,8 @@ function updateBoosterUI() {
   boosterBar.querySelectorAll('.booster-btn').forEach(btn => {
     const id = btn.dataset.booster;
     if (!id) return; // recall tile — managed by updateRecallButton()
-    btn.querySelector('.badge').textContent = boosterCounts[id];
+    btn.querySelector('.badge').textContent = boosterBadgeText(id);
+    btn.classList.toggle('full', isBoosterFull(id));
     btn.classList.toggle('disabled', !hasBooster(id) || inputLocked);
     btn.classList.toggle('active', activeBooster === id);
   });
@@ -146,16 +161,20 @@ function grantChainReward(comboLen) {
   const ids = getChainRewardBoosters(comboLen);
   if (!ids.length) return;
   const flashed = [];
+  const maxedOut = [];
   ids.forEach(id => {
     const max = getBoosterMax(id);
     const before = boosterCounts[id] || 0;
     boosterCounts[id] = Math.min(max, before + 1);
     if (boosterCounts[id] > before) flashed.push(id);
+    else maxedOut.push(id); // already at capacity — reward can't stack
   });
   saveBoosterCounts();
   updateBoosterUI();
-  // Silent reward — just pulse each earned power-up's button (no top text notification)
+  // Silent reward — just pulse each earned power-up's button (no top text notification).
   flashed.forEach(flashBoosterButton);
+  // Earned a bomb but the slot is already full — pulse it so "at max capacity" reads.
+  maxedOut.forEach(flashBoosterFull);
 }
 
 function flashBoosterButton(id) {
@@ -163,6 +182,14 @@ function flashBoosterButton(id) {
   if (!btn) return;
   btn.classList.add('reward-flash');
   btn.addEventListener('animationend', () => btn.classList.remove('reward-flash'), { once: true });
+}
+
+// Pulse a capacity-limited booster to signal it's already at its cap (nothing gained).
+function flashBoosterFull(id) {
+  const btn = boosterBar.querySelector(`.booster-btn[data-booster="${id}"]`);
+  if (!btn) return;
+  btn.classList.add('full-flash');
+  btn.addEventListener('animationend', () => btn.classList.remove('full-flash'), { once: true });
 }
 
 // ============================================================

@@ -453,15 +453,16 @@ function initInventoryDefaults() {
 // POWER-UP SETTINGS
 // ============================================================
 const DEFAULT_BOOSTER_QTY = 3;
-const MAX_BOOSTER_QTY = 9;
 
 if (!progress.boosterSettings) progress.boosterSettings = {};
 
 const DISABLED_BY_DEFAULT_BOOSTERS = ['cross', 'shield', 'neighbor', 'row', 'col', 'joker', 'colorpick'];
-// Per-booster inventory cap (undefined = MAX_BOOSTER_QTY). Bombs are capped low to push use.
+// Per-booster inventory cap. Only the bombs are capacity-limited (Baby Bomb 3,
+// BIG Bomb 1 via their `max` field) to push use; every other power-up is
+// uncapped (Infinity), so no ceiling and no "x/max" badge.
 function getBoosterMax(id) {
   const def = (typeof BOOSTERS !== 'undefined') ? BOOSTERS.find(b => b.id === id) : null;
-  return def && def.max !== undefined ? Math.min(MAX_BOOSTER_QTY, def.max) : MAX_BOOSTER_QTY;
+  return def && def.max !== undefined ? def.max : Infinity;
 }
 function getBoosterSetting(id) {
   if (!progress.boosterSettings[id]) {
