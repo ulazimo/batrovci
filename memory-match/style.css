@@ -251,9 +251,15 @@ body {
 .chain-slot.filled.reward .chain-slot-reward { opacity: 1; filter: drop-shadow(0 0 3px rgba(0,0,0,.55)); }
 /* Markers ride absolutely inside the track so they slide with it. */
 .chain-min-line {
-  position: absolute; top: 2px; height: 30px; width: 0;
-  border-left: 3px dashed #2ecc71; border-radius: 2px;
-  filter: drop-shadow(0 0 3px rgba(46,204,113,.6)); pointer-events: none;
+  position: absolute; top: 2px; height: 30px; width: 3px;
+  transform: translateX(-50%); /* centre the bar exactly on lineX (mid-gap) */
+  background: #6b6b80; border-radius: 2px; pointer-events: none;
+  transition: background .2s ease, filter .2s ease;
+}
+/* Chain reached the Match-2 minimum → the divider lights up green. */
+.chain-min-line.reached {
+  background: #2ecc71;
+  filter: drop-shadow(0 0 3px rgba(46,204,113,.6));
 }
 /* Red limit "]" = the right side of the limit slot's own rounded outline,
    overlaid exactly on that slot so the red hugs the edge. Transparent interior

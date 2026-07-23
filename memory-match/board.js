@@ -483,8 +483,12 @@ function updateChainIndicator() {
   }
 
   // Markers ride inside the track (absolutely positioned) so they slide with it.
+  // lineX is the exact centre of the gap between slots CHAIN_MIN_LINE_POS and +1;
+  // the line itself is centred on it (translateX(-50%) in CSS). It grays out until
+  // the chain reaches the Match-2 minimum, then turns green.
   const lineX = (CHAIN_MIN_LINE_POS - 1) * CHAIN_STEP + 34;
-  let markers = `<span class="chain-min-line" style="left:${lineX}px"></span>`;
+  const lineReached = len >= CHAIN_MIN_LINE_POS ? ' reached' : '';
+  let markers = `<span class="chain-min-line${lineReached}" style="left:${lineX}px"></span>`;
   if (limitPos > 0) {
     const limitCol = cssColor(chainColor); // bracket matches the color being collected
     markers += `<span class="chain-limit" style="left:${(limitPos - 1) * CHAIN_STEP}px;` +
