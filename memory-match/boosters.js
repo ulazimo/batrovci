@@ -281,6 +281,7 @@ function applyChainColorHint() {
 }
 
 function markWrongColorHint(i) {
+  if (board[i] && board[i].locked) return; // never flag a locked tile as a danger card
   const el = getCardEl(i);
   if (!el || el.classList.contains('wrong-color-hint')) return;
   el.classList.add('wrong-color-hint'); // drives the ember glow on .card-back (see style.css)
