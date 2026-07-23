@@ -223,12 +223,24 @@ body {
 
 /* Chain bar — bottom pill with slot positions */
 #chain-indicator {
+  position: relative;
   width: auto; max-width: calc(100% - 24px); align-self: center;
   margin: 4px auto 18px; display: flex; align-items: center; gap: 14px;
   padding: 10px 18px; background: rgba(0,0,0,.28); border-radius: 18px;
   font-size: 13px; font-weight: 600; color: #8b93ad;
 }
 #chain-indicator.chain-prompt { font-weight: 600; color: #cdd4e6; letter-spacing: .2px; }
+/* Targeting mode (booster/spotlight): dim the chain in place; the board must not
+   move, so the bar keeps its size and the prompt floats above it. */
+.chain-bar.dimmed .chain-label,
+.chain-bar.dimmed .chain-slots { opacity: .3; transition: opacity .2s ease; }
+.chain-prompt-banner {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  white-space: nowrap; z-index: 5; pointer-events: none;
+  font-size: 13px; font-weight: 600; letter-spacing: .2px; color: #eef1fa;
+  background: rgba(20,10,36,.92); padding: 6px 15px; border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.4);
+}
 .chain-label {
   font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
   color: #7f879e; text-transform: uppercase; flex-shrink: 0;

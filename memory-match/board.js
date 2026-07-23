@@ -429,20 +429,12 @@ function updateChainIndicator() {
   updateSweepCountdown();
   updateBankButton();
 
-  // Booster / spotlight targeting takes over the bar with a prompt.
-  if (spotlightMode) {
-    chainEl.className = 'chain-bar chain-prompt';
-    chainEl.innerHTML = '🔦 Tap a face-down card to reveal it';
-    _chainLastLen = 0;
-    return;
-  }
-  if (activeBooster) {
-    chainEl.className = 'chain-bar chain-prompt';
-    chainEl.innerHTML = `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}`;
-    _chainLastLen = 0;
-    return;
-  }
-  chainEl.className = 'chain-bar';
+  // Booster / spotlight targeting: keep the chain bar at its full size (so the
+  // board never reflows/rescales) — just dim the chain and float a prompt above it.
+  let promptText = null;
+  if (spotlightMode) promptText = '🔦 Tap a face-down card to reveal it';
+  else if (activeBooster) promptText = `Select a card for ${BOOSTERS.find(b => b.id === activeBooster).icon}`;
+  chainEl.className = promptText ? 'chain-bar dimmed' : 'chain-bar';
 
   const isWild = (i) => board[i]?.special && getSpecialType(board[i].special)?.isWild;
 
@@ -496,6 +488,7 @@ function updateChainIndicator() {
   }
 
   chainEl.innerHTML =
+    (promptText ? `<div class="chain-prompt-banner">${promptText}</div>` : '') +
     `<span class="chain-label">Chain</span>` +
     `<div class="chain-slots"><div class="chain-track">${slots}${markers}</div></div>`;
 
