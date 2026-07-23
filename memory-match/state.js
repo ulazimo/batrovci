@@ -19,6 +19,7 @@ let turnActive = false, inputLocked = false;
 let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
 let lastRevealedCards = []; // indices of most recently revealed cards (for recall)
 let pendingDangerReveal = []; // chain-3 danger tiles to flip up once the chain ends (chainDangerReveal rule)
+let bombColorClearOverride = null; // colours a bomb cleared pre-refill — forces endTurn's colour clear despite the bomb's own refill
 let remnantHintShown = false; // one-time per-level hint for Cleaning remnant collection
 let deck = []; // Cleaning journey: finite refill pool (colors) drawn into cleared slots
 

@@ -284,7 +284,15 @@ function endTurn(manual, perfectSweep) {
   // can't be chained, so they'd remain).
   const matchedSet = new Set(matched);
   const matchedColors = [...new Set(matched.map(i => board[i]?.color).filter(Boolean))];
-  const clearedColors = matchedColors.filter(color => !board.some(c => c && !c.special && c.color === color && !matchedSet.has(c.index)));
+  let clearedColors = matchedColors.filter(color => !board.some(c => c && !c.special && c.color === color && !matchedSet.has(c.index)));
+  // A bomb that revealed the last card of the chain colour forces the clear, even
+  // though its own refill may have since dropped a fresh card of that colour onto the
+  // board (which would otherwise defeat the recompute above). Only honour colours that
+  // are actually part of this collect.
+  if (bombColorClearOverride && bombColorClearOverride.length) {
+    clearedColors = [...new Set([...clearedColors, ...bombColorClearOverride.filter(c => matchedColors.includes(c))])];
+  }
+  bombColorClearOverride = null;
   const colorCleared = clearedColors.length > 0;
   const willCollect = combo >= minCombo || colorCleared;
   // A colour clear flashes the whole board when the Perfect Sweep Reveal rule is on.

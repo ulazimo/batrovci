@@ -169,12 +169,28 @@ function detonateBombAt(index, bombType) {
   if (centerCell) spawnBombVFX(centerCell);
   shakeBoard();
 
+  // Did the bomb reveal the last off-chain card(s) of the chain colour? Judge this NOW,
+  // before the bomb collects/refills its other targets — the refill can drop a fresh card
+  // of that colour and mask the fact that the colour was cleared. `targets` are treated as
+  // already gone (the bomb is about to collect them). Only meaningful when cards joined.
+  const bombCleared = joinChain.length > 0 ? chainClearedColors(targets) : [];
+
+  // Resolve the chain as a colour clear: collect the chain, refund the turn, show the
+  // "<COLOUR> Cleared" banner. The override makes endTurn honour the clear even though the
+  // bomb's own refill may have dropped new cards of that colour onto the board.
+  const resolveBombColorClear = () => {
+    bombColorClearOverride = bombCleared;
+    stopChainTimer();
+    inputLocked = true;
+    updateBoosterUI(); updateBankButton(); updateChainIndicator();
+    setTimeout(() => endTurn(true, false), 300);
+  };
+
   // Whole blast joined the chain — nothing to collect
   if (targets.length === 0) {
     setTimeout(() => {
-      // Colour clear? The bomb may have added the last card(s) of the chain colour —
-      // resolve the turn with the "<COLOUR> Cleared" flow instead of just unlocking.
-      if (checkChainColorClear()) { updateChainIndicator(); return; }
+      // Colour clear? The bomb may have added the last card(s) of the chain colour.
+      if (bombCleared.length > 0) { resolveBombColorClear(); return; }
       inputLocked = false;
       updateBoosterUI(); updateBankButton(); updateChainIndicator();
     }, 400);
@@ -191,7 +207,12 @@ function detonateBombAt(index, bombType) {
       const nc = placeNewCards(targets, -1);
       updateGoalHUD(); updateDeckHUD();
       if (checkAllGoalsMet()) { levelWon(); return; }
-      const finish = () => { inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator(); };
+      const finish = () => {
+        // The bomb revealed the last card(s) of the chain colour → resolve as a colour
+        // clear instead of leaving the (now complete) chain dangling.
+        if (bombCleared.length > 0) { resolveBombColorClear(); return; }
+        inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator();
+      };
       // Refilled cards drop in face-up (like a normal clear), then hide after a beat
       if (nc.length > 0 && getRule('bombRevealNewCards')) {
         revealCardsNoHide(nc);

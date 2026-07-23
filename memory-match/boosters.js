@@ -217,17 +217,28 @@ function onChainExtended() {
   applyChainColorHint(); // chain-3 reward: mark the wrong-color "danger" tiles now
 }
 
-// Returns true (and resolves the turn) when a power-up has just added the last
-// card(s) of the active chain colour(s) — i.e. no card of those colours remains
-// off the chain. That's a colour clear: endTurn awards the collect, refunds the
-// spent turn, and shows the "<COLOUR> Cleared" banner. Locked cards of the colour
-// can't be chained, so they block the clear (matches endTurn's own check).
-function checkChainColorClear() {
-  if (chainColor === null) return false;
+// The active chain colour(s) that are now fully collected into the chain — i.e. no
+// card of that colour remains off the chain. Pure (no side effects). Locked cards of
+// the colour can't be chained, so they block the clear (matches endTurn's own check).
+// `alsoRemoved` lets a caller treat extra indices (e.g. cards a bomb is about to
+// collect) as already gone when judging the clear.
+function chainClearedColors(alsoRemoved) {
+  if (chainColor === null) return [];
   const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-  const inChain = new Set(chainCards);
-  const anyLeft = board.some(c => c && !c.special && activeColors.includes(c.color) && !inChain.has(c.index));
-  if (anyLeft) return false;
+  const gone = new Set(chainCards);
+  if (alsoRemoved) alsoRemoved.forEach(i => gone.add(i));
+  return activeColors.filter(color =>
+    !board.some(c => c && !c.special && c.color === color && !gone.has(c.index)));
+}
+
+// Returns true (and resolves the turn) when a power-up has just added the last
+// card(s) of the active chain colour(s). That's a colour clear: endTurn awards the
+// collect, refunds the spent turn, and shows the "<COLOUR> Cleared" banner.
+function checkChainColorClear() {
+  const activeColors = getRule('coloredBombs') ? [...chainColors] : (chainColor ? [chainColor] : []);
+  if (activeColors.length === 0) return false;
+  // Every active colour must be fully collected (matches tryAutoResolveColor's rule).
+  if (chainClearedColors().length < activeColors.length) return false;
   stopChainTimer();
   inputLocked = true;
   setTimeout(() => endTurn(true, false), 600);
