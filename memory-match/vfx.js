@@ -161,9 +161,38 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
   if (cb) setTimeout(cb, totalTime);
 }
 
+// Dim the board behind the bomb showcase with a soft vignette so the flying
+// bombs read clearly. Ref-counted: several bombs share one veil, and it fades
+// out only once the last showcase releases it.
+let _bombVeilRefs = 0, _bombVeilEl = null;
+function showBombVeil() {
+  _bombVeilRefs++;
+  if (!_bombVeilEl) {
+    _bombVeilEl = document.createElement('div');
+    _bombVeilEl.className = 'bomb-showcase-veil';
+    document.body.appendChild(_bombVeilEl);
+    // next frame so the opacity transition actually runs
+    requestAnimationFrame(() => { if (_bombVeilEl) _bombVeilEl.classList.add('show'); });
+  }
+}
+function hideBombVeil() {
+  _bombVeilRefs = Math.max(0, _bombVeilRefs - 1);
+  if (_bombVeilRefs === 0 && _bombVeilEl) {
+    const el = _bombVeilEl;
+    _bombVeilEl = null;
+    el.classList.remove('show');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 400); // fallback if transitionend never fires
+  }
+}
+
 // Bomb reward showcase: jumps from the chain to the centre of the screen and grows
 // big, holds a beat, then drops into its stash tile (cb runs on landing).
-function flyBombToStash(bombId, cb) {
+// When several bombs are earned at once (opts.count > 1) they fan out horizontally
+// around the centre — one to the left, one to the right — instead of stacking.
+function flyBombToStash(bombId, cb, opts) {
+  const index = (opts && opts.index) || 0;
+  const count = (opts && opts.count) || 1;
   // Launch from this bomb's own chain marker (match by icon), else any marker / the bar.
   const bombIcon = (typeof BOOSTERS !== 'undefined' ? (BOOSTERS.find(b => b.id === bombId) || {}).icon : null);
   const markers = [...document.querySelectorAll('#chain-indicator .chain-slot-reward')];
@@ -176,10 +205,15 @@ function flyBombToStash(bombId, cb) {
   const f = frame.getBoundingClientRect();
   const sx = s.left + s.width / 2, sy = s.top + s.height / 2;
   const tx = t.left + t.width / 2, ty = t.top + t.height / 2;
-  const mx = f.left + f.width / 2, my = f.top + f.height / 2;
+  // Fan multiple bombs out around the centre so they sit side by side.
+  const spacing = 100;
+  const offsetX = (index - (count - 1) / 2) * spacing;
+  const mx = f.left + f.width / 2 + offsetX, my = f.top + f.height / 2;
+
+  showBombVeil();
 
   const clone = document.createElement('div');
-  clone.className = 'bomb-fly';
+  clone.className = 'bomb-fly showcase';
   clone.textContent = bombId === 'bigbomb' ? '💥' : '💣';
   clone.style.left = (sx - 16) + 'px';
   clone.style.top = (sy - 16) + 'px';
@@ -187,14 +221,15 @@ function flyBombToStash(bombId, cb) {
 
   const toCenter = `translate(${mx - sx}px, ${my - sy}px)`;
   const toStash  = `translate(${tx - sx}px, ${ty - sy}px)`;
+  // 1000ms total: shoot+grow ~380ms, hold ~280ms (100ms longer than before), drop ~340ms.
   const anim = clone.animate([
-    { transform: 'translate(0,0) scale(.55)', opacity: .5, offset: 0,    easing: 'cubic-bezier(.2,.9,.3,1)' }, // shoot to centre
-    { transform: `${toCenter} scale(3)`,      opacity: 1,  offset: 0.42, easing: 'linear' },                    // grown, big
-    { transform: `${toCenter} scale(3)`,      opacity: 1,  offset: 0.62, easing: 'cubic-bezier(.55,0,.75,1)' }, // hold a beat
+    { transform: 'translate(0,0) scale(.55)', opacity: .5, offset: 0,     easing: 'cubic-bezier(.2,.9,.3,1)' }, // shoot to centre
+    { transform: `${toCenter} scale(3)`,      opacity: 1,  offset: 0.38,  easing: 'linear' },                    // grown, big
+    { transform: `${toCenter} scale(3)`,      opacity: 1,  offset: 0.66,  easing: 'cubic-bezier(.55,0,.75,1)' }, // hold a beat
     { transform: `${toStash} scale(1)`,       opacity: .9, offset: 1 },                                          // drop into stash
-  ], { duration: 900 });
+  ], { duration: 1000 });
 
-  anim.onfinish = () => { clone.remove(); if (cb) cb(); };
+  anim.onfinish = () => { clone.remove(); hideBombVeil(); if (cb) cb(); };
 }
 
 function launchConfetti() {

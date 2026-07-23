@@ -76,6 +76,16 @@ function initBoosters() {
   });
 }
 
+// Dev helper (Fill button): stock the tray with a fixed loadout, capped per booster.
+function fillBoosters() {
+  const loadout = { peek: 5, random3: 5, babybomb: 2, bigbomb: 1 };
+  Object.entries(loadout).forEach(([id, qty]) => {
+    boosterCounts[id] = Math.min(qty, getBoosterMax(id));
+  });
+  saveBoosterCounts();
+  updateBoosterUI();
+}
+
 function saveBoosterCounts() {
   BOOSTERS.forEach(b => { progress.boosterCounts[b.id] = boosterCounts[b.id] || 0; });
   saveProgress();
@@ -174,9 +184,9 @@ function grantChainReward(comboLen) {
   // Every earned bomb jumps out of the chain and arcs into its stash tile. On landing
   // it pulses the tile — a normal pulse if it stacked, or an "at max capacity" pulse if
   // the slot was already full. Fires whenever the chain qualifies, so it's consistent.
-  ids.forEach(id => {
+  ids.forEach((id, i) => {
     const onLand = maxedOut.includes(id) ? () => flashBoosterFull(id) : () => flashBoosterButton(id);
-    flyBombToStash(id, onLand);
+    flyBombToStash(id, onLand, { index: i, count: ids.length });
   });
 }
 

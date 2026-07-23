@@ -50,6 +50,12 @@ body {
 #level-banner .level-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #4fc3f7; text-transform: uppercase; flex:1; }
 /* level label takes the left half; hearts/coins/gear sit grouped in the right half */
 #level-banner .settings-gear { margin-left: 10px; text-align:right; }
+#level-banner .fill-btn {
+  margin-right: 10px; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: #4fc3f7; background: rgba(79,195,247,.12);
+  border: 1px solid #4fc3f755; border-radius: 6px; padding: 3px 8px; cursor: pointer;
+}
+#level-banner .fill-btn:hover { color: #fff; background: rgba(79,195,247,.25); }
 #level-banner .level-dots { display: flex; gap: 4px; }
 #level-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6a; }
 .lives-pill {
@@ -97,6 +103,19 @@ body {
   font-size: 27px; line-height: 32px; text-align: center; pointer-events: none;
   filter: drop-shadow(0 3px 5px rgba(0,0,0,.55));
 }
+/* Extra glow while a reward bomb is showcased in the centre — makes it pop
+   against the dimmed board. */
+.bomb-fly.showcase {
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.7)) drop-shadow(0 0 14px rgba(255,210,90,.85));
+}
+
+/* Soft vignette that dims the board behind the bomb reward showcase. */
+.bomb-showcase-veil {
+  position: fixed; inset: 0; z-index: 390; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.12) 0%, rgba(0,0,0,.58) 72%);
+  opacity: 0; transition: opacity .18s ease-out;
+}
+.bomb-showcase-veil.show { opacity: 1; }
 
 /* Collection graveyard (top-left). Hidden by default; JS shows it on Cleaning
    levels when the collectionTray rule is on. */
