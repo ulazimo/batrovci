@@ -10,6 +10,7 @@ function applyProgression(style) {
     default:  { levels: LEVELS_DEFAULT,  progression: PROGRESSION_UNLOCK_DEFAULTS, rewards: REWARDS_DEFAULT },
     short:    { levels: LEVELS_SHORT,    progression: PROGRESSION_SHORT,           rewards: PROGRESSION_SHORT.levelRewards },
     cleaning: { levels: LEVELS_CLEANING, progression: PROGRESSION_CLEANING,        rewards: PROGRESSION_CLEANING.levelRewards },
+    cleaningxl: { levels: LEVELS_CLEANING_XL, progression: PROGRESSION_CLEANING_XL, rewards: PROGRESSION_CLEANING_XL.levelRewards },
     long:     { levels: LEVELS_LONG,     progression: PROGRESSION_LONG,            rewards: PROGRESSION_LONG.levelRewards },
   };
   const preset = PRESETS[style];
@@ -26,7 +27,7 @@ function applyProgression(style) {
 
   // Reflect the active journey on <body> for journey-specific styling (e.g. cleaning hides score/goals).
   if (document.body) {
-    document.body.classList.remove('journey-default', 'journey-short', 'journey-cleaning', 'journey-long');
+    document.body.classList.remove('journey-default', 'journey-short', 'journey-cleaning', 'journey-cleaningxl', 'journey-long');
     document.body.classList.add('journey-' + style);
   }
 }

@@ -53,7 +53,7 @@ const GAMEPLAY_RULES = [
     default: true },
   { id: 'chainDangerReveal', name: 'Chain Danger Reveal', icon: '🔥',
     desc: 'When a chain ends, briefly flip up the danger-marked "don\'t go there" tiles (shown at chain 3) so you learn what colors they were. Off = they just clear silently.',
-    default: false },
+    default: true },
 ];
 
 function getRule(id) {

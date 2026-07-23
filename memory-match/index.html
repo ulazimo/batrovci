@@ -100,6 +100,10 @@
         <span class="prog-pick-icon">🧹</span>
         <span class="prog-pick-info"><strong>Cleaning</strong><br><span style="font-size:12px;color:#aaa;">40 levels · Clear the whole board</span></span>
       </button>
+      <button class="overlay-btn prog-pick-btn" onclick="loadProgression('cleaningxl')">
+        <span class="prog-pick-icon">🧼</span>
+        <span class="prog-pick-info"><strong>Cleaning XL</strong><br><span style="font-size:12px;color:#aaa;">40 levels · Bigger board, no deck</span></span>
+      </button>
       <button class="overlay-btn prog-pick-btn" onclick="loadProgression('long')">
         <span class="prog-pick-icon">🏔</span>
         <span class="prog-pick-info"><strong>Long</strong><br><span style="font-size:12px;color:#aaa;">253 levels · Full journey</span></span>
@@ -223,10 +227,12 @@
 <script src="levels_default.js"></script>
 <script src="levels_short.js"></script>
 <script src="levels_cleaning.js"></script>
+<script src="levels_cleaningxl.js"></script>
 <script src="levels_long.js"></script>
 <script src="progression_default.js"></script>
 <script src="progression_short.js"></script>
 <script src="progression_cleaning.js"></script>
+<script src="progression_cleaningxl.js"></script>
 <script src="progression_long.js"></script>
 <script src="settings.js"></script>
 <!-- Former gameplay.js, split by concern. state.js MUST be first, boot.js MUST be last.

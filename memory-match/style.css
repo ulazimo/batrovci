@@ -82,12 +82,12 @@ body {
 #turns-value.danger-pulse { animation: turns-pulse .45s ease-in-out 2; }
 #target-value { color: #aaa; }
 
-/* Cleaning journey: the objective is always "clear the board", so hide Score + the
+/* Cleaning journeys: the objective is always "clear the board", so hide Score + the
    Goals HUD and show just Turns + Deck, slightly larger, spread across the width. */
-.journey-cleaning #stat-score { display: none; }
-.journey-cleaning #goal-hud { display: none !important; }
-.journey-cleaning #header .stat-value { font-size: 26px; }
-.journey-cleaning #header .stat-label { font-size: 11px; }
+.journey-cleaning #stat-score, .journey-cleaningxl #stat-score { display: none; }
+.journey-cleaning #goal-hud, .journey-cleaningxl #goal-hud { display: none !important; }
+.journey-cleaning #header .stat-value, .journey-cleaningxl #header .stat-value { font-size: 26px; }
+.journey-cleaning #header .stat-label, .journey-cleaningxl #header .stat-label { font-size: 11px; }
 /* Turns gets a slightly larger value in every theme (Deck stays as is). */
 #header #turns-value { font-size: 32px; }
 

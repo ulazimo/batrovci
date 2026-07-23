@@ -34,12 +34,20 @@ function buildDeck(count, colors) {
   return d;
 }
 
-// Show the remaining deck count in the header (Cleaning levels reuse the "Target" slot).
+// Show progress in the header (Cleaning levels reuse the "Target" slot). The Cleaning
+// journey has a finite refill deck → show how many refills remain. Cleaning XL has no
+// deck (the deck is baked into a bigger board) → show how many cards are left to clear.
 function updateDeckHUD() {
-  if (!LEVELS[currentLevelIndex]?.clearBoard) return;
+  const lvl = LEVELS[currentLevelIndex];
+  if (!lvl?.clearBoard) return;
   const lbl = document.getElementById('target-label');
-  if (lbl) lbl.textContent = 'Deck';
-  if (targetEl) targetEl.textContent = deck.length;
+  if (lvl.deck) {
+    if (lbl) lbl.textContent = 'Deck';
+    if (targetEl) targetEl.textContent = deck.length;
+  } else {
+    if (lbl) lbl.textContent = 'Left';
+    if (targetEl) targetEl.textContent = board.filter(c => c && !c.special).length;
+  }
 }
 
 // ============================================================
