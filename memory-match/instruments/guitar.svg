@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 520" width="220" height="520">
+  <!-- ===================== BODY (low-poly facets) ===================== -->
+  <!-- Upper bout fan (center 110,300) -->
+  <polygon points="110,300 150,362 160,330" fill="#C6853F"/>
+  <polygon points="110,300 160,330 163,292" fill="#E0A96D"/>
+  <polygon points="110,300 163,292 150,262" fill="#C6853F"/>
+  <polygon points="110,300 150,262 110,250" fill="#A9662B"/>
+  <polygon points="110,300 110,250 70,262"  fill="#8B5A2B"/>
+  <polygon points="110,300 70,262 57,292"   fill="#A9662B"/>
+  <polygon points="110,300 57,292 60,330"   fill="#8B5A2B"/>
+  <polygon points="110,300 60,330 70,362"   fill="#6E4423"/>
+
+  <!-- Waist band -->
+  <polygon points="110,300 150,362 70,362" fill="#C6853F"/>
+  <polygon points="110,415 150,362 70,362" fill="#A9662B"/>
+
+  <!-- Lower bout fan (center 110,415) -->
+  <polygon points="110,415 150,362 172,395" fill="#C6853F"/>
+  <polygon points="110,415 172,395 180,430" fill="#E0A96D"/>
+  <polygon points="110,415 180,430 170,465" fill="#C6853F"/>
+  <polygon points="110,415 170,465 140,492" fill="#A9662B"/>
+  <polygon points="110,415 140,492 110,500" fill="#8B5A2B"/>
+  <polygon points="110,415 110,500 80,492"  fill="#8B5A2B"/>
+  <polygon points="110,415 80,492 50,465"   fill="#A9662B"/>
+  <polygon points="110,415 50,465 40,430"   fill="#8B5A2B"/>
+  <polygon points="110,415 40,430 48,395"   fill="#A9662B"/>
+  <polygon points="110,415 48,395 70,362"   fill="#6E4423"/>
+
+  <!-- subtle inner shading facets -->
+  <polygon points="110,300 150,262 163,292" fill="#E0A96D" opacity="0.5"/>
+  <polygon points="110,415 172,395 150,362" fill="#E0A96D" opacity="0.4"/>
+  <polygon points="110,415 40,430 50,465"   fill="#6E4423" opacity="0.4"/>
+
+  <!-- ===================== SOUND HOLE + ROSETTE ===================== -->
+  <circle cx="110" cy="348" r="31" fill="#6E4423"/>
+  <circle cx="110" cy="348" r="28" fill="#3A2416"/>
+  <circle cx="110" cy="348" r="24" fill="#2A1810"/>
+
+  <!-- ===================== BRIDGE ===================== -->
+  <polygon points="88,430 132,430 84,448" fill="#3A2416"/>
+  <polygon points="132,430 136,448 84,448" fill="#3A2416"/>
+  <polygon points="92,433 128,433 128,438 92,438" fill="#C9CDD4"/>
+
+  <!-- ===================== NECK / FRETBOARD ===================== -->
+  <!-- row 78-100 -->
+  <polygon points="100,78 120,78 100,100" fill="#4A2E1A"/>
+  <polygon points="120,78 120,100 100,100" fill="#3A2416"/>
+  <!-- row 100-122 -->
+  <polygon points="100,100 120,100 100,122" fill="#3A2416"/>
+  <polygon points="120,100 120,122 100,122" fill="#4A2E1A"/>
+  <!-- row 122-144 -->
+  <polygon points="100,122 120,122 100,144" fill="#4A2E1A"/>
+  <polygon points="120,122 120,144 100,144" fill="#3A2416"/>
+  <!-- row 144-166 -->
+  <polygon points="100,144 120,144 100,166" fill="#3A2416"/>
+  <polygon points="120,144 120,166 100,166" fill="#4A2E1A"/>
+  <!-- row 166-188 -->
+  <polygon points="100,166 120,166 100,188" fill="#4A2E1A"/>
+  <polygon points="120,166 120,188 100,188" fill="#3A2416"/>
+  <!-- row 188-210 -->
+  <polygon points="100,188 120,188 100,210" fill="#3A2416"/>
+  <polygon points="120,188 120,210 100,210" fill="#4A2E1A"/>
+  <!-- row 210-232 -->
+  <polygon points="100,210 120,210 100,232" fill="#4A2E1A"/>
+  <polygon points="120,210 120,232 100,232" fill="#3A2416"/>
+  <!-- row 232-256 -->
+  <polygon points="100,232 120,232 100,256" fill="#3A2416"/>
+  <polygon points="120,232 120,256 100,256" fill="#4A2E1A"/>
+
+  <!-- frets (steel) -->
+  <polygon points="99,99 121,99 121,101 99,101" fill="#C9CDD4"/>
+  <polygon points="99,121 121,121 121,123 99,123" fill="#C9CDD4"/>
+  <polygon points="99,143 121,143 121,145 99,145" fill="#C9CDD4"/>
+  <polygon points="99,165 121,165 121,167 99,167" fill="#C9CDD4"/>
+  <polygon points="99,187 121,187 121,189 99,189" fill="#C9CDD4"/>
+  <polygon points="99,209 121,209 121,211 99,211" fill="#C9CDD4"/>
+  <polygon points="99,231 121,231 121,233 99,233" fill="#C9CDD4"/>
+
+  <!-- ===================== HEADSTOCK ===================== -->
+  <polygon points="94,18 126,18 110,48" fill="#6E4423"/>
+  <polygon points="94,18 110,48 90,55"  fill="#5A3A20"/>
+  <polygon points="126,18 130,55 110,48" fill="#8B5A2B"/>
+  <polygon points="90,55 110,48 100,78"  fill="#4A2E1A"/>
+  <polygon points="130,55 110,48 120,78" fill="#6E4423"/>
+  <polygon points="100,78 110,48 120,78" fill="#5A3A20"/>
+
+  <!-- tuning pegs (steel) -->
+  <line x1="90" y1="28" x2="80" y2="28" stroke="#C9CDD4" stroke-width="2"/>
+  <line x1="90" y1="44" x2="80" y2="44" stroke="#C9CDD4" stroke-width="2"/>
+  <line x1="91" y1="60" x2="81" y2="60" stroke="#C9CDD4" stroke-width="2"/>
+  <line x1="130" y1="28" x2="140" y2="28" stroke="#C9CDD4" stroke-width="2"/>
+  <line x1="130" y1="44" x2="140" y2="44" stroke="#C9CDD4" stroke-width="2"/>
+  <line x1="129" y1="60" x2="139" y2="60" stroke="#C9CDD4" stroke-width="2"/>
+  <circle cx="78" cy="28" r="4" fill="#C9CDD4"/>
+  <circle cx="78" cy="44" r="4" fill="#C9CDD4"/>
+  <circle cx="79" cy="60" r="4" fill="#C9CDD4"/>
+  <circle cx="142" cy="28" r="4" fill="#C9CDD4"/>
+  <circle cx="142" cy="44" r="4" fill="#C9CDD4"/>
+  <circle cx="141" cy="60" r="4" fill="#C9CDD4"/>
+
+  <!-- ===================== STRINGS ===================== -->
+  <line x1="101" y1="80" x2="91"  y2="442" stroke="#C9CDD4" stroke-width="0.7"/>
+  <line x1="104.6" y1="80" x2="98.6" y2="442" stroke="#C9CDD4" stroke-width="0.7"/>
+  <line x1="108.2" y1="80" x2="106.2" y2="442" stroke="#C9CDD4" stroke-width="0.7"/>
+  <line x1="111.8" y1="80" x2="113.8" y2="442" stroke="#C9CDD4" stroke-width="0.7"/>
+  <line x1="115.4" y1="80" x2="121.4" y2="442" stroke="#C9CDD4" stroke-width="0.7"/>
+  <line x1="119" y1="80" x2="129" y2="442" stroke="#C9CDD4" stroke-width="0.7"/>
+</svg>

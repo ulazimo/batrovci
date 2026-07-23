@@ -218,6 +218,10 @@ function fitBoard() {
   boardEl.style.maxWidth = 'none';
   boardEl.style.width  = Math.floor(cell * COLS + BOARD_GAP * (COLS - 1)) + 'px';
   boardEl.style.height = Math.floor(cell * ROWS + BOARD_GAP * (ROWS - 1)) + 'px';
+
+  // Recompute the optional instrument background now that the board's pixel box
+  // (and each cell's position) is known.
+  if (typeof applyBoardBackground === 'function') applyBoardBackground();
 }
 
 // Refit whenever the container's box changes: device-switcher, orientation,
@@ -302,7 +306,13 @@ function updateUI()   { scoreEl.textContent = score; turnsEl.textContent = turns
 function replaceCell(i) {
   const cell = boardEl.children[i];
   if (!cell) return;
-  if (board[i] === null) { cell.className = 'cell cleared-cell'; cell.innerHTML = ''; return; }
+  if (board[i] === null) {
+    cell.className = 'cell cleared-cell'; cell.innerHTML = '';
+    // A cell just broke — refresh the instrument reveal (cheap; skips the
+    // behind-grid image rebuild unless something actually changed).
+    if (typeof applyBoardBackground === 'function') applyBoardBackground();
+    return;
+  }
   cell.innerHTML = buildCardHTML(board[i]);
 }
 

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 520" width="200" height="520">
+  <!-- ===================== SCROLL (curled top) ===================== -->
+  <polygon points="100,14 88,22 96,30" fill="#D68A3C"/>
+  <polygon points="100,14 112,22 104,30" fill="#B5701F"/>
+  <polygon points="88,22 96,30 86,34" fill="#8B4A20"/>
+  <polygon points="112,22 104,30 114,34" fill="#6E3A18"/>
+  <polygon points="86,34 96,30 104,30 114,34" fill="#B5701F"/>
+  <polygon points="86,34 100,40 114,34" fill="#D68A3C"/>
+  <polygon points="86,34 100,40 92,46" fill="#8B4A20"/>
+  <polygon points="114,34 100,40 108,46" fill="#6E3A18"/>
+  <polygon points="92,46 100,40 108,46" fill="#E0A96D"/>
+
+  <!-- ===================== PEGBOX ===================== -->
+  <polygon points="92,46 108,46 96,64" fill="#8B4A20"/>
+  <polygon points="108,46 96,64 108,66" fill="#6E3A18"/>
+  <polygon points="92,46 96,64 90,66" fill="#B5701F"/>
+  <!-- pegs -->
+  <polygon points="86,52 92,50 90,58" fill="#C9CDD4"/>
+  <polygon points="114,52 108,50 110,58" fill="#E4D5B7"/>
+  <polygon points="88,62 94,60 92,68" fill="#E4D5B7"/>
+  <polygon points="112,62 106,60 108,68" fill="#C9CDD4"/>
+
+  <!-- ===================== NECK / FINGERBOARD ===================== -->
+  <polygon points="90,66 108,66 90,150" fill="#241610"/>
+  <polygon points="108,66 90,150 110,150" fill="#2A1810"/>
+  <polygon points="90,150 110,150 88,230" fill="#2A1810"/>
+  <polygon points="110,150 88,230 112,232" fill="#1c110a"/>
+  <!-- fingerboard side wood slivers -->
+  <polygon points="90,66 90,150 86,150" fill="#6E3A18"/>
+  <polygon points="108,66 110,150 114,150" fill="#8B4A20"/>
+
+  <!-- ===================== UPPER BOUT (body top) ===================== -->
+  <polygon points="100,210 66,236 100,250" fill="#E0A96D"/>
+  <polygon points="100,210 134,236 100,250" fill="#D68A3C"/>
+  <polygon points="66,236 60,262 100,250" fill="#D68A3C"/>
+  <polygon points="134,236 140,262 100,250" fill="#B5701F"/>
+  <polygon points="66,236 100,210 76,222" fill="#B5701F"/>
+  <polygon points="134,236 100,210 124,222" fill="#8B4A20"/>
+  <polygon points="60,262 100,250 66,284" fill="#E0A96D"/>
+  <polygon points="140,262 100,250 134,284" fill="#B5701F"/>
+
+  <!-- ===================== WAIST / C-BOUTS ===================== -->
+  <polygon points="66,284 60,262 54,286" fill="#D68A3C"/>
+  <polygon points="134,284 140,262 146,286" fill="#8B4A20"/>
+  <polygon points="66,284 54,286 62,308" fill="#B5701F"/>
+  <polygon points="134,284 146,286 138,308" fill="#6E3A18"/>
+  <polygon points="66,284 62,308 100,296" fill="#D68A3C"/>
+  <polygon points="134,284 138,308 100,296" fill="#B5701F"/>
+  <polygon points="66,284 100,296 100,250" fill="#E0A96D"/>
+  <polygon points="134,284 100,296 100,250" fill="#D68A3C"/>
+
+  <!-- ===================== LOWER BOUT (body bottom) ===================== -->
+  <polygon points="62,308 100,296 68,330" fill="#E0A96D"/>
+  <polygon points="138,308 100,296 132,330" fill="#B5701F"/>
+  <polygon points="62,308 54,336 68,330" fill="#D68A3C"/>
+  <polygon points="138,308 146,336 132,330" fill="#8B4A20"/>
+  <polygon points="54,336 68,330 60,372" fill="#B5701F"/>
+  <polygon points="146,336 132,330 140,372" fill="#6E3A18"/>
+  <polygon points="68,330 100,296 100,340" fill="#D68A3C"/>
+  <polygon points="132,330 100,296 100,340" fill="#B5701F"/>
+  <polygon points="68,330 100,340 74,380" fill="#E0A96D"/>
+  <polygon points="132,330 100,340 126,380" fill="#B5701F"/>
+  <polygon points="60,372 68,330 74,380" fill="#D68A3C"/>
+  <polygon points="140,372 132,330 126,380" fill="#8B4A20"/>
+  <polygon points="60,372 74,380 72,414" fill="#B5701F"/>
+  <polygon points="140,372 126,380 128,414" fill="#6E3A18"/>
+  <polygon points="74,380 100,340 100,420" fill="#D68A3C"/>
+  <polygon points="126,380 100,340 100,420" fill="#B5701F"/>
+  <polygon points="72,414 74,380 100,420" fill="#E0A96D"/>
+  <polygon points="128,414 126,380 100,420" fill="#B5701F"/>
+  <polygon points="60,372 72,414 78,448" fill="#8B4A20"/>
+  <polygon points="140,372 128,414 122,448" fill="#6E3A18"/>
+  <polygon points="72,414 78,448 100,420" fill="#D68A3C"/>
+  <polygon points="128,414 122,448 100,420" fill="#B5701F"/>
+  <polygon points="78,448 100,420 100,470" fill="#B5701F"/>
+  <polygon points="122,448 100,420 100,470" fill="#8B4A20"/>
+  <polygon points="78,448 100,470 96,478" fill="#6E3A18"/>
+  <polygon points="122,448 100,470 104,478" fill="#8B4A20"/>
+
+  <!-- ===================== F-HOLES (very dark) ===================== -->
+  <polygon points="80,320 76,338 82,336" fill="#241610"/>
+  <polygon points="80,320 82,336 84,322" fill="#1c110a"/>
+  <polygon points="82,336 76,338 80,356" fill="#241610"/>
+  <polygon points="82,336 80,356 86,352" fill="#1c110a"/>
+  <polygon points="120,320 124,338 118,336" fill="#241610"/>
+  <polygon points="120,320 118,336 116,322" fill="#1c110a"/>
+  <polygon points="118,336 124,338 120,356" fill="#241610"/>
+  <polygon points="118,336 120,356 114,352" fill="#1c110a"/>
+
+  <!-- ===================== BRIDGE + TAILPIECE ===================== -->
+  <polygon points="88,398 112,398 100,410" fill="#8B4A20"/>
+  <polygon points="94,420 106,420 100,452" fill="#241610"/>
+  <polygon points="94,420 100,452 92,448" fill="#2A1810"/>
+  <polygon points="106,420 100,452 108,448" fill="#1c110a"/>
+
+  <!-- ===================== STRINGS ===================== -->
+  <polygon points="96,64 97,64 97,420 96,420" fill="#E4D5B7"/>
+  <polygon points="98,64 99,64 99,420 98,420" fill="#C9CDD4"/>
+  <polygon points="101,64 102,64 102,420 101,420" fill="#E4D5B7"/>
+  <polygon points="103,64 104,64 104,420 103,420" fill="#C9CDD4"/>
+</svg>

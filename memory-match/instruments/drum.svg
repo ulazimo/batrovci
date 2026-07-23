@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 380" width="460" height="380">
+  <!-- ===================== DRUM SHELL (cylinder body) ===================== -->
+  <!-- Top ellipse of shell roughly y=150, bottom ellipse roughly y=300. Center x=230, radii ~130 / ~46 -->
+
+  <!-- Shell left column facets -->
+  <polygon points="100,150 100,300 145,308 130,155" fill="#A93226"/>
+  <polygon points="130,155 145,308 190,313 165,158" fill="#B33427"/>
+  <polygon points="100,150 130,155 165,158 128,152" fill="#8E2A20"/>
+  <polygon points="165,158 190,313 235,314 200,159" fill="#C0392B"/>
+  <polygon points="200,159 235,314 280,313 265,158" fill="#C0392B"/>
+  <polygon points="265,158 280,313 325,308 295,155" fill="#B33427"/>
+  <polygon points="295,155 325,308 360,300 330,150" fill="#A93226"/>
+  <polygon points="330,150 360,300 360,300 360,150" fill="#93291F"/>
+
+  <!-- Shell vertical shading bands (front lit) -->
+  <polygon points="165,158 200,159 235,314 190,313" fill="#B7382A"/>
+  <polygon points="200,159 265,158 280,313 235,314" fill="#CB4133"/>
+  <polygon points="230,159 265,158 280,313 255,313" fill="#E06B5A"/>
+  <polygon points="140,156 165,158 190,313 152,309" fill="#9E2E22"/>
+
+  <!-- Shell outer rounding highlights -->
+  <polygon points="215,159 245,159 260,313 232,314" fill="#D24A3B"/>
+  <polygon points="245,159 265,158 280,313 260,313" fill="#C93F31"/>
+
+  <!-- ===================== BOTTOM RIM (steel) ===================== -->
+  <polygon points="100,300 145,308 130,318 96,308" fill="#C9CDD4"/>
+  <polygon points="145,308 190,313 185,323 130,318" fill="#B8BCC4"/>
+  <polygon points="190,313 235,314 235,325 185,323" fill="#C9CDD4"/>
+  <polygon points="235,314 280,313 285,323 235,325" fill="#B8BCC4"/>
+  <polygon points="280,313 325,308 330,318 285,323" fill="#C9CDD4"/>
+  <polygon points="325,308 360,300 364,308 330,318" fill="#AEB2BA"/>
+
+  <!-- ===================== TENSION LUGS around shell (gold/steel) ===================== -->
+  <!-- lug 1 -->
+  <polygon points="120,168 133,166 135,300 122,299" fill="#E9C46A"/>
+  <polygon points="120,168 122,299 114,296 113,170" fill="#C9A24A"/>
+  <!-- lug 2 -->
+  <polygon points="175,178 188,177 189,308 176,308" fill="#EFCE7C"/>
+  <polygon points="175,178 176,308 169,306 168,180" fill="#D0AB55"/>
+  <!-- lug 3 (center, brightest) -->
+  <polygon points="224,182 237,182 237,314 224,314" fill="#F2D68C"/>
+  <polygon points="224,182 224,314 217,313 217,183" fill="#D6B25C"/>
+  <!-- lug 4 -->
+  <polygon points="272,178 285,178 284,308 271,308" fill="#EFCE7C"/>
+  <polygon points="285,178 284,308 292,306 293,180" fill="#D0AB55"/>
+  <!-- lug 5 -->
+  <polygon points="327,168 340,167 342,299 329,300" fill="#E9C46A"/>
+  <polygon points="340,167 342,299 349,296 348,169" fill="#C9A24A"/>
+
+  <!-- ===================== TOP RIM (gold hoop) ===================== -->
+  <polygon points="100,150 130,150 118,138 92,142" fill="#EFCE7C"/>
+  <polygon points="130,150 165,146 150,135 118,138" fill="#E9C46A"/>
+  <polygon points="165,146 200,143 185,132 150,135" fill="#F2D68C"/>
+  <polygon points="200,143 235,142 225,130 185,132" fill="#EFCE7C"/>
+  <polygon points="235,142 270,143 265,130 225,130" fill="#F2D68C"/>
+  <polygon points="270,143 305,146 305,132 265,130" fill="#E9C46A"/>
+  <polygon points="305,146 330,150 322,138 305,132" fill="#EFCE7C"/>
+  <polygon points="330,150 360,150 350,140 322,138" fill="#D9B95E"/>
+
+  <!-- rim inner bevel -->
+  <polygon points="92,142 118,138 130,150 100,150" fill="#D6B25C"/>
+  <polygon points="350,140 360,150 330,150 322,138" fill="#C9A24A"/>
+
+  <!-- ===================== TOP DRUM HEAD (cream ellipse) ===================== -->
+  <!-- ellipse center (230,140), rx~118, ry~40 -->
+  <polygon points="112,140 230,101 230,140 155,168" fill="#F0E6D2"/>
+  <polygon points="112,140 155,168 230,178 230,140" fill="#EADDC4"/>
+  <polygon points="230,140 230,101 348,140 305,168" fill="#EEE3CC"/>
+  <polygon points="230,140 305,168 230,178 230,140" fill="#E4D5B7"/>
+
+  <!-- head facets top-left -->
+  <polygon points="112,140 230,101 175,110 145,128" fill="#F3EAD8"/>
+  <polygon points="145,128 175,110 230,101 200,133" fill="#F0E6D2"/>
+  <polygon points="112,140 145,128 200,133 155,168" fill="#EADDC4"/>
+  <polygon points="200,133 230,101 230,140 155,168" fill="#F0E6D2"/>
+
+  <!-- head facets top-right -->
+  <polygon points="230,101 285,110 315,128 348,140" fill="#F3EAD8"/>
+  <polygon points="230,101 285,110 315,128 262,133" fill="#EEE3CC"/>
+  <polygon points="315,128 348,140 305,168 262,133" fill="#E9DCC1"/>
+  <polygon points="230,101 262,133 305,168 230,140" fill="#EEE3CC"/>
+
+  <!-- head lower shading -->
+  <polygon points="155,168 230,178 230,140" fill="#E1D1B0"/>
+  <polygon points="230,140 230,178 305,168" fill="#E4D5B7"/>
+  <polygon points="185,160 230,140 275,160 230,172" fill="#EADDC4"/>
+
+  <!-- head center bright facet -->
+  <polygon points="200,133 262,133 230,140" fill="#F5EEDE"/>
+  <polygon points="200,133 230,140 185,160 175,150" fill="#F0E6D2"/>
+  <polygon points="262,133 285,150 275,160 230,140" fill="#EEE3CC"/>
+
+  <!-- ===================== DRUMSTICKS (crossed on top) ===================== -->
+  <!-- stick A: lower-left to upper-right -->
+  <polygon points="120,190 130,178 328,72 320,86" fill="#C6853F"/>
+  <polygon points="130,178 138,168 336,62 328,72" fill="#D89A56"/>
+  <polygon points="120,190 130,178 328,72 318,90" fill="#AC6E30"/>
+  <!-- stick A tip bead -->
+  <polygon points="328,72 336,62 350,64 342,74" fill="#E0A968"/>
+  <polygon points="328,72 342,74 340,84 320,86" fill="#C6853F"/>
+
+  <!-- stick B: lower-right to upper-left -->
+  <polygon points="340,192 330,180 132,74 140,88" fill="#B87838"/>
+  <polygon points="330,180 322,170 124,64 132,74" fill="#CE9250"/>
+  <polygon points="340,192 330,180 132,74 142,92" fill="#A2682C"/>
+  <!-- stick B tip bead -->
+  <polygon points="132,74 124,64 110,66 118,76" fill="#DFA766"/>
+  <polygon points="132,74 118,76 120,86 140,88" fill="#B87838"/>
+
+  <!-- cross intersection dark accent -->
+  <polygon points="225,124 235,120 240,132 230,136" fill="#3A2416"/>
+
+  <!-- ===================== small dark accents on lugs ===================== -->
+  <polygon points="123,167 130,166 130,171 123,172" fill="#3A2416"/>
+  <polygon points="228,183 235,183 235,188 228,188" fill="#3A2416"/>
+  <polygon points="332,167 339,167 339,172 332,172" fill="#3A2416"/>
+</svg>

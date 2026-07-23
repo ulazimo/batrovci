@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" width="520" height="300">
+  <!-- Low-poly golden trumpet: mouthpiece left, valves top-center, bell flaring right -->
+
+  <!-- ===== Mouthpiece (far left) ===== -->
+  <polygon points="18,148 44,140 44,160" fill="#C6842F"/>
+  <polygon points="18,148 44,160 20,164" fill="#B5701F"/>
+  <polygon points="44,140 58,142 44,160" fill="#E0A23B"/>
+  <polygon points="58,142 58,158 44,160" fill="#C6842F"/>
+
+  <!-- ===== Lead pipe / tubing to valves ===== -->
+  <polygon points="58,142 96,138 96,152" fill="#E9C46A"/>
+  <polygon points="58,142 96,152 58,158" fill="#E0A23B"/>
+  <polygon points="58,158 96,152 96,166" fill="#C6842F"/>
+  <polygon points="96,138 140,140 96,152" fill="#F4D58D"/>
+  <polygon points="140,140 140,154 96,152" fill="#E9C46A"/>
+  <polygon points="96,152 140,154 96,166" fill="#E0A23B"/>
+  <polygon points="96,166 140,154 140,168" fill="#C6842F"/>
+
+  <!-- ===== Lower tubing loop (curved return under valves) ===== -->
+  <polygon points="140,168 190,172 150,196" fill="#C6842F"/>
+  <polygon points="140,168 150,196 138,190" fill="#B5701F"/>
+  <polygon points="190,172 210,190 150,196" fill="#8A5316"/>
+  <polygon points="190,172 240,172 210,190" fill="#C6842F"/>
+  <polygon points="240,172 250,192 210,190" fill="#8A5316"/>
+  <polygon points="240,172 288,168 250,192" fill="#B5701F"/>
+  <polygon points="288,168 288,190 250,192" fill="#8A5316"/>
+
+  <!-- ===== Main valve body block (center) ===== -->
+  <polygon points="140,140 176,138 176,168" fill="#E9C46A"/>
+  <polygon points="140,140 176,168 140,168" fill="#E0A23B"/>
+  <polygon points="176,138 212,140 212,168" fill="#F4D58D"/>
+  <polygon points="176,138 212,168 176,168" fill="#E9C46A"/>
+  <polygon points="212,140 248,138 248,168" fill="#E9C46A"/>
+  <polygon points="212,140 248,168 212,168" fill="#E0A23B"/>
+  <polygon points="248,138 288,140 288,168" fill="#F4D58D"/>
+  <polygon points="248,138 288,168 248,168" fill="#E9C46A"/>
+
+  <!-- ===== Valve piston 1 ===== -->
+  <polygon points="150,138 168,138 150,96" fill="#E0A23B"/>
+  <polygon points="168,138 150,96 168,96" fill="#E9C46A"/>
+  <polygon points="150,96 168,96 150,84" fill="#C9CDD4"/>
+  <polygon points="168,96 150,84 168,84" fill="#C6842F"/>
+  <polygon points="150,84 168,84 159,76" fill="#C9CDD4"/>
+
+  <!-- ===== Valve piston 2 (tallest, center) ===== -->
+  <polygon points="186,138 204,138 186,88" fill="#E9C46A"/>
+  <polygon points="204,138 186,88 204,88" fill="#E0A23B"/>
+  <polygon points="186,88 204,88 186,74" fill="#C9CDD4"/>
+  <polygon points="204,88 186,74 204,74" fill="#C6842F"/>
+  <polygon points="186,74 204,74 195,66" fill="#C9CDD4"/>
+
+  <!-- ===== Valve piston 3 ===== -->
+  <polygon points="222,138 240,138 222,96" fill="#E0A23B"/>
+  <polygon points="240,138 222,96 240,96" fill="#E9C46A"/>
+  <polygon points="222,96 240,96 222,84" fill="#C9CDD4"/>
+  <polygon points="240,96 222,84 240,84" fill="#C6842F"/>
+  <polygon points="222,84 240,84 231,76" fill="#C9CDD4"/>
+
+  <!-- ===== Tubing from valves toward the bell ===== -->
+  <polygon points="288,140 320,142 288,168" fill="#F4D58D"/>
+  <polygon points="288,168 320,142 320,170" fill="#E9C46A"/>
+  <polygon points="320,142 352,146 320,170" fill="#E9C46A"/>
+  <polygon points="320,170 352,146 352,176" fill="#E0A23B"/>
+  <polygon points="352,146 380,150 352,176" fill="#F4D58D"/>
+  <polygon points="352,176 380,150 380,184" fill="#E9C46A"/>
+
+  <!-- ===== Bell flare (right) — expanding cone ===== -->
+  <polygon points="380,150 410,140 380,184" fill="#F4D58D"/>
+  <polygon points="380,184 410,140 410,196" fill="#E9C46A"/>
+  <polygon points="410,140 436,128 410,196" fill="#E9C46A"/>
+  <polygon points="410,196 436,128 436,210" fill="#E0A23B"/>
+  <polygon points="436,128 460,116 436,210" fill="#F4D58D"/>
+  <polygon points="436,210 460,116 462,224" fill="#E0A23B"/>
+  <polygon points="460,116 484,104 462,224" fill="#E9C46A"/>
+  <polygon points="462,224 484,104 488,238" fill="#C6842F"/>
+
+  <!-- ===== Bell rim ===== -->
+  <polygon points="484,104 502,100 488,238" fill="#F4D58D"/>
+  <polygon points="488,238 502,100 504,244" fill="#E0A23B"/>
+  <polygon points="502,100 510,108 504,244" fill="#E9C46A"/>
+  <polygon points="504,244 510,108 508,240" fill="#C6842F"/>
+
+  <!-- ===== Bell inner shadow (mouth of bell) ===== -->
+  <polygon points="484,104 502,100 496,150" fill="#8A5316"/>
+  <polygon points="484,104 496,150 490,180" fill="#3A2416"/>
+  <polygon points="490,180 496,150 500,210" fill="#8A5316"/>
+  <polygon points="490,180 500,210 496,238" fill="#3A2416"/>
+
+  <!-- ===== Shadow facets under tubing loop ===== -->
+  <polygon points="150,196 210,190 190,206" fill="#8A5316"/>
+  <polygon points="210,190 250,192 230,208" fill="#8A5316"/>
+  <polygon points="150,196 190,206 160,206" fill="#3A2416"/>
+
+  <!-- ===== Small brace connecting loop to bell tubing ===== -->
+  <polygon points="288,168 316,172 300,186" fill="#C6842F"/>
+  <polygon points="288,168 300,186 288,190" fill="#8A5316"/>
+</svg>

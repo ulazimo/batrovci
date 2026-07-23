@@ -26,6 +26,17 @@
   <button class="device-btn" data-device="ipad"       onclick="setDevice('ipad')">iPad</button>
 </div>
 
+<!-- Background art switcher (desktop only; hidden on real phones). Mirrors the
+     device switcher — pick how the per-level instrument art is shown. -->
+<div id="bg-switcher">
+  <span class="bg-switcher-label">Background</span>
+  <button class="bg-btn" data-bg="0" onclick="setBgOption(0)">Off</button>
+  <button class="bg-btn" data-bg="1" onclick="setBgOption(1)">Option 1<small>reveal on break</small></button>
+  <button class="bg-btn" data-bg="2" onclick="setBgOption(2)">Option 2<small>blur + reveal</small></button>
+  <button class="bg-btn" data-bg="3" onclick="setBgOption(3)">Option 3<small>blur + reveal + highlight</small></button>
+  <button class="bg-btn" data-bg="4" onclick="setBgOption(4)">Option 4<small>in gaps only</small></button>
+</div>
+
 <!-- Phone frame — wraps the whole game so it renders inside a device bezel -->
 <div id="device-frame">
 
@@ -245,6 +256,7 @@
 <script src="specials.js"></script>
 <script src="goals.js"></script>
 <script src="board.js"></script>
+<script src="board-bg.js"></script>
 <script src="chain-timer.js"></script>
 <script src="boosters.js"></script>
 <script src="bank.js"></script>

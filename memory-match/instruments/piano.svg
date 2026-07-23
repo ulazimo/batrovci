@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 420" width="520" height="420">
+  <!-- ============================================================
+       LOW-POLY GRAND PIANO (top-down view)
+       Body: glossy black/charcoal. Open lid: warm wood interior.
+       Keyboard along the straight front edge. Gold accents.
+       ============================================================ -->
+
+  <!-- ===================== OUTER BODY SHADOW / RIM ===================== -->
+  <g stroke="#15151A" stroke-width="0.6" stroke-linejoin="round">
+    <!-- Curved case (long curved side to the right, straight side to the left) -->
+    <!-- Left straight edge (bass/keyboard side) -->
+    <polygon points="120,360 120,110 175,95 120,360" fill="#33333D"/>
+    <polygon points="120,110 175,95 175,110" fill="#3A3A44"/>
+    <polygon points="120,110 120,360 175,110" fill="#2B2B33"/>
+    <polygon points="120,360 175,110 175,350" fill="#2E2E37"/>
+
+    <!-- Top-left corner into the curve -->
+    <polygon points="175,95 240,80 175,110" fill="#3E3E49"/>
+    <polygon points="175,110 240,80 240,110" fill="#353540"/>
+    <polygon points="240,80 310,80 240,110" fill="#42424E"/>
+    <polygon points="240,110 310,80 310,110" fill="#3A3A45"/>
+
+    <!-- Top curve heading right -->
+    <polygon points="310,80 360,90 310,110" fill="#45454F"/>
+    <polygon points="310,110 360,90 360,120" fill="#3B3B46"/>
+    <polygon points="360,90 400,110 360,120" fill="#41414C"/>
+    <polygon points="360,120 400,110 400,140" fill="#37373F"/>
+
+    <!-- Right bulge (the widest part of the curve) -->
+    <polygon points="400,110 428,150 400,140" fill="#3E3E48"/>
+    <polygon points="400,140 428,150 420,190" fill="#343440"/>
+    <polygon points="428,150 420,190 440,175" fill="#3A3A45"/>
+    <polygon points="420,190 440,175 425,225" fill="#31313B"/>
+    <polygon points="440,175 425,225 445,220" fill="#37373F"/>
+
+    <!-- Curve sweeping back down toward the tail -->
+    <polygon points="425,225 445,220 405,265" fill="#2F2F39"/>
+    <polygon points="445,220 405,265 430,275" fill="#353540"/>
+    <polygon points="405,265 430,275 375,305" fill="#2C2C35"/>
+    <polygon points="430,275 375,305 400,320" fill="#31313C"/>
+
+    <!-- Tail / bottom-right rounding -->
+    <polygon points="375,305 400,320 330,345" fill="#2A2A32"/>
+    <polygon points="400,320 330,345 355,360" fill="#2E2E38"/>
+    <polygon points="330,345 355,360 275,365" fill="#292930"/>
+
+    <!-- Bottom straight edge back to keyboard -->
+    <polygon points="275,365 355,360 275,375" fill="#2C2C35"/>
+    <polygon points="275,365 275,375 200,368" fill="#28282F"/>
+    <polygon points="200,368 275,375 200,378" fill="#2B2B33"/>
+    <polygon points="120,360 200,368 120,372" fill="#26262D"/>
+    <polygon points="120,360 200,368 200,378 120,372" fill="#29292F"/>
+  </g>
+
+  <!-- ===================== OPEN LID INTERIOR (warm wood) ===================== -->
+  <!-- The lid is raised, revealing the wooden soundboard/harp inside the curve -->
+  <g stroke="#7A4A1E" stroke-width="0.5" stroke-linejoin="round">
+    <polygon points="150,130 205,118 165,215" fill="#C6853F"/>
+    <polygon points="205,118 165,215 235,175" fill="#B87434"/>
+    <polygon points="205,118 235,175 275,120" fill="#CE8E45"/>
+    <polygon points="205,118 275,120 240,110 175,120" fill="#C07C39"/>
+
+    <polygon points="275,120 235,175 300,165" fill="#BD7A38"/>
+    <polygon points="275,120 300,165 335,125" fill="#C98A42"/>
+    <polygon points="335,125 300,165 360,175" fill="#B06E30"/>
+    <polygon points="335,125 360,175 385,150" fill="#C08039"/>
+
+    <polygon points="165,215 235,175 220,265" fill="#A9662B"/>
+    <polygon points="235,175 300,165 275,255" fill="#B57030"/>
+    <polygon points="235,175 275,255 220,265" fill="#AA6828"/>
+    <polygon points="300,165 360,175 330,250" fill="#A9662B"/>
+    <polygon points="300,165 330,250 275,255" fill="#B06E30"/>
+
+    <polygon points="360,175 385,150 400,205" fill="#BB7735"/>
+    <polygon points="360,175 400,205 370,245" fill="#A9662B"/>
+    <polygon points="360,175 370,245 330,250" fill="#AE6B2D"/>
+    <polygon points="400,205 370,245 385,290" fill="#9E5D26"/>
+
+    <polygon points="220,265 275,255 250,325" fill="#9C5C24"/>
+    <polygon points="275,255 330,250 305,315" fill="#A5642A"/>
+    <polygon points="275,255 305,315 250,325" fill="#9A5A23"/>
+    <polygon points="330,250 385,290 340,320" fill="#96581F"/>
+    <polygon points="330,250 340,320 305,315" fill="#9E5D26"/>
+
+    <polygon points="250,325 305,315 275,350" fill="#8F5320"/>
+    <polygon points="305,315 340,320 275,350" fill="#95571F"/>
+    <polygon points="220,265 250,325 200,335" fill="#8A4F1D"/>
+    <polygon points="200,335 250,325 275,350 200,352" fill="#8F531F"/>
+  </g>
+
+  <!-- ===================== STRINGS / HARP (gold lines) ===================== -->
+  <g stroke="#E9C46A" stroke-width="1" opacity="0.55" stroke-linecap="round">
+    <line x1="185" y1="140" x2="230" y2="320"/>
+    <line x1="215" y1="132" x2="255" y2="322"/>
+    <line x1="248" y1="128" x2="282" y2="320"/>
+    <line x1="285" y1="128" x2="308" y2="315"/>
+    <line x1="322" y1="132" x2="332" y2="312"/>
+    <line x1="358" y1="150" x2="358" y2="300"/>
+  </g>
+  <g stroke="#C99A3C" stroke-width="0.6" opacity="0.4">
+    <line x1="170" y1="205" x2="395" y2="215"/>
+    <line x1="200" y1="265" x2="380" y2="275"/>
+  </g>
+
+  <!-- ===================== LID EDGE HIGHLIGHT (gold rim) ===================== -->
+  <g stroke="#E9C46A" stroke-width="1.4" fill="none" opacity="0.7" stroke-linejoin="round">
+    <polyline points="150,130 205,118 275,120 335,125 385,150 400,205 385,290 340,320 275,350 200,352 165,215 150,130"/>
+  </g>
+
+  <!-- ===================== BODY GLOSS HIGHLIGHTS (charcoal facets) ===================== -->
+  <g stroke="#15151A" stroke-width="0.5" stroke-linejoin="round">
+    <polygon points="130,120 150,130 132,200" fill="#43434F"/>
+    <polygon points="132,200 150,130 165,215" fill="#3B3B47"/>
+    <polygon points="132,200 165,215 138,300" fill="#38383F" opacity="0.9"/>
+    <polygon points="138,300 165,215 200,335" fill="#33333C"/>
+    <polygon points="138,300 200,335 200,352" fill="#2E2E37"/>
+  </g>
+
+  <!-- ===================== KEYBOARD (front straight edge, left side) ===================== -->
+  <!-- White keys as a faceted ivory strip -->
+  <g stroke="#B7A882" stroke-width="0.5">
+    <polygon points="70,112 118,110 118,358 70,352" fill="#F0E6D2"/>
+    <polygon points="70,112 118,110 70,230" fill="#F4EBD9"/>
+    <polygon points="70,230 118,110 118,235" fill="#EADFC6"/>
+    <polygon points="70,230 118,235 70,352" fill="#E4D5B7"/>
+    <polygon points="70,352 118,235 118,358" fill="#DBCBA8"/>
+  </g>
+
+  <!-- White key separators -->
+  <g stroke="#C9B793" stroke-width="1" opacity="0.8">
+    <line x1="72" y1="140" x2="117" y2="139"/>
+    <line x1="72" y1="170" x2="117" y2="169"/>
+    <line x1="72" y1="200" x2="117" y2="199"/>
+    <line x1="72" y1="230" x2="117" y2="230"/>
+    <line x1="72" y1="260" x2="117" y2="260"/>
+    <line x1="72" y1="290" x2="117" y2="290"/>
+    <line x1="72" y1="320" x2="117" y2="320"/>
+  </g>
+
+  <!-- Black keys (charcoal), grouped 2 + 3 like a real keyboard -->
+  <g stroke="#0E0E12" stroke-width="0.5">
+    <polygon points="95,126 118,125 118,150 95,151" fill="#24242A"/>
+    <polygon points="95,156 118,155 118,180 95,181" fill="#2A2A30"/>
+
+    <polygon points="95,214 118,213 118,238 95,239" fill="#24242A"/>
+    <polygon points="95,244 118,243 118,268 95,269" fill="#2A2A30"/>
+    <polygon points="95,274 118,273 118,298 95,299" fill="#24242A"/>
+
+    <polygon points="95,306 118,305 118,330 95,331" fill="#2A2A30"/>
+  </g>
+
+  <!-- Gold trim line where keyboard meets the case (fallboard) -->
+  <g stroke="#E9C46A" stroke-width="2" opacity="0.8">
+    <line x1="119" y1="110" x2="119" y2="360"/>
+  </g>
+
+  <!-- ===================== THREE LEGS (small dark facets, top-down hints) ===================== -->
+  <g stroke="#15151A" stroke-width="0.5" stroke-linejoin="round">
+    <polygon points="128,362 142,362 135,378" fill="#1E1E24"/>
+    <polygon points="308,352 322,352 315,368" fill="#1E1E24"/>
+    <polygon points="360,120 374,120 367,104" fill="#1E1E24"/>
+  </g>
+</svg>
