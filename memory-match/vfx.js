@@ -161,6 +161,42 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
   if (cb) setTimeout(cb, totalTime);
 }
 
+// Bomb reward showcase: jumps from the chain to the centre of the screen and grows
+// big, holds a beat, then drops into its stash tile (cb runs on landing).
+function flyBombToStash(bombId, cb) {
+  // Launch from this bomb's own chain marker (match by icon), else any marker / the bar.
+  const bombIcon = (typeof BOOSTERS !== 'undefined' ? (BOOSTERS.find(b => b.id === bombId) || {}).icon : null);
+  const markers = [...document.querySelectorAll('#chain-indicator .chain-slot-reward')];
+  const src = markers.find(el => el.textContent === bombIcon) || markers[0] || document.getElementById('chain-indicator');
+  const target = document.querySelector(`#booster-bar .booster-btn[data-booster="${bombId}"]`);
+  const frame = document.getElementById('device-frame') || document.body;
+  if (!src || !target) { if (cb) cb(); return; }
+  const s = src.getBoundingClientRect();
+  const t = target.getBoundingClientRect();
+  const f = frame.getBoundingClientRect();
+  const sx = s.left + s.width / 2, sy = s.top + s.height / 2;
+  const tx = t.left + t.width / 2, ty = t.top + t.height / 2;
+  const mx = f.left + f.width / 2, my = f.top + f.height / 2;
+
+  const clone = document.createElement('div');
+  clone.className = 'bomb-fly';
+  clone.textContent = bombId === 'bigbomb' ? '💥' : '💣';
+  clone.style.left = (sx - 16) + 'px';
+  clone.style.top = (sy - 16) + 'px';
+  document.body.appendChild(clone);
+
+  const toCenter = `translate(${mx - sx}px, ${my - sy}px)`;
+  const toStash  = `translate(${tx - sx}px, ${ty - sy}px)`;
+  const anim = clone.animate([
+    { transform: 'translate(0,0) scale(.55)', opacity: .5, offset: 0,    easing: 'cubic-bezier(.2,.9,.3,1)' }, // shoot to centre
+    { transform: `${toCenter} scale(3)`,      opacity: 1,  offset: 0.42, easing: 'linear' },                    // grown, big
+    { transform: `${toCenter} scale(3)`,      opacity: 1,  offset: 0.62, easing: 'cubic-bezier(.55,0,.75,1)' }, // hold a beat
+    { transform: `${toStash} scale(1)`,       opacity: .9, offset: 1 },                                          // drop into stash
+  ], { duration: 900 });
+
+  anim.onfinish = () => { clone.remove(); if (cb) cb(); };
+}
+
 function launchConfetti() {
   const colors = ['#D01012','#FFD700','#006CB7','#237841','#ff6b6b','#f0c040','#4fc3f7'];
   for (let i = 0; i < 70; i++) {

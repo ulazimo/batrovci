@@ -401,7 +401,20 @@ function updateSweepCountdown() {
 // Sliding-window chain bar geometry
 const CHAIN_STEP = 38;        // slot width (30) + gap (8)
 const CHAIN_MIN_LINE_POS = 2; // green line between track positions 2 & 3 (Match-2 minimum)
-const CHAIN_REWARD_POS = 5;   // Baby Bomb reward at track position 5
+
+// Which chain positions show a reward icon — derived from CHAIN_REWARD_TIERS so the
+// markers stay in sync with the actual rewards (change a tier's `min` and the chain
+// marker moves automatically). Returns { position: iconString }.
+function chainRewardMarkers() {
+  const map = {};
+  if (typeof CHAIN_REWARD_TIERS !== 'undefined') {
+    CHAIN_REWARD_TIERS.forEach(tier => {
+      const b = (typeof BOOSTERS !== 'undefined') ? BOOSTERS.find(x => x.id === tier.id) : null;
+      if (b) map[tier.min] = b.icon;
+    });
+  }
+  return map;
+}
 let _chainLastLen = 0;        // last rendered chain length (drives the pop-then-slide)
 
 // How many positions have scrolled off the left for a chain of `len`.
@@ -451,10 +464,12 @@ function updateChainIndicator() {
     limitPos = board.filter(c => c && !c.special && !c.locked && c.color === chainColor).length;
   }
 
+  const rewardMarkers = chainRewardMarkers();
   let slots = '';
   for (let p = 1; p <= nSlots; p++) {
-    const rewardCls = p === CHAIN_REWARD_POS ? ' reward' : '';
-    const reward = p === CHAIN_REWARD_POS ? '<span class="chain-slot-reward">💣</span>' : '';
+    const rewardIcon = rewardMarkers[p];
+    const rewardCls = rewardIcon ? ' reward' : '';
+    const reward = rewardIcon ? `<span class="chain-slot-reward">${rewardIcon}</span>` : '';
     if (p <= len) {
       const f = filled[p - 1];
       const style = f.wild

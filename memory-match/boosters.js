@@ -171,10 +171,13 @@ function grantChainReward(comboLen) {
   });
   saveBoosterCounts();
   updateBoosterUI();
-  // Silent reward — just pulse each earned power-up's button (no top text notification).
-  flashed.forEach(flashBoosterButton);
-  // Earned a bomb but the slot is already full — pulse it so "at max capacity" reads.
-  maxedOut.forEach(flashBoosterFull);
+  // Every earned bomb jumps out of the chain and arcs into its stash tile. On landing
+  // it pulses the tile — a normal pulse if it stacked, or an "at max capacity" pulse if
+  // the slot was already full. Fires whenever the chain qualifies, so it's consistent.
+  ids.forEach(id => {
+    const onLand = maxedOut.includes(id) ? () => flashBoosterFull(id) : () => flashBoosterButton(id);
+    flyBombToStash(id, onLand);
+  });
 }
 
 function flashBoosterButton(id) {

@@ -91,6 +91,13 @@ body {
 /* Turns gets a slightly larger value in every theme (Deck stays as is). */
 #header #turns-value { font-size: 32px; }
 
+/* Bomb reward flying from the chain into the stash */
+.bomb-fly {
+  position: fixed; z-index: 400; width: 32px; height: 32px;
+  font-size: 27px; line-height: 32px; text-align: center; pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,.55));
+}
+
 /* Collection graveyard (top-left). Hidden by default; JS shows it on Cleaning
    levels when the collectionTray rule is on. */
 #stat-collection { display: none; }
