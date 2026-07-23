@@ -196,6 +196,45 @@ function flashBoosterFull(id) {
 }
 
 // ============================================================
+// CHAIN EXTENSION HELPERS — shared by every power-up that reveals cards and
+// adds them to the active chain (Peek, Random 3, Color Pick, bombs). A normal
+// flip grows the chain one card at a time, but a power-up can add SEVERAL cards
+// in one action, so the chain can jump straight past a milestone (e.g. 2 → 4).
+// These two helpers keep the mid-chain rewards firing in that case.
+// ============================================================
+
+// Call right after pushing card(s) onto the chain. Grants the chain-3 rewards
+// (the "Danger cards" ✕ hint + the optional chain timer) as soon as the chain
+// reaches length 3, even if a power-up leapt over 3 in one go. applyChainColorHint
+// is idempotent (it no-ops if the hint is already shown), so calling this on every
+// extension at/above 3 is safe.
+function onChainExtended() {
+  const chainLen = chainCards.length + specialsUsed.length;
+  if (chainLen < 3) return;
+  // Start the timer the first time the chain reaches 3+, else restart its countdown.
+  if (!timerWrapEl.classList.contains('active')) startChainTimer();
+  else resetChainTimer();
+  applyChainColorHint(); // chain-3 reward: mark the wrong-color "danger" tiles now
+}
+
+// Returns true (and resolves the turn) when a power-up has just added the last
+// card(s) of the active chain colour(s) — i.e. no card of those colours remains
+// off the chain. That's a colour clear: endTurn awards the collect, refunds the
+// spent turn, and shows the "<COLOUR> Cleared" banner. Locked cards of the colour
+// can't be chained, so they block the clear (matches endTurn's own check).
+function checkChainColorClear() {
+  if (chainColor === null) return false;
+  const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
+  const inChain = new Set(chainCards);
+  const anyLeft = board.some(c => c && !c.special && activeColors.includes(c.color) && !inChain.has(c.index));
+  if (anyLeft) return false;
+  stopChainTimer();
+  inputLocked = true;
+  setTimeout(() => endTurn(true, false), 600);
+  return true;
+}
+
+// ============================================================
 // CHAIN-3 WRONG-COLOR HINT — instant reward for reaching a chain of 3.
 // Marks up to getChainHintCount() random face-down cards that DON'T match the
 // active chain color with an ✕, so the player knows which cards to avoid.
@@ -278,23 +317,16 @@ function executePeek(index) {
       if (!chainCards.includes(index)) { chainCards.push(index); lastSelectedIdx = index; SFX.shepard(chainCards.length + specialsUsed.length - 1); }
       SFX.match();
       spawnParticles([index], card.color);
-      const chainLen = chainCards.length + specialsUsed.length;
-      if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
-      else if (chainLen > 3) resetChainTimer();
+      onChainExtended(); // chain-3 "Danger cards" reward + timer (handles jumps past 3)
+      // Colour clear? Adding this card may have collected the last of its colour —
+      // endTurn shows the "<COLOUR> Cleared" banner, refunds the turn, and (with the
+      // Perfect Sweep Reveal rule) flashes the board.
+      if (checkChainColorClear()) { updateBoosterUI(); updateChainIndicator(); return; }
+      // Refresh the booster bar AFTER unlocking input, or the buttons stay disabled.
       inputLocked = false;
       resumeChainTimer();
       updateBoosterUI();
       updateChainIndicator();
-      // Check if all cards of chain color are found
-      const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-      const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-      if (chainColor !== null && remaining.length === 0) {
-        // Colour clear — endTurn shows the "<COLOUR> Cleared" banner, refunds the turn,
-        // and (when the Perfect Sweep Reveal rule is on) flashes the board.
-        stopChainTimer();
-        inputLocked = true;
-        setTimeout(() => endTurn(false, false), 600);
-      }
     }, 400);
   } else {
     // Normal peek — flash then hide
@@ -409,7 +441,9 @@ function executeRandom3() {
   inputLocked = true;
   pauseChainTimer();
 
-  // Flip all picked cards with a staggered flash; matching ones join the chain
+  // Flip all picked cards with a staggered flash. A matching card joins the chain
+  // the instant it's revealed: it adopts the chain face right away (updateChainIndicator)
+  // and stays on the board — only the non-matching cards hide again at the end.
   picks.forEach((idx, i) => {
     setTimeout(() => {
       board[idx].flipped = true;
@@ -420,30 +454,26 @@ function executeRandom3() {
         chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1);
         SFX.match();
         spawnParticles([idx], board[idx].color);
+        updateChainIndicator(); // instantly turn this card into a chain card (chain face + bar)
       }
     }, i * 80);
   });
 
-  // After the reveal: hide non-matching cards, resolve chain state
+  // After the reveal: hide the non-matching cards, then settle input/booster state.
+  // (onChainExtended runs here, not per-card, so the chain timer stays paused for the
+  // whole reveal instead of being restarted mid-animation.)
   setTimeout(() => {
     nonMatching.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
-    const chainLen = chainCards.length + specialsUsed.length;
-    if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
-    else if (chainLen > 3) resetChainTimer();
+    onChainExtended(); // chain-3 "Danger cards" reward + timer (fires even if the chain jumped past 3)
+    // Colour clear? Random 3 may have flipped the last card(s) of the chain colour —
+    // endTurn shows the "<COLOUR> Cleared" banner, refunds the turn, and (with the
+    // Perfect Sweep Reveal rule) flashes the board.
+    if (checkChainColorClear()) { updateBoosterUI(); updateChainIndicator(); return; }
+    // Refresh the booster bar AFTER unlocking input, or the buttons stay disabled.
     inputLocked = false;
     resumeChainTimer();
     updateBoosterUI();
     updateChainIndicator();
-    // Check if all cards of chain color are found
-    const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-    const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-    if (chainColor !== null && remaining.length === 0) {
-      // Colour clear — endTurn shows the "<COLOUR> Cleared" banner, refunds the turn,
-      // and (when the Perfect Sweep Reveal rule is on) flashes the board.
-      stopChainTimer();
-      inputLocked = true;
-      setTimeout(() => endTurn(false, false), 600);
-    }
   }, picks.length * 80 + 1500);
 }
 function executeNeighbor() {
@@ -494,27 +524,23 @@ function pickColor(color) {
         const el = getCardEl(idx);
         if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
         SFX.cardFlip();
-        if (!chainCards.includes(idx)) { chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1); }
+        if (!chainCards.includes(idx)) {
+          chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1);
+          updateChainIndicator(); // instantly turn this card into a chain card (chain face + bar)
+        }
       }, i * 80);
     });
     setTimeout(() => {
-      const chainLen = chainCards.length + specialsUsed.length;
-      if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
-      else if (chainLen > 3) resetChainTimer();
+      onChainExtended(); // chain-3 "Danger cards" reward + timer (handles jumps past 3)
+      // Colour clear? Color Pick may have flipped the last card(s) of the chain colour —
+      // endTurn shows the "<COLOUR> Cleared" banner, refunds the turn, and (with the
+      // Perfect Sweep Reveal rule) flashes the board.
+      if (checkChainColorClear()) { updateBoosterUI(); updateChainIndicator(); return; }
+      // Refresh the booster bar AFTER unlocking input, or the buttons stay disabled.
       inputLocked = false;
       resumeChainTimer();
       updateBoosterUI();
       updateChainIndicator();
-      // Check if all cards of chain color are found
-      const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-      const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-      if (chainColor !== null && remaining.length === 0) {
-        // Colour clear — endTurn shows the "<COLOUR> Cleared" banner, refunds the turn,
-        // and (when the Perfect Sweep Reveal rule is on) flashes the board.
-        stopChainTimer();
-        inputLocked = true;
-        setTimeout(() => endTurn(false, false), 600);
-      }
     }, picks.length * 80 + 200);
   } else {
     boosterReveal(picks);

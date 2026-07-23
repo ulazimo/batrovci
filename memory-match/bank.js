@@ -160,9 +160,7 @@ function detonateBombAt(index, bombType) {
     joinChain.forEach(i => { if (!chainCards.includes(i)) { chainCards.push(i); lastSelectedIdx = i; SFX.shepard(chainCards.length + specialsUsed.length - 1); } });
     SFX.match();
     spawnParticles(joinChain, chainColor || 'red');
-    const chainLen = chainCards.length + specialsUsed.length;
-    if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
-    else if (chainLen > 3) resetChainTimer();
+    onChainExtended(); // chain-3 "Danger cards" reward + timer (a bomb can add several at once)
     updateChainIndicator();
   }
 
@@ -173,7 +171,13 @@ function detonateBombAt(index, bombType) {
 
   // Whole blast joined the chain — nothing to collect
   if (targets.length === 0) {
-    setTimeout(() => { inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator(); }, 400);
+    setTimeout(() => {
+      // Colour clear? The bomb may have added the last card(s) of the chain colour —
+      // resolve the turn with the "<COLOUR> Cleared" flow instead of just unlocking.
+      if (checkChainColorClear()) { updateChainIndicator(); return; }
+      inputLocked = false;
+      updateBoosterUI(); updateBankButton(); updateChainIndicator();
+    }, 400);
     return;
   }
 

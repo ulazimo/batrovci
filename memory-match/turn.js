@@ -150,11 +150,11 @@ function onCardClick(index) {
         // Auto-add bomb-color cards to chain
         if (bombAutoChain.length > 0) {
           bombAutoChain.forEach(idx => { if (!chainCards.includes(idx)) { chainCards.push(idx); SFX.shepard(chainCards.length + specialsUsed.length - 1); } });
-          const chainLen = chainCards.length + specialsUsed.length;
-          if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
-          else if (chainLen > 3) resetChainTimer();
+          onChainExtended(); // chain-3 "Danger cards" reward + timer (a bomb can add several at once)
           // Check all-colors bonus
           if (chainColors.size >= ACTIVE_COLORS.length) { checkAllColorsBonus(); return; }
+          // Colour clear? The bomb may have revealed the last card(s) of the chain colour.
+          if (checkChainColorClear()) { updateChainIndicator(); return; }
         }
         inputLocked = false;
         resumeChainTimer();
