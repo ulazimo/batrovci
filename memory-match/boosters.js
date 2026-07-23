@@ -196,8 +196,23 @@ function markWrongColorHint(i) {
   el.classList.add('wrong-color-hint'); // drives the ember glow on .card-back (see style.css)
 }
 
+// Board indices currently carrying the chain-3 danger ✕ hint.
+function getChainHintIndices() {
+  return [...boardEl.querySelectorAll('.card.wrong-color-hint')].map(el => parseInt(el.dataset.index, 10));
+}
+
 function clearChainColorHints() {
   boardEl.querySelectorAll('.card.wrong-color-hint').forEach(el => el.classList.remove('wrong-color-hint'));
+}
+
+// When the Chain Danger Reveal rule is on, briefly flip up the danger-marked tiles
+// once the chain has ended, so the player learns what colors they were. Called from
+// finishTurn only when the turn resolves and the level continues.
+function revealChainDangerCards() {
+  const targets = pendingDangerReveal;
+  pendingDangerReveal = [];
+  if (!targets.length) return;
+  boosterReveal(targets); // flip up + flash, then auto-hide (re-filters stale/removed tiles)
 }
 
 // Detonate a bomb power-up at `index`: destroy (collect) that card and its pattern.

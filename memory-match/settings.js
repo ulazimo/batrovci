@@ -51,6 +51,9 @@ const GAMEPLAY_RULES = [
   { id: 'collectionTray', name: 'Collection Tray', icon: '🪦',
     desc: 'Show a "graveyard" stack of cleared/bombed tiles in the top-left (Cleaning levels).',
     default: true },
+  { id: 'chainDangerReveal', name: 'Chain Danger Reveal', icon: '🔥',
+    desc: 'When a chain ends, briefly flip up the danger-marked "don\'t go there" tiles (shown at chain 3) so you learn what colors they were. Off = they just clear silently.',
+    default: false },
 ];
 
 function getRule(id) {

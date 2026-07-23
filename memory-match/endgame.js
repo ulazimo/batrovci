@@ -47,6 +47,7 @@ function finishTurn() {
   updateChainIndicator(); updateBoosterUI(); updateRecallButton(); updateGoalHUD();
   if (checkAllGoalsMet()) levelWon();
   else if (turns <= 0) levelFailed();
+  else revealChainDangerCards();
 }
 
 // Called after a card joins the current chain. If every remaining card of the active

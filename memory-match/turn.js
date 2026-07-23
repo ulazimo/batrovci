@@ -249,6 +249,9 @@ function onCardClick(index) {
 // and shows a small "<COLOUR> Cleared" banner. See showColorClearBanner / showTurnRefund.
 function endTurn(manual, perfectSweep) {
   stopChainTimer();
+  // Chain Danger Reveal: remember the danger-marked tiles so finishTurn can flip them
+  // up once the chain resolves (off = they just clear silently).
+  pendingDangerReveal = getRule('chainDangerReveal') ? getChainHintIndices() : [];
   clearChainColorHints(); // remove the chain-3 wrong-color ✕ marks — the chain is resolving
   // Kill chain tension immediately — turn is resolving, no more pulsing
   boardEl.removeAttribute('data-tension');
