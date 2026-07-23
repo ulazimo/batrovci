@@ -243,30 +243,19 @@ function onCardClick(index) {
 // ============================================================
 // END TURN
 // ============================================================
-// remnantSweep: the chain opened every remaining card of a colour that only had 1-2
-// left (Cleaning journey) — collect them even though the combo is below the 3-minimum.
-function endTurn(manual, perfectSweep, remnantSweep) {
+// A turn resolves on a mismatch, a manual bank, or a colour clear. If this collect takes
+// every remaining card of an active colour off the board it's a "colour clear": it
+// collects at ANY chain length (even a lone last card), refunds the spent turn (net zero),
+// and shows a small "<COLOUR> Cleared" banner. See showColorClearBanner / showTurnRefund.
+function endTurn(manual, perfectSweep) {
   stopChainTimer();
   clearChainColorHints(); // remove the chain-3 wrong-color ✕ marks — the chain is resolving
   // Kill chain tension immediately — turn is resolving, no more pulsing
   boardEl.removeAttribute('data-tension');
   if (tensionRAF) { cancelAnimationFrame(tensionRAF); tensionRAF = null; }
   boardEl.querySelectorAll('.card-front').forEach(el => { if (el.style.scale) el.style.scale = ''; });
-  inputLocked = true; turns--;
+  inputLocked = true;
   shieldCharges = 0; spotlightMode = false;
-  scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
-
-  // Low turns warning — go red at ≤3 (including 0), callout exactly at 3
-  if (turns <= 3) {
-    turnsEl.classList.add('danger');
-    if (turns === 3) {
-      showTutorialHint('⚠️ Only 3 turns remaining!');
-      turnsEl.classList.add('danger-pulse');
-      turnsEl.addEventListener('animationend', () => turnsEl.classList.remove('danger-pulse'), { once: true });
-    }
-  } else {
-    turnsEl.classList.remove('danger');
-  }
 
   // Capture the chain as recallable before cards flip back
   const chainNormal = chainCards.filter(i => board[i] && !board[i].special);
@@ -284,20 +273,48 @@ function endTurn(manual, perfectSweep, remnantSweep) {
   else matched = normalCards;
 
   const combo = matched.length + specialsUsed.length;
+  const minCombo = getMinCombo();
+
+  // Colour clear: for each colour we're collecting, is every card of that colour on the
+  // board part of this collect? Measured before removal, so a lone last card counts. A
+  // locked card of that colour still on the board means it is NOT cleared (locked cards
+  // can't be chained, so they'd remain).
+  const matchedSet = new Set(matched);
+  const matchedColors = [...new Set(matched.map(i => board[i]?.color).filter(Boolean))];
+  const clearedColors = matchedColors.filter(color => !board.some(c => c && !c.special && c.color === color && !matchedSet.has(c.index)));
+  const colorCleared = clearedColors.length > 0;
+  const willCollect = combo >= minCombo || colorCleared;
+  // A colour clear flashes the whole board when the Perfect Sweep Reveal rule is on.
+  const willSweepReveal = (perfectSweep || colorCleared) && isSweepRevealActive();
+
+  // Every resolved turn costs one — but a colour clear refunds it (net zero).
+  turns--;
+  if (colorCleared) turns++;
+  scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
+
+  // Low turns warning — go red at ≤3 (including 0), callout exactly at 3
+  if (turns <= 3) {
+    turnsEl.classList.add('danger');
+    if (turns === 3) {
+      showTutorialHint('⚠️ Only 3 turns remaining!');
+      turnsEl.classList.add('danger-pulse');
+      turnsEl.addEventListener('animationend', () => turnsEl.classList.remove('danger-pulse'), { once: true });
+    }
+  } else {
+    turnsEl.classList.remove('danger');
+  }
+
   let specialActivated = matched.length>=2 && specialsUsed.length>0;
   let pts=0, toRemove=[], newST=null, newSP=-1;
-  const PERFECT_SWEEP_BONUS = 0;
 
-  const minCombo = getMinCombo();
-  // Track failed combos for nudge system (a remnant sweep is a successful collect)
-  if (combo >= minCombo || remnantSweep) { consecutiveFailedCombos = 0; }
+  // Track failed combos for nudge system (a colour clear is a successful collect)
+  if (willCollect) { consecutiveFailedCombos = 0; }
   else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge && hasAnyBoosters()) showNudge('booster'); }, 2000); }
 
-  if (combo >= minCombo || remnantSweep) {
+  if (willCollect) {
     updateGoalProgress(matched, combo);
     toRemove = [...matched];
     if (combo===2) pts=50; else if (combo===3) pts=100; else if (combo===4) pts=150; else pts=combo*50;
-    if (perfectSweep) pts += PERFECT_SWEEP_BONUS;
     // Completing a chain of 3+ grants a power-up (Peek / Baby Bomb / BIG Bomb) —
     // no special card is left on the board anymore.
     if (combo >= 3) grantChainReward(combo);
@@ -336,10 +353,12 @@ function endTurn(manual, perfectSweep, remnantSweep) {
   if (toRemove.length>0 || newSP>=0 || revealTargets.length>0) {
     turnsEl.textContent = turns;
     if (pts>0) {
-      showScorePopup(pts, matched.length>0 ? matched : specialsUsed, perfectSweep ? '🧹 PERFECT SWEEP!' : null);
+      showScorePopup(pts, matched.length>0 ? matched : specialsUsed, null);
       spawnParticles(matched.length>0 ? matched : specialsUsed, chainColor);
-      if (perfectSweep) { SFX.win(); launchConfetti(); }
+      if (willSweepReveal) { SFX.win(); launchConfetti(); }
     }
+    // Colour clear feedback: small "<COLOUR> Cleared" banner + the refunded turn.
+    if (colorCleared) { showColorClearBanner(clearedColors); showTurnRefund(); }
     // Unlock cards orthogonally adjacent to removed combo cards (include newSP — it's consumed too)
     const unlocked = new Set();
     const unlockSources = newSP >= 0 ? [...toRemove, newSP] : toRemove;
@@ -399,7 +418,6 @@ function endTurn(manual, perfectSweep, remnantSweep) {
         }
       // Step 2: After bomb reveal animation, drop in new cards
       const bombRevealTime = revealTargets.length > 0 ? 300 : 0;
-      const willSweepReveal = perfectSweep && isSweepRevealActive();
       setTimeout(() => {
         const nc = placeNewCards(toRemove, newSP);
         const showNewCards = nc.length > 0 && !getRule('hiddenNewCards') && !willSweepReveal;
@@ -426,7 +444,7 @@ function endTurn(manual, perfectSweep, remnantSweep) {
       }, bombRevealTime);
     }, bombExplodeDelay);
     });
-  } else if (perfectSweep && isSweepRevealActive()) {
+  } else if (willSweepReveal) {
     showSweepBanner();
     setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1600);
   } else setTimeout(finishTurn, 400);

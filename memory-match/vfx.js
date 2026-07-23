@@ -248,6 +248,46 @@ function showGoalIntroBanner(cb) {
 function showSweepBanner() { showBoardBanner('sweep', '🧹 PERFECT SWEEP!', 'Revealing the NEW board...'); }
 function hideSweepBanner(cb) { hideBoardBanner(cb); }
 
+// Small, non-blocking banner shown when a chain clears every remaining card of a
+// colour: "<COLOUR> Cleared" — the colour name tinted, "Cleared" in white. It never
+// locks input and auto-dismisses, so it rides alongside the collect animation.
+function showColorClearBanner(colors) {
+  if (!colors || !colors.length) return;
+  const hex = c => ({ red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[c] || '#fff');
+  const names = colors.map(c => `<span style="color:${hex(c)}">${c.toUpperCase()}</span>`).join(' + ');
+  const prev = boardContainerEl.querySelector('.color-clear-banner');
+  if (prev) prev.remove();
+  const banner = document.createElement('div');
+  banner.className = 'color-clear-banner';
+  banner.innerHTML = `${names} <span class="cc-word">Cleared</span>`;
+  boardContainerEl.appendChild(banner);
+  setTimeout(() => {
+    let done = false;
+    const finish = () => { if (done) return; done = true; banner.remove(); };
+    banner.classList.add('hiding');
+    banner.addEventListener('animationend', finish, { once: true });
+    setTimeout(finish, 500); // fallback if animationend doesn't fire
+  }, 1100);
+}
+
+// "+1" turn-refund feedback: clearing a colour refunds the spent turn. Floats a green
+// +1 above the Turns counter and gives the counter a quick pulse.
+function showTurnRefund() {
+  const stat = document.getElementById('stat-turns');
+  if (stat) {
+    const rect = stat.getBoundingClientRect();
+    const floater = document.createElement('div');
+    floater.className = 'turn-refund-float';
+    floater.textContent = '+1';
+    floater.style.left = `${rect.left + rect.width / 2}px`;
+    floater.style.top = `${rect.top}px`;
+    document.body.appendChild(floater);
+    setTimeout(() => floater.remove(), 900);
+  }
+  turnsEl.classList.add('refund-pulse');
+  turnsEl.addEventListener('animationend', () => turnsEl.classList.remove('refund-pulse'), { once: true });
+}
+
 function sweepRevealBoard(cb) {
   const targets = [];
   board.forEach((c, i) => { if (c && !c.special && !c.flipped && !c.locked) targets.push(i); });

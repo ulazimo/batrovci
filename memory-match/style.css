@@ -534,6 +534,25 @@ body {
   opacity:0;transform:scale(.5);
 }
 
+/* Colour-clear banner + turn refund */
+.color-clear-banner {
+  position:absolute;top:16%;left:50%;transform:translateX(-50%);
+  z-index:55;pointer-events:none;white-space:nowrap;
+  padding:8px 18px;border-radius:16px;
+  background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.14);
+  font-size:clamp(18px,5.5vw,28px);font-weight:900;color:#fff;letter-spacing:.5px;
+  text-shadow:0 2px 8px rgba(0,0,0,.7);box-shadow:0 6px 20px rgba(0,0,0,.4);
+  animation:colorClearIn .35s cubic-bezier(.2,1.3,.5,1) forwards;
+}
+.color-clear-banner.hiding { animation:colorClearOut .4s ease-in forwards; }
+.color-clear-banner .cc-word { color:#fff; }
+@keyframes colorClearIn { from{opacity:0;transform:translate(-50%,12px) scale(.85)} to{opacity:1;transform:translate(-50%,0) scale(1)} }
+@keyframes colorClearOut { from{opacity:1;transform:translate(-50%,0) scale(1)} to{opacity:0;transform:translate(-50%,-14px) scale(.95)} }
+.turn-refund-float { position:fixed;z-index:300;pointer-events:none;font-size:18px;font-weight:800;color:#2ecc71;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,.7);animation:turnRefundUp .9s ease-out forwards; }
+@keyframes turnRefundUp { 0%{opacity:0;transform:translate(-50%,4px) scale(.8)} 20%{opacity:1;transform:translate(-50%,-6px) scale(1.15)} 100%{opacity:0;transform:translate(-50%,-34px) scale(1)} }
+@keyframes turnRefundPulse { 0%,100%{transform:scale(1)} 40%{transform:scale(1.3);color:#2ecc71} }
+.refund-pulse { animation:turnRefundPulse .5s ease-out; }
+
 /* Nudge system */
 @keyframes nudgeBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
 @keyframes nudgeGlow { 0%,100%{box-shadow:0 0 20px 6px rgba(240,192,64,.2)} 50%{box-shadow:0 0 20px 6px rgba(240,192,64,.7)} }

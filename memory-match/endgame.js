@@ -49,81 +49,19 @@ function finishTurn() {
   else if (turns <= 0) levelFailed();
 }
 
-// Cleaning journey: how many collectable (normal, unlocked) cards of a color are still
-// on the board. A color at <=2 can never form a 3-chain, so those become "remnants".
-function colorCountOnBoard(color) {
-  let n = 0;
-  for (const c of board) if (c && !c.special && !c.locked && c.color === color) n++;
-  return n;
-}
-function isRemnantColor(color) { return colorCountOnBoard(color) <= 2; }
-
-// Called after a card joins the current (single-colour) chain. If every remaining card
-// of that colour is now open, resolve the turn as a sweep. Normally that needs a 3+
-// chain; on Cleaning levels the 3-minimum is waived when the colour only had 1-2 left
-// (a "remnant"), so its cards can be collected in their own pure chain. Returns true if
-// it resolved the turn.
+// Called after a card joins the current chain. If every remaining card of the active
+// colour(s) is now open, the colour is cleared — resolve the turn regardless of chain
+// length (a lone last card counts). endTurn awards the collect, refunds the spent turn,
+// and shows the "<COLOUR> Cleared" banner. Returns true if it resolved the turn.
 function tryAutoResolveColor() {
   if (chainColor === null) return false;
   const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
   const stillClosed = board.some(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
   if (stillClosed) return false; // not every card of the colour is open yet
-  const chainLen = chainCards.length + specialsUsed.length;
-  const minCombo = getMinCombo();
-
-  // Cleaning journey: fine-grained rules for the last 1-2 tiles of a colour.
-  if (LEVELS[currentLevelIndex]?.clearBoard && chainColors.size <= 1) {
-    const n = colorCountOnBoard(chainColor);            // how many of this colour remain (all now open)
-    const othersOnBoard = board.some(c => c && !c.special && !c.locked && c.color !== chainColor);
-    // Rule 3: a lone card collects the moment it's opened — and costs no turn.
-    if (n === 1) { collectChainCardsFree(); return true; }
-    // Rule 1: two of a colour, with other colours still on the board — don't auto-collect.
-    //   Keep the normal flow (fail or bank the chain to collect the pair). Only when a
-    //   2-chain can actually clear (Match-2 / minCombo<=2), else fall through to avoid a dead-end.
-    if (n === 2 && othersOnBoard && minCombo <= 2) return false;
-    // Rule 2 (n===2 && no other colours left) falls through and auto-collects below.
-  }
-
-  const remnant = LEVELS[currentLevelIndex]?.clearBoard && chainColors.size <= 1 && isRemnantColor(chainColor);
-  if (chainLen < minCombo && !remnant) return false; // below the combo minimum and not a remnant
   stopChainTimer();
   inputLocked = true;
-  if (remnant && chainLen < minCombo) {
-    setTimeout(() => endTurn(true, false, true), 300); // remnant sweep: collect below the combo minimum
-  } else if (LEVELS[currentLevelIndex]?.clearBoard) {
-    // Cleaning journey: sweeping a colour clean is the core action — resolve it directly
-    // (no "all colours" banner, which is neither accurate nor wanted here).
-    setTimeout(() => endTurn(true, false), 300);
-  } else if (isSweepRevealActive()) {
-    setTimeout(() => endTurn(true, true), 300);
-  } else {
-    showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
-    setTimeout(() => { hideBoardBanner(() => endTurn(true, false)); }, 1200);
-  }
+  setTimeout(() => endTurn(true, false), 300);
   return true;
-}
-
-// Cleaning journey: collect the currently-open chain cards WITHOUT spending a turn
-// (used for a lone leftover tile — tryAutoResolveColor rule 3). Cards fly to the score
-// and clear; the slot refills from the deck like any collect.
-function collectChainCardsFree() {
-  stopChainTimer();
-  clearNudgeTimer();
-  inputLocked = true;
-  const targets = chainCards.filter(i => board[i] && !board[i].special);
-  const col = targets.length ? board[targets[0]].color : null;
-  // Reset the chain now — the turn is not consumed
-  chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; turnActive = false; lastSelectedIdx = -1;
-  lastRevealedCards = [...targets];
-  if (col) spawnParticles(targets, col);
-  updateChainIndicator();
-  flyCardsToGoal(targets, targets.length * 25, () => {
-    placeNewCards(targets, -1);
-    updateGoalHUD(); updateDeckHUD();
-    if (checkAllGoalsMet()) { levelWon(); return; }
-    inputLocked = false;
-    updateBoosterUI(); updateBankButton(); updateChainIndicator();
-  });
 }
 
 function levelWon() {

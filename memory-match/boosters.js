@@ -243,15 +243,12 @@ function executePeek(index) {
       // Check if all cards of chain color are found
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
       const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-      if (remaining.length === 0 && chainLen >= getMinCombo()) {
+      if (chainColor !== null && remaining.length === 0) {
+        // Colour clear — endTurn shows the "<COLOUR> Cleared" banner, refunds the turn,
+        // and (when the Perfect Sweep Reveal rule is on) flashes the board.
         stopChainTimer();
         inputLocked = true;
-        if (isSweepRevealActive()) {
-          setTimeout(() => endTurn(false, true), 600);
-        } else {
-          showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
-          setTimeout(() => hideBoardBanner(() => endTurn(false, false)), 1200);
-        }
+        setTimeout(() => endTurn(false, false), 600);
       }
     }, 400);
   } else {
@@ -395,15 +392,12 @@ function executeRandom3() {
     // Check if all cards of chain color are found
     const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
     const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-    if (remaining.length === 0 && chainLen >= getMinCombo()) {
+    if (chainColor !== null && remaining.length === 0) {
+      // Colour clear — endTurn shows the "<COLOUR> Cleared" banner, refunds the turn,
+      // and (when the Perfect Sweep Reveal rule is on) flashes the board.
       stopChainTimer();
       inputLocked = true;
-      if (isSweepRevealActive()) {
-        setTimeout(() => endTurn(false, true), 600);
-      } else {
-        showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
-        setTimeout(() => hideBoardBanner(() => endTurn(false, false)), 1200);
-      }
+      setTimeout(() => endTurn(false, false), 600);
     }
   }, picks.length * 80 + 1500);
 }
@@ -469,15 +463,12 @@ function pickColor(color) {
       // Check if all cards of chain color are found
       const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
       const remaining = board.filter(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-      if (remaining.length === 0 && chainLen >= getMinCombo()) {
+      if (chainColor !== null && remaining.length === 0) {
+        // Colour clear — endTurn shows the "<COLOUR> Cleared" banner, refunds the turn,
+        // and (when the Perfect Sweep Reveal rule is on) flashes the board.
         stopChainTimer();
         inputLocked = true;
-        if (isSweepRevealActive()) {
-          setTimeout(() => endTurn(false, true), 600);
-        } else {
-          showBoardBanner('sweep', '🎯 ALL COLORS FOUND!', 'Great memory! Special card incoming...');
-          setTimeout(() => hideBoardBanner(() => endTurn(false, false)), 1200);
-        }
+        setTimeout(() => endTurn(false, false), 600);
       }
     }, picks.length * 80 + 200);
   } else {
