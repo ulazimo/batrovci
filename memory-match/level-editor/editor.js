@@ -4,6 +4,7 @@
 let levels = [];
 let selectedLevelIndex = -1;
 let activeTool = 'normal';
+const MAX_LOCK_LAYERS = 4; // Locked tool cycles 1→…→MAX, then clears.
 let undoStack = [];
 let redoStack = [];
 let loadedFileName = 'levels';
@@ -14,7 +15,7 @@ let loadedProgressionFileName = 'progression';
 // ============================================================
 const TOOLS = [
   { id: 'normal',   icon: '🟦', name: 'Normal',   desc: 'Regular card cell' },
-  { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Locked until adjacent combo' },
+  { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Click to add lock layers (1–4, then clears)' },
   { id: 'disabled', icon: '<img src="../blocks/disabled.png" style="width:32px;height:32px;border-radius:4px;opacity:.7">', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
   { id: 'ordered',  icon: '🔢', name: 'Ordered',  desc: 'Place numbered positions for orderedCards goal' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
@@ -358,7 +359,8 @@ function deleteLevel(index) {
 function renderBoard() {
   if (selectedLevelIndex < 0) return;
   const lvl = levels[selectedLevelIndex];
-  const lockedSet   = new Set((lvl.locked   || []).map(([r, c]) => `${r},${c}`));
+  const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
+  const lockedSet   = new Set(Object.keys(lockedCount));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
   const boardWrap   = document.getElementById('board-wrap');
   boardWrap.innerHTML = '';
@@ -434,7 +436,16 @@ function renderBoard() {
         img.src = '../blocks/disabled.png';
         img.alt = 'disabled';
         cell.appendChild(img);
-      } else if (lockedSet.has(key)) cell.classList.add('locked');
+      } else if (lockedSet.has(key)) {
+        cell.classList.add('locked');
+        const nLock = lockedCount[key] || 1;
+        if (nLock > 1) {
+          const badge = document.createElement('span');
+          badge.className = 'lock-count-badge';
+          badge.textContent = nLock;
+          cell.appendChild(badge);
+        }
+      }
       // Show ordered position badges
       const ordGoal = (lvl.goals || []).find(g => g.type === 'orderedCards');
       if (ordGoal && ordGoal.positions) {
@@ -485,7 +496,7 @@ function insertRow(position) {
   if (lvl.rows >= 10) return;
   pushUndo();
   if (position === 'top') {
-    lvl.locked   = (lvl.locked   || []).map(([r, c]) => [r + 1, c]);
+    lvl.locked   = (lvl.locked   || []).map(p => [p[0] + 1, p[1], ...(p[2] ? [p[2]] : [])]);
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r + 1, c]);
   }
   lvl.rows++;
@@ -498,7 +509,7 @@ function removeRow(r) {
   const lvl = levels[selectedLevelIndex];
   if (lvl.rows <= 4) return;
   pushUndo();
-  lvl.locked   = (lvl.locked   || []).filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]);
+  lvl.locked   = (lvl.locked   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], ...(p[2] ? [p[2]] : [])]);
   lvl.disabled = (lvl.disabled || []).filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]);
   lvl.rows--;
   propRows.value = lvl.rows;
@@ -511,7 +522,7 @@ function insertCol(position) {
   if (lvl.cols >= 10) return;
   pushUndo();
   if (position === 'left') {
-    lvl.locked   = (lvl.locked   || []).map(([r, c]) => [r, c + 1]);
+    lvl.locked   = (lvl.locked   || []).map(p => [p[0], p[1] + 1, ...(p[2] ? [p[2]] : [])]);
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r, c + 1]);
   }
   lvl.cols++;
@@ -524,7 +535,7 @@ function removeCol(c) {
   const lvl = levels[selectedLevelIndex];
   if (lvl.cols <= 4) return;
   pushUndo();
-  lvl.locked   = (lvl.locked   || []).filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]);
+  lvl.locked   = (lvl.locked   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], ...(p[2] ? [p[2]] : [])]);
   lvl.disabled = (lvl.disabled || []).filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]);
   lvl.cols--;
   propCols.value = lvl.cols;
@@ -558,12 +569,18 @@ function onCellClick(row, col) {
 
   pushUndo();
 
+  // Remember an existing lock layer count so the Locked tool can add layers.
+  const prevLock = (lvl.locked || []).find(([r, c]) => r === row && c === col);
+  const prevLocks = prevLock ? (prevLock[2] || 1) : 0;
+
   // Always clear from both sets first, then apply the active tool
   lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
 
   if (activeTool === 'locked' && !disabledSet.has(key)) {
-    lvl.locked = [...lvl.locked, [row, col]];
+    // Each click adds a lock layer; past MAX it wraps back to cleared.
+    const next = prevLocks >= MAX_LOCK_LAYERS ? 0 : prevLocks + 1;
+    if (next >= 1) lvl.locked = [...lvl.locked, next > 1 ? [row, col, next] : [row, col]];
   } else if (activeTool === 'disabled') {
     lvl.disabled = [...lvl.disabled, [row, col]];
   }

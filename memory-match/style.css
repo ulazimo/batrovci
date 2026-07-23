@@ -187,15 +187,36 @@ body {
   border:1.5px solid #fff;box-shadow:0 0 6px rgba(79,195,247,.6);
 }
 
+/* Multi-lock cards — how many more breaks are needed (centered just below the 🔒) */
+.lock-count {
+  position:absolute;left:50%;top:50%;transform:translate(-50%,15px);z-index:5;
+  min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;
+  border-radius:9px;background:linear-gradient(135deg,#f0c040,#d18e02);color:#2a1a00;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;border:1.5px solid #fff;box-shadow:0 0 6px rgba(240,192,64,.6);
+}
+.card.lock-crack { animation: lockCrack .4s ease; }
+@keyframes lockCrack {
+  0%,100%{transform:translate(0,0) rotate(0)}
+  20%{transform:translate(-2px,1px) rotate(-3deg)}
+  40%{transform:translate(2px,-1px) rotate(3deg)}
+  60%{transform:translate(-2px,0) rotate(-2deg)}
+  80%{transform:translate(2px,1px) rotate(2deg)}
+}
+
 /* Pre-level board preview */
 .pre-level-mini-grid {
   display:grid;gap:3px;width:140px;margin:4px auto 8px;
 }
 .pre-level-mini-cell {
-  width:100%;aspect-ratio:1;background:#2a2a5a;border-radius:3px;
+  width:100%;aspect-ratio:1;background:#2a2a5a;border-radius:3px;position:relative;
 }
 .pre-level-mini-cell.locked {
   background:#6a4a2a;border:1px solid #f0c040;
+}
+.mini-lock-count {
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;color:#f0c040;
 }
 .pre-level-mini-cell.disabled {
   background:transparent;border:none;opacity:0;

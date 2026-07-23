@@ -32,7 +32,9 @@ function markBombClickSwallow() {
 }
 
 function isValidBombCenter(idx) {
-  return idx >= 0 && board[idx] && !board[idx].special && !board[idx].locked;
+  // Locked tiles are valid drop targets now — the bomb breaks one lock layer instead
+  // of destroying them. Special cards are still off-limits.
+  return idx >= 0 && board[idx] && !board[idx].special;
 }
 
 // ---- entry points -------------------------------------------------

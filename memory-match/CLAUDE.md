@@ -143,13 +143,25 @@ callback ends. **If you add an early `return` in the turn flow, make sure
 Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.js):
 
 ```js
-{ color, flipped, special, index, locked, bombColor?, marked?, ordered? }
+{ color, flipped, special, index, locked, lockCount?, bombColor?, marked?, ordered? }
 ```
 
 - **Normal card**: `color` set, `special=null`.
 - **Special card**: `color=null`, `special=<type id>` (see §7).
-- **Locked card**: `locked=true` — can't be flipped; unlocked when an adjacent
-  combo clears (goal type `breakLocks`).
+- **Locked card**: `locked=true` — can't be flipped; **peeks/reveals skip it** (the
+  `!board[i].locked` guard), but a **bomb blast breaks one lock layer** rather than
+  destroying it (see `breakLockLayer`). Unlocked when an adjacent combo clears (goal
+  type `breakLocks`).
+- **Multi-lock card**: `locked=true` + `lockCount=N` — needs **N** breaks. It loses
+  **one layer per collected card orthogonally adjacent to it** (so one combo/bomb that
+  clears 3 of its neighbours breaks 3 layers), decrementing `lockCount`; unlocks at 0.
+  A bomb dropped *directly onto* a lock also lands one extra direct-hit break. A
+  counter badge (centered under the 🔒) shows the remaining breaks. Placed via a
+  3-tuple `[r,c,N]` in the level's `locked`/`breakLocks.locked` array (`[r,c]` = 1
+  layer). The `breakLocks` goal counts total **layers**, not tiles. Lock-breaking is
+  centralized in `breakLockLayer(idx)` + `breakAdjacentLocks(collected)` (board.js),
+  called from both the combo path (turn.js) and the bomb path (bank.js
+  `detonateBombAt`).
 - **Disabled cell**: the board slot is `null` (level `disabled: [[r,c],...]`).
 - `marked` (⭐) / `ordered` (numbered) flags are added by specific goal types.
 
@@ -241,6 +253,11 @@ cards (specials live on the board; boosters are inventory buttons).
   drag is active, `isBombAiming()` is true and it owns board input (`onCardClick` /
   long-press peek bail out); commit routes to `detonateBombAt`. Bombs no longer use
   the old tap-then-tap `bomb-placement` glow or `activeBooster`.
+- **Bombs break locks.** A **locked tile is a valid drop target** and any locked
+  tile in a bomb's blast (including a lock dropped directly on) has **one lock layer
+  broken** instead of being destroyed (`detonateBombAt` → `breakLockLayer`); a BIG
+  bomb chips every lock in its 3×3. This applies only to placed Baby/BIG/Bank bombs —
+  special *bomb cards* (cross/ring/diamond) still only reveal and skip locked tiles.
 
 ---
 
@@ -261,7 +278,7 @@ types exist — each has: init (`initLevelGoals`), progress
 | `colorAvoid` | Don't flip a color more than `maxFlips` times (acts as lives; instant fail). | `color`, `maxFlips` |
 | `rowCoverage` | Clear a combo touching each row N times. | `rows[]` or `timesEachRow` |
 | `colCoverage` | Same for columns. | `cols[]` or `timesEachCol` |
-| `breakLocks` | Unlock all locked tiles (unlock by clearing adjacent combos). | `locked: [[r,c],...]` |
+| `breakLocks` | Unlock all locked tiles (clear adjacent combos; multi-lock tiles need N breaks). | `locked: [[r,c]` or `[r,c,N],...]` |
 
 Levels can combine goals (e.g. `score` + `breakLocks`). `colorAvoid` and
 out-of-order `orderedCards` trigger **immediate fail** mid-turn.
@@ -398,7 +415,7 @@ and unlock-all-levels. It's essentially a live design/tuning console.
 | Bank It | `bank.js` | `bankChain`, `updateBankButton`, `detonateBombAt` |
 | Goals | `goals.js` | `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet` |
 | Win/fail | `endgame.js` | `levelWon`, `levelFailed`, `continueLevelWithCoins` |
-| Board render / UI | `board.js` | `renderBoard`, `buildCardHTML`, `updateChainIndicator` |
+| Board render / UI | `board.js` | `renderBoard`, `buildCardHTML`, `updateChainIndicator`, `breakLockLayer` |
 | VFX / animation | `vfx.js` | `flyCardsToGoal`, `spawnParticles`, `animateScore`, `sweepRevealBoard` |
 | Tutorials | `tutorials.js` | `advanceTutorial`, `showNextItemTutorial`, `buildLevelGrid` |
 | Shared state / DOM refs | `state.js` | `board`, `score`, `turns`, `chainCards`, `inputLocked`, `boardEl`, … |

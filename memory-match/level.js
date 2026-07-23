@@ -68,7 +68,8 @@ function showPreLevelUI() {
   const lvl = LEVELS[currentLevelIndex];
   const previewEl = document.getElementById('pre-level-board-preview');
   if (previewEl) {
-    const lockedSet   = new Set((lvl.locked   || []).map(([r, c]) => `${r},${c}`));
+    const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
+    const lockedSet   = new Set(Object.keys(lockedCount));
     const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
     let html = `<div class="pre-level-mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
     for (let r = 0; r < lvl.rows; r++) {
@@ -77,7 +78,9 @@ function showPreLevelUI() {
         let cls = 'pre-level-mini-cell';
         if (disabledSet.has(key))    cls += ' disabled';
         else if (lockedSet.has(key)) cls += ' locked';
-        html += `<div class="${cls}"></div>`;
+        const nLock = lockedCount[key];
+        const miniLockBadge = (lockedSet.has(key) && nLock > 1) ? `<span class="mini-lock-count">${nLock}</span>` : '';
+        html += `<div class="${cls}">${miniLockBadge}</div>`;
       }
     }
     html += '</div>';
@@ -281,10 +284,12 @@ function startGame(preplacedSpecials) {
   const lockGoal = lvl.goals?.find(g => g.type === 'breakLocks');
   const lockedPositions = lockGoal?.locked || lvl.locked || [];
   if (lockedPositions.length > 0) {
-    lockedPositions.forEach(([r, c]) => {
+    lockedPositions.forEach(([r, c, count]) => {
       const idx = r * COLS + c;
       if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special) {
         board[idx].locked = true;
+        // Multi-lock: needs `count` adjacent-combo breaks (default 1).
+        board[idx].lockCount = Math.max(1, count || 1);
       }
     });
   }

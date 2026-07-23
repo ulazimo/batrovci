@@ -257,8 +257,14 @@ body {
 .board-cell.locked {
   background: linear-gradient(135deg, #3a2a1a, #4a3a2a);
   border-color: #f0c040; box-shadow: inset 0 0 8px rgba(240,192,64,.2);
+  position: relative;
 }
 .board-cell.locked::after { content: '🔒'; font-size: 18px; }
+.lock-count-badge {
+  position: absolute; bottom: 2px; right: 2px; z-index: 2;
+  background: #f0c040; color: #000; font-size: 10px; font-weight: 800;
+  border-radius: 50%; width: 16px; height: 16px; line-height: 16px; text-align: center;
+}
 
 .board-cell.disabled {
     background: url(../blocks/disabled.png);

@@ -56,7 +56,8 @@ function initLevelGoals() {
         progress.colCoverage = Array(COLS).fill(0);
         break;
       case 'breakLocks':
-        progress.breakLocks = { total: board.filter(c => c && c.locked).length, broken: 0 };
+        // Count total lock *layers* (multi-lock tiles need several breaks each).
+        progress.breakLocks = { total: board.filter(c => c && c.locked).reduce((s, c) => s + (c.lockCount || 1), 0), broken: 0 };
         break;
       case 'clearAll':
         // Clear every card — those on the board now plus everything still in the refill deck.

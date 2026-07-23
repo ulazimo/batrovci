@@ -139,10 +139,13 @@ function activateBombPlacement() {
 function detonateBombAt(index, bombType) {
   inputLocked = true;
   const cells = [index, ...getRevealPattern(bombType, index)];
+  const uniqueCells = [...new Set(cells)];
   // Candidate cards in the blast: normal, unlocked, and not already flipped into the
   // active chain — leaving existing chain cards untouched keeps chainCards indices valid.
-  const blast = [...new Set(cells)].filter(i =>
+  const blast = uniqueCells.filter(i =>
     i >= 0 && board[i] && !board[i].special && !board[i].locked && !chainCards.includes(i));
+  // A bomb dropped straight onto a locked tile breaks that tile by one (it isn't collected).
+  const centerLocked = !!(board[index] && board[index].locked);
 
   // Chain-color cards in the blast can be pulled into the active chain and left on the
   // board (resolve with the chain) instead of being collected — the `bombChainStay` rule.
@@ -150,7 +153,7 @@ function detonateBombAt(index, bombType) {
   const joinChain = getRule('bombChainStay') ? blast.filter(matchesChain) : [];
   const targets = blast.filter(i => !joinChain.includes(i));
 
-  if (targets.length === 0 && joinChain.length === 0) { inputLocked = false; updateBoosterUI(); updateBankButton(); return; }
+  if (targets.length === 0 && joinChain.length === 0 && !centerLocked) { inputLocked = false; updateBoosterUI(); updateBankButton(); return; }
 
   // Reveal everything the bomb touches (with a flash)
   [...targets, ...joinChain].forEach(i => { const c = board[i]; if (c && !c.flipped) { c.flipped = true; const el = getCardEl(i); if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); } } });
@@ -169,6 +172,12 @@ function detonateBombAt(index, bombType) {
   if (centerCell) spawnBombVFX(centerCell);
   shakeBoard();
 
+  // Break locks: one layer per collected card orthogonally adjacent to a lock, plus a
+  // direct hit if the bomb was dropped straight onto a locked tile (not itself collected).
+  breakAdjacentLocks(targets);
+  if (centerLocked && board[index] && board[index].locked) breakLockLayer(index);
+  updateGoalHUD();
+
   // Did the bomb reveal the last off-chain card(s) of the chain colour? Judge this NOW,
   // before the bomb collects/refills its other targets — the refill can drop a fresh card
   // of that colour and mask the fact that the colour was cleared. `targets` are treated as
@@ -186,11 +195,13 @@ function detonateBombAt(index, bombType) {
     setTimeout(() => endTurn(true, false), 300);
   };
 
-  // Whole blast joined the chain — nothing to collect
+  // Nothing to collect — the blast only broke locks and/or joined cards to the chain.
   if (targets.length === 0) {
     setTimeout(() => {
       // Colour clear? The bomb may have added the last card(s) of the chain colour.
       if (bombCleared.length > 0) { resolveBombColorClear(); return; }
+      // Breaking a lock may have completed the breakLocks goal.
+      if (checkAllGoalsMet()) { levelWon(); return; }
       inputLocked = false;
       updateBoosterUI(); updateBankButton(); updateChainIndicator();
     }, 400);

@@ -97,6 +97,58 @@ function getRevealPattern(type, index) {
 function specialIcon(t) { const s = getSpecialType(t); return s ? s.icon : '?'; }
 function specialCSS(t)  { return 'special-' + t; }
 
+// Break one lock layer on a locked tile — used by adjacent-combo clears AND bomb blasts.
+// Decrements lockCount, ticks the breakLocks goal, updates the counter badge, and fully
+// unlocks (honouring revealOnUnlock) when the last layer breaks. Returns true if it unlocked.
+function breakLockLayer(idx) {
+  const card = board[idx];
+  if (!card || !card.locked) return false;
+  card.lockCount = (card.lockCount || 1) - 1;
+  if (levelGoals?.progress?.breakLocks) levelGoals.progress.breakLocks.broken++;
+  const el = getCardEl(idx);
+  // Layers remain → stay locked, tick the counter down with a crack.
+  if (card.lockCount > 0) {
+    if (el) {
+      const lc = el.querySelector('.lock-count');
+      if (lc) lc.textContent = card.lockCount;
+      el.classList.add('lock-crack');
+      el.addEventListener('animationend', () => el.classList.remove('lock-crack'), {once:true});
+    }
+    return false;
+  }
+  // Final layer broken → fully unlock.
+  card.locked = false;
+  if (el) {
+    const lc = el.querySelector('.lock-count');
+    if (lc) lc.remove();
+    el.classList.remove('locked');
+    el.classList.add('unlocking');
+    el.addEventListener('animationend', () => el.classList.remove('unlocking'), {once:true});
+    el.style.pointerEvents = '';
+    // Reveal on unlock setting
+    if (getRule('revealOnUnlock')) {
+      card.flipped = true;
+      el.classList.add('flipped', 'reveal-flash');
+      el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true});
+      setTimeout(() => { card.flipped = false; el.classList.remove('flipped'); }, 1500);
+    }
+  }
+  return true;
+}
+
+// Break one lock layer for EACH collected card orthogonally adjacent to a locked tile.
+// A locked tile next to 3 cleared cards loses 3 layers (extra hits past 0 are no-ops).
+// Shared by combo clears (turn.js) and bomb blasts (bank.js).
+function breakAdjacentLocks(collectedIndices) {
+  collectedIndices.forEach(idx => {
+    const { r, c } = toRC(idx);
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      const adj = toIndex(r + dr, c + dc);
+      if (adj >= 0 && board[adj] && board[adj].locked) breakLockLayer(adj);
+    });
+  });
+}
+
 function buildCardHTML(card) {
   const i = card.index;
   const lockedCls = card.locked ? ' locked' : '';
@@ -113,7 +165,9 @@ function buildCardHTML(card) {
   const orderedCls = card.ordered ? ' ordered' : '';
   const markedBadge = card.marked ? '<span class="marked-badge">⭐</span>' : '';
   const orderedNum = card.ordered ? `<span class="ordered-number">${card.ordered}</span>` : '';
-  return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}</div>`;
+  // Multi-lock counter: how many more breaks are needed (only shown when >1).
+  const lockBadge = card.locked && card.lockCount > 1 ? `<span class="lock-count">${card.lockCount}</span>` : '';
+  return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}${lockBadge}</div>`;
 }
 
 function renderBoard() {

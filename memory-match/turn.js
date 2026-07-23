@@ -370,34 +370,10 @@ function endTurn(manual, perfectSweep) {
     }
     // Colour clear feedback: small "<COLOUR> Cleared" banner + the refunded turn.
     if (colorCleared) { showColorClearBanner(clearedColors); showTurnRefund(); }
-    // Unlock cards orthogonally adjacent to removed combo cards (include newSP — it's consumed too)
-    const unlocked = new Set();
+    // Break one lock layer per collected card adjacent to a locked tile (include newSP —
+    // it's consumed too). A lock next to several cleared cards breaks several layers.
     const unlockSources = newSP >= 0 ? [...toRemove, newSP] : toRemove;
-    unlockSources.forEach(idx => {
-      const {r, c} = toRC(idx);
-      [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => {
-        const adj = toIndex(r+dr, c+dc);
-        if (adj >= 0 && board[adj] && board[adj].locked) unlocked.add(adj);
-      });
-    });
-    unlocked.forEach(idx => {
-      board[idx].locked = false;
-      if (levelGoals?.progress?.breakLocks) levelGoals.progress.breakLocks.broken++;
-      const el = getCardEl(idx);
-      if (el) {
-        el.classList.remove('locked');
-        el.classList.add('unlocking');
-        el.addEventListener('animationend', () => el.classList.remove('unlocking'), {once:true});
-        el.style.pointerEvents = '';
-        // Reveal on unlock setting
-        if (getRule('revealOnUnlock')) {
-          board[idx].flipped = true;
-          el.classList.add('flipped', 'reveal-flash');
-          el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true});
-          setTimeout(() => { board[idx].flipped = false; el.classList.remove('flipped'); }, 1500);
-        }
-      }
-    });
+    breakAdjacentLocks(unlockSources);
 
     // Separate normal cards (fly to goal) from bombs (explode in place after fly)
     const isBomb = idx => board[idx] && board[idx].special && isBombType(board[idx].special);
