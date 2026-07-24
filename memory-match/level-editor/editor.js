@@ -22,6 +22,7 @@ const TOOLS = [
   { id: 'stack',    icon: '🃏', name: 'Stack',    desc: 'Stamp a pile of cards on a tile (set the size with − / +)' },
   { id: 'elevator', icon: '🛗', name: 'Elevator', desc: 'Paint batch-refill areas — adjacent cells form one area. Set each area\'s refills in the list below. Can share a tile with a stack.' },
   { id: 'ice',      icon: '🧊', name: 'Ice',      desc: 'Paint ice areas — cards frozen until enough cards are collected. Set each area\'s melt count in the list below. Can share a tile with a stack.' },
+  { id: 'colorlock', icon: '🔐', name: 'Color Lock', desc: 'Paint color-lock areas — cards locked until enough of a chosen colour is collected. Set each area\'s colour + count in the list below. Can share a tile with a stack.' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
 const MAX_STACK = 10;
@@ -156,6 +157,48 @@ function resplitIce(lvl) {
 }
 
 // ============================================================
+// COLOR LOCK AREAS — stored as `colorLocks: [{ cells:[[r,c]…], color, count }]`.
+// `count` = number of `color` cards to collect to unlock. Same adjacency grouping as ice.
+// ============================================================
+const CL_DEFAULT_COLOR = 'red';
+const CL_DEFAULT_COUNT = 5;
+const CL_COLOR_HEX = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f', orange:'#e67e22', purple:'#9b59b6' };
+
+function colorLockAreaAt(lvl, row, col) {
+  return (lvl.colorLocks || []).find(a => a.cells.some(([r, c]) => r === row && c === col));
+}
+function addColorLockCell(lvl, row, col) {
+  if (!lvl.colorLocks) lvl.colorLocks = [];
+  const adjacent = lvl.colorLocks.filter(a =>
+    a.cells.some(([r, c]) => Math.abs(r - row) + Math.abs(c - col) === 1));
+  if (adjacent.length === 0) {
+    lvl.colorLocks.push({ cells: [[row, col]], color: CL_DEFAULT_COLOR, count: CL_DEFAULT_COUNT });
+    return;
+  }
+  const target = adjacent[0];
+  for (let k = 1; k < adjacent.length; k++) target.cells.push(...adjacent[k].cells);
+  lvl.colorLocks = lvl.colorLocks.filter(a => a === target || !adjacent.includes(a));
+  target.cells.push([row, col]);
+}
+function removeColorLockCell(lvl, row, col) {
+  const area = colorLockAreaAt(lvl, row, col);
+  if (!area) return;
+  area.cells = area.cells.filter(([r, c]) => !(r === row && c === col));
+  const others = lvl.colorLocks.filter(a => a !== area);
+  const rebuilt = connectedComponents(area.cells).map(cells => ({ cells, color: area.color, count: area.count }));
+  lvl.colorLocks = [...others, ...rebuilt];
+}
+function resplitColorLocks(lvl) {
+  if (!Array.isArray(lvl.colorLocks)) return;
+  const rebuilt = [];
+  lvl.colorLocks.forEach(a => {
+    const cells = (a.cells || []).filter(Boolean);
+    connectedComponents(cells).forEach(comp => { if (comp.length) rebuilt.push({ cells: comp, color: a.color, count: a.count }); });
+  });
+  lvl.colorLocks = rebuilt;
+}
+
+// ============================================================
 // DOM REFS
 // ============================================================
 const levelListEl    = document.getElementById('level-list');
@@ -263,6 +306,9 @@ function loadFromJSON(e) {
         ice: Array.isArray(lvl.ice)
           ? lvl.ice.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], threshold: Math.max(0, a.threshold || 0) }))
           : [],
+        colorLocks: Array.isArray(lvl.colorLocks)
+          ? lvl.colorLocks.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], color: ALL_COLORS.includes(a.color) ? a.color : CL_DEFAULT_COLOR, count: Math.max(0, a.count || 0) }))
+          : [],
         goals:     Array.isArray(lvl.goals)     ? lvl.goals     : (lvl.target ? [{ type: 'score', target: lvl.target }] : []),
       }));
       selectedLevelIndex = levels.length > 0 ? 0 : -1;
@@ -305,6 +351,9 @@ function buildLevelsOutput() {
     // Ice: one entry per frozen area (cells + cards-to-collect-to-melt threshold).
     const ices = (lvl.ice || []).filter(a => a.cells && a.cells.length > 0);
     if (ices.length > 0) obj.ice = ices.map(a => ({ cells: a.cells, threshold: Math.max(0, a.threshold || 0) }));
+    // Color locks: one entry per area (cells + required colour + count to unlock).
+    const cls = (lvl.colorLocks || []).filter(a => a.cells && a.cells.length > 0);
+    if (cls.length > 0) obj.colorLocks = cls.map(a => ({ cells: a.cells, color: a.color, count: Math.max(0, a.count || 0) }));
     return obj;
   });
 }
@@ -389,16 +438,18 @@ function buildMiniGrid(lvl) {
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
   const elevatorSet = new Set((lvl.elevators || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
   const iceSet = new Set((lvl.ice || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
+  const clMap = {}; (lvl.colorLocks || []).forEach(a => (a.cells || []).forEach(([r, c]) => { clMap[`${r},${c}`] = a.color; }));
   let html = `<div class="mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
   for (let r = 0; r < lvl.rows; r++) {
     for (let c = 0; c < lvl.cols; c++) {
       const key = `${r},${c}`;
-      let cls = 'mini-cell';
+      let cls = 'mini-cell', st = '';
       if (disabledSet.has(key))      cls += ' disabled';
       else if (lockedSet.has(key))   cls += ' locked';
       else if (elevatorSet.has(key)) cls += ' elevator';
       else if (iceSet.has(key))      cls += ' ice';
-      html += `<div class="${cls}"></div>`;
+      else if (clMap[key])         { cls += ' colorlock'; st = ` style="background:${CL_COLOR_HEX[clMap[key]] || '#888'}"`; }
+      html += `<div class="${cls}"${st}></div>`;
     }
   }
   html += '</div>';
@@ -498,6 +549,42 @@ function renderIceAreas() {
   });
 }
 
+// Per-area colour + count editor for color-lock areas.
+function renderColorLockAreas() {
+  const wrap = document.getElementById('colorlock-areas');
+  const title = document.getElementById('colorlock-areas-title');
+  if (!wrap) return;
+  const lvl = selectedLevelIndex >= 0 ? levels[selectedLevelIndex] : null;
+  const areas = (lvl && lvl.colorLocks) || [];
+  if (areas.length === 0) {
+    wrap.innerHTML = ''; wrap.style.display = 'none';
+    if (title) title.style.display = 'none';
+    return;
+  }
+  wrap.style.display = ''; if (title) title.style.display = '';
+  wrap.innerHTML = areas.map((a, i) => `
+    <div class="elev-area-row">
+      <span class="elev-area-swatch" style="background:${CL_COLOR_HEX[a.color] || '#888'}"></span>
+      <span class="elev-area-label">Lock ${i + 1} <span class="elev-area-cells">${a.cells.length} cell${a.cells.length !== 1 ? 's' : ''}</span></span>
+      <select class="cl-area-color" data-ai="${i}">${ALL_COLORS.map(c => `<option value="${c}" ${a.color === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+      <label class="elev-area-refills-label">× <input type="number" class="cl-area-count" data-ai="${i}" value="${a.count ?? 0}" min="0" max="999"></label>
+    </div>`).join('');
+  wrap.querySelectorAll('.cl-area-color').forEach(el => el.addEventListener('change', () => {
+    const ai = parseInt(el.dataset.ai);
+    if (!levels[selectedLevelIndex].colorLocks[ai]) return;
+    pushUndo();
+    levels[selectedLevelIndex].colorLocks[ai].color = el.value;
+    renderBoard();
+  }));
+  wrap.querySelectorAll('.cl-area-count').forEach(el => el.addEventListener('change', () => {
+    const ai = parseInt(el.dataset.ai);
+    if (!levels[selectedLevelIndex].colorLocks[ai]) return;
+    pushUndo();
+    levels[selectedLevelIndex].colorLocks[ai].count = Math.max(0, parseInt(el.value) || 0);
+    renderBoard();
+  }));
+}
+
 function showEmptyState() {
   editorEmpty.style.display = 'flex';
   editorContent.classList.add('hidden');
@@ -524,6 +611,7 @@ function addLevel() {
     stacks: [],
     elevators: [],
     ice: [],
+    colorLocks: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.push(newLevel);
@@ -535,7 +623,7 @@ function insertLevel(atIndex) {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
     clearBoard: false, deck: 0,
-    locked: [], disabled: [], stacks: [], elevators: [], ice: [],
+    locked: [], disabled: [], stacks: [], elevators: [], ice: [], colorLocks: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.splice(atIndex, 0, newLevel);
@@ -569,6 +657,7 @@ function renderBoard() {
   const stackMap    = {}; (lvl.stacks || []).forEach(([r, c, n]) => { stackMap[`${r},${c}`] = n || 2; });
   const elevAreaOf  = new Map(); (lvl.elevators || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => elevAreaOf.set(`${r},${c}`, ai)));
   const iceAreaOf   = new Map(); (lvl.ice       || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => iceAreaOf.set(`${r},${c}`, ai)));
+  const clAreaOf    = new Map(); (lvl.colorLocks|| []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => clAreaOf.set(`${r},${c}`, ai)));
   const boardWrap   = document.getElementById('board-wrap');
   boardWrap.innerHTML = '';
 
@@ -693,6 +782,18 @@ function renderBoard() {
         badge.textContent = '❄' + (lvl.ice[ai].threshold ?? 0);
         cell.appendChild(badge);
       }
+      // Color-lock area — cell tinted by the required colour + a count badge.
+      if (clAreaOf.has(key) && !disabledSet.has(key)) {
+        const ai = clAreaOf.get(key);
+        const a = lvl.colorLocks[ai];
+        cell.classList.add('colorlock');
+        cell.style.background = CL_COLOR_HEX[a.color] || '#888';
+        cell.style.borderColor = '#fff';
+        const badge = document.createElement('span');
+        badge.className = 'cl-count-badge';
+        badge.textContent = '×' + (a.count ?? 0);
+        cell.appendChild(badge);
+      }
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => onCellClick(r, c));
@@ -706,6 +807,7 @@ function renderBoard() {
 
   renderElevatorAreas();
   renderIceAreas();
+  renderColorLockAreas();
 }
 
 function mkInsertBtn(cls, title, disabled) {
@@ -739,6 +841,7 @@ function insertRow(position) {
     lvl.stacks   = (lvl.stacks   || []).map(p => [p[0] + 1, p[1], p[2]]);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
+    (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
   }
   lvl.rows++;
   propRows.value = lvl.rows;
@@ -755,7 +858,8 @@ function removeRow(r) {
   lvl.stacks   = (lvl.stacks   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], p[2]]);
   (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
   (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
-  resplitElevators(lvl); resplitIce(lvl);
+  (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
+  resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl);
   lvl.rows--;
   propRows.value = lvl.rows;
   renderBoard();
@@ -772,6 +876,7 @@ function insertCol(position) {
     lvl.stacks   = (lvl.stacks   || []).map(p => [p[0], p[1] + 1, p[2]]);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
+    (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
   }
   lvl.cols++;
   propCols.value = lvl.cols;
@@ -788,7 +893,8 @@ function removeCol(c) {
   lvl.stacks   = (lvl.stacks   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], p[2]]);
   (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
   (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
-  resplitElevators(lvl); resplitIce(lvl);
+  (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
+  resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl);
   lvl.cols--;
   propCols.value = lvl.cols;
   renderBoard();
@@ -827,29 +933,37 @@ function onCellClick(row, col) {
   const prevLocks = prevLock ? (prevLock[2] || 1) : 0;
   const hadElevator = !!elevatorAreaAt(lvl, row, col);
   const hadIce = !!iceAreaAt(lvl, row, col);
+  const hadColorLock = !!colorLockAreaAt(lvl, row, col);
 
-  // Elevator and Ice are independent area layers that may each coexist with a stack (frozen
-  // pile / elevator pile), but are mutually exclusive with each other. Keep the stack when
-  // toggling either; every other tool clears both.
-  const keepStack = (activeTool === 'elevator' || activeTool === 'ice');
+  // Elevator, Ice and Color Lock are independent area layers that may each coexist with a
+  // stack, but are mutually exclusive with each other. Keep the stack when toggling any of
+  // them; every other tool clears all three.
+  const keepStack = (activeTool === 'elevator' || activeTool === 'ice' || activeTool === 'colorlock');
 
   lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
   if (!keepStack) lvl.stacks = (lvl.stacks || []).filter(([r, c]) => !(r === row && c === col));
 
-  // Elevator membership: toggle with the elevator tool; the ice tool and any other non-stack
-  // tool removes it (elevator/ice can't share a cell).
+  // Elevator membership: toggle with the elevator tool; ice/color-lock and any other non-stack
+  // tool removes it (the three area types can't share a cell).
   if (activeTool === 'elevator') {
     if (!disabledSet.has(key)) { hadElevator ? removeElevatorCell(lvl, row, col) : addElevatorCell(lvl, row, col); }
   } else if (activeTool !== 'stack' && hadElevator) {
     removeElevatorCell(lvl, row, col);
   }
 
-  // Ice membership: toggle with the ice tool; the elevator tool and any other non-stack tool removes it.
+  // Ice membership: toggle with the ice tool; elevator/color-lock and any other non-stack tool removes it.
   if (activeTool === 'ice') {
     if (!disabledSet.has(key)) { hadIce ? removeIceCell(lvl, row, col) : addIceCell(lvl, row, col); }
   } else if (activeTool !== 'stack' && hadIce) {
     removeIceCell(lvl, row, col);
+  }
+
+  // Color-lock membership: toggle with the color-lock tool; elevator/ice and any other non-stack tool removes it.
+  if (activeTool === 'colorlock') {
+    if (!disabledSet.has(key)) { hadColorLock ? removeColorLockCell(lvl, row, col) : addColorLockCell(lvl, row, col); }
+  } else if (activeTool !== 'stack' && hadColorLock) {
+    removeColorLockCell(lvl, row, col);
   }
 
   if (activeTool === 'locked' && !disabledSet.has(key)) {
@@ -891,7 +1005,8 @@ function updateLevelProperty(prop, value) {
     lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
-    resplitElevators(lvl); resplitIce(lvl);
+    (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
+    resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl);
   }
 
   renderBoard();

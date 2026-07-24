@@ -102,9 +102,9 @@ function specialCSS(t)  { return 'special-' + t; }
 // unlocks (honouring revealOnUnlock) when the last layer breaks. Returns true if it unlocked.
 function breakLockLayer(idx) {
   const card = board[idx];
-  // Ice is `locked` internally but must not be broken by adjacent combos or bombs — it only
-  // melts via the collected-card threshold (breakIceArea). Skip it here.
-  if (!card || !card.locked || card.iced) return false;
+  // Ice / color-locks are `locked` internally but must NOT be broken by adjacent combos or
+  // bombs — they only clear via their own collection condition. Skip them here.
+  if (!card || !card.locked || card.iced || card.colorLocked) return false;
   card.lockCount = (card.lockCount || 1) - 1;
   if (levelGoals?.progress?.breakLocks) levelGoals.progress.breakLocks.broken++;
   const el = getCardEl(idx);
@@ -158,9 +158,9 @@ function countBoardCards() {
 
 function buildCardHTML(card) {
   const i = card.index;
-  // Iced cards are `locked` internally (so every interaction guard skips them) but must NOT
-  // show the 🔒 lock visual — the ice overlay on the cell conveys their frozen state instead.
-  const lockedCls = (card.locked && !card.iced) ? ' locked' : '';
+  // Iced / color-locked cards are `locked` internally (so every interaction guard skips them)
+  // but must NOT show the 🔒 lock visual — their overlay conveys the frozen/locked state.
+  const lockedCls = (card.locked && !card.iced && !card.colorLocked) ? ' locked' : '';
   if (card.special) {
     const bombStyle = card.bombColor ? ` style="--bomb-color:${cssColor(card.bombColor)}"` : '';
     const bombCls = card.bombColor ? ' bomb-colored' : '';
@@ -174,8 +174,8 @@ function buildCardHTML(card) {
   const orderedCls = card.ordered ? ' ordered' : '';
   const markedBadge = card.marked ? '<span class="marked-badge">⭐</span>' : '';
   const orderedNum = card.ordered ? `<span class="ordered-number">${card.ordered}</span>` : '';
-  // Multi-lock counter: how many more breaks are needed (only shown when >1). Not for ice.
-  const lockBadge = (card.locked && !card.iced && card.lockCount > 1) ? `<span class="lock-count">${card.lockCount}</span>` : '';
+  // Multi-lock counter: how many more breaks are needed (only shown when >1). Not for ice/color-lock.
+  const lockBadge = (card.locked && !card.iced && !card.colorLocked && card.lockCount > 1) ? `<span class="lock-count">${card.lockCount}</span>` : '';
   // NOTE: stacked-tile visuals (count badge + "more below" hint) live on the .cell, not the
   // .card — the card flips (rotateY) when revealed, which would flip/hide them. See decorateStack.
   return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}${lockBadge}</div>`;
@@ -313,11 +313,14 @@ function renderIceBadges() {
   });
 }
 
-// Count cards collected this level and melt any ice area whose threshold has been reached.
-function registerCollectedForIce(n) {
-  if (!n || iceAreas.length === 0) return;
-  cardsCollectedTotal += n;
+// Record a batch of collected card colours: bumps the total (ice) and per-colour counts
+// (color locks), then re-checks both for anything that should now clear.
+function registerCollected(colors) {
+  if (!colors || !colors.length) return;
+  cardsCollectedTotal += colors.length;
+  colors.forEach(c => { if (c) cardsCollectedByColor[c] = (cardsCollectedByColor[c] || 0) + 1; });
   checkIceBreaks();
+  checkColorLockBreaks();
 }
 
 // Break any unbroken ice area whose threshold has been met; refresh the countdown badge on
@@ -348,6 +351,89 @@ function breakIceArea(area) {
   }, 320);
 }
 
+// ── Color Lock rendering + unlock (Ice-style, keyed to a specific colour) ─────────────
+function hexToRgba(hex, a) {
+  let h = (hex || '#888888').replace('#', '');
+  if (h.length === 3) h = h.split('').map(x => x + x).join('');
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+// Overlay tinted by the required colour, drawn OVER the cards as one continuous region.
+function decorateColorLock(cell, i) {
+  const oldFill = cell.querySelector('.color-lock-fill'); if (oldFill) oldFill.remove();
+  cell.classList.remove('cl-cell',
+    'cl-edge-top', 'cl-edge-right', 'cl-edge-bottom', 'cl-edge-left',
+    'cl-join-top', 'cl-join-right', 'cl-join-bottom', 'cl-join-left');
+  const area = colorLockCellArea.get(i);
+  if (!area) return;
+  cell.classList.add('cl-cell');
+  const { r, c } = toRC(i);
+  ELEV_DIRS.forEach(([name, dr, dc]) => {
+    const j = toIndex(r + dr, c + dc);
+    const sameArea = j >= 0 && colorLockCellArea.get(j) === area;
+    cell.classList.add(sameArea ? 'cl-join-' + name : 'cl-edge-' + name);
+  });
+  const hex = COLOR_HEX[area.color] || '#888888';
+  const fill = document.createElement('div');
+  fill.className = 'color-lock-fill';
+  fill.style.background = `linear-gradient(135deg, ${hexToRgba(hex, .52)}, ${hexToRgba(hex, .34)})`;
+  fill.style.borderColor = hexToRgba(hex, .95);
+  cell.appendChild(fill);
+}
+
+// One badge per color-lock area, floated at the centroid: a swatch of the required colour +
+// how many more of that colour must be collected to unlock.
+function renderColorLockBadges() {
+  boardEl.querySelectorAll(':scope > .color-lock-badge').forEach(b => b.remove());
+  if (!colorLockAreas.length) return;
+  colorLockAreas.forEach(area => {
+    if (area.broken) return;
+    let sx = 0, sy = 0, n = 0;
+    area.cells.forEach(i => {
+      const cell = boardEl.children[i];
+      if (!cell) return;
+      sx += cell.offsetLeft + cell.offsetWidth / 2;
+      sy += cell.offsetTop + cell.offsetHeight / 2;
+      n++;
+    });
+    if (!n) return;
+    const remaining = Math.max(0, area.count - (cardsCollectedByColor[area.color] || 0));
+    const badge = document.createElement('span');
+    badge.className = 'color-lock-badge';
+    badge.innerHTML = `<span class="cl-swatch" style="background:${COLOR_HEX[area.color] || '#888'}"></span>${remaining}`;
+    badge.style.left = (sx / n) + 'px';
+    badge.style.top = (sy / n) + 'px';
+    boardEl.appendChild(badge);
+  });
+}
+
+function checkColorLockBreaks() {
+  colorLockAreas.forEach(area => {
+    if (area.broken) return;
+    if ((cardsCollectedByColor[area.color] || 0) >= area.count) breakColorLockArea(area);
+  });
+  renderColorLockBadges();
+}
+
+// Unlock a color-lock area: a coloured burst, then unfreeze its cards and drop the overlay.
+function breakColorLockArea(area) {
+  if (area.broken) return;
+  area.broken = true;
+  const cells = [...area.cells];
+  SFX.boom();
+  if (typeof spawnParticles === 'function') spawnParticles(cells, area.color);
+  cells.forEach(i => { const f = boardEl.children[i]?.querySelector('.color-lock-fill'); if (f) f.classList.add('cl-breaking'); });
+  setTimeout(() => {
+    cells.forEach(i => {
+      colorLockCellArea.delete(i);
+      if (board[i]) { board[i].colorLocked = false; board[i].locked = false; }
+      replaceCell(i);
+    });
+    updateChainIndicator();
+  }, 320);
+}
+
 function renderBoard() {
   boardEl.innerHTML = '';
   board.forEach((card, i) => {
@@ -361,6 +447,7 @@ function renderBoard() {
     }
     decorateElevator(cell, i);
     decorateIce(cell, i);
+    decorateColorLock(cell, i);
     boardEl.appendChild(cell);
   });
   fitBoard();
@@ -403,8 +490,9 @@ function fitBoard() {
   // Recompute the optional instrument background now that the board's pixel box
   // (and each cell's position) is known.
   if (typeof applyBoardBackground === 'function') applyBoardBackground();
-  // Reposition ice-area badges to the (now-known) cell centroids.
+  // Reposition ice-area + color-lock badges to the (now-known) cell centroids.
   if (typeof renderIceBadges === 'function') renderIceBadges();
+  if (typeof renderColorLockBadges === 'function') renderColorLockBadges();
 }
 
 // Refit whenever the container's box changes: device-switcher, orientation,
@@ -496,6 +584,7 @@ function replaceCell(i) {
     if (typeof applyBoardBackground === 'function') applyBoardBackground();
     decorateElevator(cell, i);
     decorateIce(cell, i);
+    decorateColorLock(cell, i);
     return;
   }
   // A slot that was empty (elevator/clear-board) becomes clickable again once a card lands
@@ -505,6 +594,7 @@ function replaceCell(i) {
   decorateStack(cell, board[i]);
   decorateElevator(cell, i);
   decorateIce(cell, i);
+  decorateColorLock(cell, i);
 }
 
 function updateStatusBadge() {

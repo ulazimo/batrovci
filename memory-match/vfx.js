@@ -106,9 +106,9 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
   const scoreTarget = document.getElementById(useCollection ? 'collection-stack' : 'score-value');
   // Capture colours before the cards are removed, so the graveyard shows real tiles.
   const flyColors = indices.map(idx => board[idx] && !board[idx].special ? board[idx].color : null);
-  // Count real (non-special) cards collected this batch — drives the ice-melt thresholds.
-  const _collected = flyColors.filter(c => c !== null).length;
-  if (_collected > 0 && typeof registerCollectedForIce === 'function') registerCollectedForIce(_collected);
+  // Record real (non-special) collected colours — drives ice melts + color-lock unlocks.
+  const _collectedColors = flyColors.filter(c => c !== null);
+  if (_collectedColors.length && typeof registerCollected === 'function') registerCollected(_collectedColors);
   if (!scoreTarget || indices.length === 0) {
     indices.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.add('exploding'); });
     indices.forEach(idx => reseedStackTile(idx)); // leave the next stack card behind

@@ -552,6 +552,44 @@ body {
   100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
 }
 .pre-level-mini-cell.ice { background:#bfe7ff; border:1px solid #e9f8ff; }
+
+/* Color Lock areas — like Ice, but tinted by the required colour (background/border set
+   inline per area in decorateColorLock). Overlay ON TOP of the cards; inert until enough of
+   that colour is collected. */
+.cell.cl-cell { border-radius: 8px; }
+.color-lock-fill {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  border: 0 solid; box-sizing: border-box; overflow: hidden;
+  box-shadow: inset 0 0 14px rgba(255,255,255,.3);
+}
+.color-lock-fill::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.42) 48%, transparent 53%);
+  opacity: .75;
+}
+.cell.cl-edge-top    > .color-lock-fill { border-top-width: 3px; }
+.cell.cl-edge-right  > .color-lock-fill { border-right-width: 3px; }
+.cell.cl-edge-bottom > .color-lock-fill { border-bottom-width: 3px; }
+.cell.cl-edge-left   > .color-lock-fill { border-left-width: 3px; }
+.cell.cl-join-top    > .color-lock-fill { top: -8px; }
+.cell.cl-join-right  > .color-lock-fill { right: -8px; }
+.cell.cl-join-bottom > .color-lock-fill { bottom: -8px; }
+.cell.cl-join-left   > .color-lock-fill { left: -8px; }
+.cell.cl-edge-top.cl-edge-left     > .color-lock-fill { border-top-left-radius: 12px; }
+.cell.cl-edge-top.cl-edge-right    > .color-lock-fill { border-top-right-radius: 12px; }
+.cell.cl-edge-bottom.cl-edge-left  > .color-lock-fill { border-bottom-left-radius: 12px; }
+.cell.cl-edge-bottom.cl-edge-right > .color-lock-fill { border-bottom-right-radius: 12px; }
+.color-lock-fill.cl-breaking { animation: iceBreakFlash .3s ease-out forwards; }
+/* One per area, floated at the centroid (left/top set by renderColorLockBadges). */
+.color-lock-badge {
+  position: absolute; transform: translate(-50%,-50%); z-index: 7;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 800; color: #10233a; pointer-events: none;
+  padding: 2px 7px 2px 5px; border-radius: 10px; white-space: nowrap;
+  background: rgba(245,250,255,.92); box-shadow: 0 1px 4px rgba(0,20,50,.45);
+}
+.cl-swatch { width: 12px; height: 12px; border-radius: 3px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.85), 0 1px 2px rgba(0,0,0,.4); }
+.pre-level-mini-cell.colorlock { border: 1px solid rgba(255,255,255,.6); }
 .card {
   width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
   transition: transform 0.35s ease; border-radius: 14px;

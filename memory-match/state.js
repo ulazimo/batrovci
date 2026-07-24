@@ -37,6 +37,13 @@ let iceAreas = [];                  // [{ cells:[idx…], threshold, broken }]
 let iceCellArea = new Map();        // board index → its (still-frozen) ice area object
 let cardsCollectedTotal = 0;        // running count of cards collected this level (drives ice melts)
 
+// Color Lock: like Ice, but each AREA unlocks once a set number of a specific COLOR has been
+// collected. Cards under it are locked + colorLocked (inert; bombs can't break them). Visual
+// is tinted by the required colour.
+let colorLockAreas = [];            // [{ cells:[idx…], color, count, broken }]
+let colorLockCellArea = new Map();  // board index → its (still-locked) color-lock area object
+let cardsCollectedByColor = {};     // colour → count collected this level (drives color locks)
+
 let levelGoals = null;
 
 const boardEl          = document.getElementById('board');
