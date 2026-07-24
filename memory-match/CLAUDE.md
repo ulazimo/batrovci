@@ -143,7 +143,7 @@ callback ends. **If you add an early `return` in the turn flow, make sure
 Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.js):
 
 ```js
-{ color, flipped, special, index, locked, lockCount?, stack?, bombColor?, marked?, ordered? }
+{ color, flipped, special, index, locked, lockCount?, stack?, bombColor?, marked?, ordered?, backEffect? }
 ```
 
 - **Normal card**: `color` set, `special=null`.
@@ -170,6 +170,31 @@ Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.j
   `stacks: [[r,c,N]…]` in the level data. `countBoardCards()` (board.js) counts a stacked
   tile as all N layers (used by the `clearAll` goal so it stays winnable).
 - **Disabled cell**: the board slot is `null` (level `disabled: [[r,c],...]`).
+- **Back-effect card**: a normal card carrying `backEffect=<id>` (one of `row`/`column`/
+  `cross`/`circle`/`star`; see `BACK_EFFECTS` in [specials.js](specials.js)). The effect icon
+  sits in the tile's **top-left corner**, drawn on the `.cell` (via `decorateBackEffect`, like
+  the stack badge) so it **stays put — doesn't rotate — while the card flips**, and it **fades
+  out once the card is opened (face-up)** since the effect belongs to the card's back
+  (`.card.flipped ~ .back-effect-badge` in style.css). When the card is
+  **collected as part of a successful chain**, its effect fires: `getBackEffectPattern` reveals
+  the pattern's cards (row/column span the whole line; cross/circle/star use offsets), merged
+  into `endTurn`'s `revealTargets` so they flash face-up briefly and land in **Recall** for the
+  next turn. Placed via `backEffects: [[r,c,id]…]` in the level data (one-time; a refill card in
+  the same slot is plain). Authorable via the level-editor's **Back Effect** tool.
+  - **Impact glow** (`.reveal-impact`, a soft *white* cue — not the red danger ember): the impact
+    area lights up while the card sits in the active chain (`updateBackEffectImpactPreview`, driven
+    by `updateChainIndicator`) and **stays lit** through the resolve, held a beat
+    (`BACK_EFFECT_PREVIEW_MS`) before the reveal. Both the impact glow and the danger ✕ marks
+    persist untouched until each card is actually revealed — the highlight is stripped as the card
+    flips up (in `revealCardsNoHide` / `boosterReveal`), so it never blinks off and back on;
+    `finishTurn` clears any highlight on a card that won't be revealed. **Danger wins**: a tile
+    that is both a danger card and an impact target shows the red ember (CSS override +
+    `markWrongColorHint` strips `.reveal-impact`).
+  - **Activation slam** (`slamBackEffectIcons` in vfx.js, `.back-effect-slam`): during that hold,
+    each collected back-effect card's icon scales up and slams down over its tile, and the reveal
+    bursts out as it lands (`BACK_EFFECT_PREVIEW_MS` is tuned to the slam moment).
+  - The **Chain Danger Reveal** (`pendingDangerReveal`) is folded into the *same* reveal batch in
+    `endTurn`, so back-effect and danger reveals flash **together** rather than one after the other.
 - `marked` (⭐) / `ordered` (numbered) flags are added by specific goal types.
 
 Grid math: `toRC(i)` → `{r,c}`, `toIndex(r,c)` → flat index. `COLS`/`ROWS`/`TOTAL`
@@ -293,7 +318,8 @@ out-of-order `orderedCards` trigger **immediate fail** mid-turn.
 **A level definition** looks like ([levels_default.js](levels_default.js)):
 ```js
 { id, cols, rows, colorCount, turns, goals: [...],
-  disabled?: [[r,c]...], locked?: [[r,c]...] }
+  disabled?: [[r,c]...], locked?: [[r,c]...],
+  stacks?: [[r,c,N]...], backEffects?: [[r,c,effectId]...] }
 ```
 
 ---
@@ -419,6 +445,7 @@ and unlock-all-levels. It's essentially a live design/tuning console.
 | Turn finish | `endgame.js` | `finishTurn`, `recallCards` |
 | Scoring/combos | `turn.js` / `specials.js` | `endTurn` (scoring block), `getSpecialForCombo`, `getComboMapping`, `getMinCombo` |
 | Specials | `specials.js` / `board.js` | `SPECIAL_TYPES`, `getRevealPattern`, `createSpecialCard` |
+| Back-of-card effects | `specials.js` / `board.js` / `turn.js` | `BACK_EFFECTS`, `getBackEffectPattern`, `decorateBackEffect`, `endTurn` (reveal-on-collect block) |
 | Boosters | `boosters.js` | `BOOSTERS`, `activateBooster`, `executeBoosterTap` |
 | Bomb drag-to-place | `bomb-aim.js` | `startBombBoosterDrag`, `startBankBombDrag`, `renderBombSilhouette`, `commitBombAim`, `isBombAiming` |
 | Bank It | `bank.js` | `bankChain`, `updateBankButton`, `detonateBombAt` |

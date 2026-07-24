@@ -525,6 +525,43 @@ LEVELS_CLEANINGXL = [
       {
         "type": "clearAll"
       }
+    ],
+    "backEffects": [
+      [
+        4,
+        2,
+        "column"
+      ],
+      [
+        4,
+        4,
+        "column"
+      ],
+      [
+        1,
+        3,
+        "cross"
+      ],
+      [
+        7,
+        3,
+        "circle"
+      ],
+      [
+        4,
+        3,
+        "star"
+      ],
+      [
+        0,
+        6,
+        "row"
+      ],
+      [
+        8,
+        0,
+        "row"
+      ]
     ]
   },
   {

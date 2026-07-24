@@ -6,6 +6,7 @@ let selectedLevelIndex = -1;
 let activeTool = 'normal';
 const MAX_LOCK_LAYERS = 4; // Locked tool cycles 1→…→MAX, then clears.
 let stackValue = 2;        // Stack tool stamps this many cards per tile (2–MAX_STACK).
+let backEffectValue = 'row'; // Back Effect tool stamps this reveal pattern (cycled with ‹ ›).
 let undoStack = [];
 let redoStack = [];
 let loadedFileName = 'levels';
@@ -23,9 +24,22 @@ const TOOLS = [
   { id: 'elevator', icon: '🛗', name: 'Elevator', desc: 'Paint batch-refill areas — adjacent cells form one area. Set each area\'s refills in the list below. Can share a tile with a stack.' },
   { id: 'ice',      icon: '🧊', name: 'Ice',      desc: 'Paint ice areas — cards frozen until enough cards are collected. Set each area\'s melt count in the list below. Can share a tile with a stack.' },
   { id: 'colorlock', icon: '🔐', name: 'Color Lock', desc: 'Paint color-lock areas — cards locked until enough of a chosen colour is collected. Set each area\'s colour + count in the list below. Can share a tile with a stack.' },
+  { id: 'backeffect', icon: '✴️', name: 'Back Effect', desc: 'Stamp a reveal effect on a card — it fires when that card is collected. Pick the pattern with ‹ ›; click again to remove.' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
 const MAX_STACK = 10;
+
+// Back-of-card reveal effects (mirrors BACK_EFFECTS in the game's specials.js). Stored on the
+// level as `backEffects: [[r,c,id]…]`; each fires its reveal pattern when the card is collected.
+const BACK_EFFECTS = [
+  { id: 'row',    icon: '↔️', name: 'Row' },
+  { id: 'column', icon: '↕️', name: 'Column' },
+  { id: 'cross',  icon: '➕', name: 'Cross' },
+  { id: 'circle', icon: '⭕', name: 'Circle' },
+  { id: 'star',   icon: '✴️', name: 'Star' },
+];
+function beIcon(id) { const b = BACK_EFFECTS.find(x => x.id === id); return b ? b.icon : '✨'; }
+function beName(id) { const b = BACK_EFFECTS.find(x => x.id === id); return b ? b.name : id; }
 
 const GOAL_TYPES = [
   { id: 'score',          name: 'Score Target',     icon: '🎯' },
@@ -298,6 +312,7 @@ function loadFromJSON(e) {
         locked:    Array.isArray(lvl.locked)    ? lvl.locked    : [],
         disabled:  Array.isArray(lvl.disabled)  ? lvl.disabled  : [],
         stacks:    Array.isArray(lvl.stacks)    ? lvl.stacks    : [],
+        backEffects: Array.isArray(lvl.backEffects) ? lvl.backEffects : [],
         elevators: Array.isArray(lvl.elevators)
           ? lvl.elevators.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], refills: Math.max(0, a.refills || 0) }))
           : (Array.isArray(lvl.elevator) && lvl.elevator.length
@@ -345,6 +360,8 @@ function buildLevelsOutput() {
     if (lvl.locked && lvl.locked.length > 0) obj.locked = lvl.locked;
     if (lvl.disabled && lvl.disabled.length > 0) obj.disabled = lvl.disabled;
     if (lvl.stacks && lvl.stacks.length > 0) obj.stacks = lvl.stacks;
+    // Back-of-card reveal effects: [[r,c,id]…] — fire when the tagged card is collected.
+    if (lvl.backEffects && lvl.backEffects.length > 0) obj.backEffects = lvl.backEffects;
     // Elevator: one entry per batch-refill area (cells + its own refill count).
     const els = (lvl.elevators || []).filter(a => a.cells && a.cells.length > 0);
     if (els.length > 0) obj.elevators = els.map(a => ({ cells: a.cells, refills: Math.max(0, a.refills || 0) }));
@@ -439,6 +456,7 @@ function buildMiniGrid(lvl) {
   const elevatorSet = new Set((lvl.elevators || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
   const iceSet = new Set((lvl.ice || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
   const clMap = {}; (lvl.colorLocks || []).forEach(a => (a.cells || []).forEach(([r, c]) => { clMap[`${r},${c}`] = a.color; }));
+  const beSet = new Set((lvl.backEffects || []).map(([r, c]) => `${r},${c}`));
   let html = `<div class="mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
   for (let r = 0; r < lvl.rows; r++) {
     for (let c = 0; c < lvl.cols; c++) {
@@ -449,6 +467,7 @@ function buildMiniGrid(lvl) {
       else if (elevatorSet.has(key)) cls += ' elevator';
       else if (iceSet.has(key))      cls += ' ice';
       else if (clMap[key])         { cls += ' colorlock'; st = ` style="background:${CL_COLOR_HEX[clMap[key]] || '#888'}"`; }
+      if (beSet.has(key) && !disabledSet.has(key)) cls += ' backeffect';
       html += `<div class="${cls}"${st}></div>`;
     }
   }
@@ -655,6 +674,7 @@ function renderBoard() {
   const lockedSet   = new Set(Object.keys(lockedCount));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
   const stackMap    = {}; (lvl.stacks || []).forEach(([r, c, n]) => { stackMap[`${r},${c}`] = n || 2; });
+  const backEffMap  = {}; (lvl.backEffects || []).forEach(([r, c, id]) => { backEffMap[`${r},${c}`] = id; });
   const elevAreaOf  = new Map(); (lvl.elevators || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => elevAreaOf.set(`${r},${c}`, ai)));
   const iceAreaOf   = new Map(); (lvl.ice       || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => iceAreaOf.set(`${r},${c}`, ai)));
   const clAreaOf    = new Map(); (lvl.colorLocks|| []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => clAreaOf.set(`${r},${c}`, ai)));
@@ -760,6 +780,15 @@ function renderBoard() {
         const badge = document.createElement('span');
         badge.className = 'stack-count-badge';
         badge.textContent = stackMap[key];
+        cell.appendChild(badge);
+      }
+      // Back-of-card reveal effect (icon badge, top-left)
+      if (backEffMap[key] && !disabledSet.has(key)) {
+        cell.classList.add('backeffect');
+        const badge = document.createElement('span');
+        badge.className = 'be-badge';
+        badge.textContent = beIcon(backEffMap[key]);
+        badge.title = beName(backEffMap[key]) + ' reveal';
         cell.appendChild(badge);
       }
       // Elevator area — tint by area index (matches the areas list) + show its refill count.
@@ -931,6 +960,8 @@ function onCellClick(row, col) {
   // this cell was already in an elevator area (so that tool can toggle it off).
   const prevLock = (lvl.locked || []).find(([r, c]) => r === row && c === col);
   const prevLocks = prevLock ? (prevLock[2] || 1) : 0;
+  const prevBack = (lvl.backEffects || []).find(([r, c]) => r === row && c === col);
+  const prevBE = prevBack ? prevBack[2] : null;
   const hadElevator = !!elevatorAreaAt(lvl, row, col);
   const hadIce = !!iceAreaAt(lvl, row, col);
   const hadColorLock = !!colorLockAreaAt(lvl, row, col);
@@ -943,6 +974,9 @@ function onCellClick(row, col) {
   lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
   if (!keepStack) lvl.stacks = (lvl.stacks || []).filter(([r, c]) => !(r === row && c === col));
+  // Back-effect layer: preserved by the area tools (like stacks), toggled by its own tool,
+  // cleared by everything else.
+  if (!keepStack) lvl.backEffects = (lvl.backEffects || []).filter(([r, c]) => !(r === row && c === col));
 
   // Elevator membership: toggle with the elevator tool; ice/color-lock and any other non-stack
   // tool removes it (the three area types can't share a cell).
@@ -975,6 +1009,9 @@ function onCellClick(row, col) {
   } else if (activeTool === 'stack' && !disabledSet.has(key)) {
     // Stamp a pile of `stackValue` cards on this tile.
     lvl.stacks = [...lvl.stacks, [row, col, stackValue]];
+  } else if (activeTool === 'backeffect' && !disabledSet.has(key)) {
+    // Toggle: clicking the same effect that's already here removes it; else stamp the selected one.
+    if (prevBE !== backEffectValue) lvl.backEffects = [...lvl.backEffects, [row, col, backEffectValue]];
   }
   // 'normal' or 'eraser' — already cleared above, nothing more to do
 
@@ -1058,13 +1095,21 @@ function renderToolbar() {
   TOOLS.forEach(tool => {
     const card = document.createElement('div');
     card.className = 'tool-card' + (tool.id === activeTool ? ' active' : '');
-    const stepper = (tool.id === 'stack' && activeTool === 'stack')
-      ? `<div class="tool-stepper">
+    let stepper = '';
+    if (tool.id === 'stack' && activeTool === 'stack') {
+      stepper = `<div class="tool-stepper">
            <button class="stepper-btn" data-act="dec">−</button>
            <span class="stepper-val">${stackValue}</span>
            <button class="stepper-btn" data-act="inc">+</button>
-         </div>`
-      : '';
+         </div>`;
+    } else if (tool.id === 'backeffect' && activeTool === 'backeffect') {
+      // Cycle the reveal pattern this tool stamps.
+      stepper = `<div class="tool-stepper">
+           <button class="stepper-btn" data-act="be-prev">‹</button>
+           <span class="stepper-val be-val">${beIcon(backEffectValue)} ${beName(backEffectValue)}</span>
+           <button class="stepper-btn" data-act="be-next">›</button>
+         </div>`;
+    }
     card.innerHTML = `
       <div class="tool-icon">${tool.icon}</div>
       <div class="tool-name">${tool.name}</div>
@@ -1075,12 +1120,18 @@ function renderToolbar() {
       activeTool = tool.id;
       renderToolbar();
     });
-    // Stack size − / + controls (don't let the click bubble up and re-select the tool)
+    // Stepper controls (don't let the click bubble up and re-select the tool)
     card.querySelectorAll('.stepper-btn').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
-        const delta = btn.dataset.act === 'inc' ? 1 : -1;
-        stackValue = Math.max(2, Math.min(MAX_STACK, stackValue + delta));
+        const act = btn.dataset.act;
+        if (act === 'inc' || act === 'dec') {
+          stackValue = Math.max(2, Math.min(MAX_STACK, stackValue + (act === 'inc' ? 1 : -1)));
+        } else if (act === 'be-prev' || act === 'be-next') {
+          const ids = BACK_EFFECTS.map(b => b.id);
+          const i = ids.indexOf(backEffectValue);
+          backEffectValue = ids[(i + (act === 'be-next' ? 1 : ids.length - 1)) % ids.length];
+        }
         renderToolbar();
       });
     });

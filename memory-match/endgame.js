@@ -64,6 +64,14 @@ function finishTurn() {
   turnActive=false; inputLocked=false; activeBooster=null;
   clearNudgeTimer();
   updateChainIndicator(); updateBoosterUI(); updateRecallButton(); updateGoalHUD();
+  // Clear any leftover danger marks on cards that WON'T be revealed. The pendingDangerReveal
+  // set keeps its mark until revealChainDangerCards flips it up (removed on flip); everything
+  // else (danger marks with the reveal rule off, or a stale mark) is dropped now. Impact glow
+  // is handled by updateChainIndicator above (chain is empty here → all cleared).
+  const keepDanger = new Set(pendingDangerReveal);
+  boardEl.querySelectorAll('.card.wrong-color-hint').forEach(el => {
+    if (!keepDanger.has(parseInt(el.dataset.index, 10))) el.classList.remove('wrong-color-hint');
+  });
   if (checkAllGoalsMet()) levelWon();
   else if (turns <= 0) levelFailed();
   else revealChainDangerCards();

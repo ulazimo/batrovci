@@ -252,7 +252,10 @@ function endTurn(manual, perfectSweep) {
   // Chain Danger Reveal: remember the danger-marked tiles so finishTurn can flip them
   // up once the chain resolves (off = they just clear silently).
   pendingDangerReveal = getRule('chainDangerReveal') ? getChainHintIndices() : [];
-  clearChainColorHints(); // remove the chain-3 wrong-color ✕ marks — the chain is resolving
+  // Keep the danger ✕ marks AND the back-effect impact glow lit through the resolve — each is
+  // removed only when its card is actually revealed (in revealCardsNoHide / boosterReveal), so a
+  // highlight never blinks back to normal and re-lights. Highlights on cards that won't be
+  // revealed this turn are cleaned up in finishTurn.
   // Kill chain tension immediately — turn is resolving, no more pulsing
   boardEl.removeAttribute('data-tension');
   if (tensionRAF) { cancelAnimationFrame(tensionRAF); tensionRAF = null; }
@@ -357,11 +360,41 @@ function endTurn(manual, perfectSweep) {
   // Wild cards live in chainCards (not specialsUsed) — clear their 'used' state on failed chains
   if (!specialActivated) chainCards.filter(i => isWildCard(i)).forEach(idx => { const el=getCardEl(idx); if(el) el.classList.remove('used'); });
 
+  // Cards revealed this turn will flash face-up and then hide; a card mid flip-back is a
+  // valid reveal target (it re-shows instead of hiding). Shared by the special reveal and
+  // the back-of-card reveal below.
+  const flippingBack = new Set(toFlip.filter(i => !echoProtected.has(i)));
+  const canReveal = i => board[i] && !toRemove.includes(i) && i !== newSP && !board[i].special
+    && !board[i].locked && (!board[i].flipped || flippingBack.has(i));
+
   let revealTargets = [];
   if (specialActivated && !getRule('instantSpecialReveal')) {
     specialsUsed.forEach(sIdx => { const sc=board[sIdx]; if(sc&&sc.special) revealTargets.push(...getRevealPattern(sc.special,sIdx)); });
-    const flippingBack = new Set(toFlip.filter(i => !echoProtected.has(i)));
-    revealTargets = [...new Set(revealTargets)].filter(i=>board[i]&&!toRemove.includes(i)&&i!==newSP&&!board[i].special&&!board[i].locked&&(!board[i].flipped||flippingBack.has(i)));
+    revealTargets = [...new Set(revealTargets)].filter(canReveal);
+  }
+
+  // Back-of-card reveal effects: any COLLECTED card carrying a `backEffect` fires its reveal
+  // pattern. Targets merge into revealTargets so they flash via the end-of-turn reveal path
+  // and land in Recall (re-revealable next turn). Fires on any collect — a combo OR a colour
+  // clear (even a lone last card). A card never reveals tiles being removed this turn.
+  // `showImpactPreview` flags that a back-effect fired; the reveal batch then slams the collected
+  // effect icons down over their tiles (firedBackEffects) before the cards flip up.
+  let showImpactPreview = false;
+  const firedBackEffects = [];
+  if (willCollect) {
+    let beTargets = [];
+    matched.forEach(idx => { const bc = board[idx]; if (bc && bc.backEffect) { beTargets.push(...getBackEffectPattern(bc.backEffect, idx)); firedBackEffects.push({ idx, effect: bc.backEffect }); } });
+    beTargets = beTargets.filter(canReveal);
+    if (beTargets.length) { revealTargets = [...new Set([...revealTargets, ...beTargets])]; showImpactPreview = true; }
+  }
+
+  // Sync the Chain Danger Reveal into this SAME reveal batch (whenever one runs) so the
+  // back-effect and danger reveals flash together instead of one after the other. On turns
+  // with no reveal batch (a plain mismatch), leave it for finishTurn's revealChainDangerCards.
+  const batchWillRun = toRemove.length > 0 || newSP >= 0 || revealTargets.length > 0;
+  if (batchWillRun && pendingDangerReveal.length) {
+    revealTargets = [...new Set([...revealTargets, ...pendingDangerReveal.filter(canReveal)])];
+    pendingDangerReveal = [];
   }
 
   if (toRemove.length>0 || newSP>=0 || revealTargets.length>0) {
@@ -402,11 +435,13 @@ function endTurn(manual, perfectSweep) {
       bombCards.forEach(idx => explodeBomb(idx));
       const bombExplodeDelay = bombCards.length > 0 ? 450 : 0;
       setTimeout(() => {
-        // Step 1: Reveal bomb targets (stay face-up, no auto-hide)
+        const revealAndContinue = () => {
+        // Step 1: Reveal targets (stay face-up, no auto-hide). revealCardsNoHide strips each
+        // card's danger/impact highlight as it flips up, so the glow never blinks off then on.
         if (revealTargets.length > 0) {
           revealCardsNoHide(revealTargets);
         }
-      // Step 2: After bomb reveal animation, drop in new cards
+      // Step 2: After reveal animation, drop in new cards
       const bombRevealTime = revealTargets.length > 0 ? 300 : 0;
       setTimeout(() => {
         const nc = placeNewCards(toRemove, newSP);
@@ -432,6 +467,11 @@ function endTurn(manual, perfectSweep) {
           } else doFinishWithTutorial();
         }, dropDelay);
       }, bombRevealTime);
+        };
+        // Back-effect activation: the collected effect icons scale up and SLAM down over their
+        // tiles, then the reveal bursts out as they land (highlights already lit since the chain).
+        if (showImpactPreview) { slamBackEffectIcons(firedBackEffects); setTimeout(revealAndContinue, BACK_EFFECT_PREVIEW_MS); }
+        else revealAndContinue();
     }, bombExplodeDelay);
     });
   } else if (willSweepReveal) {
@@ -509,7 +549,9 @@ function revealCardsNoHide(targets) {
     if (c && !c.special && !c.flipped) {
       c.flipped = true;
       const el = getCardEl(rIdx);
-      if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+      // Strip the danger/impact highlight AS the card flips up — this is the moment it's
+      // "revealed", so the glow goes away here (never blinks off earlier and back on).
+      if (el) { el.classList.remove('reveal-impact', 'wrong-color-hint'); el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
     }
   });
 }

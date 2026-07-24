@@ -99,6 +99,27 @@ function spawnIceShards(indices) {
   });
 }
 
+// Collected back-effect cards "activate": their icon scales up and slams down over the tile
+// they were collected from, right before the reveal fires (see endTurn). `fired` is
+// [{ idx, effect }] — one large floating icon per collected back-effect card.
+function slamBackEffectIcons(fired) {
+  if (!fired || !fired.length) return;
+  fired.forEach(({ idx, effect }) => {
+    const cell = boardEl.children[idx];
+    if (!cell) return;
+    const r = cell.getBoundingClientRect();
+    if (!r.width) return;
+    const el = document.createElement('div');
+    el.className = 'back-effect-slam';
+    el.textContent = (typeof backEffectIcon === 'function') ? backEffectIcon(effect) : '✨';
+    el.style.left = (r.left + r.width / 2) + 'px';
+    el.style.top = (r.top + r.height / 2) + 'px';
+    el.style.fontSize = Math.max(20, Math.round(r.width * 0.72)) + 'px';
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  });
+}
+
 // Fly matched cards to score element with staggered ding + score
 function flyCardsToGoal(indices, ptsTotal, cb) {
   // Fly toward the Collection graveyard when it's active; otherwise the score.

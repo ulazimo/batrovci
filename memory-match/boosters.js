@@ -284,6 +284,7 @@ function markWrongColorHint(i) {
   if (board[i] && board[i].locked) return; // never flag a locked tile as a danger card
   const el = getCardEl(i);
   if (!el || el.classList.contains('wrong-color-hint')) return;
+  el.classList.remove('reveal-impact');  // danger takes priority over the back-effect impact glow
   el.classList.add('wrong-color-hint'); // drives the ember glow on .card-back (see style.css)
 }
 
@@ -441,7 +442,8 @@ function boosterReveal(indices) {
     setTimeout(() => {
       board[idx].flipped = true;
       const el = getCardEl(idx);
-      if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+      // Drop the danger/impact highlight as the card flips up (its reveal moment).
+      if (el) { el.classList.remove('reveal-impact','wrong-color-hint'); el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
       SFX.cardFlip();
     }, i * 80);
   });

@@ -41,6 +41,13 @@ LEVELS = [
         "minLength": 4,
         "count": 2
       }
+    ],
+    "backEffects": [
+      [0, 0, "row"],
+      [0, 3, "column"],
+      [3, 0, "cross"],
+      [1, 1, "circle"],
+      [2, 2, "star"]
     ]
   },
   {

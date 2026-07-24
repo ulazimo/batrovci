@@ -35,6 +35,32 @@ function specialBadgeImage(id) { return SPECIAL_BADGE_IMAGES[id] || null; }
 initInventoryDefaults();
 
 // ============================================================
+// BACK-OF-CARD REVEAL EFFECTS
+// ============================================================
+// A NORMAL card can carry a `backEffect` (one of these ids). Its icon sits in the tile's
+// TOP-LEFT corner, drawn on the .cell (not the flipping .card) so it never moves or rotates
+// when the card is opened (see decorateBackEffect in board.js). When that card is COLLECTED
+// as part of a successful chain, the effect fires: it reveals the cards in its pattern (they
+// flash face-up, then hide, and can be Recalled next turn — see endTurn in turn.js).
+// cross/circle/star reveal via `offsets`; row/column span the whole line (getBackEffectPattern).
+// Add an entry here and it auto-appears in the level-editor's Back Effect tool.
+const BACK_EFFECTS = [
+  { id: 'row',    icon: '↔️', name: 'Row',    desc: 'Reveal the whole row when collected' },
+  { id: 'column', icon: '↕️', name: 'Column', desc: 'Reveal the whole column when collected' },
+  { id: 'cross',  icon: '➕', name: 'Cross',  desc: 'Reveal the 4 adjacent cards when collected',
+    offsets: [[-1,0],[1,0],[0,-1],[0,1]] },
+  { id: 'circle', icon: '⭕', name: 'Circle', desc: 'Reveal the 3×3 around it when collected',
+    offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]] },
+  { id: 'star',   icon: '✴️', name: 'Star',   desc: 'Reveal a star: the 3×3 plus one further out on each side',
+    offsets: [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]] },
+];
+function getBackEffect(id) { return BACK_EFFECTS.find(b => b.id === id); }
+function backEffectIcon(id) { const b = getBackEffect(id); return b ? b.icon : '✨'; }
+// Delay before a back-effect's reveal fires (ms) — tuned so the reveal bursts out just as the
+// collected effect icon slams down (the .back-effect-slam animation lands its slam ~360ms in).
+const BACK_EFFECT_PREVIEW_MS = 380;
+
+// ============================================================
 // COMBO → SPECIAL MAPPING
 // ============================================================
 // ============================================================

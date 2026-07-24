@@ -258,6 +258,21 @@ body {
   100% { transform: translateY(0)    scale(1); }
 }
 
+/* Back-of-card reveal effect — the effect icon in the tile's TOP-LEFT corner. Lives on the
+   .cell (see decorateBackEffect), so it stays put (never rotates) while the card flips. It
+   belongs to the card's BACK, so it fades out once the card is opened (face-up). */
+.back-effect-badge {
+  position:absolute;top:3px;left:3px;z-index:6;width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,#7ee0ff,#2b8fd6);color:#04263a;
+  font-size:11px;line-height:1;font-weight:800;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
+  border:1.5px solid rgba(255,255,255,.9);
+  box-shadow:0 1px 4px rgba(0,0,0,.45),0 0 8px rgba(90,209,255,.55);
+  transition:opacity .18s ease;
+}
+/* Card opened (face-up): hide the back-of-card effect badge. */
+.card.flipped ~ .back-effect-badge { opacity:0; }
+
 /* Pre-level board preview */
 .pre-level-mini-grid {
   display:grid;gap:3px;width:140px;margin:4px auto 8px;
@@ -274,6 +289,10 @@ body {
 }
 .pre-level-mini-cell.disabled {
   background:transparent;border:none;opacity:0;
+}
+.mini-back-effect {
+  position:absolute;top:-2px;left:-1px;font-size:8px;line-height:1;
+  filter:drop-shadow(0 0 2px rgba(90,209,255,.9));
 }
 
 /* Pre-level rewards */
@@ -669,6 +688,42 @@ body {
 @keyframes dangerEmber {
   0%,100% { box-shadow: 0 0 8px 2px rgba(255,40,30,.55), inset 0 -14px 18px -8px rgba(255,30,25,.65); }
   50%     { box-shadow: 0 0 13px 3px rgba(255,40,30,.78), inset 0 -18px 22px -8px rgba(255,30,25,.88); }
+}
+
+/* Back-of-card reveal IMPACT cue — soft WHITE glow on face-down cards a back-effect card will
+   reveal (a helpful "about to reveal" hint, not a warning like the red danger ember). Shown
+   while a back-effect card is in the chain and held briefly before its reveal fires. A gentle,
+   slow breathe — deliberately low-key. Lives on .card-back so it hides once the card flips. */
+.card.reveal-impact .card-back {
+  border-color: #ffffff;
+  animation: revealImpact 2.6s ease-in-out infinite;
+}
+@keyframes revealImpact {
+  0%,100% { box-shadow: 0 0 7px 2px rgba(255,255,255,.5); }
+  50%     { box-shadow: 0 0 10px 3px rgba(255,255,255,.68); }
+}
+/* Danger takes visual priority: if a tile is BOTH a danger card and a back-effect impact
+   target, show the red danger ember — the white impact glow yields (higher specificity wins). */
+.card.wrong-color-hint.reveal-impact .card-back {
+  border-color: #c0303c;
+  animation: dangerEmber 3s ease-in-out infinite;
+}
+
+/* Back-effect activation: the collected effect icon scales up and SLAMS down over its tile,
+   just before the reveal bursts out (see slamBackEffectIcons in vfx.js). */
+.back-effect-slam {
+  position: fixed; z-index: 1200; pointer-events: none; line-height: 1;
+  transform: translate(-50%, -50%) scale(.3);
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.85)) drop-shadow(0 3px 8px rgba(0,0,0,.55));
+  animation: backEffectSlam 560ms cubic-bezier(.3,.7,.3,1) forwards;
+}
+@keyframes backEffectSlam {
+  0%   { transform: translate(-50%,-50%) scale(.3);   opacity: 0; }
+  30%  { transform: translate(-50%,-50%) scale(1.9);  opacity: 1; }
+  48%  { transform: translate(-50%,-50%) scale(1.78); opacity: 1; }
+  64%  { transform: translate(-50%,-50%) scale(.82);  opacity: 1; }
+  76%  { transform: translate(-50%,-50%) scale(1.14); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1.0);  opacity: 0; }
 }
 
 /* animations */

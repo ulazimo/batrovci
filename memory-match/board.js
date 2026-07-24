@@ -160,6 +160,53 @@ function getRevealPattern(type, index) {
   return targets;
 }
 
+// Reveal targets for a back-of-card effect fired from `index` (see BACK_EFFECTS in specials.js).
+// row/column span the whole line through the card; cross/circle/star use their offset patterns.
+// Off-board targets and the origin itself are dropped; callers further filter (face-down, etc.).
+function getBackEffectPattern(id, index) {
+  const eff = getBackEffect(id);
+  if (!eff) return [];
+  const { r, c } = toRC(index);
+  if (id === 'row') {
+    const t = []; for (let cc = 0; cc < COLS; cc++) { const i = toIndex(r, cc); if (i >= 0 && i !== index) t.push(i); } return t;
+  }
+  if (id === 'column') {
+    const t = []; for (let rr = 0; rr < ROWS; rr++) { const i = toIndex(rr, c); if (i >= 0 && i !== index) t.push(i); } return t;
+  }
+  if (eff.offsets) return eff.offsets.map(([dr, dc]) => toIndex(r + dr, c + dc)).filter(i => i >= 0);
+  return [];
+}
+
+// ── Back-of-card IMPACT glow (soft white "about to reveal" cue) ───────────────────────
+// Remove the `.reveal-impact` glow from every tile (used to re-derive the chain preview).
+function clearImpactGlow() {
+  boardEl.querySelectorAll('.card.reveal-impact').forEach(el => el.classList.remove('reveal-impact'));
+}
+
+// While a back-effect card sits in the active chain, preview what it will reveal on collect:
+// glow the face-down tiles in each chained back-effect card's pattern. Re-derived on every
+// chain change (called from updateChainIndicator); a card's own danger ✕ hint takes priority.
+// Skipped mid-resolve (inputLocked) so a highlight persists — untouched — until its card is
+// actually revealed, rather than blinking off and on.
+function updateBackEffectImpactPreview() {
+  if (inputLocked) return;
+  clearImpactGlow();
+  if (!turnActive || !chainCards.length) return;
+  const inChain = new Set(chainCards);
+  const targets = new Set();
+  chainCards.forEach(idx => {
+    const card = board[idx];
+    if (!card || card.special || !card.backEffect) return;
+    getBackEffectPattern(card.backEffect, idx).forEach(t => {
+      if (board[t] && !board[t].special && !board[t].flipped && !board[t].locked && !inChain.has(t)) targets.add(t);
+    });
+  });
+  targets.forEach(t => {
+    const el = getCardEl(t);
+    if (el && !el.classList.contains('wrong-color-hint')) el.classList.add('reveal-impact');
+  });
+}
+
 function specialIcon(t) { const s = getSpecialType(t); return s ? s.icon : '?'; }
 function specialCSS(t)  { return 'special-' + t; }
 
@@ -287,6 +334,22 @@ function decorateStack(cell, card) {
     const badge = document.createElement('span');
     badge.className = 'stack-count';
     badge.textContent = card.stack;
+    cell.appendChild(badge);
+  }
+}
+
+// Back-of-card effect decoration on the CELL (not the flipping card): the reveal-effect icon
+// in the tile's TOP-LEFT corner. Lives on the .cell so it stays put — it never rotates away or
+// hides when the card is opened (the .card flips via rotateY). Idempotent — safe on every
+// render/replace; removes the badge when the tile no longer carries an effect.
+function decorateBackEffect(cell, card) {
+  const old = cell.querySelector('.back-effect-badge');
+  if (old) old.remove();
+  if (card && card.backEffect && getBackEffect(card.backEffect)) {
+    const badge = document.createElement('span');
+    badge.className = 'back-effect-badge';
+    badge.textContent = backEffectIcon(card.backEffect);
+    badge.title = getBackEffect(card.backEffect).name + ' reveal';
     cell.appendChild(badge);
   }
 }
@@ -510,6 +573,7 @@ function renderBoard() {
       cell.className = 'cell';
       cell.innerHTML = buildCardHTML(card);
       decorateStack(cell, card);
+      decorateBackEffect(cell, card);
     }
     decorateElevator(cell, i);
     decorateIce(cell, i);
@@ -658,6 +722,7 @@ function replaceCell(i) {
   cell.classList.remove('cleared-cell', 'disabled-cell');
   cell.innerHTML = buildCardHTML(board[i]);
   decorateStack(cell, board[i]);
+  decorateBackEffect(cell, board[i]);
   decorateElevator(cell, i);
   decorateIce(cell, i);
   decorateColorLock(cell, i);
@@ -839,6 +904,7 @@ function updateChainIndicator() {
   updateChainFaces();
   updateSweepCountdown();
   updateBankButton();
+  updateBackEffectImpactPreview();
 
   // Booster / spotlight targeting: keep the chain bar at its full size (so the
   // board never reflows/rescales) — just dim the chain and float a prompt above it.

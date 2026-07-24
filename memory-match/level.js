@@ -93,6 +93,7 @@ function showPreLevelUI() {
     const elevatorSet = new Set(normalizeElevators(lvl).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
     const iceSet = new Set(normalizeIce(lvl).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
     const colorLockMap = {}; normalizeColorLocks(lvl).forEach(a => (a.cells || []).forEach(([r, c]) => { colorLockMap[`${r},${c}`] = a.color; }));
+    const backEffectMap = {}; (lvl.backEffects || []).forEach(([r, c, id]) => { backEffectMap[`${r},${c}`] = id; });
     let html = `<div class="pre-level-mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
     for (let r = 0; r < lvl.rows; r++) {
       for (let c = 0; c < lvl.cols; c++) {
@@ -106,7 +107,8 @@ function showPreLevelUI() {
         else if (colorLockMap[key])     { cls += ' colorlock'; inlineStyle = ` style="background:${cssColor(colorLockMap[key])}"`; }
         const nLock = lockedCount[key];
         const miniLockBadge = (lockedSet.has(key) && nLock > 1) ? `<span class="mini-lock-count">${nLock}</span>` : '';
-        html += `<div class="${cls}"${inlineStyle}>${miniLockBadge}</div>`;
+        const miniBackBadge = (backEffectMap[key] && !disabledSet.has(key)) ? `<span class="mini-back-effect">${backEffectIcon(backEffectMap[key])}</span>` : '';
+        html += `<div class="${cls}"${inlineStyle}>${miniLockBadge}${miniBackBadge}</div>`;
       }
     }
     html += '</div>';
@@ -326,6 +328,16 @@ function startGame(preplacedSpecials) {
     const idx = r * COLS + c;
     if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special) {
       board[idx].stack = Math.max(1, Math.min(10, count || 1));
+    }
+  });
+
+  // Back-of-card reveal effects: tag normal cards with a `backEffect` (see BACK_EFFECTS).
+  // When collected in a successful chain the effect fires (turn.js), revealing its pattern.
+  // Placed once at start — a fresh refill card in the same slot is plain (the effect is consumed).
+  (lvl.backEffects || []).forEach(([r, c, id]) => {
+    const idx = r * COLS + c;
+    if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special && getBackEffect(id)) {
+      board[idx].backEffect = id;
     }
   });
 
