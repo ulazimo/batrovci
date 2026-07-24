@@ -15,15 +15,23 @@
 // Shared globals live in state.js.
 // ============================================================
 
-// Instrument art. aspect = viewBox width / height (used to size the art without
-// stretching it).
+// Board art registry (instruments + animals). aspect = viewBox width / height
+// (used to size the art without stretching it). Keyed by the `img` used in
+// LEVEL_BACKGROUNDS below and in the home halls (home-room.js).
 const BG_INSTRUMENTS = {
+  // Instruments (Music Hall — levels 1–5)
   guitar:    { file: 'instruments/guitar.svg',    aspect: 220 / 520 },
   saxophone: { file: 'instruments/saxophone.svg', aspect: 300 / 520 },
   trumpet:   { file: 'instruments/trumpet.svg',   aspect: 520 / 300 },
   drum:      { file: 'instruments/drum.svg',      aspect: 460 / 380 },
   violin:    { file: 'instruments/violin.svg',    aspect: 200 / 520 },
   piano:     { file: 'instruments/piano.svg',     aspect: 520 / 420 },
+  // Animals (Green Pasture — levels 6–10)
+  deer:      { file: 'animals/deer.svg',          aspect: 220 / 260 },
+  fox:       { file: 'animals/fox.svg',           aspect: 200 / 210 },
+  owl:       { file: 'animals/owl.svg',           aspect: 200 / 210 },
+  rabbit:    { file: 'animals/rabbit.svg',        aspect: 180 / 220 },
+  bird:      { file: 'animals/bird.svg',          aspect: 200 / 170 },
 };
 
 // One instrument per level: journey style → level id → placement.
@@ -32,9 +40,22 @@ const BG_INSTRUMENTS = {
 // width). Set for the first 3 and last 3 XL levels (small 4×6 and large boards).
 const LEVEL_BACKGROUNDS = {
   cleaningxl: {
+    // Levels 1–5 are the "instrument" levels — each clears to reveal the
+    // instrument that then appears on its pedestal in the home Music Hall
+    // (see ROOM_INSTRUMENTS in home-room.js — keep these in sync).
     1:  { img: 'guitar',    cx: 0.5, cy: 0.5, h: 0.96 },
     2:  { img: 'saxophone', cx: 0.5, cy: 0.5, h: 0.94 },
     3:  { img: 'trumpet',   cx: 0.5, cy: 0.5, h: 0.9  },
+    4:  { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
+    5:  { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },
+    // Levels 6–10 are the "animal" levels — each clears to reveal the animal
+    // that then appears in the home Green Pasture (see HALLS in home-room.js —
+    // keep these in the same order).
+    6:  { img: 'deer',      cx: 0.5, cy: 0.5, h: 0.92 },
+    7:  { img: 'fox',       cx: 0.5, cy: 0.5, h: 0.9  },
+    8:  { img: 'owl',       cx: 0.5, cy: 0.5, h: 0.9  },
+    9:  { img: 'rabbit',    cx: 0.5, cy: 0.5, h: 0.94 },
+    10: { img: 'bird',      cx: 0.5, cy: 0.5, h: 0.74 },
     38: { img: 'piano',     cx: 0.5, cy: 0.5, h: 0.9  },
     39: { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
     40: { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },

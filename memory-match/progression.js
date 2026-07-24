@@ -124,11 +124,5 @@ function resetJourneyProgress() {
   showLevelSelect();
 }
 
-function playFromHome() {
-  document.getElementById('home-screen').classList.remove('active');
-  if (progress.progressionStyle) {
-    showLevelSelect();
-  } else {
-    document.getElementById('progression-picker').classList.add('active');
-  }
-}
+// playFromHome() now lives in home-room.js — it starts the next level directly
+// from the Music Hall instead of routing through the journey picker.

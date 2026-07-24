@@ -55,6 +55,7 @@ body {
   body { padding: 0; gap: 0; }
   #device-switcher { display: none; }
   #bg-switcher { display: none; }
+  #level-jumper { display: none; }
   #device-frame {
     width: 100%; height: 100dvh; max-width: 100%; aspect-ratio: auto;
     border: 0; border-radius: 0; box-shadow: none;
@@ -1342,3 +1343,295 @@ body.bomb-aiming #board { touch-action: none; }
 .theme-purple .lives-pill, .theme-purple .coin-pill {
   background: rgba(0,0,0,.28); font-family: inherit;
 }
+
+/* While the Music Hall is showing, hide the in-game HUD chrome that lives in the
+   normal document flow (the home overlay's background is transparent, so these
+   would otherwise show through the room's translucent top/bottom bars). */
+body.on-home #level-banner,
+body.on-home #header,
+body.on-home #goal-hud,
+body.on-home #recall-bar,
+body.on-home #booster-bar,
+body.on-home #bank-bar,
+body.on-home #chain-indicator { display: none !important; }
+
+/* ================================================================
+   HOME "MUSIC HALL" ROOM  (see home-room.js / index.html #home-screen)
+   Full-bleed room: arched night-sky windows, warm sconces, wooden floor,
+   and pedestals that fill with instruments as levels are cleared.
+================================================================ */
+#home-screen.room-screen {
+  padding: 0; background: none;
+  flex-direction: column; align-items: stretch; justify-content: flex-start;
+}
+
+/* Top HUD ---------------------------------------------------- */
+#room-top {
+  position: relative; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px calc(10px + env(safe-area-inset-top, 0px));
+  background: linear-gradient(180deg, rgba(10,6,24,.85), rgba(10,6,24,0));
+}
+.room-top-left { display: flex; gap: 8px; }
+.room-top-right { display: flex; gap: 8px; }
+.room-icon-btn {
+  width: 38px; height: 38px; border-radius: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  background: rgba(0,0,0,.32); border: 1px solid rgba(255,255,255,.14);
+  color: #e7dcff; transition: all .15s; backdrop-filter: blur(4px);
+}
+.room-icon-btn:hover { border-color: #c9a9ff; background: rgba(0,0,0,.5); }
+.room-icon-btn:active { transform: scale(.9); }
+
+/* The scene (fills the space between HUD and Play button) ---- */
+#room-scene {
+  position: relative; flex: 1; min-height: 0; overflow: hidden;
+  container-type: size;             /* enables cqh/cqw sizing of instruments */
+}
+
+/* Layered background ---------------------------------------- */
+#room-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(120% 70% at 50% 8%, #3a2a63 0%, #241748 42%, #170f30 100%);
+}
+/* Warm floor with a subtle stage sheen */
+.room-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 34%;
+  background:
+    radial-gradient(80% 120% at 50% 0%, rgba(255,196,120,.22), rgba(255,196,120,0) 60%),
+    linear-gradient(180deg, #4a3320 0%, #3a2716 55%, #2a1c11 100%);
+  box-shadow: inset 0 2px 0 rgba(255,210,150,.18);
+}
+.room-floor::before {   /* floor-boards */
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg,
+    rgba(0,0,0,.16) 0 1px, rgba(0,0,0,0) 1px 42px);
+  opacity: .5;
+}
+/* Arched windows with a night sky */
+.room-window {
+  position: absolute; bottom: 34%; width: 21%; height: 44%;
+  border-radius: 50% 50% 8px 8px / 42% 42% 8px 8px;
+  background: linear-gradient(180deg, #0b1d3a 0%, #16305c 45%, #3a2f6b 100%);
+  border: 3px solid #1c1330; box-shadow: 0 0 22px rgba(120,150,255,.18), inset 0 0 20px rgba(0,0,0,.4);
+  display: flex; overflow: hidden;
+}
+.room-window:nth-child(1) { left: 12%; }
+.room-window:nth-child(2) { left: 39.5%; }   /* .tall — center */
+.room-window:nth-child(3) { left: 67%; }
+.room-window.tall { width: 21%; height: 52%; bottom: 34%; }
+.room-window .wpane { flex: 1; }
+.room-window .wpane + .wpane { border-left: 2px solid rgba(20,12,40,.7); }
+/* stars sit over the windows only where the sky shows */
+.room-stars {
+  position: absolute; left: 8%; right: 8%; top: 6%; height: 46%; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 20%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 30% 55%, #cfe0ff, transparent),
+    radial-gradient(1.5px 1.5px at 48% 12%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 63% 40%, #fff, transparent),
+    radial-gradient(1.3px 1.3px at 80% 26%, #dbe6ff, transparent),
+    radial-gradient(1.1px 1.1px at 90% 60%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 20% 78%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 72% 72%, #fff, transparent);
+  opacity: .8; animation: roomTwinkle 4s ease-in-out infinite;
+}
+@keyframes roomTwinkle { 0%,100% { opacity: .55; } 50% { opacity: .9; } }
+/* Wall sconces (warm glows) */
+.room-sconce {
+  position: absolute; bottom: 40%; width: 26%; height: 40%; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(255,180,90,.45), rgba(255,180,90,0) 62%);
+  filter: blur(2px);
+}
+.room-sconce.left  { left: -6%; }
+.room-sconce.right { right: -6%; }
+
+#room-title {
+  position: absolute; top: 10px; left: 0; right: 0; z-index: 2; text-align: center;
+  font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(255,235,205,.7); text-shadow: 0 2px 8px rgba(0,0,0,.6);
+}
+
+/* Pedestals + instruments ----------------------------------- */
+#room-pedestals { position: absolute; inset: 0; z-index: 1; }
+.room-spot {
+  position: absolute; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; --pw: 22cqw;
+}
+.spot-instrument {
+  display: block; width: auto; position: relative; z-index: 2;
+  filter: drop-shadow(0 10px 14px rgba(0,0,0,.5));
+}
+.room-spot.revealed .spot-instrument { animation: roomFloat 5s ease-in-out infinite; }
+@keyframes roomFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+/* empty / locked placeholder — fixed low height so every "?" sits just above
+   its pedestal regardless of the instrument that will eventually fill the spot. */
+.spot-locked {
+  height: 11cqh !important;
+  display: flex; align-items: flex-end; justify-content: center;
+  filter: none; opacity: .55;
+}
+.spot-locked span {
+  font-size: 26px; font-weight: 800; color: rgba(255,255,255,.3);
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.room-spot.empty { opacity: .92; }
+/* wooden pedestal */
+.spot-pedestal {
+  width: var(--pw); height: 7cqh; margin-top: -2px; position: relative; z-index: 1;
+  background: linear-gradient(180deg, #6b4a2a 0%, #4a3018 60%, #35220f 100%);
+  border-radius: 4px 4px 5px 5px;
+  box-shadow: 0 6px 12px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,210,150,.25);
+}
+.spot-pedestal::before {   /* top cap */
+  content: ""; position: absolute; left: -6%; right: -6%; top: -5px; height: 7px;
+  background: linear-gradient(180deg, #7d5730, #5a3c1f); border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.4);
+}
+.spot-pedestal::after {    /* front carved panel accent */
+  content: ""; position: absolute; left: 18%; right: 18%; top: 32%; bottom: 18%;
+  border: 1px solid rgba(255,210,150,.18); border-radius: 3px;
+}
+/* glow + notes behind a revealed instrument */
+.spot-glow {
+  position: absolute; bottom: 4cqh; left: 50%; transform: translateX(-50%);
+  width: calc(var(--pw) * 2.4); height: calc(var(--pw) * 2.4); z-index: 0; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,205,130,.4), rgba(255,205,130,0) 65%);
+}
+.spot-notes {
+  position: absolute; top: 4%; left: 50%; transform: translateX(-50%); z-index: 3;
+  color: rgba(255,240,210,.8); font-size: 14px; pointer-events: none; white-space: nowrap;
+}
+.spot-notes span { display: inline-block; margin: 0 3px; animation: roomNote 3.2s ease-in-out infinite; }
+.spot-notes span:nth-child(2) { animation-delay: .5s; font-size: 17px; }
+.spot-notes span:nth-child(3) { animation-delay: 1s; }
+@keyframes roomNote {
+  0%   { opacity: 0; transform: translateY(6px) rotate(-8deg); }
+  30%  { opacity: .9; }
+  100% { opacity: 0; transform: translateY(-16px) rotate(8deg); }
+}
+/* first-time reveal */
+.room-spot.new .spot-instrument { animation: roomReveal .9s cubic-bezier(.2,1.4,.4,1) both, roomFloat 5s ease-in-out 1s infinite; }
+.room-spot.new .spot-glow { animation: roomRevealGlow 1.2s ease-out both; }
+@keyframes roomReveal {
+  0%   { opacity: 0; transform: translateY(24px) scale(.4); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes roomRevealGlow {
+  0%   { opacity: 0; transform: translateX(-50%) scale(.3); }
+  40%  { opacity: 1; }
+  100% { opacity: .9; transform: translateX(-50%) scale(1.15); }
+}
+
+/* Bottom Play button ---------------------------------------- */
+#room-bottom {
+  position: relative; z-index: 3;
+  padding: 14px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(0deg, rgba(10,6,24,.9), rgba(10,6,24,0));
+  display: flex; justify-content: center;
+}
+.room-play-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  min-width: 220px; padding: 12px 40px; cursor: pointer;
+  border: none; border-radius: 16px; color: #3a2408;
+  background: linear-gradient(180deg, #ffc964 0%, #f5a623 100%);
+  box-shadow: 0 6px 0 #c07f10, 0 10px 20px rgba(0,0,0,.4);
+  transition: transform .1s, box-shadow .1s;
+}
+.room-play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c07f10, 0 5px 12px rgba(0,0,0,.4); }
+.room-play-label { font-size: 22px; font-weight: 900; letter-spacing: 2px; }
+.room-play-level { font-size: 12px; font-weight: 800; letter-spacing: 3px; opacity: .8; }
+
+/* ---- Hall slide transition (music → pasture, etc.) --------- */
+#room-scene.slide-in #room-bg,
+#room-scene.slide-in #room-pedestals,
+#room-scene.slide-in #room-title { animation: hallSlideIn .65s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes hallSlideIn {
+  from { transform: translateX(40%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+
+/* ================================================================
+   PASTURE HALL THEME — grass floor, rolling hills, a tree. The arched
+   night-sky windows + sconces (the shared "hall shell") stay.
+================================================================ */
+#room-scene.theme-pasture .room-floor {
+  height: 36%;
+  background:
+    radial-gradient(80% 130% at 50% 0%, rgba(180,255,150,.22), rgba(180,255,150,0) 55%),
+    linear-gradient(180deg, #4e8a3a 0%, #3a6e2c 55%, #285018 100%);
+  box-shadow: inset 0 2px 0 rgba(200,255,170,.28);
+}
+#room-scene.theme-pasture .room-floor::before {   /* grass-blade flecks */
+  background:
+    radial-gradient(2px 5px at 12% 30%, rgba(120,200,90,.5), transparent),
+    radial-gradient(2px 6px at 30% 60%, rgba(150,220,110,.45), transparent),
+    radial-gradient(2px 5px at 52% 25%, rgba(120,200,90,.5), transparent),
+    radial-gradient(2px 6px at 72% 55%, rgba(150,220,110,.45), transparent),
+    radial-gradient(2px 5px at 88% 35%, rgba(120,200,90,.5), transparent);
+  opacity: .9;
+}
+/* soft rolling hill behind the floor line */
+.room-hills { display: none; }
+#room-scene.theme-pasture .room-hills {
+  display: block; position: absolute; left: -5%; right: -5%; bottom: 30%; height: 26%;
+  background: radial-gradient(120% 150% at 50% 100%, #4e8a3a 0%, #3f7430 60%, rgba(63,116,48,0) 72%);
+  filter: blur(1px);
+}
+/* low-poly-ish tree on the right */
+.room-tree { display: none; }
+#room-scene.theme-pasture .room-tree {
+  display: block; position: absolute; right: 4%; bottom: 30%; width: 30%; height: 55%;
+}
+.room-tree .tree-trunk {
+  position: absolute; bottom: 0; left: 46%; width: 8%; height: 42%;
+  background: linear-gradient(90deg, #5a3a1e, #7a5230, #4a2f18); border-radius: 3px;
+}
+.room-tree .tree-foliage {
+  position: absolute; top: 0; left: 0; right: 0; height: 68%;
+  background:
+    radial-gradient(circle at 35% 60%, #3f8a3a 0 22%, transparent 23%),
+    radial-gradient(circle at 65% 55%, #357a30 0 26%, transparent 27%),
+    radial-gradient(circle at 50% 30%, #4a9a42 0 30%, transparent 31%),
+    radial-gradient(circle at 50% 62%, #2f6e2a 0 34%, transparent 35%);
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,.35));
+}
+/* animals sit on the grass — a soft ground shadow instead of a pedestal */
+.spot-shadow {
+  width: 15cqw; height: 2.6cqh; margin-top: -1cqh; z-index: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.4), rgba(0,0,0,0) 70%);
+}
+#room-scene.theme-pasture .spot-notes { display: none; }
+#room-scene.theme-pasture .spot-glow {
+  background: radial-gradient(circle, rgba(180,255,150,.35), rgba(180,255,150,0) 65%);
+}
+
+/* ================================================================
+   DEV LEVEL JUMPER — right-side panel, OUTSIDE the phone (desktop only).
+   Mirrors #bg-switcher (which is fixed on the left).
+================================================================ */
+#level-jumper {
+  position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; padding: 10px; width: 168px;
+  max-height: 80vh; overflow-y: auto;
+  background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; backdrop-filter: blur(6px);
+}
+#level-jumper .lj-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: #8b93ad; text-align: center; display: flex; flex-direction: column; gap: 1px;
+}
+#level-jumper .lj-label small { font-size: 8px; font-weight: 500; opacity: .7; letter-spacing: .5px; }
+#level-jumper .lj-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+#level-jumper .lj-btn {
+  aspect-ratio: 1; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 700;
+  background: #1a1a2e; border: 1px solid #333a55; color: #9aa4c0; transition: all .12s;
+  display: flex; align-items: center; justify-content: center;
+}
+#level-jumper .lj-btn:hover { border-color: #4fc3f7; color: #dbe7ff; }
+#level-jumper .lj-btn.done { border-color: #2ecc71; color: #2ecc71; background: #17241c; }
+#level-jumper .lj-btn.next { border-color: #f0c040; color: #f0c040; background: #2a2617; box-shadow: 0 0 8px rgba(240,192,64,.35); }
+/* On a real phone: the dev jumper (like the other out-of-frame switchers) is hidden.
+   Placed after the base rule so it wins over it at equal specificity. */
+@media (max-width: 520px) { #level-jumper { display: none !important; } }

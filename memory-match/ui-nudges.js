@@ -88,5 +88,6 @@ function startNudgeIdleTimer() {
 function closeAllOverlays() {
   ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay','progression-picker','special-tutorial']
     .forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
-  document.getElementById('next-level-btn').style.display = '';
+  const _nlb = document.getElementById('next-level-btn');
+  if (_nlb) _nlb.style.display = '';
 }

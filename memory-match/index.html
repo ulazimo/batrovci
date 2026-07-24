@@ -88,13 +88,48 @@
 
 <!-- ===== OVERLAYS ===== -->
 
-<!-- Home Screen -->
-<div id="home-screen" class="overlay-screen">
-  <div class="overlay-box" style="text-align:center;gap:20px;">
-    <h1 style="font-size:42px;margin:0;">🎴</h1>
-    <h1 style="color:#4fc3f7;margin:0;font-size:28px;">Memory Match</h1>
-    <p style="color:#888;font-size:14px;margin:0;">Match colors. Build combos. Beat the score.</p>
-    <button class="overlay-btn primary" style="font-size:18px;padding:14px 48px;" onclick="playFromHome()">Play</button>
+<!-- Home Screen — the Music Hall. Instruments appear on their pedestals as the
+     matching levels are cleared (see home-room.js). -->
+<div id="home-screen" class="overlay-screen room-screen">
+  <!-- Top HUD: lives + coins on the left, level-picker + settings on the right -->
+  <div id="room-top">
+    <div class="room-top-left">
+      <div class="lives-pill"><img src="icons/heart_icon.png" class="lives-icon" alt="lives"><span id="room-lives">5</span></div>
+      <div class="coin-pill"><img src="icons/coin_icon.png" class="coin-icon" alt="coins"><span id="room-coins">0</span></div>
+    </div>
+    <div class="room-top-right">
+      <button class="room-icon-btn" onclick="showLevelSelect()" title="Levels">🗺</button>
+      <button class="room-icon-btn" onclick="showSettings('home')" title="Settings">⚙</button>
+    </div>
+  </div>
+
+  <!-- The room scene: layered background + pedestals (pedestals built by JS) -->
+  <div id="room-scene">
+    <div id="room-bg">
+      <div class="room-window"><span class="wpane"></span><span class="wpane"></span></div>
+      <div class="room-window tall"><span class="wpane"></span><span class="wpane"></span></div>
+      <div class="room-window"><span class="wpane"></span><span class="wpane"></span></div>
+      <div class="room-stars"></div>
+      <div class="room-sconce left"></div>
+      <div class="room-sconce right"></div>
+      <!-- Pasture-only scenery (hidden unless #room-scene.theme-pasture) -->
+      <div class="room-hills"></div>
+      <div class="room-tree">
+        <div class="tree-foliage"></div>
+        <div class="tree-trunk"></div>
+      </div>
+      <div class="room-floor"></div>
+    </div>
+    <div id="room-pedestals"></div>
+    <div id="room-title">Music Hall</div>
+  </div>
+
+  <!-- Bottom: the single Play button, labelled with the level you'll play next -->
+  <div id="room-bottom">
+    <button class="room-play-btn" onclick="playFromHome()">
+      <span class="room-play-label">PLAY</span>
+      <span class="room-play-level" id="room-play-level">LEVEL 1</span>
+    </button>
   </div>
 </div>
 
@@ -153,7 +188,7 @@
     <div id="fail-streak-info" style="font-size:14px;font-weight:700;color:#f39c12;margin:6px 0;min-height:20px;"></div>
     <button class="overlay-btn" id="keep-streak-btn" style="background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;" onclick="continueLevelWithCoins()">+5 Turns (<span id="keep-streak-cost"></span> <img src="icons/coin_icon.png" class="coin-icon" alt="coins">)</button>
     <button class="overlay-btn primary" onclick="retryLevel()">Try Again</button>
-    <button class="overlay-btn secondary" onclick="showLevelSelect()">Level Select</button>
+    <button class="overlay-btn secondary" onclick="showHome()">🏠 Music Hall</button>
   </div>
 </div>
 
@@ -165,9 +200,7 @@
     <div class="sub" id="win-score"></div>
     <div style="font-size:15px;font-weight:700;min-height:22px;" id="win-streak"></div>
     <div id="win-rewards" class="pre-level-rewards" style="display:none;"></div>
-    <button class="overlay-btn btn-green" id="next-level-btn" onclick="nextLevel()">Next Level →</button>
-    <button class="overlay-btn secondary" onclick="retryLevel()">Play Again</button>
-    <button class="overlay-btn secondary" onclick="showLevelSelect()">Level Select</button>
+    <button class="overlay-btn btn-green" onclick="showHome()">🏠 Home</button>
   </div>
 </div>
 
@@ -183,7 +216,7 @@
     <div class="pre-level-section-title" id="pre-level-section-title">Deploy Special Cards</div>
     <div class="pre-level-grid" id="pre-level-grid"></div>
     <button class="overlay-btn btn-green" onclick="confirmPreLevel()">Start Level →</button>
-    <button class="overlay-btn btn-red" onclick="closeAllOverlays(); showLevelSelect()">← Back</button>
+    <button class="overlay-btn btn-red" onclick="closeAllOverlays(); showHome()">← Back</button>
   </div>
 </div>
 
@@ -268,6 +301,7 @@
 <script src="level.js"></script>
 <script src="turn.js"></script>
 <script src="endgame.js"></script>
+<script src="home-room.js"></script>
 <script src="boot.js"></script>
 
 <!-- Device frame switcher: pick which phone bezel to render the game inside -->

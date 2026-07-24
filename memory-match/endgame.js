@@ -152,7 +152,6 @@ function showWinOverlay() {
     rewardsEl.style.display = 'none';
   }
 
-  document.getElementById('next-level-btn').style.display = currentLevelIndex >= LEVELS.length-1 ? 'none' : '';
   document.getElementById('overlay-win').classList.add('active');
 }
 

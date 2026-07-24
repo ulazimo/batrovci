@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 210" width="200" height="210">
+  <!-- Low-poly sitting fox -->
+  <!-- tail -->
+  <polygon points="150,150 196,120 190,175 152,182" fill="#D9772E"/>
+  <polygon points="196,120 190,175 205,150" fill="#C86523"/>
+  <polygon points="190,175 152,182 178,196" fill="#F5F1E6"/>
+  <!-- body -->
+  <polygon points="70,120 130,120 150,196 60,196" fill="#E27D33"/>
+  <polygon points="100,120 130,120 150,196 100,196" fill="#D06E2A"/>
+  <!-- chest -->
+  <polygon points="82,150 118,150 108,196 92,196" fill="#F5F1E6"/>
+  <!-- head -->
+  <polygon points="60,55 140,55 130,120 70,120" fill="#E88A3C"/>
+  <polygon points="100,55 140,55 130,120 100,120" fill="#DB7A30"/>
+  <!-- ears -->
+  <polygon points="55,20 82,58 48,58" fill="#D9772E"/>
+  <polygon points="145,20 152,58 118,58" fill="#D9772E"/>
+  <polygon points="62,34 74,58 55,58" fill="#3A241A"/>
+  <polygon points="138,34 145,58 126,58" fill="#3A241A"/>
+  <!-- cheeks / snout -->
+  <polygon points="70,90 100,90 100,132 74,120" fill="#F5F1E6"/>
+  <polygon points="130,90 100,90 100,132 126,120" fill="#EDE7D6"/>
+  <polygon points="88,118 112,118 100,140" fill="#2A1C14"/>
+  <!-- eyes -->
+  <polygon points="78,80 92,78 86,92" fill="#2A1C14"/>
+  <polygon points="122,80 108,78 114,92" fill="#2A1C14"/>
+</svg>

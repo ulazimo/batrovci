@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170" width="200" height="170">
+  <!-- Low-poly little robin -->
+  <!-- tail -->
+  <polygon points="150,70 196,55 192,95 152,92" fill="#4A6E8A"/>
+  <polygon points="196,55 192,95 200,76" fill="#3C5C74"/>
+  <!-- body -->
+  <polygon points="60,50 150,66 148,120 66,120" fill="#5A82A0"/>
+  <polygon points="104,58 150,66 148,120 104,120" fill="#4A6E8A"/>
+  <!-- wing -->
+  <polygon points="80,66 132,74 120,108 78,102" fill="#3C5C74"/>
+  <!-- breast -->
+  <polygon points="52,58 92,58 96,116 60,112" fill="#E4884A"/>
+  <polygon points="52,58 70,58 74,112 60,112" fill="#D6773C"/>
+  <!-- head -->
+  <polygon points="44,34 96,40 92,72 48,70" fill="#5A82A0"/>
+  <!-- eye -->
+  <circle cx="64" cy="52" r="6" fill="#2A1C14"/>
+  <circle cx="66" cy="50" r="2" fill="#fff"/>
+  <!-- beak -->
+  <polygon points="44,50 22,56 44,62" fill="#E8A23B"/>
+  <!-- legs -->
+  <polygon points="86,118 92,118 92,150 86,150" fill="#B5701F"/>
+  <polygon points="108,118 114,118 114,150 108,150" fill="#B5701F"/>
+  <polygon points="80,148 100,148 98,156 82,156" fill="#B5701F"/>
+  <polygon points="102,148 122,148 120,156 104,156" fill="#B5701F"/>
+</svg>

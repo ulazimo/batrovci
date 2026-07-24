@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 210" width="200" height="210">
+  <!-- Low-poly owl -->
+  <!-- ear tufts -->
+  <polygon points="48,18 74,52 40,50" fill="#6E4A2E"/>
+  <polygon points="152,18 160,50 126,52" fill="#6E4A2E"/>
+  <!-- body -->
+  <polygon points="40,60 160,60 150,180 50,180" fill="#8A5E38"/>
+  <polygon points="100,60 160,60 150,180 100,180" fill="#7A5230"/>
+  <!-- wings -->
+  <polygon points="40,70 62,80 58,170 44,150" fill="#6E4A2E"/>
+  <polygon points="160,70 138,80 142,170 156,150" fill="#6E4A2E"/>
+  <!-- belly -->
+  <polygon points="70,95 130,95 120,178 80,178" fill="#D8B98A"/>
+  <polygon points="82,120 118,120 112,175 88,175" fill="#EBD6B0"/>
+  <!-- face disc -->
+  <polygon points="58,58 142,58 132,120 68,120" fill="#B9895A"/>
+  <!-- eyes -->
+  <circle cx="80" cy="86" r="20" fill="#F5EFE0"/>
+  <circle cx="120" cy="86" r="20" fill="#F5EFE0"/>
+  <circle cx="80" cy="88" r="10" fill="#2A1C14"/>
+  <circle cx="120" cy="88" r="10" fill="#2A1C14"/>
+  <circle cx="83" cy="84" r="3" fill="#fff"/>
+  <circle cx="123" cy="84" r="3" fill="#fff"/>
+  <!-- beak -->
+  <polygon points="92,100 108,100 100,118" fill="#E8A23B"/>
+  <!-- feet -->
+  <polygon points="78,178 92,178 85,196" fill="#E8A23B"/>
+  <polygon points="108,178 122,178 115,196" fill="#E8A23B"/>
+</svg>

@@ -4,7 +4,7 @@
     {
       "name": "memory-match",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "python3 -m http.server ${PORT:-8099}"],
+      "runtimeArgs": ["-c", "python3 -u .claude/devserver.py ${PORT:-8099}"],
       "port": 8099,
       "autoPort": true
     }

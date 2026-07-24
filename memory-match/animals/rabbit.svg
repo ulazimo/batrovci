@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 220" width="180" height="220">
+  <!-- Low-poly sitting rabbit -->
+  <!-- ears -->
+  <polygon points="58,12 76,90 46,90" fill="#C9BFB4"/>
+  <polygon points="122,12 134,90 104,90" fill="#C9BFB4"/>
+  <polygon points="60,26 70,88 52,88" fill="#E7B9BE"/>
+  <polygon points="120,26 128,88 110,88" fill="#E7B9BE"/>
+  <!-- head -->
+  <polygon points="52,78 128,78 118,140 62,140" fill="#D8CFC4"/>
+  <polygon points="90,78 128,78 118,140 90,140" fill="#C9BFB4"/>
+  <!-- body -->
+  <polygon points="46,135 134,135 150,205 30,205" fill="#D8CFC4"/>
+  <polygon points="90,135 134,135 150,205 90,205" fill="#C9BFB4"/>
+  <!-- belly -->
+  <polygon points="70,160 110,160 118,205 62,205" fill="#F0EBE3"/>
+  <!-- face -->
+  <polygon points="66,112 90,124 74,130" fill="#2A1C14"/>
+  <polygon points="114,112 90,124 106,130" fill="#2A1C14"/>
+  <polygon points="82,124 98,124 90,136" fill="#E79AA0"/>
+  <!-- foot -->
+  <polygon points="34,196 66,196 60,214 40,214" fill="#F0EBE3"/>
+  <polygon points="114,196 146,196 140,214 120,214" fill="#F0EBE3"/>
+</svg>

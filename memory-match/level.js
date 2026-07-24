@@ -272,6 +272,7 @@ function updateLivesDisplay() {
 // ============================================================
 function startGame(preplacedSpecials) {
   closeAllOverlays();
+  document.body.classList.remove('on-home');   // reveal in-game HUD chrome
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;
@@ -472,7 +473,8 @@ function nextLevel() {
     document.getElementById('win-stars').textContent = '🌟🌟🌟';
     document.getElementById('win-score').textContent = 'You completed all 10 levels!';
     document.getElementById('win-streak').textContent = '';
-    document.getElementById('next-level-btn').style.display = 'none';
+    const _nlb = document.getElementById('next-level-btn');
+    if (_nlb) _nlb.style.display = 'none';
     document.getElementById('overlay-win').classList.add('active');
   }
 }

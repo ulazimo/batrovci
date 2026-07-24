@@ -836,5 +836,6 @@ function unlockAllLevels() {
 function closeSettings() {
   document.getElementById('settings-panel').classList.remove('active');
   if (settingsReturnTo === 'level-select') showLevelSelect();
+  else if (settingsReturnTo === 'home' && typeof showHome === 'function') showHome();
   // 'game' — just close the overlay, game continues
 }
