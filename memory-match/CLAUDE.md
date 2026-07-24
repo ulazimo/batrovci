@@ -143,7 +143,7 @@ callback ends. **If you add an early `return` in the turn flow, make sure
 Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.js):
 
 ```js
-{ color, flipped, special, index, locked, lockCount?, bombColor?, marked?, ordered? }
+{ color, flipped, special, index, locked, lockCount?, stack?, bombColor?, marked?, ordered? }
 ```
 
 - **Normal card**: `color` set, `special=null`.
@@ -162,6 +162,13 @@ Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.j
   centralized in `breakLockLayer(idx)` + `breakAdjacentLocks(collected)` (board.js),
   called from both the combo path (turn.js) and the bomb path (bank.js
   `detonateBombAt`).
+- **Stacked card**: `stack=N` — a pile of **N** cards on one slot (top + N−1 underneath).
+  Collecting the top card re-seeds the *same slot* with the next card carrying `stack=N−1`
+  (handled in `placeNewCards`, before the deck/normal refill — the pile is its own supply),
+  until it's exhausted. A **square** counter (top-right) shows the total on the tile, and
+  `.card.stacked` draws offset "sheets" hinting at more below. Placed via
+  `stacks: [[r,c,N]…]` in the level data. `countBoardCards()` (board.js) counts a stacked
+  tile as all N layers (used by the `clearAll` goal so it stays winnable).
 - **Disabled cell**: the board slot is `null` (level `disabled: [[r,c],...]`).
 - `marked` (⭐) / `ordered` (numbered) flags are added by specific goal types.
 

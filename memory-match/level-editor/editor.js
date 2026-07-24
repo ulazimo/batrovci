@@ -5,6 +5,7 @@ let levels = [];
 let selectedLevelIndex = -1;
 let activeTool = 'normal';
 const MAX_LOCK_LAYERS = 4; // Locked tool cycles 1→…→MAX, then clears.
+let stackValue = 2;        // Stack tool stamps this many cards per tile (2–MAX_STACK).
 let undoStack = [];
 let redoStack = [];
 let loadedFileName = 'levels';
@@ -18,8 +19,10 @@ const TOOLS = [
   { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Click to add lock layers (1–4, then clears)' },
   { id: 'disabled', icon: '<img src="../blocks/disabled.png" style="width:32px;height:32px;border-radius:4px;opacity:.7">', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
   { id: 'ordered',  icon: '🔢', name: 'Ordered',  desc: 'Place numbered positions for orderedCards goal' },
+  { id: 'stack',    icon: '🃏', name: 'Stack',    desc: 'Stamp a pile of cards on a tile (set the size with − / +)' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
+const MAX_STACK = 10;
 
 const GOAL_TYPES = [
   { id: 'score',          name: 'Score Target',     icon: '🎯' },
@@ -134,6 +137,7 @@ function loadFromJSON(e) {
         deck: Math.max(0, lvl.deck || 0),
         locked:    Array.isArray(lvl.locked)    ? lvl.locked    : [],
         disabled:  Array.isArray(lvl.disabled)  ? lvl.disabled  : [],
+        stacks:    Array.isArray(lvl.stacks)    ? lvl.stacks    : [],
         goals:     Array.isArray(lvl.goals)     ? lvl.goals     : (lvl.target ? [{ type: 'score', target: lvl.target }] : []),
       }));
       selectedLevelIndex = levels.length > 0 ? 0 : -1;
@@ -169,6 +173,7 @@ function buildLevelsOutput() {
     if (lvl.goals && lvl.goals.length > 0) obj.goals = lvl.goals;
     if (lvl.locked && lvl.locked.length > 0) obj.locked = lvl.locked;
     if (lvl.disabled && lvl.disabled.length > 0) obj.disabled = lvl.disabled;
+    if (lvl.stacks && lvl.stacks.length > 0) obj.stacks = lvl.stacks;
     return obj;
   });
 }
@@ -320,6 +325,7 @@ function addLevel() {
     deck: 0,
     locked: [],
     disabled: [],
+    stacks: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.push(newLevel);
@@ -331,7 +337,7 @@ function insertLevel(atIndex) {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
     clearBoard: false, deck: 0,
-    locked: [], disabled: [],
+    locked: [], disabled: [], stacks: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.splice(atIndex, 0, newLevel);
@@ -362,6 +368,7 @@ function renderBoard() {
   const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
   const lockedSet   = new Set(Object.keys(lockedCount));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
+  const stackMap    = {}; (lvl.stacks || []).forEach(([r, c, n]) => { stackMap[`${r},${c}`] = n || 2; });
   const boardWrap   = document.getElementById('board-wrap');
   boardWrap.innerHTML = '';
 
@@ -458,6 +465,14 @@ function renderBoard() {
           cell.appendChild(badge);
         }
       }
+      // Show stacked-tile count (square badge, top-right)
+      if (stackMap[key]) {
+        cell.classList.add('stacked');
+        const badge = document.createElement('span');
+        badge.className = 'stack-count-badge';
+        badge.textContent = stackMap[key];
+        cell.appendChild(badge);
+      }
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => onCellClick(r, c));
@@ -498,6 +513,7 @@ function insertRow(position) {
   if (position === 'top') {
     lvl.locked   = (lvl.locked   || []).map(p => [p[0] + 1, p[1], ...(p[2] ? [p[2]] : [])]);
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r + 1, c]);
+    lvl.stacks   = (lvl.stacks   || []).map(p => [p[0] + 1, p[1], p[2]]);
   }
   lvl.rows++;
   propRows.value = lvl.rows;
@@ -511,6 +527,7 @@ function removeRow(r) {
   pushUndo();
   lvl.locked   = (lvl.locked   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], ...(p[2] ? [p[2]] : [])]);
   lvl.disabled = (lvl.disabled || []).filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]);
+  lvl.stacks   = (lvl.stacks   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], p[2]]);
   lvl.rows--;
   propRows.value = lvl.rows;
   renderBoard();
@@ -524,6 +541,7 @@ function insertCol(position) {
   if (position === 'left') {
     lvl.locked   = (lvl.locked   || []).map(p => [p[0], p[1] + 1, ...(p[2] ? [p[2]] : [])]);
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r, c + 1]);
+    lvl.stacks   = (lvl.stacks   || []).map(p => [p[0], p[1] + 1, p[2]]);
   }
   lvl.cols++;
   propCols.value = lvl.cols;
@@ -537,6 +555,7 @@ function removeCol(c) {
   pushUndo();
   lvl.locked   = (lvl.locked   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], ...(p[2] ? [p[2]] : [])]);
   lvl.disabled = (lvl.disabled || []).filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]);
+  lvl.stacks   = (lvl.stacks   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], p[2]]);
   lvl.cols--;
   propCols.value = lvl.cols;
   renderBoard();
@@ -573,9 +592,10 @@ function onCellClick(row, col) {
   const prevLock = (lvl.locked || []).find(([r, c]) => r === row && c === col);
   const prevLocks = prevLock ? (prevLock[2] || 1) : 0;
 
-  // Always clear from both sets first, then apply the active tool
+  // Always clear this cell from every attribute set first, then apply the active tool
   lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
+  lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => !(r === row && c === col));
 
   if (activeTool === 'locked' && !disabledSet.has(key)) {
     // Each click adds a lock layer; past MAX it wraps back to cleared.
@@ -583,6 +603,9 @@ function onCellClick(row, col) {
     if (next >= 1) lvl.locked = [...lvl.locked, next > 1 ? [row, col, next] : [row, col]];
   } else if (activeTool === 'disabled') {
     lvl.disabled = [...lvl.disabled, [row, col]];
+  } else if (activeTool === 'stack' && !disabledSet.has(key)) {
+    // Stamp a pile of `stackValue` cards on this tile.
+    lvl.stacks = [...lvl.stacks, [row, col, stackValue]];
   }
   // 'normal' or 'eraser' — already cleared above, nothing more to do
 
@@ -610,6 +633,7 @@ function updateLevelProperty(prop, value) {
   if (prop === 'cols' || prop === 'rows') {
     lvl.locked   = (lvl.locked   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     lvl.disabled = (lvl.disabled || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
+    lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
   }
 
   renderBoard();
@@ -661,14 +685,31 @@ function renderToolbar() {
   TOOLS.forEach(tool => {
     const card = document.createElement('div');
     card.className = 'tool-card' + (tool.id === activeTool ? ' active' : '');
+    const stepper = (tool.id === 'stack' && activeTool === 'stack')
+      ? `<div class="tool-stepper">
+           <button class="stepper-btn" data-act="dec">−</button>
+           <span class="stepper-val">${stackValue}</span>
+           <button class="stepper-btn" data-act="inc">+</button>
+         </div>`
+      : '';
     card.innerHTML = `
       <div class="tool-icon">${tool.icon}</div>
       <div class="tool-name">${tool.name}</div>
       <div class="tool-desc">${tool.desc}</div>
+      ${stepper}
     `;
     card.addEventListener('click', () => {
       activeTool = tool.id;
       renderToolbar();
+    });
+    // Stack size − / + controls (don't let the click bubble up and re-select the tool)
+    card.querySelectorAll('.stepper-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const delta = btn.dataset.act === 'inc' ? 1 : -1;
+        stackValue = Math.max(2, Math.min(MAX_STACK, stackValue + delta));
+        renderToolbar();
+      });
     });
     toolListEl.appendChild(card);
   });

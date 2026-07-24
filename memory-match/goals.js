@@ -60,8 +60,9 @@ function initLevelGoals() {
         progress.breakLocks = { total: board.filter(c => c && c.locked).reduce((s, c) => s + (c.lockCount || 1), 0), broken: 0 };
         break;
       case 'clearAll':
-        // Clear every card — those on the board now plus everything still in the refill deck.
-        progress.clearAll = { total: board.filter(c => c && !c.special).length + deck.length };
+        // Clear every card — those on the board now (counting stacked tiles as all their
+        // hidden layers) plus everything still in the refill deck.
+        progress.clearAll = { total: countBoardCards() + deck.length };
         break;
     }
   });
@@ -246,7 +247,7 @@ function getGoalDisplay(g) {
       return { icon:'🔓', label:'Locks', current: p.breakLocks.broken, target: p.breakLocks.total, done: p.breakLocks.broken >= p.breakLocks.total };
     case 'clearAll': {
       const total = p.clearAll.total;
-      const remaining = board.filter(c => c && !c.special).length + deck.length;
+      const remaining = countBoardCards() + deck.length;
       return { icon:'🧹', label:'Cleared', current: total - remaining, target: total, done: remaining === 0 };
     }
     default: return { icon:'📋', label:'', current: 0, target: 0, done: true };

@@ -294,6 +294,15 @@ function startGame(preplacedSpecials) {
     });
   }
 
+  // Place stacked cards — a pile of N cards on one slot. Collecting the top card
+  // reveals the next one underneath (see placeNewCards), until the stack runs out.
+  (lvl.stacks || []).forEach(([r, c, count]) => {
+    const idx = r * COLS + c;
+    if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special) {
+      board[idx].stack = Math.max(1, Math.min(10, count || 1));
+    }
+  });
+
   // Cleaning levels: re-roll board colors for an even spread, and build the finite
   // refill deck that draws into cleared slots until it runs out.
   deck = [];

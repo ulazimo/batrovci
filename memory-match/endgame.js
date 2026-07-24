@@ -42,6 +42,7 @@ function updateRecallButton() {
 // ============================================================
 function finishTurn() {
   chainColor=null; chainColors=new Set(); chainCards=[]; specialsUsed=[];
+  stackReseededSlots.clear(); // drop any leftover markers (e.g. from a goal-met collect)
   turnActive=false; inputLocked=false; activeBooster=null;
   clearNudgeTimer();
   updateChainIndicator(); updateBoosterUI(); updateRecallButton(); updateGoalHUD();

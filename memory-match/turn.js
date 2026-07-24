@@ -443,6 +443,9 @@ function placeNewCards(toRemove, skip) {
   const clearBoard = LEVELS[currentLevelIndex]?.clearBoard;
   toRemove.forEach(idx => {
     if (idx===skip || board[idx]===null) return;
+    // Stacked tile already re-seeded by flyCardsToGoal (the underneath card is showing) —
+    // leave it be; don't refill or reveal it.
+    if (stackReseededSlots.has(idx)) { stackReseededSlots.delete(idx); return; }
     if (clearBoard) {
       // Cleaning journey: draw a refill card from the deck; once it's empty the slot stays clear.
       if (deck.length === 0) { board[idx] = null; replaceCell(idx); return; }

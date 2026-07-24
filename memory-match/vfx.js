@@ -88,6 +88,7 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
   const flyColors = indices.map(idx => board[idx] && !board[idx].special ? board[idx].color : null);
   if (!scoreTarget || indices.length === 0) {
     indices.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.add('exploding'); });
+    indices.forEach(idx => reseedStackTile(idx)); // leave the next stack card behind
     if (useCollection) flyColors.forEach(c => addToCollection(c));
     if (cb) setTimeout(cb, 450);
     return;
@@ -125,6 +126,10 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
     clone.style.borderRadius = '4px';
 
     document.body.appendChild(clone);
+
+    // Stacked tile: now that the top card's clone is captured, reveal the card underneath
+    // in-place so the slot never blinks empty during the fly.
+    reseedStackTile(idx);
 
     setTimeout(() => {
       clone.style.transition = `left ${flyDuration}ms cubic-bezier(.4,0,.2,1), top ${flyDuration}ms cubic-bezier(.4,0,.2,1), width ${flyDuration}ms ease-in, height ${flyDuration}ms ease-in, opacity ${flyDuration}ms ease-in`;

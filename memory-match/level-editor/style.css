@@ -266,6 +266,27 @@ body {
   border-radius: 50%; width: 16px; height: 16px; line-height: 16px; text-align: center;
 }
 
+/* Stacked tile (pile of N cards) */
+.board-cell.stacked {
+  position: relative;
+  border-color: #9b6dff;
+  box-shadow: inset 0 0 8px rgba(155,109,255,.25),
+              2px 2px 0 0 #2a2450, 4px 4px 0 0 #221c44;
+}
+.stack-count-badge {
+  position: absolute; top: 2px; right: 2px; z-index: 2;
+  background: #9b6dff; color: #fff; font-size: 11px; font-weight: 800;
+  border-radius: 4px; min-width: 17px; height: 17px; line-height: 17px; text-align: center; padding: 0 2px;
+}
+/* Stack-size stepper inside the Stack tool card */
+.tool-stepper { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
+.stepper-btn {
+  width: 26px; height: 26px; border-radius: 6px; border: 1px solid #6a6aaa;
+  background: #2a2a4a; color: #fff; font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer;
+}
+.stepper-btn:hover { background: #3a3a6a; border-color: #9b6dff; }
+.stepper-val { min-width: 22px; text-align: center; font-size: 16px; font-weight: 800; color: #9b6dff; }
+
 .board-cell.disabled {
     background: url(../blocks/disabled.png);
     border-color: transparent;

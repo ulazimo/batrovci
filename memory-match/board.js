@@ -149,6 +149,11 @@ function breakAdjacentLocks(collectedIndices) {
   });
 }
 
+// Physical cards still on the board, counting a stacked tile as all its hidden layers.
+function countBoardCards() {
+  return board.reduce((s, c) => s + (c && !c.special ? (c.stack > 1 ? c.stack : 1) : 0), 0);
+}
+
 function buildCardHTML(card) {
   const i = card.index;
   const lockedCls = card.locked ? ' locked' : '';
@@ -167,7 +172,53 @@ function buildCardHTML(card) {
   const orderedNum = card.ordered ? `<span class="ordered-number">${card.ordered}</span>` : '';
   // Multi-lock counter: how many more breaks are needed (only shown when >1).
   const lockBadge = card.locked && card.lockCount > 1 ? `<span class="lock-count">${card.lockCount}</span>` : '';
+  // NOTE: stacked-tile visuals (count badge + "more below" hint) live on the .cell, not the
+  // .card — the card flips (rotateY) when revealed, which would flip/hide them. See decorateStack.
   return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}${lockBadge}</div>`;
+}
+
+// Stacked tiles re-seeded during the current collect (by flyCardsToGoal). The underneath
+// card is shown the instant the top starts flying, so the slot never blinks empty; placeNewCards
+// then skips these. Cleared each turn in finishTurn.
+let stackReseededSlots = new Set();
+
+// Reveal the next card of a stacked tile in-place, carrying the decremented count. Called from
+// flyCardsToGoal right after the top card's fly-clone is captured, so it appears immediately
+// (face-down, no drop animation). Returns true if `idx` was a stack. Fully depleted tiles
+// (stack would drop to <2) still get a fresh card here — the badge/hint just vanish.
+function reseedStackTile(idx) {
+  const c = board[idx];
+  if (!c || !(c.stack > 1)) return false;
+  const next = createCard(idx);
+  next.stack = c.stack - 1;
+  board[idx] = next;
+  replaceCell(idx);
+  stackReseededSlots.add(idx);
+  // Juice: the top card just flew off — pop the new count and let the pile settle.
+  const cell = boardEl.children[idx];
+  if (cell) {
+    const badge = cell.querySelector('.stack-count');
+    if (badge) { badge.classList.add('stack-pop'); badge.addEventListener('animationend', () => badge.classList.remove('stack-pop'), {once:true}); }
+    const cardEl = cell.querySelector('.card');
+    if (cardEl) { cell.classList.add('stack-settle'); cardEl.addEventListener('animationend', () => cell.classList.remove('stack-settle'), {once:true}); }
+  }
+  return true;
+}
+
+// Stacked-tile decoration on the CELL (not the flipping card): a square count badge in the
+// top-right + the offset "sheets" hint (via .cell.stacked in CSS). Idempotent — safe to call
+// on every render/replace; removes the decoration when the tile is no longer a stack.
+function decorateStack(cell, card) {
+  cell.classList.remove('stacked');
+  const old = cell.querySelector('.stack-count');
+  if (old) old.remove();
+  if (card && card.stack > 1) {
+    cell.classList.add('stacked');
+    const badge = document.createElement('span');
+    badge.className = 'stack-count';
+    badge.textContent = card.stack;
+    cell.appendChild(badge);
+  }
 }
 
 function renderBoard() {
@@ -179,6 +230,7 @@ function renderBoard() {
     } else {
       cell.className = 'cell';
       cell.innerHTML = buildCardHTML(card);
+      decorateStack(cell, card);
     }
     boardEl.appendChild(cell);
   });
@@ -314,6 +366,7 @@ function replaceCell(i) {
     return;
   }
   cell.innerHTML = buildCardHTML(board[i]);
+  decorateStack(cell, board[i]);
 }
 
 function updateStatusBadge() {

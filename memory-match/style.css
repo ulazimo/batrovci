@@ -225,6 +225,39 @@ body {
   80%{transform:translate(2px,1px) rotate(2deg)}
 }
 
+/* Stacked cards — a pile of N cards on one slot. Both the square counter (total on the
+   tile, top + underneath) and the offset "sheets" hint live on the .cell, NOT the .card:
+   the card flips (rotateY) when revealed, which would flip the badge and hide the hint. */
+.stack-count {
+  position:absolute;top:-4px;right:-4px;z-index:6;min-width:19px;height:19px;padding:0 3px;box-sizing:border-box;
+  border-radius:4px;background:linear-gradient(135deg,#9b6dff,#6a3fd1);color:#fff;
+  font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);
+}
+/* "More underneath" hint: offset card-shaped sheets behind the (flipping) card. */
+.cell.stacked > .card { z-index:1; }
+.cell.stacked::before, .cell.stacked::after {
+  content:'';position:absolute;inset:0;z-index:0;border-radius:14px;pointer-events:none;
+  background:linear-gradient(135deg,#2a2a4a,#3a3a6a);border:2px solid #4a4a7a;
+}
+.cell.stacked::before { transform:translate(6px,6px);filter:brightness(.5); }  /* deepest sheet */
+.cell.stacked::after  { transform:translate(3px,3px);filter:brightness(.75); } /* middle sheet */
+
+/* Juice when the top card flies off and the next one is revealed (see reseedStackTile):
+   the count badge pops, and the pile settles into place. */
+.stack-count.stack-pop { animation: stackCountPop .36s cubic-bezier(.34,1.56,.64,1); }
+@keyframes stackCountPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.6); }
+  100% { transform: scale(1); }
+}
+.cell.stacked.stack-settle > .card { animation: stackSettle .34s cubic-bezier(.4,0,.2,1); }
+@keyframes stackSettle {
+  0%   { transform: translateY(-4px) scale(.94); }
+  55%  { transform: translateY(2px)  scale(1.03); }
+  100% { transform: translateY(0)    scale(1); }
+}
+
 /* Pre-level board preview */
 .pre-level-mini-grid {
   display:grid;gap:3px;width:140px;margin:4px auto 8px;
