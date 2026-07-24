@@ -577,15 +577,10 @@ body {
    inline per area in decorateColorLock). Overlay ON TOP of the cards; inert until enough of
    that colour is collected. */
 .cell.cl-cell { border-radius: 8px; }
+/* A plain, flat colour wash (no ice-style shine/glow) — see decorateColorLock for the tint. */
 .color-lock-fill {
   position: absolute; inset: 0; z-index: 6; pointer-events: none;
   border: 0 solid; box-sizing: border-box; overflow: hidden;
-  box-shadow: inset 0 0 14px rgba(255,255,255,.3);
-}
-.color-lock-fill::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.42) 48%, transparent 53%);
-  opacity: .75;
 }
 .cell.cl-edge-top    > .color-lock-fill { border-top-width: 3px; }
 .cell.cl-edge-right  > .color-lock-fill { border-right-width: 3px; }
@@ -646,6 +641,34 @@ body {
 .card.locked .card-back::after { content:'🔒'; font-size:clamp(16px,4vw,28px); color:#6a6a8a; filter:none; }
 @keyframes unlockCard { 0%{transform:scale(1);filter:brightness(.7)} 30%{transform:scale(1.15);filter:brightness(1.3)} 60%{transform:scale(.95);filter:brightness(1)} 100%{transform:scale(1);filter:brightness(1)} }
 .card.unlocking { animation: unlockCard .5s ease-out; pointer-events: auto; }
+
+/* "Reveal Locked Cards" rule — a locked / iced / color-locked card sits face-up (showing its
+   colour) while locked, then flips face-down when it unlocks. `.reveal-locked` marks the still-
+   locked card (added in buildCardHTML); `.reveal-hold` marks a just-unlocked card being held
+   face-up until the turn's reveal beat (flushLockHide removes it → the .card transform-transition
+   animates the flip down, in sync with the back-effect / danger reveals). Both are distinct from
+   .flipped so no game logic mistakes them for a truly revealed card. */
+.card.reveal-locked,
+.card.reveal-hold { transform: rotateY(180deg); }
+/* Plain 🔒 lock overlay — the classic dark lock look with the 🔒 centred, drawn semi-transparently
+   OVER the revealed colour (which still reads through). On the .cell (z-index 6) so it never
+   rotates away with the flipped card. Ice / color-lock keep their own overlays. */
+.lock-fill {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  border-radius: 12px; box-sizing: border-box;
+  background: linear-gradient(135deg, rgba(20,20,34,.62), rgba(37,37,64,.62));
+  border: 2px solid rgba(74,74,122,.85);
+  box-shadow: inset 0 0 8px rgba(10,10,20,.5);
+  display: flex; align-items: center; justify-content: center;
+}
+.lock-fill-icon { font-size: clamp(16px,4vw,28px); filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.lock-fill-count {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,15px);
+  min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 9px; background: linear-gradient(135deg,#f0c040,#d18e02); color: #2a1a00;
+  font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #fff; box-shadow: 0 0 6px rgba(240,192,64,.6);
+}
 
 /* special cards */
 .card.special { transform: none; }

@@ -462,9 +462,10 @@ function endTurn(manual, perfectSweep) {
           if (allRevealed.length > 0) {
             setTimeout(() => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
+              flushLockHide(); // just-unlocked locked/iced/color-locked cards flip face-down in sync with this reveal-hide
               doFinishWithTutorial();
             }, 2200);
-          } else doFinishWithTutorial();
+          } else { flushLockHide(); doFinishWithTutorial(); }
         }, dropDelay);
       }, bombRevealTime);
         };

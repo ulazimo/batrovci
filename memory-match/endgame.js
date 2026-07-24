@@ -60,6 +60,7 @@ function updateRecallButton() {
 // ============================================================
 function finishTurn() {
   chainColor=null; chainColors=new Set(); chainCards=[]; specialsUsed=[];
+  flushLockHide(); // catch-all: flip any still-held just-unlocked reveal cards face-down
   stackReseededSlots.clear(); // drop any leftover markers (e.g. from a goal-met collect)
   turnActive=false; inputLocked=false; activeBooster=null;
   clearNudgeTimer();

@@ -282,6 +282,7 @@ function startGame(preplacedSpecials) {
   bankProgress = 0; bankBombPlacement = false; clearBombPlacement();
   consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
+  pendingLockHide.clear();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 
   // Disable cells — set to null so no card is placed there

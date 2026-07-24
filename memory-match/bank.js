@@ -198,6 +198,7 @@ function detonateBombAt(index, bombType) {
   // Nothing to collect — the blast only broke locks and/or joined cards to the chain.
   if (targets.length === 0) {
     setTimeout(() => {
+      flushLockHide(); // flip any just-unlocked reveal cards face-down at the bomb's beat
       // Colour clear? The bomb may have added the last card(s) of the chain colour.
       if (bombCleared.length > 0) { resolveBombColorClear(); return; }
       // Breaking a lock may have completed the breakLocks goal.
@@ -216,6 +217,7 @@ function detonateBombAt(index, bombType) {
 
   // Hold on the revealed cards so the player can read them, THEN collect (slower than before)
   setTimeout(() => {
+    flushLockHide(); // flip any just-unlocked reveal cards face-down in sync with the bomb collect
     flyCardsToGoal(targets, targets.length * 25, () => {
       const nc = placeNewCards(targets, -1);
       updateGoalHUD(); updateDeckHUD();

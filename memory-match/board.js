@@ -221,6 +221,7 @@ function breakLockLayer(idx) {
   card.lockCount = (card.lockCount || 1) - 1;
   if (levelGoals?.progress?.breakLocks) levelGoals.progress.breakLocks.broken++;
   const el = getCardEl(idx);
+  const cell = boardEl.children[idx];
   // Layers remain → stay locked, tick the counter down with a crack.
   if (card.lockCount > 0) {
     if (el) {
@@ -229,23 +230,33 @@ function breakLockLayer(idx) {
       el.classList.add('lock-crack');
       el.addEventListener('animationend', () => el.classList.remove('lock-crack'), {once:true});
     }
+    if (cell) decorateLock(cell, card); // refresh the cell counter when the card is shown face-up
     return false;
   }
   // Final layer broken → fully unlock.
   card.locked = false;
+  if (cell) decorateLock(cell, card); // drop the dark lock overlay — the card is no longer locked
   if (el) {
     const lc = el.querySelector('.lock-count');
     if (lc) lc.remove();
     el.classList.remove('locked');
-    el.classList.add('unlocking');
-    el.addEventListener('animationend', () => el.classList.remove('unlocking'), {once:true});
     el.style.pointerEvents = '';
-    // Reveal on unlock setting
-    if (getRule('revealOnUnlock')) {
-      card.flipped = true;
-      el.classList.add('flipped', 'reveal-flash');
-      el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true});
-      setTimeout(() => { card.flipped = false; el.classList.remove('flipped'); }, 1500);
+    // Was it shown face-up by revealLockedCards? Don't snap it hidden — hold it face-up and flip
+    // it face-DOWN at the turn's reveal beat, in sync with the back-effect / danger reveals
+    // (flushLockHide). Otherwise do the classic unlock pop (+ optional revealOnUnlock flash).
+    if (el.classList.contains('reveal-locked')) {
+      el.classList.remove('reveal-locked');
+      el.classList.add('reveal-hold');
+      pendingLockHide.add(idx);
+    } else {
+      el.classList.add('unlocking');
+      el.addEventListener('animationend', () => el.classList.remove('unlocking'), {once:true});
+      if (getRule('revealOnUnlock')) {
+        card.flipped = true;
+        el.classList.add('flipped', 'reveal-flash');
+        el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true});
+        setTimeout(() => { card.flipped = false; el.classList.remove('flipped'); }, 1500);
+      }
     }
   }
   return true;
@@ -274,6 +285,10 @@ function buildCardHTML(card) {
   // Iced / color-locked cards are `locked` internally (so every interaction guard skips them)
   // but must NOT show the 🔒 lock visual — their overlay conveys the frozen/locked state.
   const lockedCls = (card.locked && !card.iced && !card.colorLocked) ? ' locked' : '';
+  // "Reveal Locked Cards" rule: show a locked/iced/color-locked card face-up (its colour) while
+  // it's locked, so the player can memorise it; it flips face-down the moment it unlocks. Purely
+  // visual — the model `flipped` stays false, so all game logic still treats the card as inert.
+  const revealCls = (!card.special && card.locked && getRule('revealLockedCards')) ? ' reveal-locked' : '';
   if (card.special) {
     const bombStyle = card.bombColor ? ` style="--bomb-color:${cssColor(card.bombColor)}"` : '';
     const bombCls = card.bombColor ? ' bomb-colored' : '';
@@ -288,10 +303,12 @@ function buildCardHTML(card) {
   const markedBadge = card.marked ? '<span class="marked-badge">⭐</span>' : '';
   const orderedNum = card.ordered ? `<span class="ordered-number">${card.ordered}</span>` : '';
   // Multi-lock counter: how many more breaks are needed (only shown when >1). Not for ice/color-lock.
-  const lockBadge = (card.locked && !card.iced && !card.colorLocked && card.lockCount > 1) ? `<span class="lock-count">${card.lockCount}</span>` : '';
+  // When the card is revealed face-up (reveal-locked) the count lives on the CELL instead
+  // (decorateLock) — an in-card badge would rotate/mirror away with the flipped card.
+  const lockBadge = (card.locked && !card.iced && !card.colorLocked && card.lockCount > 1 && !revealCls) ? `<span class="lock-count">${card.lockCount}</span>` : '';
   // NOTE: stacked-tile visuals (count badge + "more below" hint) live on the .cell, not the
   // .card — the card flips (rotateY) when revealed, which would flip/hide them. See decorateStack.
-  return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}${lockBadge}</div>`;
+  return `<div class="card${lockedCls}${revealCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}${lockBadge}</div>`;
 }
 
 // Stacked tiles re-seeded during the current collect (by flyCardsToGoal). The underneath
@@ -352,6 +369,44 @@ function decorateBackEffect(cell, card) {
     badge.title = getBackEffect(card.backEffect).name + ' reveal';
     cell.appendChild(badge);
   }
+}
+
+// Plain 🔒 lock overlay on the CELL (not the flipping card), shown only while the "Reveal Locked
+// Cards" rule is displaying a plain lock face-up. It's the classic dark lock look with the 🔒
+// centred, drawn semi-transparently OVER the revealed colour (which still reads through it) — the
+// back's own 🔒 rotates away with the flipped card. Lives on the .cell so it doesn't rotate. Ice /
+// color-lock tiles keep their own overlays and are skipped. Idempotent — safe on every render.
+function decorateLock(cell, card) {
+  const old = cell.querySelector('.lock-fill');
+  if (old) old.remove();
+  if (card && card.locked && !card.iced && !card.colorLocked && !card.special && getRule('revealLockedCards')) {
+    const fill = document.createElement('div');
+    fill.className = 'lock-fill';
+    fill.innerHTML = '<span class="lock-fill-icon">🔒</span>' +
+      (card.lockCount > 1 ? `<span class="lock-fill-count">${card.lockCount}</span>` : '');
+    cell.appendChild(fill);
+  }
+}
+
+// Flip every held just-unlocked card face-down together, with the normal flip transition. Called
+// at the turn's reveal beat (in sync with the back-effect / danger reveals) and again in finishTurn
+// as a catch-all. Removing `reveal-hold` lets the .card's base transform-transition animate the
+// rotateY(180)→0 flip. No-op when nothing is held. See pendingLockHide / revealLockedCards.
+function flushLockHide() {
+  if (!pendingLockHide.size) return;
+  pendingLockHide.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.remove('reveal-hold'); });
+  pendingLockHide.clear();
+}
+
+// After an ice / color-lock area unfreezes and its cell is re-rendered (face-down): if its cards
+// were being shown face-up by revealLockedCards, hold them face-up and defer the flip-down to the
+// turn's reveal beat (flushLockHide), so they hide in sync with plain locks and the other reveals.
+// No-op when the rule is off (the cell already re-rendered face-down, matching legacy behaviour).
+function heldRevealUnlock(i) {
+  if (!getRule('revealLockedCards') || !board[i] || board[i].special) return;
+  const el = getCardEl(i);
+  if (el) el.classList.add('reveal-hold');
+  pendingLockHide.add(i);
 }
 
 // Elevator decoration on the CELL (not the flipping card). Each elevator AREA is drawn as
@@ -475,6 +530,7 @@ function breakIceArea(area) {
       iceCellArea.delete(i);
       if (board[i]) { board[i].iced = false; board[i].locked = false; }
       replaceCell(i);
+      heldRevealUnlock(i); // keep face-up + defer flip-down to the reveal beat (revealLockedCards)
     });
     updateChainIndicator();
   }, 320);
@@ -506,7 +562,8 @@ function decorateColorLock(cell, i) {
   const hex = COLOR_HEX[area.color] || '#888888';
   const fill = document.createElement('div');
   fill.className = 'color-lock-fill';
-  fill.style.background = `linear-gradient(135deg, ${hexToRgba(hex, .52)}, ${hexToRgba(hex, .34)})`;
+  // A plain, near-uniform colour wash (no ice-style shine) tinted by the required colour.
+  fill.style.background = hexToRgba(hex, .5);
   fill.style.borderColor = hexToRgba(hex, .95);
   cell.appendChild(fill);
 }
@@ -558,6 +615,7 @@ function breakColorLockArea(area) {
       colorLockCellArea.delete(i);
       if (board[i]) { board[i].colorLocked = false; board[i].locked = false; }
       replaceCell(i);
+      heldRevealUnlock(i); // keep face-up + defer flip-down to the reveal beat (revealLockedCards)
     });
     updateChainIndicator();
   }, 320);
@@ -574,6 +632,7 @@ function renderBoard() {
       cell.innerHTML = buildCardHTML(card);
       decorateStack(cell, card);
       decorateBackEffect(cell, card);
+      decorateLock(cell, card);
     }
     decorateElevator(cell, i);
     decorateIce(cell, i);
@@ -723,6 +782,7 @@ function replaceCell(i) {
   cell.innerHTML = buildCardHTML(board[i]);
   decorateStack(cell, board[i]);
   decorateBackEffect(cell, board[i]);
+  decorateLock(cell, board[i]);
   decorateElevator(cell, i);
   decorateIce(cell, i);
   decorateColorLock(cell, i);
