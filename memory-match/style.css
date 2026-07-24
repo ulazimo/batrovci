@@ -450,6 +450,49 @@ body {
 .cell { perspective: 400px; cursor: pointer; aspect-ratio: 1; position: relative; }
 .cell.disabled-cell { cursor: default; pointer-events: none; background: transparent; }
 .cell.cleared-cell { cursor: default; pointer-events: none; background: rgba(255,255,255,0.03); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+
+/* Elevator areas — each area is drawn as ONE continuous region rather than per-tile rings.
+   A child `.elevator-fill` (behind the card, so it never collides with a stacked tile's
+   ::before/::after sheets) carries a shared tint that bridges the 8px inter-cell gap toward
+   same-area neighbours (elev-join-*) and draws the area border only on outward edges
+   (elev-edge-*). Empty slots glow stronger and show a centered "⬆N" badge (that area's
+   remaining refills); with no refills left they read as depleted. */
+.cell.elevator-cell { border-radius: 8px; }
+.cell.elevator-cell > .card { position: relative; z-index: 1; }
+.elevator-fill {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: rgba(63,208,201,.12);
+  border: 0 solid rgba(63,208,201,.85);
+  box-sizing: border-box;
+}
+.cell.elev-edge-top    > .elevator-fill { border-top-width: 3px; }
+.cell.elev-edge-right  > .elevator-fill { border-right-width: 3px; }
+.cell.elev-edge-bottom > .elevator-fill { border-bottom-width: 3px; }
+.cell.elev-edge-left   > .elevator-fill { border-left-width: 3px; }
+.cell.elev-join-top    > .elevator-fill { top: -8px; }
+.cell.elev-join-right  > .elevator-fill { right: -8px; }
+.cell.elev-join-bottom > .elevator-fill { bottom: -8px; }
+.cell.elev-join-left   > .elevator-fill { left: -8px; }
+/* Round only the region's outer corners (where two outward edges meet). */
+.cell.elev-edge-top.elev-edge-left     > .elevator-fill { border-top-left-radius: 10px; }
+.cell.elev-edge-top.elev-edge-right    > .elevator-fill { border-top-right-radius: 10px; }
+.cell.elev-edge-bottom.elev-edge-left  > .elevator-fill { border-bottom-left-radius: 10px; }
+.cell.elev-edge-bottom.elev-edge-right > .elevator-fill { border-bottom-right-radius: 10px; }
+.cell.cleared-cell.elevator-cell > .elevator-fill { background: rgba(63,208,201,.22); }
+.elevator-badge {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); z-index: 4;
+  font-size: 13px; font-weight: 800; color: #bff7f1; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8);
+}
+/* Cards emerging from an elevator rise up from below (vs. normal refills that drop in). */
+@keyframes elevatorEmerge {
+  0%   { transform: translateY(80%); opacity: 0; }
+  60%  { transform: translateY(-6%); opacity: 1; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+.card.elevator-emerge { animation: elevatorEmerge .45s cubic-bezier(.22,.61,.36,1); }
+.pre-level-mini-cell.elevator { background:#1c4c57; border:1px solid #3fd0c9; }
 .card {
   width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
   transition: transform 0.35s ease; border-radius: 14px;

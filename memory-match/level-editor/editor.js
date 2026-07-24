@@ -20,6 +20,7 @@ const TOOLS = [
   { id: 'disabled', icon: '<img src="../blocks/disabled.png" style="width:32px;height:32px;border-radius:4px;opacity:.7">', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
   { id: 'ordered',  icon: '🔢', name: 'Ordered',  desc: 'Place numbered positions for orderedCards goal' },
   { id: 'stack',    icon: '🃏', name: 'Stack',    desc: 'Stamp a pile of cards on a tile (set the size with − / +)' },
+  { id: 'elevator', icon: '🛗', name: 'Elevator', desc: 'Paint batch-refill areas — adjacent cells form one area. Set each area\'s refills in the list below. Can share a tile with a stack.' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
 const MAX_STACK = 10;
@@ -37,6 +38,80 @@ const GOAL_TYPES = [
   { id: 'clearAll',       name: 'Clear Board',      icon: '🧹' },
 ];
 const ALL_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'purple'];
+
+// ============================================================
+// ELEVATOR AREAS — independent batch-refill zones, each with its own refill count.
+// Stored on the level as `elevators: [{ cells:[[r,c]…], refills }]`. Cells that are
+// orthogonally adjacent belong to the same area; painting maintains that grouping.
+// ============================================================
+const ELEV_HUES = ['#3fd0c9', '#f5a623', '#e879f9', '#5b9bff', '#4ade80', '#f87171', '#c084fc', '#facc15'];
+const ELEV_DEFAULT_REFILLS = 3;
+
+function elevatorAreaAt(lvl, row, col) {
+  return (lvl.elevators || []).find(a => a.cells.some(([r, c]) => r === row && c === col));
+}
+
+// Split a flat cell list into orthogonally-connected components.
+function connectedComponents(cells) {
+  const key = ([r, c]) => `${r},${c}`;
+  const set = new Set(cells.map(key));
+  const seen = new Set();
+  const comps = [];
+  cells.forEach(cell => {
+    if (seen.has(key(cell))) return;
+    const comp = [];
+    const stack = [cell];
+    seen.add(key(cell));
+    while (stack.length) {
+      const [r, c] = stack.pop();
+      comp.push([r, c]);
+      [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dr, dc]) => {
+        const nk = `${r + dr},${c + dc}`;
+        if (set.has(nk) && !seen.has(nk)) { seen.add(nk); stack.push([r + dr, c + dc]); }
+      });
+    }
+    comps.push(comp);
+  });
+  return comps;
+}
+
+// Add (row,col) to the elevator: join the adjacent area, merge several if it bridges them,
+// or start a fresh area (with the default refill count) if it touches none.
+function addElevatorCell(lvl, row, col) {
+  if (!lvl.elevators) lvl.elevators = [];
+  const adjacent = lvl.elevators.filter(a =>
+    a.cells.some(([r, c]) => Math.abs(r - row) + Math.abs(c - col) === 1));
+  if (adjacent.length === 0) {
+    lvl.elevators.push({ cells: [[row, col]], refills: ELEV_DEFAULT_REFILLS });
+    return;
+  }
+  const target = adjacent[0];
+  for (let k = 1; k < adjacent.length; k++) target.cells.push(...adjacent[k].cells);
+  lvl.elevators = lvl.elevators.filter(a => a === target || !adjacent.includes(a));
+  target.cells.push([row, col]);
+}
+
+// Remove (row,col); drop the area if empty, or re-split it if the removal disconnected it.
+function removeElevatorCell(lvl, row, col) {
+  const area = elevatorAreaAt(lvl, row, col);
+  if (!area) return;
+  area.cells = area.cells.filter(([r, c]) => !(r === row && c === col));
+  const others = lvl.elevators.filter(a => a !== area);
+  const rebuilt = connectedComponents(area.cells).map(cells => ({ cells, refills: area.refills }));
+  lvl.elevators = [...others, ...rebuilt];
+}
+
+// After a row/column edit, re-derive connected areas (each keeps its parent's refills) and
+// drop any that became empty.
+function resplitElevators(lvl) {
+  if (!Array.isArray(lvl.elevators)) return;
+  const rebuilt = [];
+  lvl.elevators.forEach(a => {
+    const cells = (a.cells || []).filter(Boolean);
+    connectedComponents(cells).forEach(comp => { if (comp.length) rebuilt.push({ cells: comp, refills: a.refills }); });
+  });
+  lvl.elevators = rebuilt;
+}
 
 // ============================================================
 // DOM REFS
@@ -138,6 +213,11 @@ function loadFromJSON(e) {
         locked:    Array.isArray(lvl.locked)    ? lvl.locked    : [],
         disabled:  Array.isArray(lvl.disabled)  ? lvl.disabled  : [],
         stacks:    Array.isArray(lvl.stacks)    ? lvl.stacks    : [],
+        elevators: Array.isArray(lvl.elevators)
+          ? lvl.elevators.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], refills: Math.max(0, a.refills || 0) }))
+          : (Array.isArray(lvl.elevator) && lvl.elevator.length
+              ? [{ cells: lvl.elevator, refills: Math.max(0, lvl.elevatorRefills || 0) }]
+              : []),
         goals:     Array.isArray(lvl.goals)     ? lvl.goals     : (lvl.target ? [{ type: 'score', target: lvl.target }] : []),
       }));
       selectedLevelIndex = levels.length > 0 ? 0 : -1;
@@ -174,6 +254,9 @@ function buildLevelsOutput() {
     if (lvl.locked && lvl.locked.length > 0) obj.locked = lvl.locked;
     if (lvl.disabled && lvl.disabled.length > 0) obj.disabled = lvl.disabled;
     if (lvl.stacks && lvl.stacks.length > 0) obj.stacks = lvl.stacks;
+    // Elevator: one entry per batch-refill area (cells + its own refill count).
+    const els = (lvl.elevators || []).filter(a => a.cells && a.cells.length > 0);
+    if (els.length > 0) obj.elevators = els.map(a => ({ cells: a.cells, refills: Math.max(0, a.refills || 0) }));
     return obj;
   });
 }
@@ -256,13 +339,15 @@ function renderLevelList() {
 function buildMiniGrid(lvl) {
   const lockedSet   = new Set((lvl.locked   || []).map(([r, c]) => `${r},${c}`));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
+  const elevatorSet = new Set((lvl.elevators || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
   let html = `<div class="mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
   for (let r = 0; r < lvl.rows; r++) {
     for (let c = 0; c < lvl.cols; c++) {
       const key = `${r},${c}`;
       let cls = 'mini-cell';
-      if (disabledSet.has(key))    cls += ' disabled';
-      else if (lockedSet.has(key)) cls += ' locked';
+      if (disabledSet.has(key))      cls += ' disabled';
+      else if (lockedSet.has(key))   cls += ' locked';
+      else if (elevatorSet.has(key)) cls += ' elevator';
       html += `<div class="${cls}"></div>`;
     }
   }
@@ -302,6 +387,37 @@ function loadLevelIntoEditor() {
   renderGoals();
 }
 
+// Per-area refills editor: one row per elevator area with a color swatch (matching the
+// board tint) and a number input. Rendered from renderBoard so it stays in sync with edits.
+function renderElevatorAreas() {
+  const wrap = document.getElementById('elevator-areas');
+  const title = document.getElementById('elevator-areas-title');
+  if (!wrap) return;
+  const lvl = selectedLevelIndex >= 0 ? levels[selectedLevelIndex] : null;
+  const areas = (lvl && lvl.elevators) || [];
+  if (areas.length === 0) {
+    wrap.innerHTML = ''; wrap.style.display = 'none';
+    if (title) title.style.display = 'none';
+    return;
+  }
+  wrap.style.display = ''; if (title) title.style.display = '';
+  wrap.innerHTML = areas.map((a, i) => `
+    <div class="elev-area-row">
+      <span class="elev-area-swatch" style="background:${ELEV_HUES[i % ELEV_HUES.length]}"></span>
+      <span class="elev-area-label">Area ${i + 1} <span class="elev-area-cells">${a.cells.length} cell${a.cells.length !== 1 ? 's' : ''}</span></span>
+      <label class="elev-area-refills-label">🛗 <input type="number" class="elev-area-refills" data-ai="${i}" value="${a.refills ?? 0}" min="0" max="99"></label>
+    </div>`).join('');
+  wrap.querySelectorAll('.elev-area-refills').forEach(el => {
+    el.addEventListener('change', () => {
+      const ai = parseInt(el.dataset.ai);
+      if (!levels[selectedLevelIndex].elevators[ai]) return;
+      pushUndo();
+      levels[selectedLevelIndex].elevators[ai].refills = Math.max(0, parseInt(el.value) || 0);
+      renderBoard();
+    });
+  });
+}
+
 function showEmptyState() {
   editorEmpty.style.display = 'flex';
   editorContent.classList.add('hidden');
@@ -326,6 +442,7 @@ function addLevel() {
     locked: [],
     disabled: [],
     stacks: [],
+    elevators: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.push(newLevel);
@@ -337,7 +454,7 @@ function insertLevel(atIndex) {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
     clearBoard: false, deck: 0,
-    locked: [], disabled: [], stacks: [],
+    locked: [], disabled: [], stacks: [], elevators: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.splice(atIndex, 0, newLevel);
@@ -369,6 +486,7 @@ function renderBoard() {
   const lockedSet   = new Set(Object.keys(lockedCount));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
   const stackMap    = {}; (lvl.stacks || []).forEach(([r, c, n]) => { stackMap[`${r},${c}`] = n || 2; });
+  const elevAreaOf  = new Map(); (lvl.elevators || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => elevAreaOf.set(`${r},${c}`, ai)));
   const boardWrap   = document.getElementById('board-wrap');
   boardWrap.innerHTML = '';
 
@@ -473,6 +591,17 @@ function renderBoard() {
         badge.textContent = stackMap[key];
         cell.appendChild(badge);
       }
+      // Elevator area — tint by area index (matches the areas list) + show its refill count.
+      // Independent layer that can share a tile with a stack.
+      if (elevAreaOf.has(key) && !disabledSet.has(key)) {
+        const ai = elevAreaOf.get(key);
+        cell.classList.add('elevator');
+        cell.style.setProperty('--elev-hue', ELEV_HUES[ai % ELEV_HUES.length]);
+        const badge = document.createElement('span');
+        badge.className = 'elev-refill-badge';
+        badge.textContent = '🛗' + (lvl.elevators[ai].refills ?? 0);
+        cell.appendChild(badge);
+      }
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => onCellClick(r, c));
@@ -483,6 +612,8 @@ function renderBoard() {
   midRow.appendChild(board);
   area.appendChild(midRow);
   boardWrap.appendChild(area);
+
+  renderElevatorAreas();
 }
 
 function mkInsertBtn(cls, title, disabled) {
@@ -514,6 +645,7 @@ function insertRow(position) {
     lvl.locked   = (lvl.locked   || []).map(p => [p[0] + 1, p[1], ...(p[2] ? [p[2]] : [])]);
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r + 1, c]);
     lvl.stacks   = (lvl.stacks   || []).map(p => [p[0] + 1, p[1], p[2]]);
+    (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
   }
   lvl.rows++;
   propRows.value = lvl.rows;
@@ -528,6 +660,8 @@ function removeRow(r) {
   lvl.locked   = (lvl.locked   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], ...(p[2] ? [p[2]] : [])]);
   lvl.disabled = (lvl.disabled || []).filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]);
   lvl.stacks   = (lvl.stacks   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], p[2]]);
+  (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
+  resplitElevators(lvl);
   lvl.rows--;
   propRows.value = lvl.rows;
   renderBoard();
@@ -542,6 +676,7 @@ function insertCol(position) {
     lvl.locked   = (lvl.locked   || []).map(p => [p[0], p[1] + 1, ...(p[2] ? [p[2]] : [])]);
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r, c + 1]);
     lvl.stacks   = (lvl.stacks   || []).map(p => [p[0], p[1] + 1, p[2]]);
+    (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
   }
   lvl.cols++;
   propCols.value = lvl.cols;
@@ -556,6 +691,8 @@ function removeCol(c) {
   lvl.locked   = (lvl.locked   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], ...(p[2] ? [p[2]] : [])]);
   lvl.disabled = (lvl.disabled || []).filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]);
   lvl.stacks   = (lvl.stacks   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], p[2]]);
+  (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
+  resplitElevators(lvl);
   lvl.cols--;
   propCols.value = lvl.cols;
   renderBoard();
@@ -588,14 +725,26 @@ function onCellClick(row, col) {
 
   pushUndo();
 
-  // Remember an existing lock layer count so the Locked tool can add layers.
+  // Remember an existing lock layer count so the Locked tool can add layers, and whether
+  // this cell was already in an elevator area (so that tool can toggle it off).
   const prevLock = (lvl.locked || []).find(([r, c]) => r === row && c === col);
   const prevLocks = prevLock ? (prevLock[2] || 1) : 0;
+  const hadElevator = !!elevatorAreaAt(lvl, row, col);
 
-  // Always clear this cell from every attribute set first, then apply the active tool
+  // Elevator areas are an independent layer that may coexist with a stack (an elevator tile
+  // can hold a pile). Keep the stack when toggling elevator; every other tool clears it.
+  const keepStack = (activeTool === 'elevator');
+
   lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
-  lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => !(r === row && c === col));
+  if (!keepStack) lvl.stacks = (lvl.stacks || []).filter(([r, c]) => !(r === row && c === col));
+
+  // Elevator membership: toggle with the elevator tool; any other (non-stack) tool removes it.
+  if (activeTool === 'elevator') {
+    if (!disabledSet.has(key)) { hadElevator ? removeElevatorCell(lvl, row, col) : addElevatorCell(lvl, row, col); }
+  } else if (activeTool !== 'stack' && hadElevator) {
+    removeElevatorCell(lvl, row, col);
+  }
 
   if (activeTool === 'locked' && !disabledSet.has(key)) {
     // Each click adds a lock layer; past MAX it wraps back to cleared.
@@ -634,6 +783,8 @@ function updateLevelProperty(prop, value) {
     lvl.locked   = (lvl.locked   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     lvl.disabled = (lvl.disabled || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
+    (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
+    resplitElevators(lvl);
   }
 
   renderBoard();

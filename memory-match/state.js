@@ -23,6 +23,13 @@ let bombColorClearOverride = null; // colours a bomb cleared pre-refill — forc
 let remnantHintShown = false; // one-time per-level hint for Cleaning remnant collection
 let deck = []; // Cleaning journey: finite refill pool (colors) drawn into cleared slots
 
+// Elevator: one or more designer-placed AREAS that batch-refill independently. An area's
+// cells never refill per-card — they stay empty until that WHOLE area is cleared, then a
+// fresh batch emerges from below (respecting hiddenNewCards). Each area carries its own
+// remaining-refills count, so different areas can produce different numbers of batches.
+let elevatorAreas = [];             // [{ cells:[idx…], refills, refillsLeft }]
+let elevatorCellArea = new Map();   // board index → its area object (membership + lookup)
+
 let levelGoals = null;
 
 const boardEl          = document.getElementById('board');

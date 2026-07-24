@@ -278,6 +278,33 @@ body {
   background: #9b6dff; color: #fff; font-size: 11px; font-weight: 800;
   border-radius: 4px; min-width: 17px; height: 17px; line-height: 17px; text-align: center; padding: 0 2px;
 }
+
+/* Elevator areas (batch-refill zones) — tinted per area by --elev-hue so the board matches
+   the Elevator Areas list. Independent layer; may share a tile with a stack. */
+.board-cell.elevator {
+  border-color: var(--elev-hue, #3fd0c9);
+  box-shadow: inset 0 0 0 2px var(--elev-hue, #3fd0c9), inset 0 0 10px rgba(63,208,201,.25);
+  position: relative;
+}
+.board-cell.elevator::after { content: '🛗'; font-size: 18px; opacity: .85; }
+.board-cell.elevator.stacked { border-color: var(--elev-hue, #3fd0c9); }
+.elev-refill-badge {
+  position: absolute; bottom: 2px; left: 2px; z-index: 3;
+  background: var(--elev-hue, #3fd0c9); color: #06222b; font-size: 10px; font-weight: 800;
+  border-radius: 4px; padding: 0 3px; height: 15px; line-height: 15px;
+}
+.mini-cell.elevator { background: #1c4c57; border: 1px solid #3fd0c9; }
+
+/* Elevator Areas list (right panel) — one row per area, matching the board tint */
+.elev-area-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin-bottom: 6px;
+  background: #1c1c3a; border: 1px solid #2f2f5a; border-radius: 8px;
+}
+.elev-area-swatch { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; }
+.elev-area-label { flex: 1; font-size: 12px; font-weight: 700; color: #cfe; }
+.elev-area-cells { color: #888; font-weight: 500; font-size: 10px; }
+.elev-area-refills-label { display: flex; align-items: center; gap: 3px; font-size: 13px; }
+.elev-area-refills { width: 46px; }
 /* Stack-size stepper inside the Stack tool card */
 .tool-stepper { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
 .stepper-btn {

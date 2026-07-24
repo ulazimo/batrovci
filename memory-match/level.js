@@ -37,6 +37,15 @@ function startLevel() {
   startGame();
 }
 
+// Normalize a level's elevator data to a list of areas [{ cells:[[r,c]…], refills }].
+// Accepts the new per-area `elevators` array or the legacy single-zone `elevator` + `elevatorRefills`.
+function normalizeElevators(lvl) {
+  if (Array.isArray(lvl.elevators)) return lvl.elevators;
+  if (Array.isArray(lvl.elevator) && lvl.elevator.length)
+    return [{ cells: lvl.elevator, refills: lvl.elevatorRefills || 0 }];
+  return [];
+}
+
 // ============================================================
 // PRE-LEVEL PREPARATION
 // ============================================================
@@ -71,13 +80,15 @@ function showPreLevelUI() {
     const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
     const lockedSet   = new Set(Object.keys(lockedCount));
     const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
+    const elevatorSet = new Set(normalizeElevators(lvl).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
     let html = `<div class="pre-level-mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
     for (let r = 0; r < lvl.rows; r++) {
       for (let c = 0; c < lvl.cols; c++) {
         const key = `${r},${c}`;
         let cls = 'pre-level-mini-cell';
-        if (disabledSet.has(key))    cls += ' disabled';
-        else if (lockedSet.has(key)) cls += ' locked';
+        if (disabledSet.has(key))      cls += ' disabled';
+        else if (lockedSet.has(key))   cls += ' locked';
+        else if (elevatorSet.has(key)) cls += ' elevator';
         const nLock = lockedCount[key];
         const miniLockBadge = (lockedSet.has(key) && nLock > 1) ? `<span class="mini-lock-count">${nLock}</span>` : '';
         html += `<div class="${cls}">${miniLockBadge}</div>`;
@@ -301,6 +312,22 @@ function startGame(preplacedSpecials) {
     if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special) {
       board[idx].stack = Math.max(1, Math.min(10, count || 1));
     }
+  });
+
+  // Elevator areas: each area only refills as one batch once its whole area is cleared
+  // (a stacked elevator tile counts as cleared only after its pile is fully depleted).
+  // Each area keeps its own refill count.
+  elevatorAreas = [];
+  elevatorCellArea = new Map();
+  normalizeElevators(lvl).forEach(a => {
+    const cells = (a.cells || [])
+      .map(([r, c]) => r * COLS + c)
+      .filter(idx => idx >= 0 && idx < TOTAL && board[idx] !== null);
+    if (cells.length === 0) return;
+    const refills = Math.max(0, a.refills || 0);
+    const area = { cells, refills, refillsLeft: refills };
+    elevatorAreas.push(area);
+    cells.forEach(idx => elevatorCellArea.set(idx, area));
   });
 
   // Cleaning levels: re-roll board colors for an even spread, and build the finite

@@ -443,11 +443,19 @@ function endTurn(manual, perfectSweep) {
 function placeNewCards(toRemove, skip) {
   const nc = [];
   const clearBoard = LEVELS[currentLevelIndex]?.clearBoard;
+  const hasElevator = elevatorCellArea.size > 0;
   toRemove.forEach(idx => {
     if (idx===skip || board[idx]===null) return;
     // Stacked tile already re-seeded by flyCardsToGoal (the underneath card is showing) —
-    // leave it be; don't refill or reveal it.
+    // leave it be; don't refill or reveal it. (A stacked elevator tile keeps producing its
+    // own pile until depleted — only then does it count as a cleared elevator slot.)
     if (stackReseededSlots.has(idx)) { stackReseededSlots.delete(idx); return; }
+    // Elevator cells take precedence over the deck/normal refill: they never refill per-card
+    // (nor draw from the Clear-Board deck) — they stay empty until their whole area is cleared,
+    // then that area batch-refills all at once (handled after this loop). Must be checked
+    // BEFORE clearBoard, or on Clear-Board levels the deck logic would swallow them and the
+    // elevator would never refill.
+    if (hasElevator && elevatorCellArea.has(idx)) { board[idx] = null; replaceCell(idx); return; }
     if (clearBoard) {
       // Cleaning journey: draw a refill card from the deck; once it's empty the slot stays clear.
       if (deck.length === 0) { board[idx] = null; replaceCell(idx); return; }
@@ -462,6 +470,22 @@ function placeNewCards(toRemove, skip) {
     const el=getCardEl(idx);
     if (el) { el.classList.add('dropping'); el.addEventListener('animationend',()=>el.classList.remove('dropping'),{once:true}); }
   });
+  // Elevator activation (per area): whenever an area's whole set of cells is empty and it
+  // still has a batch left, a fresh batch emerges FROM BELOW. Checked every turn (not just
+  // when a cell was cleared this turn) so an area can never stay stuck empty while it still
+  // has refills. Returned in `nc` so the caller reveals them per the hiddenNewCards rule.
+  // Areas are independent — each tracks its own count.
+  if (hasElevator) {
+    elevatorAreas.forEach(area => {
+      if (area.refillsLeft <= 0 || !area.cells.every(i => board[i] === null)) return;
+      area.refillsLeft--;
+      area.cells.forEach(i => {
+        board[i] = createCard(i); replaceCell(i); nc.push(i);
+        const el = getCardEl(i);
+        if (el) { el.classList.add('elevator-emerge'); el.addEventListener('animationend',()=>el.classList.remove('elevator-emerge'),{once:true}); }
+      });
+    });
+  }
   if (clearBoard) updateDeckHUD();
   spawnMarkedCards();
   return nc;

@@ -221,9 +221,48 @@ function decorateStack(cell, card) {
   }
 }
 
+// Elevator decoration on the CELL (not the flipping card). Each elevator AREA is drawn as
+// one continuous region: a shared tint bridges the gaps between same-area neighbours, and a
+// border is drawn only on the area's outer edges (edge-detection against same-area cells).
+// A centered "⬆N" badge shows that area's remaining batch refills while a slot is empty;
+// with no refills left an empty slot reads as depleted. Idempotent.
+const ELEV_DIRS = [['top', -1, 0], ['right', 0, 1], ['bottom', 1, 0], ['left', 0, -1]];
+function decorateElevator(cell, i) {
+  const oldFill = cell.querySelector('.elevator-fill');
+  if (oldFill) oldFill.remove();
+  const old = cell.querySelector('.elevator-badge');
+  if (old) old.remove();
+  cell.classList.remove('elevator-cell', 'elevator-depleted',
+    'elev-edge-top', 'elev-edge-right', 'elev-edge-bottom', 'elev-edge-left',
+    'elev-join-top', 'elev-join-right', 'elev-join-bottom', 'elev-join-left');
+  const area = elevatorCellArea.get(i);
+  // No area, or the area is spent (no refills left) → show nothing: the elevator visual
+  // disappears once it can no longer produce cards.
+  if (!area || area.refillsLeft <= 0) return;
+  cell.classList.add('elevator-cell');
+  const { r, c } = toRC(i);
+  ELEV_DIRS.forEach(([name, dr, dc]) => {
+    const j = toIndex(r + dr, c + dc);
+    const sameArea = j >= 0 && elevatorCellArea.get(j) === area;
+    cell.classList.add(sameArea ? 'elev-join-' + name : 'elev-edge-' + name);
+  });
+  // The region tint/border lives on a child div behind the card (avoids clashing with a
+  // stacked tile's ::before/::after sheets).
+  const fill = document.createElement('div');
+  fill.className = 'elevator-fill';
+  cell.insertBefore(fill, cell.firstChild);
+  // While a slot is empty, show that area's remaining refill count.
+  if (board[i] === null) {
+    const badge = document.createElement('span');
+    badge.className = 'elevator-badge';
+    badge.textContent = `⬆${area.refillsLeft}`;
+    cell.appendChild(badge);
+  }
+}
+
 function renderBoard() {
   boardEl.innerHTML = '';
-  board.forEach(card => {
+  board.forEach((card, i) => {
     const cell = document.createElement('div');
     if (card === null) {
       cell.className = 'cell disabled-cell';
@@ -232,6 +271,7 @@ function renderBoard() {
       cell.innerHTML = buildCardHTML(card);
       decorateStack(cell, card);
     }
+    decorateElevator(cell, i);
     boardEl.appendChild(cell);
   });
   fitBoard();
@@ -363,10 +403,15 @@ function replaceCell(i) {
     // A cell just broke — refresh the instrument reveal (cheap; skips the
     // behind-grid image rebuild unless something actually changed).
     if (typeof applyBoardBackground === 'function') applyBoardBackground();
+    decorateElevator(cell, i);
     return;
   }
+  // A slot that was empty (elevator/clear-board) becomes clickable again once a card lands
+  // in it — drop the empty-cell classes whose pointer-events:none would block taps.
+  cell.classList.remove('cleared-cell', 'disabled-cell');
   cell.innerHTML = buildCardHTML(board[i]);
   decorateStack(cell, board[i]);
+  decorateElevator(cell, i);
 }
 
 function updateStatusBadge() {

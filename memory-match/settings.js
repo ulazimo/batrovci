@@ -8,7 +8,7 @@ const GAMEPLAY_RULES = [
     default: false },
   { id: 'hiddenNewCards', name: 'Hidden New Cards', icon: '🂠',
     desc: 'New cards that replace combos arrive face-down instead of briefly revealed',
-    default: false },
+    default: true },
   { id: 'chainPulse', name: 'Chain Pulse', icon: '💓',
     desc: 'Flipped cards pulse in size during a combo chain — intensity increases with chain length',
     default: true },
