@@ -65,7 +65,7 @@ function shakeBoard() {
 }
 
 function spawnParticles(indices, color) {
-  const hex = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[color] || '#fff';
+  const hex = COLOR_HEX[color] || '#fff';
   indices.slice(0, 5).forEach(idx => {
     const cell = boardEl.children[idx]; if (!cell) return;
     const r = cell.getBoundingClientRect();
@@ -334,7 +334,7 @@ function hideSweepBanner(cb) { hideBoardBanner(cb); }
 // locks input and auto-dismisses, so it rides alongside the collect animation.
 function showColorClearBanner(colors) {
   if (!colors || !colors.length) return;
-  const hex = c => ({ red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[c] || '#fff');
+  const hex = c => (COLOR_HEX[c] || '#fff');
   const names = colors.map(c => `<span style="color:${hex(c)}">${c.toUpperCase()}</span>`).join(' + ');
   const prev = boardContainerEl.querySelector('.color-clear-banner');
   if (prev) prev.remove();

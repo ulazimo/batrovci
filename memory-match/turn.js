@@ -108,9 +108,8 @@ function onCardClick(index) {
             const cel = getCardEl(idx);
             if (cel && !board[idx].flipped && !board[idx].locked) {
               const color = board[idx].color;
-              const colorMap = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' };
               cel.classList.add('tinted');
-              cel.style.setProperty('--tint-color', colorMap[color] || '#5b9bd5');
+              cel.style.setProperty('--tint-color', COLOR_HEX[color] || '#5b9bd5');
             }
           }, ti * 60);
         });

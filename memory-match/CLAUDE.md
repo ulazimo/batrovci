@@ -10,7 +10,7 @@
 ## 1. What the game is
 
 **Memory Match** is a memory + combo puzzle. The board is a grid of face-down
-cards, each a hidden color (red / green / blue / yellow). The player flips cards
+cards, each a hidden color (red / green / blue / yellow / orange / purple). The player flips cards
 one at a time trying to build a **combo chain** of same-colored cards from memory.
 
 - Flip cards of the **same color** → the chain grows.
@@ -402,8 +402,10 @@ and unlock-all-levels. It's essentially a live design/tuning console.
   even though journeys have 16/40/253 levels — cosmetic end-of-journey message.
 - **No build/test/lint.** Verify changes by opening `index.html` and playing.
   Use the Settings panel + "🧪 Test Level" / "🔓 Unlock All" to reach states fast.
-- **Colors are fixed** to the four in `ALL_COLORS`; `colorCount` per level just
-  slices how many are active (`ACTIVE_COLORS`).
+- **Colors are fixed** to the six in `ALL_COLORS` (red, green, blue, yellow,
+  orange, purple); `colorCount` per level slices how many are active
+  (`ACTIVE_COLORS`) — so orange/purple only appear at `colorCount` 5/6. Each
+  color's CSS hex lives once in `COLOR_HEX` (config.js); `cssColor(c)` reads it.
 
 ---
 

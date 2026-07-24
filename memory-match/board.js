@@ -377,7 +377,7 @@ function updateStatusBadge() {
   statusBadge.innerHTML = h;
 }
 
-function cssColor(c) { return { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[c] || '#fff'; }
+function cssColor(c) { return COLOR_HEX[c] || '#fff'; }
 
 let tensionRAF = null;
 let tensionScale = 0;

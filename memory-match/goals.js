@@ -181,7 +181,7 @@ function checkAllGoalsMet() {
 }
 
 function colorSwatch(c) {
-  const hex = { red:'#e74c3c', green:'#2ecc71', blue:'#3498db', yellow:'#f1c40f' }[c] || '#fff';
+  const hex = COLOR_HEX[c] || '#fff';
   return `<span class="color-swatch" style="background:${hex}"></span>`;
 }
 function capColor(c) { return c.charAt(0).toUpperCase() + c.slice(1); }

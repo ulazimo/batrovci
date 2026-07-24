@@ -467,7 +467,7 @@ body {
 }
 .card-back::after { content:'?'; font-size:clamp(10px,2.5vw,18px); color:#6a6a9a; font-weight:700; font-size: 2rem; }
 .card-front { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,0.3); }
-.card-front.red, .card-front.green, .card-front.blue, .card-front.yellow { background: transparent; border: none; }
+.card-front.red, .card-front.green, .card-front.blue, .card-front.yellow, .card-front.orange, .card-front.purple { background: transparent; border: none; }
 .card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
 
 @keyframes jellyPop {
@@ -981,13 +981,15 @@ body.bomb-aiming #board { touch-action: none; }
 #color-picker { display:none;position:absolute;inset:0;background:rgba(0,0,0,.8);z-index:250;align-items:center;justify-content:center; }
 #color-picker.active { display:flex; }
 #color-picker .overlay-box { gap:16px; }
-.color-choices { display:flex;gap:12px; }
+.color-choices { display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:280px; }
 .color-choice { width:54px;height:54px;border-radius:12px;cursor:pointer;border:3px solid rgba(255,255,255,.3);transition:transform .15s; }
 .color-choice:active { transform:scale(.9); }
 .color-choice.cc-red    { background:radial-gradient(circle at 30% 30%,#ff6b6b,#c0392b); }
 .color-choice.cc-green  { background:radial-gradient(circle at 30% 30%,#6bff6b,#27ae60); }
 .color-choice.cc-blue   { background:radial-gradient(circle at 30% 30%,#6b9bff,#2980b9); }
 .color-choice.cc-yellow { background:radial-gradient(circle at 30% 30%,#ffe66b,#f39c12); }
+.color-choice.cc-orange { background:radial-gradient(circle at 30% 30%,#ffb36b,#e67e22); }
+.color-choice.cc-purple { background:radial-gradient(circle at 30% 30%,#c39bff,#8e44ad); }
 
 /* ================================================================
    SETTINGS PANEL

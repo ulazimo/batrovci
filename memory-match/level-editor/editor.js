@@ -36,7 +36,7 @@ const GOAL_TYPES = [
   { id: 'breakLocks',     name: 'Break Locks',      icon: '🔓' },
   { id: 'clearAll',       name: 'Clear Board',      icon: '🧹' },
 ];
-const ALL_COLORS = ['red', 'green', 'blue', 'yellow'];
+const ALL_COLORS = ['red', 'green', 'blue', 'yellow', 'orange', 'purple'];
 
 // ============================================================
 // DOM REFS
@@ -130,7 +130,7 @@ function loadFromJSON(e) {
         id: lvl.id || i + 1,
         cols: Math.max(4, Math.min(10, lvl.cols || 4)),
         rows: Math.max(4, Math.min(10, lvl.rows || 4)),
-        colorCount: Math.max(1, Math.min(4, lvl.colorCount || 3)),
+        colorCount: Math.max(1, Math.min(6, lvl.colorCount || 3)),
         turns: lvl.turns || 10,
         target: lvl.target || 500,
         clearBoard: !!lvl.clearBoard,
