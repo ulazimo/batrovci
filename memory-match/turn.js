@@ -259,10 +259,6 @@ function endTurn(manual, perfectSweep) {
   inputLocked = true;
   shieldCharges = 0; spotlightMode = false;
 
-  // Capture the chain as recallable before cards flip back
-  const chainNormal = chainCards.filter(i => board[i] && !board[i].special);
-  if (chainNormal.length > 0) lastRevealedCards = [...chainNormal];
-
   const isWildCard = (i) => board[i].special && getSpecialType(board[i].special)?.isWild;
   const normalCards = chainCards.filter(i => !board[i].special || isWildCard(i));
   const mismatchIdx = manual ? -1 : (normalCards.length>0 && !isWildCard(normalCards[normalCards.length-1]) ? normalCards[normalCards.length-1] : -1);
@@ -333,6 +329,13 @@ function endTurn(manual, perfectSweep) {
 
   const toFlip = [];
   normalCards.forEach(idx => { if (!toRemove.includes(idx) && idx!==newSP) toFlip.push(idx); });
+
+  // Recall memory: a collect changes the board, so wipe memory and start fresh from the
+  // cards that stayed put (e.g. the mismatched card that broke the chain). A non-collect
+  // turn accumulates those revealed cards on top of everything seen since the last chain.
+  const recallable = toFlip.filter(i => board[i] && !board[i].special);
+  if (willCollect) resetRecall();
+  addRecall(recallable);
   // Echo: keep the first card(s) visible instead of flipping back
   const echoProtected = new Set();
   if (echoCharges > 0 && toFlip.length > 0) {
@@ -417,7 +420,7 @@ function endTurn(manual, perfectSweep) {
           if (showNewCards) revealCardsNoHide(nc);
           // Hide everything together after 2.2s
           const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
-          if (allRevealed.length > 0) lastRevealedCards = allRevealed;
+          addRecall(allRevealed);
           const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
           const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!itemTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!itemTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };
           if (allRevealed.length > 0) {

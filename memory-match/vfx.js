@@ -380,7 +380,7 @@ function sweepRevealBoard(cb) {
     replaceCell(idx);
   });
 
-  lastRevealedCards = targets;
+  resetRecall(); addRecall(targets); // whole board was reshuffled + shown
   const stagger = 30;
   targets.forEach((idx, i) => {
     setTimeout(() => {
@@ -447,7 +447,7 @@ function revealEntireBoard(onComplete) {
 
   // Briefly flash only streak-awarded cards, then hide them
   if (streakIndices.size > 0) {
-    lastRevealedCards = [...streakIndices];
+    addRecall([...streakIndices]);
     board.forEach((c, i) => {
       if (!c || !streakIndices.has(i)) return;
       c.flipped = true;

@@ -303,7 +303,7 @@ function revealChainDangerCards() {
   const targets = pendingDangerReveal;
   pendingDangerReveal = [];
   if (!targets.length) return;
-  boosterReveal(targets); // flip up + flash, then auto-hide (re-filters stale/removed tiles)
+  boosterReveal(targets); // flip up + flash, then auto-hide (also feeds Recall via addRecall)
 }
 
 // Detonate a bomb power-up at `index`: destroy (collect) that card and its pattern.
@@ -351,7 +351,8 @@ function executePeek(index) {
       updateChainIndicator();
     }, 400);
   } else {
-    // Normal peek — flash then hide
+    // Normal peek — flash then hide (remembered by Recall)
+    addRecall([index]);
     setTimeout(() => {
       card.flipped = false;
       if (el) el.classList.remove('flipped');
@@ -433,6 +434,7 @@ function executeJoker(index) {
 function boosterReveal(indices) {
   const targets = indices.filter(i => i>=0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
   if (!targets.length) { inputLocked = false; updateBoosterUI(); return; }
+  addRecall(targets); // remember every card a booster (eye, cross, row/col, gamble…) reveals
   inputLocked = true;
   pauseChainTimer();
   targets.forEach((idx, i) => {
@@ -484,6 +486,7 @@ function executeRandom3() {
   // After the reveal: hide the non-matching cards, then settle input/booster state.
   // (onChainExtended runs here, not per-card, so the chain timer stays paused for the
   // whole reveal instead of being restarted mid-animation.)
+  addRecall(nonMatching); // gamble-revealed cards that didn't join the chain are still remembered
   setTimeout(() => {
     nonMatching.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
     onChainExtended(); // chain-3 "Danger cards" reward + timer (fires even if the chain jumped past 3)

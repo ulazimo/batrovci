@@ -210,7 +210,9 @@ function detonateBombAt(index, bombType) {
 
   // Count collected cards toward color/marked/coverage goals; combo 0 so it isn't treated as a chain
   updateGoalProgress(targets, 0);
-  lastRevealedCards = [...targets];
+  // A bomb collect must NOT wipe Recall — keep everything seen so far. Only forget the
+  // slots it collected (they'll be refilled with fresh, unseen cards).
+  removeRecall(targets);
 
   // Hold on the revealed cards so the player can read them, THEN collect (slower than before)
   setTimeout(() => {
@@ -227,7 +229,7 @@ function detonateBombAt(index, bombType) {
       // Refilled cards drop in face-up (like a normal clear), then hide after a beat
       if (nc.length > 0 && getRule('bombRevealNewCards')) {
         revealCardsNoHide(nc);
-        lastRevealedCards = [...nc];
+        addRecall(nc);
         setTimeout(() => {
           nc.forEach(i => { const c = board[i]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(i); if (el) el.classList.remove('flipped'); } });
           finish();

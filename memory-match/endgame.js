@@ -6,8 +6,26 @@
 // ============================================================
 
 // ============================================================
-// RECALL — re-reveal the last shown cards
+// RECALL — re-reveal the cards seen since the last chain
 // ============================================================
+// `lastRevealedCards` is a running memory of every face-down card the player has
+// glimpsed since the last chain that CLEARED cards: mismatched chain cards that
+// flipped back, chain-3 danger reveals, and freshly dropped cards. A collect resets
+// it (the board changed); everything else accumulates. Recall re-shows the lot.
+function resetRecall() { lastRevealedCards = []; }
+function addRecall(indices) {
+  if (!indices || !indices.length) return;
+  const seen = new Set(lastRevealedCards);
+  indices.forEach(i => { if (i >= 0 && !seen.has(i)) { seen.add(i); lastRevealedCards.push(i); } });
+}
+// Forget specific slots — used when cards are collected/refilled so Recall never
+// re-shows a fresh, unseen card that happens to have landed on a remembered slot.
+function removeRecall(indices) {
+  if (!indices || !indices.length) return;
+  const drop = new Set(indices);
+  lastRevealedCards = lastRevealedCards.filter(i => !drop.has(i));
+}
+
 const RECALL_COST = 10; // coins per use
 function recallCards() {
   dismissNudge(); clearNudgeTimer();

@@ -248,7 +248,7 @@ function startGame(preplacedSpecials) {
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;
-  lastRevealedCards = [];
+  resetRecall();
   remnantHintShown = false;
   bankProgress = 0; bankBombPlacement = false; clearBombPlacement();
   consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
