@@ -376,13 +376,15 @@ function startGame(preplacedSpecials) {
     cells.forEach(idx => { colorLockCellArea.set(idx, area); board[idx].colorLocked = true; board[idx].locked = true; });
   });
 
-  // Cleaning levels: re-roll board colors for an even spread, and build the finite
-  // refill deck that draws into cleared slots until it runs out.
+  // Board colours. Re-roll for clear-board levels (even, clearable spread); and whenever there
+  // are color locks, guarantee each lock's required colour is collectable from the free
+  // (never-locked) cells so the locks can actually be opened. Both go through
+  // assignBoardColorsForLocks (it reads the ice/color-lock maps set up just above).
   deck = [];
+  if (lvl.clearBoard || colorLockAreas.length > 0) {
+    assignBoardColorsForLocks();
+  }
   if (lvl.clearBoard) {
-    const fillable = board.map((c, i) => (c && !c.special) ? i : -1).filter(i => i >= 0);
-    const colors = generateClearableColors(fillable.length, ACTIVE_COLORS);
-    fillable.forEach((idx, k) => { board[idx].color = colors[k]; });
     deck = buildDeck(lvl.deck || 0, ACTIVE_COLORS);
   }
 
