@@ -30,6 +30,13 @@ let deck = []; // Cleaning journey: finite refill pool (colors) drawn into clear
 let elevatorAreas = [];             // [{ cells:[idx…], refills, refillsLeft }]
 let elevatorCellArea = new Map();   // board index → its area object (membership + lookup)
 
+// Ice: one or more AREAS of frozen cards. Cards under ice can't be interacted with (marked
+// locked + iced) until the ice melts, which happens once the level's running collected-card
+// count reaches that area's threshold. Each area melts independently.
+let iceAreas = [];                  // [{ cells:[idx…], threshold, broken }]
+let iceCellArea = new Map();        // board index → its (still-frozen) ice area object
+let cardsCollectedTotal = 0;        // running count of cards collected this level (drives ice melts)
+
 let levelGoals = null;
 
 const boardEl          = document.getElementById('board');

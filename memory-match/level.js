@@ -46,6 +46,11 @@ function normalizeElevators(lvl) {
   return [];
 }
 
+// Ice areas: [{ cells:[[r,c]…], threshold }] — threshold = cards collected to melt the area.
+function normalizeIce(lvl) {
+  return Array.isArray(lvl.ice) ? lvl.ice : [];
+}
+
 // ============================================================
 // PRE-LEVEL PREPARATION
 // ============================================================
@@ -81,6 +86,7 @@ function showPreLevelUI() {
     const lockedSet   = new Set(Object.keys(lockedCount));
     const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
     const elevatorSet = new Set(normalizeElevators(lvl).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
+    const iceSet = new Set(normalizeIce(lvl).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
     let html = `<div class="pre-level-mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
     for (let r = 0; r < lvl.rows; r++) {
       for (let c = 0; c < lvl.cols; c++) {
@@ -89,6 +95,7 @@ function showPreLevelUI() {
         if (disabledSet.has(key))      cls += ' disabled';
         else if (lockedSet.has(key))   cls += ' locked';
         else if (elevatorSet.has(key)) cls += ' elevator';
+        else if (iceSet.has(key))      cls += ' ice';
         const nLock = lockedCount[key];
         const miniLockBadge = (lockedSet.has(key) && nLock > 1) ? `<span class="mini-lock-count">${nLock}</span>` : '';
         html += `<div class="${cls}">${miniLockBadge}</div>`;
@@ -328,6 +335,21 @@ function startGame(preplacedSpecials) {
     const area = { cells, refills, refillsLeft: refills };
     elevatorAreas.push(area);
     cells.forEach(idx => elevatorCellArea.set(idx, area));
+  });
+
+  // Ice areas: freeze their cards (marked iced + locked so every interaction/reveal guard
+  // skips them) until the level's collected-card count reaches each area's threshold.
+  iceAreas = [];
+  iceCellArea = new Map();
+  cardsCollectedTotal = 0;
+  normalizeIce(lvl).forEach(a => {
+    const cells = (a.cells || [])
+      .map(([r, c]) => r * COLS + c)
+      .filter(idx => idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special);
+    if (cells.length === 0) return;
+    const area = { cells, threshold: Math.max(0, a.threshold || 0), broken: false };
+    iceAreas.push(area);
+    cells.forEach(idx => { iceCellArea.set(idx, area); board[idx].iced = true; board[idx].locked = true; });
   });
 
   // Cleaning levels: re-roll board colors for an even spread, and build the finite

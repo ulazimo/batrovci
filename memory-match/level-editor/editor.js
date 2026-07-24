@@ -21,6 +21,7 @@ const TOOLS = [
   { id: 'ordered',  icon: '🔢', name: 'Ordered',  desc: 'Place numbered positions for orderedCards goal' },
   { id: 'stack',    icon: '🃏', name: 'Stack',    desc: 'Stamp a pile of cards on a tile (set the size with − / +)' },
   { id: 'elevator', icon: '🛗', name: 'Elevator', desc: 'Paint batch-refill areas — adjacent cells form one area. Set each area\'s refills in the list below. Can share a tile with a stack.' },
+  { id: 'ice',      icon: '🧊', name: 'Ice',      desc: 'Paint ice areas — cards frozen until enough cards are collected. Set each area\'s melt count in the list below. Can share a tile with a stack.' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
 const MAX_STACK = 10;
@@ -111,6 +112,47 @@ function resplitElevators(lvl) {
     connectedComponents(cells).forEach(comp => { if (comp.length) rebuilt.push({ cells: comp, refills: a.refills }); });
   });
   lvl.elevators = rebuilt;
+}
+
+// ============================================================
+// ICE AREAS — frozen-card zones stored as `ice: [{ cells:[[r,c]…], threshold }]`.
+// `threshold` = number of cards that must be collected in the level to melt the area.
+// Same adjacency-grouping model as elevators.
+// ============================================================
+const ICE_DEFAULT_THRESHOLD = 5;
+
+function iceAreaAt(lvl, row, col) {
+  return (lvl.ice || []).find(a => a.cells.some(([r, c]) => r === row && c === col));
+}
+function addIceCell(lvl, row, col) {
+  if (!lvl.ice) lvl.ice = [];
+  const adjacent = lvl.ice.filter(a =>
+    a.cells.some(([r, c]) => Math.abs(r - row) + Math.abs(c - col) === 1));
+  if (adjacent.length === 0) {
+    lvl.ice.push({ cells: [[row, col]], threshold: ICE_DEFAULT_THRESHOLD });
+    return;
+  }
+  const target = adjacent[0];
+  for (let k = 1; k < adjacent.length; k++) target.cells.push(...adjacent[k].cells);
+  lvl.ice = lvl.ice.filter(a => a === target || !adjacent.includes(a));
+  target.cells.push([row, col]);
+}
+function removeIceCell(lvl, row, col) {
+  const area = iceAreaAt(lvl, row, col);
+  if (!area) return;
+  area.cells = area.cells.filter(([r, c]) => !(r === row && c === col));
+  const others = lvl.ice.filter(a => a !== area);
+  const rebuilt = connectedComponents(area.cells).map(cells => ({ cells, threshold: area.threshold }));
+  lvl.ice = [...others, ...rebuilt];
+}
+function resplitIce(lvl) {
+  if (!Array.isArray(lvl.ice)) return;
+  const rebuilt = [];
+  lvl.ice.forEach(a => {
+    const cells = (a.cells || []).filter(Boolean);
+    connectedComponents(cells).forEach(comp => { if (comp.length) rebuilt.push({ cells: comp, threshold: a.threshold }); });
+  });
+  lvl.ice = rebuilt;
 }
 
 // ============================================================
@@ -218,6 +260,9 @@ function loadFromJSON(e) {
           : (Array.isArray(lvl.elevator) && lvl.elevator.length
               ? [{ cells: lvl.elevator, refills: Math.max(0, lvl.elevatorRefills || 0) }]
               : []),
+        ice: Array.isArray(lvl.ice)
+          ? lvl.ice.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], threshold: Math.max(0, a.threshold || 0) }))
+          : [],
         goals:     Array.isArray(lvl.goals)     ? lvl.goals     : (lvl.target ? [{ type: 'score', target: lvl.target }] : []),
       }));
       selectedLevelIndex = levels.length > 0 ? 0 : -1;
@@ -257,6 +302,9 @@ function buildLevelsOutput() {
     // Elevator: one entry per batch-refill area (cells + its own refill count).
     const els = (lvl.elevators || []).filter(a => a.cells && a.cells.length > 0);
     if (els.length > 0) obj.elevators = els.map(a => ({ cells: a.cells, refills: Math.max(0, a.refills || 0) }));
+    // Ice: one entry per frozen area (cells + cards-to-collect-to-melt threshold).
+    const ices = (lvl.ice || []).filter(a => a.cells && a.cells.length > 0);
+    if (ices.length > 0) obj.ice = ices.map(a => ({ cells: a.cells, threshold: Math.max(0, a.threshold || 0) }));
     return obj;
   });
 }
@@ -340,6 +388,7 @@ function buildMiniGrid(lvl) {
   const lockedSet   = new Set((lvl.locked   || []).map(([r, c]) => `${r},${c}`));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
   const elevatorSet = new Set((lvl.elevators || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
+  const iceSet = new Set((lvl.ice || []).flatMap(a => a.cells || []).map(([r, c]) => `${r},${c}`));
   let html = `<div class="mini-grid" style="grid-template-columns:repeat(${lvl.cols},1fr);grid-template-rows:repeat(${lvl.rows},1fr)">`;
   for (let r = 0; r < lvl.rows; r++) {
     for (let c = 0; c < lvl.cols; c++) {
@@ -348,6 +397,7 @@ function buildMiniGrid(lvl) {
       if (disabledSet.has(key))      cls += ' disabled';
       else if (lockedSet.has(key))   cls += ' locked';
       else if (elevatorSet.has(key)) cls += ' elevator';
+      else if (iceSet.has(key))      cls += ' ice';
       html += `<div class="${cls}"></div>`;
     }
   }
@@ -418,6 +468,36 @@ function renderElevatorAreas() {
   });
 }
 
+// Per-area melt-count editor for ice areas — one row per area with the shared board tint.
+function renderIceAreas() {
+  const wrap = document.getElementById('ice-areas');
+  const title = document.getElementById('ice-areas-title');
+  if (!wrap) return;
+  const lvl = selectedLevelIndex >= 0 ? levels[selectedLevelIndex] : null;
+  const areas = (lvl && lvl.ice) || [];
+  if (areas.length === 0) {
+    wrap.innerHTML = ''; wrap.style.display = 'none';
+    if (title) title.style.display = 'none';
+    return;
+  }
+  wrap.style.display = ''; if (title) title.style.display = '';
+  wrap.innerHTML = areas.map((a, i) => `
+    <div class="elev-area-row ice-area-row">
+      <span class="elev-area-swatch ice-swatch"></span>
+      <span class="elev-area-label">Ice ${i + 1} <span class="elev-area-cells">${a.cells.length} cell${a.cells.length !== 1 ? 's' : ''}</span></span>
+      <label class="elev-area-refills-label">❄ <input type="number" class="ice-area-threshold" data-ai="${i}" value="${a.threshold ?? 0}" min="0" max="999"></label>
+    </div>`).join('');
+  wrap.querySelectorAll('.ice-area-threshold').forEach(el => {
+    el.addEventListener('change', () => {
+      const ai = parseInt(el.dataset.ai);
+      if (!levels[selectedLevelIndex].ice[ai]) return;
+      pushUndo();
+      levels[selectedLevelIndex].ice[ai].threshold = Math.max(0, parseInt(el.value) || 0);
+      renderBoard();
+    });
+  });
+}
+
 function showEmptyState() {
   editorEmpty.style.display = 'flex';
   editorContent.classList.add('hidden');
@@ -443,6 +523,7 @@ function addLevel() {
     disabled: [],
     stacks: [],
     elevators: [],
+    ice: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.push(newLevel);
@@ -454,7 +535,7 @@ function insertLevel(atIndex) {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
     clearBoard: false, deck: 0,
-    locked: [], disabled: [], stacks: [], elevators: [],
+    locked: [], disabled: [], stacks: [], elevators: [], ice: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.splice(atIndex, 0, newLevel);
@@ -487,6 +568,7 @@ function renderBoard() {
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
   const stackMap    = {}; (lvl.stacks || []).forEach(([r, c, n]) => { stackMap[`${r},${c}`] = n || 2; });
   const elevAreaOf  = new Map(); (lvl.elevators || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => elevAreaOf.set(`${r},${c}`, ai)));
+  const iceAreaOf   = new Map(); (lvl.ice       || []).forEach((a, ai) => (a.cells || []).forEach(([r, c]) => iceAreaOf.set(`${r},${c}`, ai)));
   const boardWrap   = document.getElementById('board-wrap');
   boardWrap.innerHTML = '';
 
@@ -602,6 +684,15 @@ function renderBoard() {
         badge.textContent = '🛗' + (lvl.elevators[ai].refills ?? 0);
         cell.appendChild(badge);
       }
+      // Ice area — frost overlay + melt-count badge. Can share a tile with a stack.
+      if (iceAreaOf.has(key) && !disabledSet.has(key)) {
+        const ai = iceAreaOf.get(key);
+        cell.classList.add('ice');
+        const badge = document.createElement('span');
+        badge.className = 'ice-count-badge';
+        badge.textContent = '❄' + (lvl.ice[ai].threshold ?? 0);
+        cell.appendChild(badge);
+      }
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => onCellClick(r, c));
@@ -614,6 +705,7 @@ function renderBoard() {
   boardWrap.appendChild(area);
 
   renderElevatorAreas();
+  renderIceAreas();
 }
 
 function mkInsertBtn(cls, title, disabled) {
@@ -646,6 +738,7 @@ function insertRow(position) {
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r + 1, c]);
     lvl.stacks   = (lvl.stacks   || []).map(p => [p[0] + 1, p[1], p[2]]);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
+    (lvl.ice || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
   }
   lvl.rows++;
   propRows.value = lvl.rows;
@@ -661,7 +754,8 @@ function removeRow(r) {
   lvl.disabled = (lvl.disabled || []).filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]);
   lvl.stacks   = (lvl.stacks   || []).filter(([row]) => row !== r).map(p => [p[0] > r ? p[0] - 1 : p[0], p[1], p[2]]);
   (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
-  resplitElevators(lvl);
+  (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
+  resplitElevators(lvl); resplitIce(lvl);
   lvl.rows--;
   propRows.value = lvl.rows;
   renderBoard();
@@ -677,6 +771,7 @@ function insertCol(position) {
     lvl.disabled = (lvl.disabled || []).map(([r, c]) => [r, c + 1]);
     lvl.stacks   = (lvl.stacks   || []).map(p => [p[0], p[1] + 1, p[2]]);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
+    (lvl.ice || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
   }
   lvl.cols++;
   propCols.value = lvl.cols;
@@ -692,7 +787,8 @@ function removeCol(c) {
   lvl.disabled = (lvl.disabled || []).filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]);
   lvl.stacks   = (lvl.stacks   || []).filter(([r, col]) => col !== c).map(p => [p[0], p[1] > c ? p[1] - 1 : p[1], p[2]]);
   (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
-  resplitElevators(lvl);
+  (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
+  resplitElevators(lvl); resplitIce(lvl);
   lvl.cols--;
   propCols.value = lvl.cols;
   renderBoard();
@@ -730,20 +826,30 @@ function onCellClick(row, col) {
   const prevLock = (lvl.locked || []).find(([r, c]) => r === row && c === col);
   const prevLocks = prevLock ? (prevLock[2] || 1) : 0;
   const hadElevator = !!elevatorAreaAt(lvl, row, col);
+  const hadIce = !!iceAreaAt(lvl, row, col);
 
-  // Elevator areas are an independent layer that may coexist with a stack (an elevator tile
-  // can hold a pile). Keep the stack when toggling elevator; every other tool clears it.
-  const keepStack = (activeTool === 'elevator');
+  // Elevator and Ice are independent area layers that may each coexist with a stack (frozen
+  // pile / elevator pile), but are mutually exclusive with each other. Keep the stack when
+  // toggling either; every other tool clears both.
+  const keepStack = (activeTool === 'elevator' || activeTool === 'ice');
 
   lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
   if (!keepStack) lvl.stacks = (lvl.stacks || []).filter(([r, c]) => !(r === row && c === col));
 
-  // Elevator membership: toggle with the elevator tool; any other (non-stack) tool removes it.
+  // Elevator membership: toggle with the elevator tool; the ice tool and any other non-stack
+  // tool removes it (elevator/ice can't share a cell).
   if (activeTool === 'elevator') {
     if (!disabledSet.has(key)) { hadElevator ? removeElevatorCell(lvl, row, col) : addElevatorCell(lvl, row, col); }
   } else if (activeTool !== 'stack' && hadElevator) {
     removeElevatorCell(lvl, row, col);
+  }
+
+  // Ice membership: toggle with the ice tool; the elevator tool and any other non-stack tool removes it.
+  if (activeTool === 'ice') {
+    if (!disabledSet.has(key)) { hadIce ? removeIceCell(lvl, row, col) : addIceCell(lvl, row, col); }
+  } else if (activeTool !== 'stack' && hadIce) {
+    removeIceCell(lvl, row, col);
   }
 
   if (activeTool === 'locked' && !disabledSet.has(key)) {
@@ -784,7 +890,8 @@ function updateLevelProperty(prop, value) {
     lvl.disabled = (lvl.disabled || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
-    resplitElevators(lvl);
+    (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
+    resplitElevators(lvl); resplitIce(lvl);
   }
 
   renderBoard();

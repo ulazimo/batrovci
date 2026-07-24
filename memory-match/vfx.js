@@ -79,6 +79,26 @@ function spawnParticles(indices, color) {
   });
 }
 
+// Ice shatter: burst of frosty shards from each melting cell.
+function spawnIceShards(indices) {
+  indices.forEach(idx => {
+    const cell = boardEl.children[idx];
+    if (!cell) return;
+    const r = cell.getBoundingClientRect();
+    for (let i = 0; i < 9; i++) {
+      const shard = document.createElement('div');
+      shard.className = 'ice-shard';
+      const dx = (Math.random() - 0.5) * 100;
+      const dy = (Math.random() - 0.4) * 100;
+      shard.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px;` +
+        `--dx:${dx}px;--dy:${dy}px;--rot:${(Math.random() - 0.5) * 220}deg;` +
+        `animation-duration:${0.45 + Math.random() * 0.35}s`;
+      document.body.appendChild(shard);
+      setTimeout(() => shard.remove(), 850);
+    }
+  });
+}
+
 // Fly matched cards to score element with staggered ding + score
 function flyCardsToGoal(indices, ptsTotal, cb) {
   // Fly toward the Collection graveyard when it's active; otherwise the score.
@@ -86,6 +106,9 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
   const scoreTarget = document.getElementById(useCollection ? 'collection-stack' : 'score-value');
   // Capture colours before the cards are removed, so the graveyard shows real tiles.
   const flyColors = indices.map(idx => board[idx] && !board[idx].special ? board[idx].color : null);
+  // Count real (non-special) cards collected this batch — drives the ice-melt thresholds.
+  const _collected = flyColors.filter(c => c !== null).length;
+  if (_collected > 0 && typeof registerCollectedForIce === 'function') registerCollectedForIce(_collected);
   if (!scoreTarget || indices.length === 0) {
     indices.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.add('exploding'); });
     indices.forEach(idx => reseedStackTile(idx)); // leave the next stack card behind

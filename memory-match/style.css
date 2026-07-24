@@ -493,6 +493,65 @@ body {
 }
 .card.elevator-emerge { animation: elevatorEmerge .45s cubic-bezier(.22,.61,.36,1); }
 .pre-level-mini-cell.elevator { background:#1c4c57; border:1px solid #3fd0c9; }
+
+/* Ice areas — a semi-transparent frost overlay drawn OVER the cards (they show through, but
+   are inert until melted), rendered as one continuous region per area with an outer border,
+   gaps bridged toward same-area neighbours. A "❄ N" badge counts down to the melt. */
+.cell.ice-cell { border-radius: 8px; }
+.ice-fill {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  background: linear-gradient(135deg, rgba(214,241,255,.6), rgba(150,199,238,.42) 55%, rgba(191,231,255,.55));
+  border: 0 solid rgba(233,248,255,.92);
+  box-sizing: border-box; overflow: hidden;
+  box-shadow: inset 0 0 14px rgba(255,255,255,.45);
+}
+/* Frosty streaks so it reads as ice rather than flat glass. */
+.ice-fill::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(115deg, transparent 40%, rgba(255,255,255,.5) 47%, transparent 52%),
+    linear-gradient(160deg, transparent 60%, rgba(255,255,255,.35) 66%, transparent 70%);
+  opacity: .8;
+}
+.cell.ice-edge-top    > .ice-fill { border-top-width: 3px; }
+.cell.ice-edge-right  > .ice-fill { border-right-width: 3px; }
+.cell.ice-edge-bottom > .ice-fill { border-bottom-width: 3px; }
+.cell.ice-edge-left   > .ice-fill { border-left-width: 3px; }
+.cell.ice-join-top    > .ice-fill { top: -8px; }
+.cell.ice-join-right  > .ice-fill { right: -8px; }
+.cell.ice-join-bottom > .ice-fill { bottom: -8px; }
+.cell.ice-join-left   > .ice-fill { left: -8px; }
+.cell.ice-edge-top.ice-edge-left     > .ice-fill { border-top-left-radius: 12px; }
+.cell.ice-edge-top.ice-edge-right    > .ice-fill { border-top-right-radius: 12px; }
+.cell.ice-edge-bottom.ice-edge-left  > .ice-fill { border-bottom-left-radius: 12px; }
+.cell.ice-edge-bottom.ice-edge-right > .ice-fill { border-bottom-right-radius: 12px; }
+/* One per ice area, floated at the area's centroid (left/top set by renderIceBadges). */
+.ice-badge {
+  position: absolute; transform: translate(-50%,-50%); z-index: 7;
+  font-size: 13px; font-weight: 800; color: #0b3a5c; pointer-events: none;
+  padding: 1px 6px; border-radius: 9px; white-space: nowrap;
+  background: rgba(240,250,255,.9); box-shadow: 0 1px 4px rgba(0,60,110,.5);
+}
+/* Melt flash the instant the ice breaks, just before the shards fly. */
+.ice-fill.ice-breaking { animation: iceBreakFlash .3s ease-out forwards; }
+@keyframes iceBreakFlash {
+  0%   { filter: brightness(1);   transform: scale(1);    opacity: 1; }
+  35%  { filter: brightness(1.8); transform: scale(1.06); opacity: 1; }
+  100% { filter: brightness(2.2); transform: scale(1.12); opacity: 0; }
+}
+/* Flying ice shards (spawnIceShards). */
+.ice-shard {
+  position: fixed; width: 11px; height: 11px; z-index: 9999; pointer-events: none;
+  background: linear-gradient(135deg, #f2ffff, #a9dcff);
+  clip-path: polygon(50% 0, 100% 78%, 20% 100%);
+  box-shadow: 0 0 5px rgba(180,230,255,.9);
+  animation: iceShardFly forwards cubic-bezier(.2,.6,.3,1);
+}
+@keyframes iceShardFly {
+  0%   { transform: translate(0,0) rotate(0);       opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+.pre-level-mini-cell.ice { background:#bfe7ff; border:1px solid #e9f8ff; }
 .card {
   width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
   transition: transform 0.35s ease; border-radius: 14px;

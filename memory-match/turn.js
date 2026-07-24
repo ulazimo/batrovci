@@ -13,6 +13,7 @@ function onCardClick(index) {
   if (inputLocked) return;
   const card = board[index];
   if (!card || turns <= 0) return;
+  if (card.iced) return; // frozen under ice — inert until the ice melts
 
   // Nudge: dismiss on any action, restart idle timer
   dismissNudge();

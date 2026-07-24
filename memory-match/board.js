@@ -102,7 +102,9 @@ function specialCSS(t)  { return 'special-' + t; }
 // unlocks (honouring revealOnUnlock) when the last layer breaks. Returns true if it unlocked.
 function breakLockLayer(idx) {
   const card = board[idx];
-  if (!card || !card.locked) return false;
+  // Ice is `locked` internally but must not be broken by adjacent combos or bombs — it only
+  // melts via the collected-card threshold (breakIceArea). Skip it here.
+  if (!card || !card.locked || card.iced) return false;
   card.lockCount = (card.lockCount || 1) - 1;
   if (levelGoals?.progress?.breakLocks) levelGoals.progress.breakLocks.broken++;
   const el = getCardEl(idx);
@@ -156,7 +158,9 @@ function countBoardCards() {
 
 function buildCardHTML(card) {
   const i = card.index;
-  const lockedCls = card.locked ? ' locked' : '';
+  // Iced cards are `locked` internally (so every interaction guard skips them) but must NOT
+  // show the 🔒 lock visual — the ice overlay on the cell conveys their frozen state instead.
+  const lockedCls = (card.locked && !card.iced) ? ' locked' : '';
   if (card.special) {
     const bombStyle = card.bombColor ? ` style="--bomb-color:${cssColor(card.bombColor)}"` : '';
     const bombCls = card.bombColor ? ' bomb-colored' : '';
@@ -170,8 +174,8 @@ function buildCardHTML(card) {
   const orderedCls = card.ordered ? ' ordered' : '';
   const markedBadge = card.marked ? '<span class="marked-badge">⭐</span>' : '';
   const orderedNum = card.ordered ? `<span class="ordered-number">${card.ordered}</span>` : '';
-  // Multi-lock counter: how many more breaks are needed (only shown when >1).
-  const lockBadge = card.locked && card.lockCount > 1 ? `<span class="lock-count">${card.lockCount}</span>` : '';
+  // Multi-lock counter: how many more breaks are needed (only shown when >1). Not for ice.
+  const lockBadge = (card.locked && !card.iced && card.lockCount > 1) ? `<span class="lock-count">${card.lockCount}</span>` : '';
   // NOTE: stacked-tile visuals (count badge + "more below" hint) live on the .cell, not the
   // .card — the card flips (rotateY) when revealed, which would flip/hide them. See decorateStack.
   return `<div class="card${lockedCls}${markedCls}${orderedCls}" data-index="${i}">${orderedNum}<div class="card-face card-back"></div><div class="card-face card-front ${card.color}"><img src="blocks/block_${card.color}_1.png" alt="${card.color}"></div>${markedBadge}${lockBadge}</div>`;
@@ -260,6 +264,90 @@ function decorateElevator(cell, i) {
   }
 }
 
+// Ice decoration on the CELL: a semi-transparent frost overlay drawn OVER the card (so the
+// frozen card shows through), rendered as one continuous region per area (edge-detection like
+// the elevator) with a "❄ N" badge on the area's top-left cell showing how many more cards
+// must be collected to melt it. Idempotent.
+function decorateIce(cell, i) {
+  const oldFill = cell.querySelector('.ice-fill'); if (oldFill) oldFill.remove();
+  cell.classList.remove('ice-cell',
+    'ice-edge-top', 'ice-edge-right', 'ice-edge-bottom', 'ice-edge-left',
+    'ice-join-top', 'ice-join-right', 'ice-join-bottom', 'ice-join-left');
+  const area = iceCellArea.get(i);
+  if (!area) return;
+  cell.classList.add('ice-cell');
+  const { r, c } = toRC(i);
+  ELEV_DIRS.forEach(([name, dr, dc]) => {
+    const j = toIndex(r + dr, c + dc);
+    const sameArea = j >= 0 && iceCellArea.get(j) === area;
+    cell.classList.add(sameArea ? 'ice-join-' + name : 'ice-edge-' + name);
+  });
+  const fill = document.createElement('div');
+  fill.className = 'ice-fill';
+  cell.appendChild(fill); // ON TOP of the card (see z-index in CSS)
+}
+
+// One melt-countdown badge per ice area, floated at the pixel centroid of its cells so it
+// sits in the MIDDLE of the area. Appended to #board AFTER the cells (so cell indexing is
+// unaffected) — rebuilt on layout changes (fitBoard) and whenever the count changes.
+function renderIceBadges() {
+  boardEl.querySelectorAll(':scope > .ice-badge').forEach(b => b.remove());
+  if (!iceAreas.length) return;
+  iceAreas.forEach(area => {
+    if (area.broken) return;
+    let sx = 0, sy = 0, n = 0;
+    area.cells.forEach(i => {
+      const cell = boardEl.children[i];
+      if (!cell) return;
+      sx += cell.offsetLeft + cell.offsetWidth / 2;
+      sy += cell.offsetTop + cell.offsetHeight / 2;
+      n++;
+    });
+    if (!n) return;
+    const badge = document.createElement('span');
+    badge.className = 'ice-badge';
+    badge.textContent = `❄ ${Math.max(0, area.threshold - cardsCollectedTotal)}`;
+    badge.style.left = (sx / n) + 'px';
+    badge.style.top = (sy / n) + 'px';
+    boardEl.appendChild(badge);
+  });
+}
+
+// Count cards collected this level and melt any ice area whose threshold has been reached.
+function registerCollectedForIce(n) {
+  if (!n || iceAreas.length === 0) return;
+  cardsCollectedTotal += n;
+  checkIceBreaks();
+}
+
+// Break any unbroken ice area whose threshold has been met; refresh the countdown badge on
+// the rest. Safe to call any time the collected count changes.
+function checkIceBreaks() {
+  iceAreas.forEach(area => {
+    if (area.broken) return;
+    if (cardsCollectedTotal >= area.threshold) breakIceArea(area);
+  });
+  renderIceBadges(); // refresh remaining counts + drop any melted area's badge
+}
+
+// Melt an ice area: shatter VFX, then unfreeze its cards (interactable again) and drop the overlay.
+function breakIceArea(area) {
+  if (area.broken) return;
+  area.broken = true;
+  const cells = [...area.cells];
+  SFX.boom();
+  if (typeof spawnIceShards === 'function') spawnIceShards(cells);
+  cells.forEach(i => { const f = boardEl.children[i]?.querySelector('.ice-fill'); if (f) f.classList.add('ice-breaking'); });
+  setTimeout(() => {
+    cells.forEach(i => {
+      iceCellArea.delete(i);
+      if (board[i]) { board[i].iced = false; board[i].locked = false; }
+      replaceCell(i);
+    });
+    updateChainIndicator();
+  }, 320);
+}
+
 function renderBoard() {
   boardEl.innerHTML = '';
   board.forEach((card, i) => {
@@ -272,6 +360,7 @@ function renderBoard() {
       decorateStack(cell, card);
     }
     decorateElevator(cell, i);
+    decorateIce(cell, i);
     boardEl.appendChild(cell);
   });
   fitBoard();
@@ -314,6 +403,8 @@ function fitBoard() {
   // Recompute the optional instrument background now that the board's pixel box
   // (and each cell's position) is known.
   if (typeof applyBoardBackground === 'function') applyBoardBackground();
+  // Reposition ice-area badges to the (now-known) cell centroids.
+  if (typeof renderIceBadges === 'function') renderIceBadges();
 }
 
 // Refit whenever the container's box changes: device-switcher, orientation,
@@ -404,6 +495,7 @@ function replaceCell(i) {
     // behind-grid image rebuild unless something actually changed).
     if (typeof applyBoardBackground === 'function') applyBoardBackground();
     decorateElevator(cell, i);
+    decorateIce(cell, i);
     return;
   }
   // A slot that was empty (elevator/clear-board) becomes clickable again once a card lands
@@ -412,6 +504,7 @@ function replaceCell(i) {
   cell.innerHTML = buildCardHTML(board[i]);
   decorateStack(cell, board[i]);
   decorateElevator(cell, i);
+  decorateIce(cell, i);
 }
 
 function updateStatusBadge() {
