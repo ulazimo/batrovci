@@ -10,6 +10,7 @@ const BOOSTERS = [
   { id:'babybomb',  icon:'💣',  name:'Baby Bomb',   desc:'Place on the board to destroy that card and its 4 neighbours',  needsTap:true, bomb:'cross', max:3, startQty:0 },
   { id:'bigbomb',   icon:'💥',  name:'BIG Bomb',    desc:'Place on the board to destroy a whole 3×3 block of cards',      needsTap:true, bomb:'ring',  max:1, startQty:0 },
   { id:'random3',   icon:'🎲',  name:'Random 3',    desc:'Reveal 3 random face-down cards',                             needsTap:false },
+  { id:'pluscolor', icon:'➕🎨', name:'+1 Color',     desc:'Reveal one more card of your chain\'s color (or the most common color if no chain is active)', needsTap:false },
   { id:'cross',     icon:'✚',  name:'Cross Reveal', desc:'Reveal cards in a cross around the card you tap',              needsTap:true  },
   { id:'row',       icon:'↔',  name:'Row Reveal',   desc:'Reveal the entire row of the card you tap',                    needsTap:true  },
   { id:'col',       icon:'↕',  name:'Col Reveal',   desc:'Reveal the entire column of the card you tap',                 needsTap:true  },
@@ -33,10 +34,10 @@ function isBoosterFull(id) {
   return Number.isFinite(max) && (boosterCounts[id] || 0) >= max;
 }
 
-// Tray tiles, in display order: Peek · Random 3 · Baby Bomb · BIG Bomb.
+// Tray tiles, in display order: Peek · Random 3 · +1 Color · Baby Bomb · BIG Bomb.
 // Recall lives in its own bar above the chain (not in the tray). Hidden boosters
 // still keep their inventory counts — see initBoosters.
-const VISIBLE_BOOSTERS = ['peek', 'random3', 'babybomb', 'bigbomb'];
+const VISIBLE_BOOSTERS = ['peek', 'random3', 'pluscolor', 'babybomb', 'bigbomb'];
 
 // ============================================================
 // BOOSTERS
@@ -76,11 +77,11 @@ function initBoosters() {
   });
 }
 
-// Dev helper (Fill button): stock the tray with a fixed loadout, capped per booster.
+// Dev helper (Fill button): add 5 charges to every tray power-up, clamped to each
+// booster's cap (the bombs stay capped at 3 / 1). Press again to keep topping up.
 function fillBoosters() {
-  const loadout = { peek: 5, random3: 5, babybomb: 2, bigbomb: 1 };
-  Object.entries(loadout).forEach(([id, qty]) => {
-    boosterCounts[id] = Math.min(qty, getBoosterMax(id));
+  VISIBLE_BOOSTERS.forEach(id => {
+    boosterCounts[id] = Math.min((boosterCounts[id] || 0) + 5, getBoosterMax(id));
   });
   saveBoosterCounts();
   updateBoosterUI();
@@ -135,6 +136,7 @@ function activateBooster(id) {
   if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
   consumeBooster(id);
   if (id === 'random3')   executeRandom3();
+  else if (id === 'pluscolor') executePlusColor();
   else if (id === 'neighbor')  executeNeighbor();
   else if (id === 'colorpick') executeColorPick();
   else if (id === 'shield') { shieldCharges += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
@@ -502,6 +504,67 @@ function executeRandom3() {
     updateBoosterUI();
     updateChainIndicator();
   }, picks.length * 80 + 1500);
+}
+// +1 Color: reveal ONE more card whose color matches the active chain. With no
+// chain running, reveal a card of the color that has the most cards on the board
+// (counting hidden, normal, unlocked tiles so the pick is always revealable). When
+// it matches the chain it joins the chain (like Color Pick's match branch); with no
+// chain it's a plain reveal that flashes, then hides (remembered by Recall).
+function mostCommonHiddenColor() {
+  const counts = {};
+  board.forEach(c => {
+    if (c && !c.special && !c.flipped && !c.locked && c.color) counts[c.color] = (counts[c.color] || 0) + 1;
+  });
+  let best = null, bestN = 0;
+  Object.entries(counts).forEach(([color, n]) => { if (n > bestN) { bestN = n; best = color; } });
+  return best;
+}
+function refundPlusColor(msg) {
+  if (!getRule('unlimitedPowerUps')) boosterCounts['pluscolor']++;
+  saveBoosterCounts();
+  inputLocked = false;
+  updateBoosterUI();
+  const prev = chainEl.innerHTML;
+  chainEl.innerHTML = `<span style="color:#e74c3c">${msg} — refunded ➕</span>`;
+  setTimeout(() => { chainEl.innerHTML = prev; }, 1800);
+}
+function executePlusColor() {
+  const color = (turnActive && chainColor) ? chainColor : mostCommonHiddenColor();
+  if (!color) { refundPlusColor('No hidden cards to reveal'); return; }
+
+  // One random face-down, normal, unlocked card of that color.
+  const candidates = board.filter(c => c && !c.flipped && !c.special && !c.locked && c.color === color)
+                          .map(c => c.index).sort(() => Math.random() - .5);
+  const pick = candidates[0];
+  if (pick === undefined) { refundPlusColor(`No hidden ${color} cards found`); return; }
+
+  const matchesChain = turnActive && (color === chainColor || (getRule('coloredBombs') && chainColors.has(color)));
+  if (!matchesChain) { boosterReveal([pick]); return; }
+
+  // Matches the active chain — flip it up and fold it into the chain.
+  inputLocked = true;
+  pauseChainTimer();
+  board[pick].flipped = true;
+  const el = getCardEl(pick);
+  if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+  SFX.cardFlip();
+  if (!chainCards.includes(pick)) {
+    chainCards.push(pick); lastSelectedIdx = pick; SFX.shepard(chainCards.length + specialsUsed.length - 1);
+    SFX.match();
+    spawnParticles([pick], color);
+    updateChainIndicator(); // instantly turn this card into a chain card (chain face + bar)
+  }
+  setTimeout(() => {
+    onChainExtended(); // chain-3 "Danger cards" reward + timer (handles jumps past 3)
+    // Colour clear? This may have flipped the last card of the chain colour — endTurn
+    // shows the "<COLOUR> Cleared" banner, refunds the turn, and (with Perfect Sweep
+    // Reveal) flashes the board.
+    if (checkChainColorClear()) { updateBoosterUI(); updateChainIndicator(); return; }
+    inputLocked = false;
+    resumeChainTimer();
+    updateBoosterUI();
+    updateChainIndicator();
+  }, 400);
 }
 function executeNeighbor() {
   const last = [...chainCards].reverse().find(i=>!board[i].special);

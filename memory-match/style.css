@@ -968,17 +968,19 @@ body {
 ================================================================ */
 #booster-bar {
   width:100%;max-width:500px;background:transparent;
-  padding:8px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;
+  padding:8px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;
   position:relative;overflow:visible;margin-bottom:12px;
 }
 #booster-bar.highlight { animation:boosterBarPulse 1.5s ease-in-out 3; }
 @keyframes boosterBarPulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px 4px rgba(240,192,64,.6), inset 0 0 8px rgba(240,192,64,.3)} }
 .booster-btn {
-  width:calc((100% - 30px) / 4);max-width:76px;aspect-ratio:1;border-radius:12px;
+  width:calc((100% - 32px) / 5);max-width:64px;aspect-ratio:1;border-radius:12px;
   border:2px solid #3a3a6a;background:#2a2a4a;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:28px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
   position:relative;transition:all .15s;flex-shrink:0;
 }
+/* +1 Color carries two glyphs (➕🎨) — shrink them so they fit the tile. */
+.booster-btn[data-booster="pluscolor"] > span:not(.badge) { font-size:16px;letter-spacing:-1px; }
 /* Recall tile reuses .recall-wrap for nudge hooks — keep it laid out like a tile. */
 .booster-btn.recall-wrap { flex-direction:row;gap:0;justify-content:center; }
 .booster-btn:active { transform:scale(.9); }
