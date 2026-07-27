@@ -57,8 +57,8 @@ const BACK_EFFECTS = [
 function getBackEffect(id) { return BACK_EFFECTS.find(b => b.id === id); }
 function backEffectIcon(id) { const b = getBackEffect(id); return b ? b.icon : '✨'; }
 // Delay before a back-effect's reveal fires (ms) — tuned so the reveal bursts out just as the
-// collected effect icon slams down (the .back-effect-slam animation lands its slam ~360ms in).
-const BACK_EFFECT_PREVIEW_MS = 380;
+// collected effect icon slams down (the .back-effect-slam animation lands its slam ~575ms in).
+const BACK_EFFECT_PREVIEW_MS = 600;
 
 // ============================================================
 // COMBO → SPECIAL MAPPING

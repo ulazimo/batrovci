@@ -344,6 +344,14 @@ LEVELS_CLEANINGXL = [
         "type": "clearAll"
       }
     ],
+    "beneath": [
+      {
+        "r": 6,
+        "c": 3,
+        "layer": -1,
+        "backEffect": "cross"
+      }
+    ],
     "elevators": [
       {
         "cells": [

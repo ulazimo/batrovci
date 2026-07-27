@@ -173,9 +173,17 @@ Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.j
 - **Back-effect card**: a normal card carrying `backEffect=<id>` (one of `row`/`column`/
   `cross`/`circle`/`star`; see `BACK_EFFECTS` in [specials.js](specials.js)). The effect icon
   sits in the tile's **top-left corner**, drawn on the `.cell` (via `decorateBackEffect`, like
-  the stack badge) so it **stays put — doesn't rotate — while the card flips**, and it **fades
-  out once the card is opened (face-up)** since the effect belongs to the card's back
-  (`.card.flipped ~ .back-effect-badge` in style.css). When the card is
+  the stack badge) so it **stays put — doesn't rotate — while the card flips**. `decorateBackEffect`
+  adds **two** cell emblems, both **top-left**: the blue **back badge** (`.back-effect-badge`) shown
+  while the card is face-**down** (the "hidden effect" cue), and an amber **armed emblem**
+  (`.back-effect-armed`) shown once the **player opens the card into the chain** (pops in, then
+  breathes) so they know the revealed card is still loaded and with which effect. The back badge
+  hides via `.card.flipped ~ …`; the armed emblem lights via `.card.flipped.armed ~ …`, where the
+  `.armed` class is applied only to played chain cards (`updateBackEffectImpactPreview`) — so a card
+  merely **flashed by a reveal effect** is flipped-but-not-armed and stays plain. When a
+  back-effect card is collected, its cell emblems are hidden and a copy (`.back-effect-fly`) rides
+  the flying clone to the Collection (`flyCardsToGoal`, clone set `overflow:visible` so it isn't
+  clipped). When the card is
   **collected as part of a successful chain**, its effect fires: `getBackEffectPattern` reveals
   the pattern's cards (row/column span the whole line; cross/circle/star use offsets), merged
   into `endTurn`'s `revealTargets` so they flash face-up briefly and land in **Recall** for the

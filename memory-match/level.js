@@ -51,6 +51,13 @@ function normalizeIce(lvl) {
   return Array.isArray(lvl.ice) ? lvl.ice : [];
 }
 
+// Authored back-effect for the card emerging at board index `idx` on `layer` (negative), or
+// null. Built from lvl.beneath in initLevelConfig; read by the stack/elevator emergence paths.
+function getBeneathBackEffect(idx, layer) {
+  const { r, c } = toRC(idx);
+  return beneathBackEffects.get(`${r},${c},${layer}`) || null;
+}
+
 // Color-lock areas: [{ cells:[[r,c]…], color, count }] — count = cards of `color` to collect to unlock.
 function normalizeColorLocks(lvl) {
   return Array.isArray(lvl.colorLocks) ? lvl.colorLocks : [];
@@ -330,6 +337,7 @@ function startGame(preplacedSpecials) {
     const idx = r * COLS + c;
     if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special) {
       board[idx].stack = Math.max(1, Math.min(10, count || 1));
+      board[idx].stackBase = board[idx].stack; // original pile size — reseed uses it to derive the layer
     }
   });
 
@@ -340,6 +348,15 @@ function startGame(preplacedSpecials) {
     const idx = r * COLS + c;
     if (idx >= 0 && idx < TOTAL && board[idx] && !board[idx].special && getBackEffect(id)) {
       board[idx].backEffect = id;
+    }
+  });
+
+  // Beneath-layer authored back-effects (lvl.beneath): applied not now but when the card
+  // emerges later from a Stack pile (reseedStackTile) or an Elevator refill (placeNewCards).
+  beneathBackEffects = new Map();
+  (lvl.beneath || []).forEach(b => {
+    if (b && typeof b.layer === 'number' && b.layer < 0 && getBackEffect(b.backEffect)) {
+      beneathBackEffects.set(`${b.r},${b.c},${b.layer}`, b.backEffect);
     }
   });
 

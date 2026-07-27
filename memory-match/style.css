@@ -274,6 +274,41 @@ body {
 /* Card opened (face-up): hide the back-of-card effect badge. */
 .card.flipped ~ .back-effect-badge { opacity:0; }
 
+/* Armed emblem — shown on the card FRONT (top-LEFT, same corner as the back badge) once the
+   player OPENS a back-effect card (plays it into the chain), so they know the revealed card
+   still carries its effect (and which one). Amber "armed" look, distinct from the blue back
+   badge; pops in when opened, then breathes gently. Only the `.armed` class (set on cards the
+   player plays — NOT cards flashed by a reveal effect) lights it up, so effect-revealed cards
+   stay plain. */
+.back-effect-armed {
+  position:absolute;top:3px;left:3px;z-index:7;width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,#ffe08a,#f0a020);color:#3a2400;
+  font-size:11px;line-height:1;font-weight:800;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
+  border:1.5px solid #fff5d0;
+  box-shadow:0 1px 4px rgba(0,0,0,.45),0 0 8px rgba(255,190,60,.85);
+  opacity:0;transform:scale(.4);transition:opacity .2s ease;
+}
+.card.flipped.armed ~ .back-effect-armed {
+  opacity:1;
+  animation:armedPop .4s cubic-bezier(.34,1.56,.64,1) forwards, armedPulse 1.8s ease-in-out .4s infinite;
+}
+/* A copy of the emblem that rides the collected card's clone to the Collection (see
+   flyCardsToGoal). It's a child of the clone (which is overflow:visible while carrying it), so
+   it tracks the card's flight and just shrinks/fades along the way. */
+.back-effect-fly {
+  position:absolute;top:3px;left:3px;z-index:5;pointer-events:none;border-radius:50%;
+  line-height:1;font-weight:800;transform-origin:top left;
+  background:linear-gradient(135deg,#ffe08a,#f0a020);color:#3a2400;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid #fff5d0;box-shadow:0 1px 4px rgba(0,0,0,.45),0 0 8px rgba(255,190,60,.85);
+}
+@keyframes armedPop { 0%{transform:scale(.4)} 60%{transform:scale(1.28)} 100%{transform:scale(1)} }
+@keyframes armedPulse {
+  0%,100% { box-shadow:0 1px 4px rgba(0,0,0,.45),0 0 7px rgba(255,190,60,.7); }
+  50%     { box-shadow:0 1px 4px rgba(0,0,0,.45),0 0 13px rgba(255,205,90,1); }
+}
+
 /* Pre-level board preview */
 .pre-level-mini-grid {
   display:grid;gap:3px;width:140px;margin:4px auto 8px;
@@ -739,7 +774,7 @@ body {
   position: fixed; z-index: 1200; pointer-events: none; line-height: 1;
   transform: translate(-50%, -50%) scale(.3);
   filter: drop-shadow(0 0 6px rgba(255,255,255,.85)) drop-shadow(0 3px 8px rgba(0,0,0,.55));
-  animation: backEffectSlam 560ms cubic-bezier(.3,.7,.3,1) forwards;
+  animation: backEffectSlam 900ms cubic-bezier(.3,.7,.3,1) forwards;
 }
 @keyframes backEffectSlam {
   0%   { transform: translate(-50%,-50%) scale(.3);   opacity: 0; }

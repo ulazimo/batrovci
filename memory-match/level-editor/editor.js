@@ -7,6 +7,8 @@ let activeTool = 'normal';
 const MAX_LOCK_LAYERS = 4; // Locked tool cycles 1→…→MAX, then clears.
 let stackValue = 2;        // Stack tool stamps this many cards per tile (2–MAX_STACK).
 let backEffectValue = 'row'; // Back Effect tool stamps this reveal pattern (cycled with ‹ ›).
+let currentLayer = 0;      // Editing layer: 0 = top (on-board) cards; -1, -2, … = cards beneath
+                           // that emerge later from Stacks / Elevators (authored in `lvl.beneath`).
 let undoStack = [];
 let redoStack = [];
 let loadedFileName = 'levels';
@@ -40,6 +42,53 @@ const BACK_EFFECTS = [
 ];
 function beIcon(id) { const b = BACK_EFFECTS.find(x => x.id === id); return b ? b.icon : '✨'; }
 function beName(id) { const b = BACK_EFFECTS.find(x => x.id === id); return b ? b.name : id; }
+
+// ============================================================
+// BENEATH LAYERS — cards that emerge later from Stacks/Elevators can carry an authored
+// back-effect (stored in `lvl.beneath: [{r,c,layer,backEffect}]`, layer < 0). A Stack of N
+// exposes layers -1…-(N-1); an Elevator area with R refills exposes -1…-R.
+// ============================================================
+function stackSizeAt(lvl, row, col) {
+  const s = (lvl.stacks || []).find(([r, c]) => r === row && c === col);
+  return s ? (s[2] || 2) : 0;
+}
+function elevatorRefillsAt(lvl, row, col) {
+  const a = elevatorAreaAt(lvl, row, col);
+  return a ? Math.max(0, a.refills || 0) : 0;
+}
+// How many cards a tile produces below the top: a stack of N gives N-1, an elevator gives
+// its refill count. A tile that is both uses the deeper of the two.
+function tileBeneathDepth(lvl, row, col) {
+  return Math.max(Math.max(0, stackSizeAt(lvl, row, col) - 1), elevatorRefillsAt(lvl, row, col));
+}
+// Deepest beneath layer available anywhere on the level (as a positive count). 0 → no beneath.
+function maxBeneathDepth(lvl) {
+  let d = 0;
+  for (let r = 0; r < lvl.rows; r++) for (let c = 0; c < lvl.cols; c++) d = Math.max(d, tileBeneathDepth(lvl, r, c));
+  return d;
+}
+// Does (row,col) hold a card at this (negative) layer?
+function tileHasCardAtLayer(lvl, row, col, layer) {
+  if (layer >= 0) return true;
+  return tileBeneathDepth(lvl, row, col) >= -layer;
+}
+function beneathAt(lvl, row, col, layer) {
+  return (lvl.beneath || []).find(b => b.r === row && b.c === col && b.layer === layer);
+}
+// Drop beneath entries whose tile no longer produces a card at that layer (stack shrank,
+// elevator refills dropped, tile changed type, or out of bounds).
+function pruneBeneath(lvl) {
+  if (!Array.isArray(lvl.beneath)) { lvl.beneath = []; return; }
+  lvl.beneath = lvl.beneath.filter(b =>
+    b.r >= 0 && b.r < lvl.rows && b.c >= 0 && b.c < lvl.cols &&
+    b.layer < 0 && tileHasCardAtLayer(lvl, b.r, b.c, b.layer));
+}
+// Keep currentLayer within the level's available beneath range.
+function clampCurrentLayer(lvl) {
+  const min = -maxBeneathDepth(lvl);
+  if (currentLayer > 0) currentLayer = 0;
+  if (currentLayer < min) currentLayer = min;
+}
 
 const GOAL_TYPES = [
   { id: 'score',          name: 'Score Target',     icon: '🎯' },
@@ -313,6 +362,12 @@ function loadFromJSON(e) {
         disabled:  Array.isArray(lvl.disabled)  ? lvl.disabled  : [],
         stacks:    Array.isArray(lvl.stacks)    ? lvl.stacks    : [],
         backEffects: Array.isArray(lvl.backEffects) ? lvl.backEffects : [],
+        // Beneath-layer authored cards (layers < 0 from Stacks/Elevators). Only backEffect
+        // is authorable for now; layer is a negative int.
+        beneath: Array.isArray(lvl.beneath)
+          ? lvl.beneath.filter(b => b && typeof b.layer === 'number' && b.layer < 0)
+                       .map(b => ({ r: b.r, c: b.c, layer: b.layer, backEffect: b.backEffect }))
+          : [],
         elevators: Array.isArray(lvl.elevators)
           ? lvl.elevators.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], refills: Math.max(0, a.refills || 0) }))
           : (Array.isArray(lvl.elevator) && lvl.elevator.length
@@ -362,6 +417,9 @@ function buildLevelsOutput() {
     if (lvl.stacks && lvl.stacks.length > 0) obj.stacks = lvl.stacks;
     // Back-of-card reveal effects: [[r,c,id]…] — fire when the tagged card is collected.
     if (lvl.backEffects && lvl.backEffects.length > 0) obj.backEffects = lvl.backEffects;
+    // Beneath-layer cards: [{r,c,layer,backEffect}] — a back-effect on a card that emerges
+    // later from a Stack pile (layer -1…-(N-1)) or an Elevator refill (layer -1…-refills).
+    if (lvl.beneath && lvl.beneath.length > 0) obj.beneath = lvl.beneath;
     // Elevator: one entry per batch-refill area (cells + its own refill count).
     const els = (lvl.elevators || []).filter(a => a.cells && a.cells.length > 0);
     if (els.length > 0) obj.elevators = els.map(a => ({ cells: a.cells, refills: Math.max(0, a.refills || 0) }));
@@ -495,6 +553,8 @@ function loadLevelIntoEditor() {
   editorEmpty.style.display = 'none';
   editorContent.classList.remove('hidden');
 
+  currentLayer = 0; // always start a level on the top layer
+
   const lvl = levels[selectedLevelIndex];
   propCols.value = lvl.cols;
   propRows.value = lvl.rows;
@@ -504,6 +564,7 @@ function loadLevelIntoEditor() {
   propDeck.value = lvl.deck || 0;
   propDeck.disabled = !lvl.clearBoard;
   renderBoard();
+  renderToolbar(); // reset any beneath-layer tool dimming
   renderGoals();
 }
 
@@ -533,6 +594,7 @@ function renderElevatorAreas() {
       if (!levels[selectedLevelIndex].elevators[ai]) return;
       pushUndo();
       levels[selectedLevelIndex].elevators[ai].refills = Math.max(0, parseInt(el.value) || 0);
+      pruneBeneath(levels[selectedLevelIndex]); // fewer refills → drop beneath entries past the new depth
       renderBoard();
     });
   });
@@ -642,7 +704,7 @@ function insertLevel(atIndex) {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
     clearBoard: false, deck: 0,
-    locked: [], disabled: [], stacks: [], elevators: [], ice: [], colorLocks: [],
+    locked: [], disabled: [], stacks: [], elevators: [], ice: [], colorLocks: [], beneath: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.splice(atIndex, 0, newLevel);
@@ -667,9 +729,78 @@ function deleteLevel(index) {
 // ============================================================
 // BOARD RENDERING
 // ============================================================
+// Layer selector bar: shown only when the level has Stacks/Elevators that produce cards
+// beneath the top. ◀ steps deeper (toward -maxDepth), ▶ steps back toward layer 0.
+function buildLayerBar(lvl) {
+  const maxDepth = maxBeneathDepth(lvl);
+  if (maxDepth <= 0) return null;
+  const min = -maxDepth;
+  const bar = document.createElement('div');
+  bar.className = 'layer-bar' + (currentLayer < 0 ? ' beneath' : '');
+
+  const deeper = document.createElement('button');
+  deeper.className = 'layer-btn';
+  deeper.textContent = '◀';
+  deeper.title = 'Go one layer deeper';
+  deeper.disabled = currentLayer <= min;
+  deeper.addEventListener('click', () => { if (currentLayer > min) { currentLayer--; renderBoard(); renderToolbar(); } });
+
+  const label = document.createElement('span');
+  label.className = 'layer-label';
+  label.textContent = currentLayer === 0 ? 'Layer 0 (top)' : `Layer ${currentLayer} (beneath)`;
+
+  const shallower = document.createElement('button');
+  shallower.className = 'layer-btn';
+  shallower.textContent = '▶';
+  shallower.title = 'Go one layer up';
+  shallower.disabled = currentLayer >= 0;
+  shallower.addEventListener('click', () => { if (currentLayer < 0) { currentLayer++; renderBoard(); renderToolbar(); } });
+
+  bar.appendChild(deeper);
+  bar.appendChild(label);
+  bar.appendChild(shallower);
+  if (currentLayer < 0) {
+    const hint = document.createElement('span');
+    hint.className = 'layer-hint';
+    hint.textContent = 'Stamp Back Effects on cards coming in from Stacks 🃏 / Elevators 🛗';
+    bar.appendChild(hint);
+  }
+  return bar;
+}
+
+// Render a cell while viewing a beneath layer (currentLayer < 0). Active tiles are ones that
+// will produce a card at this depth; everything else is dimmed and inert.
+function renderBeneathCell(cell, lvl, r, c, effectId) {
+  if (!tileHasCardAtLayer(lvl, r, c, currentLayer)) {
+    cell.classList.add('layer-inactive');
+    return;
+  }
+  cell.classList.add('layer-active');
+  // Source hint (top-right): which mechanism produces this beneath card.
+  const fromStack = (stackSizeAt(lvl, r, c) - 1) >= -currentLayer;
+  const fromElev  = elevatorRefillsAt(lvl, r, c) >= -currentLayer;
+  const src = document.createElement('span');
+  src.className = 'layer-src-badge';
+  src.textContent = fromStack && fromElev ? '🃏🛗' : fromStack ? '🃏' : '🛗';
+  cell.appendChild(src);
+  // Authored back-effect on this beneath card (top-left) — same badge as layer 0.
+  if (effectId) {
+    cell.classList.add('backeffect');
+    const badge = document.createElement('span');
+    badge.className = 'be-badge';
+    badge.textContent = beIcon(effectId);
+    badge.title = beName(effectId) + ' reveal';
+    cell.appendChild(badge);
+  }
+}
+
 function renderBoard() {
   if (selectedLevelIndex < 0) return;
   const lvl = levels[selectedLevelIndex];
+  clampCurrentLayer(lvl);
+  const beneathMode = currentLayer < 0;
+  const beneathMap = {}; // key → backEffect id, only for the layer being viewed
+  if (beneathMode) (lvl.beneath || []).forEach(b => { if (b.layer === currentLayer) beneathMap[`${b.r},${b.c}`] = b.backEffect; });
   const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
   const lockedSet   = new Set(Object.keys(lockedCount));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
@@ -683,6 +814,10 @@ function renderBoard() {
 
   const area = document.createElement('div');
   area.className = 'board-area';
+
+  // ── Layer selector: cycle 0 / -1 / -2 … to edit cards beneath Stacks & Elevators ───
+  const layerBar = buildLayerBar(lvl);
+  if (layerBar) area.appendChild(layerBar);
 
   // ── Top controls: col remove buttons + col insert buttons ───
   const topRow = document.createElement('div');
@@ -746,6 +881,9 @@ function renderBoard() {
       const key = `${r},${c}`;
       const cell = document.createElement('div');
       cell.className = 'board-cell';
+      if (beneathMode) {
+        renderBeneathCell(cell, lvl, r, c, beneathMap[key]);
+      } else {
       if (disabledSet.has(key)) {
         cell.classList.add('disabled');
         const img = document.createElement('img');
@@ -823,6 +961,7 @@ function renderBoard() {
         badge.textContent = '×' + (a.count ?? 0);
         cell.appendChild(badge);
       }
+      } // end normal-mode (layer 0) decorations
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.addEventListener('click', () => onCellClick(r, c));
@@ -871,6 +1010,7 @@ function insertRow(position) {
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
     (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r + 1, c]); });
+    (lvl.beneath || []).forEach(b => { b.r += 1; });
   }
   lvl.rows++;
   propRows.value = lvl.rows;
@@ -888,7 +1028,8 @@ function removeRow(r) {
   (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
   (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
   (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([row]) => row !== r).map(([row, c]) => [row > r ? row - 1 : row, c]); });
-  resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl);
+  lvl.beneath  = (lvl.beneath  || []).filter(b => b.r !== r).map(b => ({ ...b, r: b.r > r ? b.r - 1 : b.r }));
+  resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl); pruneBeneath(lvl);
   lvl.rows--;
   propRows.value = lvl.rows;
   renderBoard();
@@ -906,6 +1047,7 @@ function insertCol(position) {
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
     (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.map(([r, c]) => [r, c + 1]); });
+    (lvl.beneath || []).forEach(b => { b.c += 1; });
   }
   lvl.cols++;
   propCols.value = lvl.cols;
@@ -923,7 +1065,8 @@ function removeCol(c) {
   (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
   (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
   (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([r, col]) => col !== c).map(([r, col]) => [r, col > c ? col - 1 : col]); });
-  resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl);
+  lvl.beneath  = (lvl.beneath  || []).filter(b => b.c !== c).map(b => ({ ...b, c: b.c > c ? b.c - 1 : b.c }));
+  resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl); pruneBeneath(lvl);
   lvl.cols--;
   propCols.value = lvl.cols;
   renderBoard();
@@ -936,6 +1079,24 @@ function removeCol(c) {
 function onCellClick(row, col) {
   if (selectedLevelIndex < 0) return;
   const lvl = levels[selectedLevelIndex];
+
+  // Beneath-layer editing (viewing layer < 0): only Back Effect + Eraser act, and only on a
+  // tile that actually produces a card at this depth. Stamps into lvl.beneath[{r,c,layer,…}].
+  if (currentLayer < 0) {
+    if (activeTool !== 'backeffect' && activeTool !== 'eraser') return;
+    if (!tileHasCardAtLayer(lvl, row, col, currentLayer)) return;
+    pushUndo();
+    if (!Array.isArray(lvl.beneath)) lvl.beneath = [];
+    const existing = beneathAt(lvl, row, col, currentLayer);
+    // Clear any entry for this cell+layer first (covers eraser, toggle-off, and re-stamp).
+    lvl.beneath = lvl.beneath.filter(b => !(b.r === row && b.c === col && b.layer === currentLayer));
+    // Back Effect: stamp the selected pattern, unless it's the one already here (toggle off).
+    if (activeTool === 'backeffect' && !(existing && existing.backEffect === backEffectValue)) {
+      lvl.beneath.push({ r: row, c: col, layer: currentLayer, backEffect: backEffectValue });
+    }
+    renderBoard(); renderLevelList();
+    return;
+  }
 
   // Ordered tool — toggle position in orderedCards goal
   if (activeTool === 'ordered') {
@@ -1019,6 +1180,9 @@ function onCellClick(row, col) {
   const blg = (lvl.goals || []).find(g => g.type === 'breakLocks');
   if (blg) blg.locked = [...(lvl.locked || [])];
 
+  // A stack/elevator may have shrunk or been removed — drop beneath entries with no card left.
+  pruneBeneath(lvl);
+
   renderBoard(); renderGoals(); renderLevelList();
 }
 
@@ -1043,7 +1207,8 @@ function updateLevelProperty(prop, value) {
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
     (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
-    resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl);
+    lvl.beneath  = (lvl.beneath  || []).filter(b => b.r < lvl.rows && b.c < lvl.cols);
+    resplitElevators(lvl); resplitIce(lvl); resplitColorLocks(lvl); pruneBeneath(lvl);
   }
 
   renderBoard();
@@ -1092,9 +1257,13 @@ function updateUndoRedoButtons() {
 // ============================================================
 function renderToolbar() {
   toolListEl.innerHTML = '';
+  // On beneath layers only Back Effect + Eraser act; the rest are structural (layer-0 only).
+  const beneathMode = currentLayer < 0;
+  const usableOnBeneath = id => id === 'backeffect' || id === 'eraser';
   TOOLS.forEach(tool => {
     const card = document.createElement('div');
-    card.className = 'tool-card' + (tool.id === activeTool ? ' active' : '');
+    const dimmed = beneathMode && !usableOnBeneath(tool.id);
+    card.className = 'tool-card' + (tool.id === activeTool ? ' active' : '') + (dimmed ? ' tool-disabled' : '');
     let stepper = '';
     if (tool.id === 'stack' && activeTool === 'stack') {
       stepper = `<div class="tool-stepper">
@@ -1117,6 +1286,7 @@ function renderToolbar() {
       ${stepper}
     `;
     card.addEventListener('click', () => {
+      if (dimmed) return; // structural tools are disabled while editing a beneath layer
       activeTool = tool.id;
       renderToolbar();
     });

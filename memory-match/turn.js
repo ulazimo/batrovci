@@ -521,8 +521,13 @@ function placeNewCards(toRemove, skip) {
     elevatorAreas.forEach(area => {
       if (area.refillsLeft <= 0 || !area.cells.every(i => board[i] === null)) return;
       area.refillsLeft--;
+      // This batch surfaces at layer -(refills - refillsLeft): -1 for the first refill, -2 next…
+      const layer = -(area.refills - area.refillsLeft);
       area.cells.forEach(i => {
-        board[i] = createCard(i); replaceCell(i); nc.push(i);
+        board[i] = createCard(i);
+        const be = (typeof getBeneathBackEffect === 'function') ? getBeneathBackEffect(i, layer) : null;
+        if (be) board[i].backEffect = be;
+        replaceCell(i); nc.push(i);
         const el = getCardEl(i);
         if (el) { el.classList.add('elevator-emerge'); el.addEventListener('animationend',()=>el.classList.remove('elevator-emerge'),{once:true}); }
       });

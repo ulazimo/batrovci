@@ -191,12 +191,18 @@ function clearImpactGlow() {
 function updateBackEffectImpactPreview() {
   if (inputLocked) return;
   clearImpactGlow();
+  // "Armed" = a back-effect card the PLAYER opened into the chain (drives the amber front
+  // emblem). Cleared here and re-applied to current chain members, so a card flashed by a
+  // reveal effect (never in chainCards) stays plain — it's flipped but not `.armed`.
+  boardEl.querySelectorAll('.card.armed').forEach(el => el.classList.remove('armed'));
   if (!turnActive || !chainCards.length) return;
   const inChain = new Set(chainCards);
   const targets = new Set();
   chainCards.forEach(idx => {
     const card = board[idx];
     if (!card || card.special || !card.backEffect) return;
+    const cel = getCardEl(idx);
+    if (cel) cel.classList.add('armed');
     getBackEffectPattern(card.backEffect, idx).forEach(t => {
       if (board[t] && !board[t].special && !board[t].flipped && !board[t].locked && !inChain.has(t)) targets.add(t);
     });
@@ -325,6 +331,11 @@ function reseedStackTile(idx) {
   if (!c || !(c.stack > 1)) return false;
   const next = createCard(idx);
   next.stack = c.stack - 1;
+  next.stackBase = c.stackBase; // keep original pile size so beneath layers stay consistent
+  // The card now surfacing sits at layer -(base - remaining). Apply any authored beneath effect.
+  const layer = -((c.stackBase || c.stack) - next.stack);
+  const be = (typeof getBeneathBackEffect === 'function') ? getBeneathBackEffect(idx, layer) : null;
+  if (be) next.backEffect = be;
   board[idx] = next;
   replaceCell(idx);
   stackReseededSlots.add(idx);
@@ -360,14 +371,23 @@ function decorateStack(cell, card) {
 // hides when the card is opened (the .card flips via rotateY). Idempotent — safe on every
 // render/replace; removes the badge when the tile no longer carries an effect.
 function decorateBackEffect(cell, card) {
-  const old = cell.querySelector('.back-effect-badge');
-  if (old) old.remove();
+  cell.querySelectorAll('.back-effect-badge, .back-effect-armed').forEach(el => el.remove());
   if (card && card.backEffect && getBackEffect(card.backEffect)) {
+    const icon = backEffectIcon(card.backEffect);
+    const name = getBackEffect(card.backEffect).name;
+    // Back badge (blue, top-left) — the "hidden effect" cue, shown while the card is face-DOWN.
     const badge = document.createElement('span');
     badge.className = 'back-effect-badge';
-    badge.textContent = backEffectIcon(card.backEffect);
-    badge.title = getBackEffect(card.backEffect).name + ' reveal';
+    badge.textContent = icon;
+    badge.title = name + ' reveal';
     cell.appendChild(badge);
+    // Armed emblem (amber, top-right) — shown while the card is face-UP so the player knows this
+    // revealed card is still loaded, and which effect it will fire when collected.
+    const armed = document.createElement('span');
+    armed.className = 'back-effect-armed';
+    armed.textContent = icon;
+    armed.title = name + ' reveal — armed, fires when collected';
+    cell.appendChild(armed);
   }
 }
 

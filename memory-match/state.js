@@ -31,6 +31,11 @@ let deck = []; // Cleaning journey: finite refill pool (colors) drawn into clear
 let elevatorAreas = [];             // [{ cells:[idx…], refills, refillsLeft }]
 let elevatorCellArea = new Map();   // board index → its area object (membership + lookup)
 
+// Beneath-layer authored back-effects: cards that emerge later from a Stack pile or an
+// Elevator refill can carry a designer-authored back-effect. Keyed "r,c,layer" (layer < 0)
+// → back-effect id; consulted by reseedStackTile (board.js) and the elevator refill (turn.js).
+let beneathBackEffects = new Map();
+
 // Ice: one or more AREAS of frozen cards. Cards under ice can't be interacted with (marked
 // locked + iced) until the ice melts, which happens once the level's running collected-card
 // count reaches that area's threshold. Each area melts independently.

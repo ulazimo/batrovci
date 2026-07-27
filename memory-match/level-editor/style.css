@@ -293,6 +293,37 @@ body {
 }
 .mini-cell.backeffect { box-shadow: inset 0 0 0 1.5px #5ad1ff; }
 
+/* ── Beneath-layer editing (cards that emerge later from Stacks / Elevators) ── */
+.layer-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 5px 10px; margin-bottom: 2px;
+  background: #23234d; border: 1px solid #3a3a7a; border-radius: 6px;
+}
+.layer-bar.beneath { background: #2c2140; border-color: #9b6dff; box-shadow: inset 0 0 8px rgba(155,109,255,.25); }
+.layer-btn {
+  background: #3a3a7a; color: #fff; border: none; border-radius: 4px;
+  width: 26px; height: 26px; font-size: 14px; cursor: pointer;
+}
+.layer-btn:hover:not(:disabled) { background: #4a4a9a; }
+.layer-btn:disabled { opacity: .35; cursor: default; }
+.layer-label { font-size: 13px; font-weight: 700; color: #e0e0ff; min-width: 120px; text-align: center; }
+.layer-hint { font-size: 10px; color: #b79bff; }
+
+/* Cells while viewing a beneath layer */
+.board-cell.layer-active {
+  position: relative;
+  background: #2c2140; border-color: #9b6dff;
+  box-shadow: inset 0 0 8px rgba(155,109,255,.3);
+}
+.board-cell.layer-inactive {
+  background: #1c1c34; border-color: #26264a; opacity: .4; cursor: default;
+}
+.board-cell.layer-inactive:hover { border-color: #26264a; background: #1c1c34; }
+.layer-src-badge { position: absolute; top: 2px; right: 2px; z-index: 3; font-size: 10px; line-height: 1; }
+
+/* Structural tools are disabled while editing a beneath layer */
+.tool-card.tool-disabled { opacity: .35; cursor: default; pointer-events: none; }
+
 /* Elevator areas (batch-refill zones) — tinted per area by --elev-hue so the board matches
    the Elevator Areas list. Independent layer; may share a tile with a stack. */
 .board-cell.elevator {

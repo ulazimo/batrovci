@@ -145,10 +145,14 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
   const stagger = Math.min(120, 600 / indices.length);
   const flyDuration = 350;
 
-  // Hide originals immediately
+  // Hide originals immediately — the card face AND the back-effect emblems on the cell (which
+  // are siblings of .card, so the card's opacity:0 wouldn't hide them; without this the emblem
+  // would sit awkwardly on the empty cell while a copy flies).
   indices.forEach(idx => {
     const el = getCardEl(idx);
     if (el) el.style.opacity = '0';
+    const cell = boardEl.children[idx];
+    if (cell) cell.querySelectorAll('.back-effect-badge, .back-effect-armed').forEach(b => b.style.opacity = '0');
   });
 
   indices.forEach((idx, i) => {
@@ -169,6 +173,21 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
     clone.style.background = front ? getComputedStyle(front).background : '';
     clone.style.borderRadius = '4px';
 
+    // A copy of the back-effect emblem rides the flying card to the Collection. It's a CHILD of
+    // the clone (so it tracks the card's flight for free), and we let the clone overflow so the
+    // shrinking card doesn't clip it.
+    let flyEm = null;
+    if (board[idx] && board[idx].backEffect && typeof backEffectIcon === 'function') {
+      flyEm = document.createElement('div');
+      flyEm.className = 'back-effect-fly';
+      flyEm.textContent = backEffectIcon(board[idx].backEffect);
+      const sz = Math.max(16, Math.round(cellRect.width * 0.36));
+      flyEm.style.width = flyEm.style.height = sz + 'px';
+      flyEm.style.fontSize = Math.round(sz * 0.6) + 'px';
+      clone.style.overflow = 'visible';
+      clone.appendChild(flyEm);
+    }
+
     document.body.appendChild(clone);
 
     // Stacked tile: now that the top card's clone is captured, reveal the card underneath
@@ -182,6 +201,12 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
       clone.style.width = '16px';
       clone.style.height = '16px';
       clone.style.opacity = '0.7';
+      if (flyEm) {
+        // The emblem rides the clone (which flies), so it just shrinks + fades with the card.
+        flyEm.style.transition = `transform ${flyDuration}ms ease-in, opacity ${flyDuration}ms ease-in`;
+        flyEm.style.transform = 'scale(.4)';
+        flyEm.style.opacity = '0.6';
+      }
 
       setTimeout(() => {
         SFX.ding(i);
