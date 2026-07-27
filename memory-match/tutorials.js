@@ -28,7 +28,15 @@ function startTutorial() {
   tutorialActive = true;
 }
 
-function showTutorialHint(msg) {
+// Each unique tip is shown only ONCE (persisted in progress.seenHints). The banner teaches
+// something (how to use bombs, low-turns danger, …) so it just gets in the way once learned.
+// `key` groups message variants under one tip — e.g. the bomb-drag tip, whose text carries the
+// bomb name — and defaults to the message itself. Cleared by the "Reset Tutorials" button.
+function showTutorialHint(msg, key = msg) {
+  if (!Array.isArray(progress.seenHints)) progress.seenHints = [];
+  if (progress.seenHints.includes(key)) return;
+  progress.seenHints.push(key);
+  saveProgress();
   if (tutorialHintTimer) clearTimeout(tutorialHintTimer);
   tutorialHintEl.textContent = msg;
   tutorialHintEl.classList.remove('hiding');
@@ -162,6 +170,7 @@ function resetTutorials() {
   progress.seenSpecials = [];
   progress.seenBoosters = [];
   progress.seenFeatures = [];
+  progress.seenHints = [];
   progress.tutorialComplete = false;
   progress.boosterTutorialDone = false;
   saveJourneySnapshot();

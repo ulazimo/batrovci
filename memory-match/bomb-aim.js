@@ -66,7 +66,7 @@ function startBombAim({ type, source, name, startEvent }) {
   markAimButton(source, true);
   createBombGhost(type);
   if (SFX && SFX.booster) SFX.booster();
-  showTutorialHint(`Drag onto the board — release to drop the ${name}`);
+  showTutorialHint(`Drag onto the board — release to drop the ${name}`, 'bombDrag');
 
   document.addEventListener('pointermove',   onBombAimPointerMove, true);
   document.addEventListener('pointerup',     onBombAimPointerUp,   true);

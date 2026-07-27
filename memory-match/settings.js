@@ -440,6 +440,7 @@ if (!progress.gameplayRules) progress.gameplayRules = {};
 if (!progress.boosterCounts) progress.boosterCounts = {};
 if (progress.tutorialComplete === undefined) progress.tutorialComplete = false;
 if (progress.boosterTutorialDone === undefined) progress.boosterTutorialDone = false;
+if (!Array.isArray(progress.seenHints)) progress.seenHints = []; // tip-banner messages already shown (once each)
 if (!progress.specialInventory) {
   progress.specialInventory = {};
   // Defer actual init until SPECIAL_TYPES is defined (see initInventoryDefaults)
