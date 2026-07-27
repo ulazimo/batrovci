@@ -480,6 +480,51 @@ function startGame(preplacedSpecials) {
 
 function retryLevel() { showPreLevel(); }
 
+// Dev helper (Finish button, next to Fill): win the current level instantly so the
+// post-level flow (win overlay, rewards, streak, hall reveal, board art) can be
+// inspected without playing it out. Wipes the board + deck and force-satisfies every
+// goal, then routes through the normal levelWon() so nothing is special-cased.
+// Stars still come from the turns left, so a fresh level finishes at 3★.
+function devFinishLevel() {
+  if (!board.length || !LEVELS[currentLevelIndex]) return;
+  if (typeof discardActiveReveal === 'function') discardActiveReveal();
+  stopChainTimer();
+  clearNudgeTimer();
+  chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [];
+  turnActive = false; inputLocked = false; activeBooster = null;
+
+  // Empty the board (drop everything into the Collection tray so it looks played)
+  // and the refill deck — this is what satisfies `clearAll`.
+  const clearedColors = [];
+  board.forEach((card, i) => {
+    if (!card) return;
+    if (card.color) { clearedColors.push(card.color); addToCollection(card.color); }
+    board[i] = null;
+  });
+  deck.length = 0;
+  registerCollected(clearedColors); // melts ice / opens color locks off the collect counters
+
+  // Force-satisfy every goal the level declares.
+  if (levelGoals) levelGoals.definitions.forEach(g => {
+    const p = levelGoals.progress;
+    switch (g.type) {
+      case 'score':          score = Math.max(score, g.target); animateScore(score); break;
+      case 'colorCollect':   Object.entries(g.requirements).forEach(([c, n]) => p.colorCollect[c] = n); break;
+      case 'specificCombos': p.specificCombos.count = g.count; break;
+      case 'markedCards':    p.markedCards.collected = g.totalToCollect; break;
+      case 'orderedCards':   p.orderedCards.nextRequired = g.count + 1; break;
+      case 'colorAvoid':     p.colorAvoid.flips = 0; break;
+      case 'rowCoverage':    p.rowCoverage = getRowTargets(g).slice(); break;
+      case 'colCoverage':    p.colCoverage = getColTargets(g).slice(); break;
+      case 'breakLocks':     p.breakLocks.broken = p.breakLocks.total; break;
+    }
+  });
+
+  renderBoard(); renderCoverageIndicators(); updateDeckHUD(); updateGoalHUD();
+  updateChainIndicator(); updateBoosterUI(); updateRecallButton();
+  levelWon();
+}
+
 function startTestLevel() {
   // Temporarily inject a test level at the end and play it
   const testLevel = { id: 999, cols: 8, rows: 8, colorCount: 4, turns: 99, goals: [{ type: 'score', target: 1000000 }] };
