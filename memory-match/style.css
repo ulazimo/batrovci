@@ -389,7 +389,7 @@ body {
 .chain-slot.just-added { animation: chainSlotPop .3s ease-out; }
 @keyframes chainSlotPop { 0% { transform: scale(.4); opacity: .3; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
 .chain-slot-reward { font-size: 15px; line-height: 1; pointer-events: none; }
-.chain-slot.empty.reward .chain-slot-reward { filter: grayscale(1) brightness(.7); opacity: .45; }
+.chain-slot.empty.reward .chain-slot-reward { filter: grayscale(.55) brightness(.9); opacity: .85; }
 .chain-slot.filled.reward .chain-slot-reward { opacity: 1; filter: drop-shadow(0 0 3px rgba(0,0,0,.55)); }
 /* Markers ride absolutely inside the track so they slide with it. */
 .chain-min-line {

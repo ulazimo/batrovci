@@ -991,6 +991,10 @@ const CHAIN_MIN_LINE_POS = 2; // green line between track positions 2 & 3 (Match
 // marker moves automatically). Returns { position: iconString }.
 function chainRewardMarkers() {
   const map = {};
+  // Chain-3 grants the "danger cards" hint. In the chain bar it reads as a POSITIVE
+  // intel/hint reward (💡) — not the ✕ / red-ember danger sign it paints on the board.
+  // Only shown when the hint is actually enabled (count > 0).
+  if (typeof getChainHintCount === 'function' && getChainHintCount() > 0) map[3] = '💡';
   if (typeof CHAIN_REWARD_TIERS !== 'undefined') {
     CHAIN_REWARD_TIERS.forEach(tier => {
       const b = (typeof BOOSTERS !== 'undefined') ? BOOSTERS.find(x => x.id === tier.id) : null;
