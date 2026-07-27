@@ -58,6 +58,13 @@ function getBeneathBackEffect(idx, layer) {
   return beneathBackEffects.get(`${r},${c},${layer}`) || null;
 }
 
+// Authored colour for the card emerging at board index `idx` on `layer` (negative), or null.
+// Built from lvl.beneath in initLevelConfig; read by the stack/elevator emergence paths.
+function getBeneathColor(idx, layer) {
+  const { r, c } = toRC(idx);
+  return beneathColors.get(`${r},${c},${layer}`) || null;
+}
+
 // Color-lock areas: [{ cells:[[r,c]…], color, count }] — count = cards of `color` to collect to unlock.
 function normalizeColorLocks(lvl) {
   return Array.isArray(lvl.colorLocks) ? lvl.colorLocks : [];
@@ -351,13 +358,14 @@ function startGame(preplacedSpecials) {
     }
   });
 
-  // Beneath-layer authored back-effects (lvl.beneath): applied not now but when the card
-  // emerges later from a Stack pile (reseedStackTile) or an Elevator refill (placeNewCards).
+  // Beneath-layer authored back-effects + colours (lvl.beneath): applied not now but when the
+  // card emerges later from a Stack pile (reseedStackTile) or an Elevator refill (placeNewCards).
   beneathBackEffects = new Map();
+  beneathColors = new Map();
   (lvl.beneath || []).forEach(b => {
-    if (b && typeof b.layer === 'number' && b.layer < 0 && getBackEffect(b.backEffect)) {
-      beneathBackEffects.set(`${b.r},${b.c},${b.layer}`, b.backEffect);
-    }
+    if (!b || typeof b.layer !== 'number' || b.layer >= 0) return;
+    if (getBackEffect(b.backEffect)) beneathBackEffects.set(`${b.r},${b.c},${b.layer}`, b.backEffect);
+    if (ALL_COLORS.includes(b.color)) beneathColors.set(`${b.r},${b.c},${b.layer}`, b.color);
   });
 
   // Elevator areas: each area only refills as one batch once its whole area is cleared
@@ -407,14 +415,12 @@ function startGame(preplacedSpecials) {
     cells.forEach(idx => { colorLockCellArea.set(idx, area); board[idx].colorLocked = true; board[idx].locked = true; });
   });
 
-  // Board colours. Re-roll for clear-board levels (even, clearable spread); and whenever there
-  // are color locks, guarantee each lock's required colour is collectable from the free
-  // (never-locked) cells so the locks can actually be opened. Both go through
-  // assignBoardColorsForLocks (it reads the ice/color-lock maps set up just above).
+  // Board colours. assignBoardColors() applies authored colours (lvl.colors — fixed, never
+  // re-rolled), honours per-colour targets (lvl.colorCounts), keeps color-lock levels solvable
+  // by adjusting ONLY un-authored cells, and falls back to the clearable/random spread. It reads
+  // the ice/color-lock maps set up just above. (No-ops to plain random when there's nothing to do.)
   deck = [];
-  if (lvl.clearBoard || colorLockAreas.length > 0) {
-    assignBoardColorsForLocks();
-  }
+  assignBoardColors();
   if (lvl.clearBoard) {
     deck = buildDeck(lvl.deck || 0, ACTIVE_COLORS);
   }

@@ -36,6 +36,11 @@ let elevatorCellArea = new Map();   // board index → its area object (membersh
 // → back-effect id; consulted by reseedStackTile (board.js) and the elevator refill (turn.js).
 let beneathBackEffects = new Map();
 
+// Beneath-layer authored colours: same idea, but the authored colour a card should have when it
+// emerges from that layer. Keyed "r,c,layer" (layer < 0) → colour id. Consulted alongside
+// beneathBackEffects. Absent → the emerging card keeps its random refill colour.
+let beneathColors = new Map();
+
 // Ice: one or more AREAS of frozen cards. Cards under ice can't be interacted with (marked
 // locked + iced) until the ice melts, which happens once the level's running collected-card
 // count reaches that area's threshold. Each area melts independently.

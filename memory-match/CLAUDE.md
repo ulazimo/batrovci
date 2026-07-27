@@ -76,7 +76,7 @@ loaded in this order after `settings.js` (see [index.html](index.html)):
 | `turn.js` | **Core loop:** `onCardClick`, `endTurn`, `placeNewCards`/reveal helpers. |
 | `endgame.js` | `recallCards`, `finishTurn`, win/fail overlays, continue-with-coins. |
 | `boot.js` | **Loads last.** `boot()` IIFE — restores progression, shows home. |
-| `config.js` | 4 | `ALL_COLORS = ['red','green','blue','yellow']`. |
+| `config.js` | ~16 | `ALL_COLORS` (the 6 colors) + `COLOR_HEX` (each color's CSS hex). |
 | `style.css` | ~750 | All styling + CSS animations (flips, particles, banners, nudges). |
 | `levels_default.js` / `_short.js` / `_long.js` | — | Level definitions per **journey** (16 / 40 / 253 levels). `.json` twins exist for the editor. |
 | `progression_default.js` / `_short.js` / `_long.js` | — | Per-journey unlock thresholds + level rewards. |
@@ -204,6 +204,13 @@ Cards are plain objects created by helpers at [gameplay.js:1635-1638](gameplay.j
   - The **Chain Danger Reveal** (`pendingDangerReveal`) is folded into the *same* reveal batch in
     `endTurn`, so back-effect and danger reveals flash **together** rather than one after the other.
 - `marked` (⭐) / `ordered` (numbered) flags are added by specific goal types.
+- **Authored colour**: a level can hand-pin a card's `color` via `colors: [[r,c,color]…]`
+  (any tile, including locked/iced/color-locked — the pin is the colour *under* the lock). These
+  are **fixed** — never re-rolled, so the level plays the same every time. Applied in
+  `assignBoardColors` (board.js), which also honours per-colour totals (`colorCounts`) and keeps
+  color-lock levels solvable by adjusting only the *un-authored* cells. Cards emerging later from
+  a Stack/Elevator can carry an authored colour too via `beneath[].color` (read by
+  `getBeneathColor`, applied in `reseedStackTile`/elevator refill — same path as `beneath[].backEffect`).
 
 Grid math: `toRC(i)` → `{r,c}`, `toIndex(r,c)` → flat index. `COLS`/`ROWS`/`TOTAL`
 are set per-level in `initLevelConfig()`.
@@ -327,7 +334,11 @@ out-of-order `orderedCards` trigger **immediate fail** mid-turn.
 ```js
 { id, cols, rows, colorCount, turns, goals: [...],
   disabled?: [[r,c]...], locked?: [[r,c]...],
-  stacks?: [[r,c,N]...], backEffects?: [[r,c,effectId]...] }
+  stacks?: [[r,c,N]...], backEffects?: [[r,c,effectId]...],
+  colors?: [[r,c,color]...],        // authored FIXED card colours (any tile)
+  colorCounts?: { color: n, ... },  // per-colour total on the top board (authored count toward it)
+  beneath?: [{ r,c,layer, backEffect?, color? }]  // authored cards emerging from Stacks/Elevators
+  // (also: elevators?, ice?, colorLocks? area lists — see the level-editor) }
 ```
 
 ---
@@ -440,6 +451,16 @@ and unlock-all-levels. It's essentially a live design/tuning console.
   orange, purple); `colorCount` per level slices how many are active
   (`ACTIVE_COLORS`) — so orange/purple only appear at `colorCount` 5/6. Each
   color's CSS hex lives once in `COLOR_HEX` (config.js); `cssColor(c)` reads it.
+- **Board-colour assignment is authored-aware** (`assignBoardColors`, board.js, run every
+  `startGame`). Precedence: authored `colors` (fixed, never moved) → color-lock **solvability
+  shortfall** → `colorCounts` targets → clearable/random fill. The solvability pass only touches
+  *un-authored* cells and **credits the author's own cards toward each lock's requirement**, so a
+  hand-built cascade (the cards that open lock A are placed under lock B) is respected instead of
+  being force-fed into the free cells — it no longer requires "all needed cards free at start."
+  It `console.warn`s (never throws) when it can't guarantee a lock or hit a count; unsolvable
+  authored layouts are the designer's responsibility. Authored colours may even be outside a
+  level's active slice — allowed on purpose. The **level-editor** authors all this: a **Color**
+  tool (paints a fixed colour on any tile / beneath layer), and a **Color Counts** panel.
 
 ---
 
@@ -454,6 +475,7 @@ and unlock-all-levels. It's essentially a live design/tuning console.
 | Scoring/combos | `turn.js` / `specials.js` | `endTurn` (scoring block), `getSpecialForCombo`, `getComboMapping`, `getMinCombo` |
 | Specials | `specials.js` / `board.js` | `SPECIAL_TYPES`, `getRevealPattern`, `createSpecialCard` |
 | Back-of-card effects | `specials.js` / `board.js` / `turn.js` | `BACK_EFFECTS`, `getBackEffectPattern`, `decorateBackEffect`, `endTurn` (reveal-on-collect block) |
+| Board colours (authored/counts/solvability) | `board.js` / `level.js` | `assignBoardColors`, `getBeneathColor`, `generateClearableColors` |
 | Boosters | `boosters.js` | `BOOSTERS`, `activateBooster`, `executeBoosterTap` |
 | Bomb drag-to-place | `bomb-aim.js` | `startBombBoosterDrag`, `startBankBombDrag`, `renderBombSilhouette`, `commitBombAim`, `isBombAiming` |
 | Bank It | `bank.js` | `bankChain`, `updateBankButton`, `detonateBombAt` |

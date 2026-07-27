@@ -476,6 +476,26 @@ LEVELS_CLEANINGXL = [
         "type": "clearAll"
       }
     ],
+    "colors": [
+      [
+        2,
+        1,
+        "yellow"
+      ],
+      [
+        2,
+        2,
+        "yellow"
+      ],
+      [
+        2,
+        3,
+        "yellow"
+      ]
+    ],
+    "colorCounts": {
+      "yellow": 3
+    },
     "colorLocks": [
       {
         "cells": [
@@ -517,6 +537,24 @@ LEVELS_CLEANINGXL = [
           ]
         ],
         "color": "blue",
+        "count": 3
+      },
+      {
+        "cells": [
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            3
+          ]
+        ],
+        "color": "yellow",
         "count": 3
       }
     ]

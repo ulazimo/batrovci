@@ -378,6 +378,33 @@ body {
 }
 .mini-cell.colorlock { border: 1px solid rgba(255,255,255,.7); }
 .cl-area-color { max-width: 84px; }
+
+/* ── Authored FIXED card colour (Color tool) ─────────────────────── */
+.board-cell.authored { box-shadow: inset 0 0 0 2px rgba(0,0,0,.28); }
+/* Corner swatch — used when the authored colour sits ON TOP of another background (e.g. a
+   colour-lock cell whose background already shows the required colour). */
+.authored-swatch {
+  position: absolute; top: 2px; right: 2px; z-index: 4;
+  width: 13px; height: 13px; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.85); box-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+/* Colour swatch shown in the Color tool card icon + its ‹ › stepper. */
+.col-swatch {
+  display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.7); vertical-align: middle; margin-right: 5px;
+}
+.col-swatch.big { width: 28px; height: 28px; border-radius: 5px; margin: 0; }
+.col-val { display: inline-flex; align-items: center; text-transform: capitalize; color: #ddd; font-size: 13px; font-weight: 600; }
+
+/* ── Color Counts panel ──────────────────────────────────────────── */
+.cc-hint { color: #888; font-size: 10px; margin: 4px 0 6px; line-height: 1.4; }
+.cc-sum { margin-top: 6px; }
+.cc-row .elev-area-label { text-transform: capitalize; }
+.cc-input {
+  width: 54px; background: #2a2a4a; color: #fff; border: 1px solid #6a6aaa;
+  border-radius: 6px; padding: 3px 6px; font-size: 13px; text-align: center;
+}
+.cc-input:focus { outline: none; border-color: #9b6dff; }
 /* Stack-size stepper inside the Stack tool card */
 .tool-stepper { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
 .stepper-btn {

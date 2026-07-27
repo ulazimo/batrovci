@@ -527,6 +527,8 @@ function placeNewCards(toRemove, skip) {
         board[i] = createCard(i);
         const be = (typeof getBeneathBackEffect === 'function') ? getBeneathBackEffect(i, layer) : null;
         if (be) board[i].backEffect = be;
+        const bcol = (typeof getBeneathColor === 'function') ? getBeneathColor(i, layer) : null;
+        if (bcol) board[i].color = bcol;
         replaceCell(i); nc.push(i);
         const el = getCardEl(i);
         if (el) { el.classList.add('elevator-emerge'); el.addEventListener('animationend',()=>el.classList.remove('elevator-emerge'),{once:true}); }

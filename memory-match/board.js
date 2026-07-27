@@ -34,70 +34,96 @@ function buildDeck(count, colors) {
   return d;
 }
 
-// Assign board colours so every color-lock's required colour is COLLECTABLE from the free
-// (never-locked) cells — otherwise a lock could never be opened. The required colours are
-// placed into free cells FIRST (rounded up to a full 3-chain each so they can actually be
-// collected), then the rest of the board (leftover free cells + ice/color-lock cells) is
-// filled with a clearable spread. Called from startGame whenever there are color locks (and
-// reused for the normal clear-board re-roll when there are none). Reads iceCellArea /
-// colorLockCellArea (which startGame has already populated) to know which cells are locked.
-function assignBoardColorsForLocks() {
+// Assign the initial board colours, honouring the designer's intent while keeping color-lock
+// levels solvable. Precedence: authored colours (lvl.colors — FIXED, never moved) → solvability
+// shortfall for color locks → per-colour targets (lvl.colorCounts) → clearable/random fill.
+// The solvability pass only ever touches UN-authored cells and credits the author's own cards
+// toward each lock's requirement, so hand-built cascade puzzles (where the cards needed to open
+// one lock sit under another lock/ice) are respected instead of being force-fed into free cells.
+// Reads iceCellArea / colorLockCellArea (which startGame has already populated). Called every
+// startGame; a no-op leaving createCard's random colours when there's nothing to author or gate.
+function assignBoardColors() {
   const lvl = LEVELS[currentLevelIndex];
   const fillable = board.map((c, i) => (c && !c.special) ? i : -1).filter(i => i >= 0);
   if (!fillable.length) return;
-  const isLocked = i => iceCellArea.has(i) || colorLockCellArea.has(i);
-  const freeCells = fillable.filter(i => !isLocked(i));
-  const lockedCells = fillable.filter(isLocked);
+
   const clearBoard = !!(lvl && lvl.clearBoard);
-
-  // How many of each colour must sit in the free cells for its lock(s) to open. Rounded up to
-  // a multiple of 3 (and ≥3) so the free cards can be collected via normal 3+ chains.
-  const placeNeed = {};
-  colorLockAreas.forEach(a => {
-    if (!a.color || a.count <= 0) return;
-    const req = Math.max(3, Math.ceil(a.count / 3) * 3);
-    placeNeed[a.color] = Math.max(placeNeed[a.color] || 0, req);
-  });
-  const totalNeed = Object.values(placeNeed).reduce((s, v) => s + v, 0);
-  if (totalNeed > freeCells.length) {
-    console.warn(`[color-lock] Level ${lvl && lvl.id}: needs ${totalNeed} free cards to guarantee every lock opens, but only ${freeCells.length} free cells exist — some locks may be hard or impossible to open.`);
-  }
-
-  // Base colour multiset for the whole board (clearable spread for clear-board levels).
-  const pool = clearBoard ? generateClearableColors(fillable.length, ACTIVE_COLORS) : fillable.map(() => randomColor());
-  const avail = {}; ACTIVE_COLORS.forEach(c => avail[c] = 0);
-  pool.forEach(c => { avail[c] = (avail[c] || 0) + 1; });
-
-  // Make sure the pool actually contains placeNeed[X] of each X — convert spare cards from the
-  // most abundant colour (never dropping a colour below its own requirement).
-  Object.keys(placeNeed).forEach(color => {
-    while ((avail[color] || 0) < placeNeed[color]) {
-      let donor = null, best = 0;
-      ACTIVE_COLORS.forEach(c => {
-        if (c === color) return;
-        if (avail[c] - 1 >= (placeNeed[c] || 0) && avail[c] > best) { donor = c; best = avail[c]; }
-      });
-      if (!donor) break; // can't satisfy without breaking another requirement
-      avail[donor]--; avail[color] = (avail[color] || 0) + 1;
-    }
-  });
+  const authored   = Array.isArray(lvl && lvl.colors) ? lvl.colors : [];
+  const counts      = (lvl && lvl.colorCounts && typeof lvl.colorCounts === 'object') ? lvl.colorCounts : null;
+  const hasLocks    = colorLockAreas.length > 0;
+  if (!authored.length && !counts && !hasLocks && !clearBoard) return; // pure-random level
 
   const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
-  const takeAny = () => { for (const c of shuffle([...ACTIVE_COLORS])) if (avail[c] > 0) { avail[c]--; return c; } return ACTIVE_COLORS[0]; };
 
-  // Place the required colours into free cells first, then fill the rest.
-  const reqQueue = shuffle(Object.keys(placeNeed).flatMap(c => Array(placeNeed[c]).fill(c)));
-  const assign = {};
-  let qi = 0;
-  shuffle([...freeCells]).forEach(idx => {
-    while (qi < reqQueue.length) {
-      const c = reqQueue[qi++];
-      if (avail[c] > 0) { avail[c]--; assign[idx] = c; return; }
-    }
-    assign[idx] = takeAny();
+  // 1) Authored (fixed) colours — apply and lock those cells out of every later step. Authored
+  //    colours may be any of the six (even outside this level's active slice) — the designer asked.
+  const fixed = new Set();
+  authored.forEach(([r, c, color]) => {
+    if (!ALL_COLORS.includes(color)) return;
+    const idx = r * COLS + c;
+    if (board[idx] && !board[idx].special) { board[idx].color = color; fixed.add(idx); }
   });
-  lockedCells.forEach(idx => { assign[idx] = takeAny(); });
-  fillable.forEach(idx => { if (assign[idx] != null) board[idx].color = assign[idx]; });
+
+  const isLocked = i => iceCellArea.has(i) || colorLockCellArea.has(i);
+  const adjustable = fillable.filter(i => !fixed.has(i));
+  const placed = {}; // running tally of committed colours (seeded with the fixed cells)
+  fixed.forEach(i => { placed[board[i].color] = (placed[board[i].color] || 0) + 1; });
+
+  const assign = {}; // idx → colour, for the cells we decide here
+  const commit = (idx, color) => { assign[idx] = color; placed[color] = (placed[color] || 0) + 1; };
+  const remaining = () => adjustable.filter(i => assign[i] == null);
+
+  // 2) Solvability shortfall (color locks only). need[X] = max lock count for X, rounded up to a
+  //    full 3-chain so the cards can actually be collected. Credit the author's own X cards
+  //    anywhere (already in `placed`), then inject any remaining shortfall into FREE, un-authored
+  //    cells so at least one collectable chain of X exists at start.
+  if (hasLocks) {
+    const need = {};
+    colorLockAreas.forEach(a => {
+      if (!a.color || a.count <= 0) return;
+      const req = Math.max(3, Math.ceil(a.count / 3) * 3);
+      need[a.color] = Math.max(need[a.color] || 0, req);
+    });
+    const freePool = shuffle(remaining().filter(i => !isLocked(i)));
+    let fp = 0;
+    Object.keys(need).forEach(color => {
+      let shortfall = need[color] - (placed[color] || 0);
+      while (shortfall > 0 && fp < freePool.length) { commit(freePool[fp++], color); shortfall--; }
+      if (shortfall > 0) console.warn(`[color-lock] Level ${lvl && lvl.id}: '${color}' lock needs ${need[color]} collectable but only ${placed[color] || 0} placeable — not enough free un-authored cells to guarantee it opens.`);
+    });
+  }
+
+  // 3) Per-colour targets (lvl.colorCounts). Authored + shortfall already count toward the target,
+  //    so "8 yellow, 6 hand-placed" tops up by 2. Only active-slice colours are honoured.
+  const listed = new Set();
+  if (counts) {
+    let pool = shuffle(remaining()), pi = 0;
+    Object.keys(counts).forEach(color => {
+      if (!ACTIVE_COLORS.includes(color)) {
+        if (ALL_COLORS.includes(color)) console.warn(`[colorCounts] Level ${lvl && lvl.id}: '${color}' is outside this level's ${ACTIVE_COLORS.length}-colour slice — ignored.`);
+        return;
+      }
+      listed.add(color);
+      let want = Math.max(0, Math.floor(counts[color]) - (placed[color] || 0));
+      while (want > 0 && pi < pool.length) { const idx = pool[pi++]; if (assign[idx] == null) { commit(idx, color); want--; } }
+      if (want > 0) console.warn(`[colorCounts] Level ${lvl && lvl.id}: wanted ${counts[color]} '${color}' but only ${placed[color] || 0} fit.`);
+    });
+  }
+
+  // 4) Fill the rest. Draw from colours the author did NOT pin a count to (so a target stays
+  //    exact); if every active colour is listed, fall back to all of them. clearBoard uses an
+  //    even, clearable spread of the fill colours.
+  const rest = remaining();
+  if (rest.length) {
+    let fillColors = ACTIVE_COLORS.filter(c => !listed.has(c));
+    if (!fillColors.length) fillColors = ACTIVE_COLORS.slice();
+    const fillPool = clearBoard
+      ? generateClearableColors(rest.length, fillColors)
+      : rest.map(() => fillColors[Math.floor(Math.random() * fillColors.length)]);
+    shuffle(rest).forEach((idx, k) => commit(idx, fillPool[k]));
+  }
+
+  Object.keys(assign).forEach(idx => { board[+idx].color = assign[idx]; });
 }
 
 // Show progress in the header (Cleaning levels reuse the "Target" slot). The Cleaning
@@ -336,6 +362,8 @@ function reseedStackTile(idx) {
   const layer = -((c.stackBase || c.stack) - next.stack);
   const be = (typeof getBeneathBackEffect === 'function') ? getBeneathBackEffect(idx, layer) : null;
   if (be) next.backEffect = be;
+  const bcol = (typeof getBeneathColor === 'function') ? getBeneathColor(idx, layer) : null;
+  if (bcol) next.color = bcol;
   board[idx] = next;
   replaceCell(idx);
   stackReseededSlots.add(idx);

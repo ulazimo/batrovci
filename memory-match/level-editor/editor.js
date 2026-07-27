@@ -7,6 +7,7 @@ let activeTool = 'normal';
 const MAX_LOCK_LAYERS = 4; // Locked tool cycles 1→…→MAX, then clears.
 let stackValue = 2;        // Stack tool stamps this many cards per tile (2–MAX_STACK).
 let backEffectValue = 'row'; // Back Effect tool stamps this reveal pattern (cycled with ‹ ›).
+let colorValue = 'red';    // Color tool stamps this fixed card colour (cycled with ‹ ›).
 let currentLayer = 0;      // Editing layer: 0 = top (on-board) cards; -1, -2, … = cards beneath
                            // that emerge later from Stacks / Elevators (authored in `lvl.beneath`).
 let undoStack = [];
@@ -19,6 +20,7 @@ let loadedProgressionFileName = 'progression';
 // ============================================================
 const TOOLS = [
   { id: 'normal',   icon: '🟦', name: 'Normal',   desc: 'Regular card cell' },
+  { id: 'color',    icon: '🎨', name: 'Color',    desc: 'Paint a FIXED card colour on any tile (coexists with locks/ice/color-lock). Pick the colour with ‹ ›; click again to remove.' },
   { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Click to add lock layers (1–4, then clears)' },
   { id: 'disabled', icon: '<img src="../blocks/disabled.png" style="width:32px;height:32px;border-radius:4px;opacity:.7">', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
   { id: 'ordered',  icon: '🔢', name: 'Ordered',  desc: 'Place numbered positions for orderedCards goal' },
@@ -362,11 +364,27 @@ function loadFromJSON(e) {
         disabled:  Array.isArray(lvl.disabled)  ? lvl.disabled  : [],
         stacks:    Array.isArray(lvl.stacks)    ? lvl.stacks    : [],
         backEffects: Array.isArray(lvl.backEffects) ? lvl.backEffects : [],
-        // Beneath-layer authored cards (layers < 0 from Stacks/Elevators). Only backEffect
-        // is authorable for now; layer is a negative int.
+        // Authored FIXED top-layer card colours: [[r,c,color]…]. Kept verbatim; never re-rolled.
+        colors: Array.isArray(lvl.colors)
+          ? lvl.colors.filter(x => Array.isArray(x) && x.length >= 3 && ALL_COLORS.includes(x[2]))
+                      .map(([r, c, col]) => [r, c, col])
+          : [],
+        // Per-colour target totals for the top-layer board. { color: n }.
+        colorCounts: (lvl.colorCounts && typeof lvl.colorCounts === 'object' && !Array.isArray(lvl.colorCounts))
+          ? Object.fromEntries(Object.entries(lvl.colorCounts)
+              .filter(([col, n]) => ALL_COLORS.includes(col) && Number.isFinite(+n))
+              .map(([col, n]) => [col, Math.max(0, Math.floor(+n))]))
+          : {},
+        // Beneath-layer authored cards (layers < 0 from Stacks/Elevators): backEffect and/or a
+        // fixed colour; layer is a negative int. Drop empty entries.
         beneath: Array.isArray(lvl.beneath)
-          ? lvl.beneath.filter(b => b && typeof b.layer === 'number' && b.layer < 0)
-                       .map(b => ({ r: b.r, c: b.c, layer: b.layer, backEffect: b.backEffect }))
+          ? lvl.beneath.filter(b => b && typeof b.layer === 'number' && b.layer < 0 && (b.backEffect || ALL_COLORS.includes(b.color)))
+                       .map(b => {
+                         const e = { r: b.r, c: b.c, layer: b.layer };
+                         if (b.backEffect) e.backEffect = b.backEffect;
+                         if (ALL_COLORS.includes(b.color)) e.color = b.color;
+                         return e;
+                       })
           : [],
         elevators: Array.isArray(lvl.elevators)
           ? lvl.elevators.map(a => ({ cells: Array.isArray(a.cells) ? a.cells : [], refills: Math.max(0, a.refills || 0) }))
@@ -415,10 +433,24 @@ function buildLevelsOutput() {
     if (lvl.locked && lvl.locked.length > 0) obj.locked = lvl.locked;
     if (lvl.disabled && lvl.disabled.length > 0) obj.disabled = lvl.disabled;
     if (lvl.stacks && lvl.stacks.length > 0) obj.stacks = lvl.stacks;
+    // Authored FIXED top-layer colours: [[r,c,color]…]. Drop entries on now-disabled cells.
+    if (lvl.colors && lvl.colors.length > 0) {
+      const disSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
+      const colors = lvl.colors.filter(([r, c, col]) =>
+        r < lvl.rows && c < lvl.cols && !disSet.has(`${r},${c}`) && ALL_COLORS.includes(col));
+      if (colors.length > 0) obj.colors = colors;
+    }
+    // Per-colour target totals ({color:n}) — clamped to this level's active-colour slice.
+    if (lvl.colorCounts) {
+      const active = ALL_COLORS.slice(0, Math.max(1, Math.min(6, lvl.colorCount || 3)));
+      const cc = {};
+      active.forEach(c => { if (lvl.colorCounts[c] != null) cc[c] = Math.max(0, Math.floor(lvl.colorCounts[c])); });
+      if (Object.keys(cc).length > 0) obj.colorCounts = cc;
+    }
     // Back-of-card reveal effects: [[r,c,id]…] — fire when the tagged card is collected.
     if (lvl.backEffects && lvl.backEffects.length > 0) obj.backEffects = lvl.backEffects;
-    // Beneath-layer cards: [{r,c,layer,backEffect}] — a back-effect on a card that emerges
-    // later from a Stack pile (layer -1…-(N-1)) or an Elevator refill (layer -1…-refills).
+    // Beneath-layer cards: [{r,c,layer,backEffect?,color?}] — a back-effect and/or fixed colour on
+    // a card that emerges later from a Stack pile (layer -1…-(N-1)) or an Elevator refill (-1…-refills).
     if (lvl.beneath && lvl.beneath.length > 0) obj.beneath = lvl.beneath;
     // Elevator: one entry per batch-refill area (cells + its own refill count).
     const els = (lvl.elevators || []).filter(a => a.cells && a.cells.length > 0);
@@ -666,6 +698,46 @@ function renderColorLockAreas() {
   }));
 }
 
+// Per-colour target counts for the TOP-LAYER board (lvl.colorCounts). One row per active-slice
+// colour: a blank input means "random" (engine default); a number is the exact total to place
+// (authored cards count toward it). Lives in the right panel; re-rendered on every board change
+// so the "authored" tally and the sum-vs-cells hint stay live.
+function renderColorCounts() {
+  const wrap = document.getElementById('color-counts');
+  if (!wrap) return;
+  const lvl = selectedLevelIndex >= 0 ? levels[selectedLevelIndex] : null;
+  if (!lvl) { wrap.innerHTML = ''; return; }
+  const active = ALL_COLORS.slice(0, Math.max(1, Math.min(6, lvl.colorCount || 3)));
+  const counts = lvl.colorCounts || {};
+  const authoredTally = {}; (lvl.colors || []).forEach(([r, c, col]) => { authoredTally[col] = (authoredTally[col] || 0) + 1; });
+  const totalCells = lvl.rows * lvl.cols - (lvl.disabled || []).length;
+  const sum = active.reduce((s, c) => s + (counts[c] != null ? Math.max(0, Math.floor(counts[c])) : 0), 0);
+  wrap.innerHTML =
+    `<div class="cc-hint">Blank = random. Authored cards count toward the total.</div>` +
+    active.map(c => {
+      const val = counts[c] != null ? counts[c] : '';
+      const auth = authoredTally[c] || 0;
+      return `<div class="elev-area-row cc-row">
+        <span class="elev-area-swatch" style="background:${CL_COLOR_HEX[c]}"></span>
+        <span class="elev-area-label">${c} <span class="elev-area-cells">${auth} authored</span></span>
+        <input type="number" class="cc-input" data-color="${c}" value="${val}" min="0" max="${totalCells}" placeholder="rnd">
+      </div>`;
+    }).join('') +
+    `<div class="cc-hint cc-sum">Targets sum: ${sum} / ${totalCells} top cells</div>`;
+  wrap.querySelectorAll('.cc-input').forEach(el => el.addEventListener('change', () => {
+    const lvl2 = levels[selectedLevelIndex];
+    if (!lvl2) return;
+    pushUndo();
+    if (!lvl2.colorCounts) lvl2.colorCounts = {};
+    const color = el.dataset.color;
+    const raw = (el.value || '').trim();
+    if (raw === '') delete lvl2.colorCounts[color];
+    else lvl2.colorCounts[color] = Math.max(0, parseInt(raw) || 0);
+    if (Object.keys(lvl2.colorCounts).length === 0) delete lvl2.colorCounts;
+    renderBoard();
+  }));
+}
+
 function showEmptyState() {
   editorEmpty.style.display = 'flex';
   editorContent.classList.add('hidden');
@@ -690,6 +762,9 @@ function addLevel() {
     locked: [],
     disabled: [],
     stacks: [],
+    colors: [],
+    colorCounts: {},
+    beneath: [],
     elevators: [],
     ice: [],
     colorLocks: [],
@@ -704,7 +779,7 @@ function insertLevel(atIndex) {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
     clearBoard: false, deck: 0,
-    locked: [], disabled: [], stacks: [], elevators: [], ice: [], colorLocks: [], beneath: [],
+    locked: [], disabled: [], stacks: [], colors: [], colorCounts: {}, elevators: [], ice: [], colorLocks: [], beneath: [],
     goals: [{ type: 'score', target: 500 }],
   };
   levels.splice(atIndex, 0, newLevel);
@@ -770,12 +845,18 @@ function buildLayerBar(lvl) {
 
 // Render a cell while viewing a beneath layer (currentLayer < 0). Active tiles are ones that
 // will produce a card at this depth; everything else is dimmed and inert.
-function renderBeneathCell(cell, lvl, r, c, effectId) {
+function renderBeneathCell(cell, lvl, r, c, effectId, colorId) {
   if (!tileHasCardAtLayer(lvl, r, c, currentLayer)) {
     cell.classList.add('layer-inactive');
     return;
   }
   cell.classList.add('layer-active');
+  // Authored FIXED colour on this beneath card — fill the cell like layer 0.
+  if (colorId) {
+    cell.classList.add('authored');
+    cell.style.background = CL_COLOR_HEX[colorId] || '#888';
+    cell.title = 'Card colour: ' + colorId;
+  }
   // Source hint (top-right): which mechanism produces this beneath card.
   const fromStack = (stackSizeAt(lvl, r, c) - 1) >= -currentLayer;
   const fromElev  = elevatorRefillsAt(lvl, r, c) >= -currentLayer;
@@ -799,8 +880,14 @@ function renderBoard() {
   const lvl = levels[selectedLevelIndex];
   clampCurrentLayer(lvl);
   const beneathMode = currentLayer < 0;
-  const beneathMap = {}; // key → backEffect id, only for the layer being viewed
-  if (beneathMode) (lvl.beneath || []).forEach(b => { if (b.layer === currentLayer) beneathMap[`${b.r},${b.c}`] = b.backEffect; });
+  const beneathMap = {};      // key → backEffect id, only for the layer being viewed
+  const beneathColorMap = {}; // key → authored colour, only for the layer being viewed
+  if (beneathMode) (lvl.beneath || []).forEach(b => {
+    if (b.layer !== currentLayer) return;
+    if (b.backEffect) beneathMap[`${b.r},${b.c}`] = b.backEffect;
+    if (b.color) beneathColorMap[`${b.r},${b.c}`] = b.color;
+  });
+  const colorMap    = {}; (lvl.colors || []).forEach(([r, c, col]) => { colorMap[`${r},${c}`] = col; });
   const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
   const lockedSet   = new Set(Object.keys(lockedCount));
   const disabledSet = new Set((lvl.disabled || []).map(([r, c]) => `${r},${c}`));
@@ -882,7 +969,7 @@ function renderBoard() {
       const cell = document.createElement('div');
       cell.className = 'board-cell';
       if (beneathMode) {
-        renderBeneathCell(cell, lvl, r, c, beneathMap[key]);
+        renderBeneathCell(cell, lvl, r, c, beneathMap[key], beneathColorMap[key]);
       } else {
       if (disabledSet.has(key)) {
         cell.classList.add('disabled');
@@ -961,6 +1048,23 @@ function renderBoard() {
         badge.textContent = '×' + (a.count ?? 0);
         cell.appendChild(badge);
       }
+      // Authored FIXED colour (lvl.colors) — independent layer, coexists with any tile type. On a
+      // colour-lock cell (whose background already shows the REQUIRED colour) draw a small corner
+      // swatch of the hidden authored colour; on every other tile fill the cell like a face-up card.
+      if (colorMap[key] && !disabledSet.has(key)) {
+        const hex = CL_COLOR_HEX[colorMap[key]] || '#888';
+        if (clAreaOf.has(key)) {
+          const sw = document.createElement('span');
+          sw.className = 'authored-swatch';
+          sw.style.background = hex;
+          sw.title = 'Card colour: ' + colorMap[key];
+          cell.appendChild(sw);
+        } else {
+          cell.classList.add('authored');
+          cell.style.background = hex;
+          cell.title = 'Card colour: ' + colorMap[key];
+        }
+      }
       } // end normal-mode (layer 0) decorations
       cell.dataset.row = r;
       cell.dataset.col = c;
@@ -976,6 +1080,7 @@ function renderBoard() {
   renderElevatorAreas();
   renderIceAreas();
   renderColorLockAreas();
+  renderColorCounts();
 }
 
 function mkInsertBtn(cls, title, disabled) {
@@ -1080,20 +1185,44 @@ function onCellClick(row, col) {
   if (selectedLevelIndex < 0) return;
   const lvl = levels[selectedLevelIndex];
 
-  // Beneath-layer editing (viewing layer < 0): only Back Effect + Eraser act, and only on a
-  // tile that actually produces a card at this depth. Stamps into lvl.beneath[{r,c,layer,…}].
+  // Beneath-layer editing (viewing layer < 0): only Back Effect, Color + Eraser act, and only on
+  // a tile that actually produces a card at this depth. Back-effect and colour are independent —
+  // each toggles on its own while preserving the other. Stamps into lvl.beneath[{r,c,layer,…}].
   if (currentLayer < 0) {
-    if (activeTool !== 'backeffect' && activeTool !== 'eraser') return;
+    if (activeTool !== 'backeffect' && activeTool !== 'color' && activeTool !== 'eraser') return;
     if (!tileHasCardAtLayer(lvl, row, col, currentLayer)) return;
     pushUndo();
     if (!Array.isArray(lvl.beneath)) lvl.beneath = [];
     const existing = beneathAt(lvl, row, col, currentLayer);
-    // Clear any entry for this cell+layer first (covers eraser, toggle-off, and re-stamp).
+    // Start from the existing back-effect/colour, then toggle whichever this tool controls.
+    let be = existing ? existing.backEffect : undefined;
+    let col2 = existing ? existing.color : undefined;
+    if (activeTool === 'eraser')      { be = undefined; col2 = undefined; }
+    else if (activeTool === 'backeffect') be  = (be === backEffectValue) ? undefined : backEffectValue;
+    else if (activeTool === 'color')      col2 = (col2 === colorValue)    ? undefined : colorValue;
+    // Rewrite the entry for this cell+layer (drop it entirely if nothing remains).
     lvl.beneath = lvl.beneath.filter(b => !(b.r === row && b.c === col && b.layer === currentLayer));
-    // Back Effect: stamp the selected pattern, unless it's the one already here (toggle off).
-    if (activeTool === 'backeffect' && !(existing && existing.backEffect === backEffectValue)) {
-      lvl.beneath.push({ r: row, c: col, layer: currentLayer, backEffect: backEffectValue });
+    if (be || col2) {
+      const entry = { r: row, c: col, layer: currentLayer };
+      if (be) entry.backEffect = be;
+      if (col2) entry.color = col2;
+      lvl.beneath.push(entry);
     }
+    renderBoard(); renderLevelList();
+    return;
+  }
+
+  // Color tool (top layer) — an INDEPENDENT authored-colour layer stored in lvl.colors. It
+  // coexists with locks/ice/color-lock/stacks (so you can pre-set what's hidden under a lock),
+  // so it must NOT run the destructive tile-type clearing below — handle + return early, like
+  // the Ordered tool. Clicking the same colour again removes it. Disabled cells hold no card.
+  if (activeTool === 'color') {
+    if ((lvl.disabled || []).some(([r, c]) => r === row && c === col)) return;
+    pushUndo();
+    if (!Array.isArray(lvl.colors)) lvl.colors = [];
+    const existing = lvl.colors.find(([r, c]) => r === row && c === col);
+    lvl.colors = lvl.colors.filter(([r, c]) => !(r === row && c === col));
+    if (!(existing && existing[2] === colorValue)) lvl.colors.push([row, col, colorValue]);
     renderBoard(); renderLevelList();
     return;
   }
@@ -1138,6 +1267,11 @@ function onCellClick(row, col) {
   // Back-effect layer: preserved by the area tools (like stacks), toggled by its own tool,
   // cleared by everything else.
   if (!keepStack) lvl.backEffects = (lvl.backEffects || []).filter(([r, c]) => !(r === row && c === col));
+  // Authored-colour layer (lvl.colors): independent — coexists with every tile type, so only the
+  // Eraser and turning a cell Disabled remove it. All other tools leave it in place.
+  if (activeTool === 'eraser' || activeTool === 'disabled') {
+    lvl.colors = (lvl.colors || []).filter(([r, c]) => !(r === row && c === col));
+  }
 
   // Elevator membership: toggle with the elevator tool; ice/color-lock and any other non-stack
   // tool removes it (the three area types can't share a cell).
@@ -1204,6 +1338,7 @@ function updateLevelProperty(prop, value) {
     lvl.locked   = (lvl.locked   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     lvl.disabled = (lvl.disabled || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     lvl.stacks   = (lvl.stacks   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
+    lvl.colors   = (lvl.colors   || []).filter(([r, c]) => r < lvl.rows && c < lvl.cols);
     (lvl.elevators || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
     (lvl.ice || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
     (lvl.colorLocks || []).forEach(a => { a.cells = a.cells.filter(([r, c]) => r < lvl.rows && c < lvl.cols); });
@@ -1259,7 +1394,8 @@ function renderToolbar() {
   toolListEl.innerHTML = '';
   // On beneath layers only Back Effect + Eraser act; the rest are structural (layer-0 only).
   const beneathMode = currentLayer < 0;
-  const usableOnBeneath = id => id === 'backeffect' || id === 'eraser';
+  // On beneath layers only Back Effect, Color + Eraser act; the rest are structural (layer-0 only).
+  const usableOnBeneath = id => id === 'backeffect' || id === 'color' || id === 'eraser';
   TOOLS.forEach(tool => {
     const card = document.createElement('div');
     const dimmed = beneathMode && !usableOnBeneath(tool.id);
@@ -1278,9 +1414,20 @@ function renderToolbar() {
            <span class="stepper-val be-val">${beIcon(backEffectValue)} ${beName(backEffectValue)}</span>
            <button class="stepper-btn" data-act="be-next">›</button>
          </div>`;
+    } else if (tool.id === 'color' && activeTool === 'color') {
+      // Cycle the fixed colour this tool stamps.
+      stepper = `<div class="tool-stepper">
+           <button class="stepper-btn" data-act="col-prev">‹</button>
+           <span class="stepper-val col-val"><span class="col-swatch" style="background:${CL_COLOR_HEX[colorValue]}"></span>${colorValue}</span>
+           <button class="stepper-btn" data-act="col-next">›</button>
+         </div>`;
     }
+    // The Color tool's icon is a live swatch of the currently-selected colour.
+    const iconHTML = tool.id === 'color'
+      ? `<span class="col-swatch big" style="background:${CL_COLOR_HEX[colorValue]}"></span>`
+      : tool.icon;
     card.innerHTML = `
-      <div class="tool-icon">${tool.icon}</div>
+      <div class="tool-icon">${iconHTML}</div>
       <div class="tool-name">${tool.name}</div>
       <div class="tool-desc">${tool.desc}</div>
       ${stepper}
@@ -1301,6 +1448,9 @@ function renderToolbar() {
           const ids = BACK_EFFECTS.map(b => b.id);
           const i = ids.indexOf(backEffectValue);
           backEffectValue = ids[(i + (act === 'be-next' ? 1 : ids.length - 1)) % ids.length];
+        } else if (act === 'col-prev' || act === 'col-next') {
+          const i = ALL_COLORS.indexOf(colorValue);
+          colorValue = ALL_COLORS[(i + (act === 'col-next' ? 1 : ALL_COLORS.length - 1)) % ALL_COLORS.length];
         }
         renderToolbar();
       });
