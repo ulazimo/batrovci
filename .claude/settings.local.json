@@ -74,7 +74,10 @@
       "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
       "Bash(/usr/local/bin/node \"/Users/djordjevu/HTML Prototypes/memory-match/_transform_levels.js\")",
       "Bash(grep -c '\"\"minLength\"\":3' levels_short.json levels_long.json)",
-      "Bash(/usr/local/bin/node -e \":*)"
+      "Bash(/usr/local/bin/node -e \":*)",
+      "WebFetch(domain:z6g72m.csb.app)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(python3 -)"
     ]
   }
 }

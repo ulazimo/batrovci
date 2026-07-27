@@ -287,6 +287,7 @@ function updateLivesDisplay() {
 function startGame(preplacedSpecials) {
   closeAllOverlays();
   document.body.classList.remove('on-home');   // reveal in-game HUD chrome
+  if (typeof flashBoardArtWin === 'function') flashBoardArtWin(false);  // clear any win highlight
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;

@@ -17,6 +17,9 @@
   /* Authoring affordances — not part of the game. */
   .room-spot { cursor: grab; }
   .room-spot.sel { outline: 2px dashed #4fc3f7; outline-offset: 3px; }
+  /* a layer fills the box; keep the topmost one from eating clicks on others */
+  .room-spot.spot-layer { cursor: default; }
+  .room-spot.spot-layer:not(.sel) { pointer-events: none; }
   .room-spot.sel::after {
     content: ""; position: absolute; left: 50%; bottom: 0; width: 9px; height: 9px;
     transform: translate(-50%, 50%); background: #4fc3f7; border-radius: 50%;
@@ -138,16 +141,23 @@ function paintSpots() {
   (hall.slots || []).forEach((slot, i) => {
     const item = CFG.items[slot.item];
     if (!item) return;
+    const isLayer = slot.kind === 'layer';
     const el = document.createElement('div');
-    el.className = 'room-spot revealed' + (i === CFG.sel ? ' sel' : '');
+    el.className = 'room-spot revealed' + (isLayer ? ' spot-layer' : '') + (i === CFG.sel ? ' sel' : '');
     el.dataset.i = i;
-    el.style.left = slot.left + '%';
-    el.style.bottom = slot.bottom + '%';
-    if (slot.pw) el.style.setProperty('--pw', slot.pw + 'cqw');
-    let inner = `<img class="spot-instrument" src="../${item.file}" draggable="false" style="height:${slot.h}cqh">`;
-    if (hall.backdrop) { if (hall.shadow) inner += '<div class="spot-shadow"></div>'; }
-    else inner += themePedestals ? '<div class="spot-pedestal"></div>' : '<div class="spot-shadow"></div>';
-    el.innerHTML = inner;
+    if (isLayer) {
+      // A tableau layer's position is baked into its canvas — it fills the
+      // picture box, so there is nothing to drag and no base to draw.
+      el.innerHTML = `<img class="spot-instrument" src="../${item.layer || item.file}" draggable="false">`;
+    } else {
+      el.style.left = slot.left + '%';
+      el.style.bottom = slot.bottom + '%';
+      if (slot.pw) el.style.setProperty('--pw', slot.pw + 'cqw');
+      let inner = `<img class="spot-instrument" src="../${item.file}" draggable="false" style="height:${slot.h}cqh">`;
+      if (hall.backdrop) { if (hall.shadow) inner += '<div class="spot-shadow"></div>'; }
+      else inner += themePedestals ? '<div class="spot-pedestal"></div>' : '<div class="spot-shadow"></div>';
+      el.innerHTML = inner;
+    }
     wrap.appendChild(el);
   });
 }
@@ -160,6 +170,10 @@ document.addEventListener('pointerdown', e => {
   const wrap = document.getElementById('room-pedestals').getBoundingClientRect();
   const i = +spot.dataset.i;
   const slot = CFG.hall.slots[i];
+  if (slot.kind === 'layer') {          // selectable, but position is baked in
+    parent.postMessage({ type: 'select', index: i }, '*');
+    return;
+  }
   drag = { i, wrap, x0: e.clientX, y0: e.clientY, left0: slot.left, bottom0: slot.bottom };
   spot.setPointerCapture(e.pointerId);
   parent.postMessage({ type: 'select', index: i }, '*');

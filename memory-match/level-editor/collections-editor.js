@@ -86,7 +86,7 @@ function collRenderItems() {
     <div class="item-row" title="${key}">
       <img src="../${it.file}" alt="">
       <div><div>${it.name || key}</div>
-        <div class="ir-meta">${it.view.w}×${it.view.h} · ${(it.view.w / it.view.h).toFixed(2)}${used.has(key) ? '' : ' · unused'}</div>
+        <div class="ir-meta">${it.view.w}×${it.view.h} · ${(it.view.w / it.view.h).toFixed(2)}${it.layer ? ' · +layer' : ''}${used.has(key) ? '' : ' · unused'}</div>
       </div>
       <button data-del="${key}" title="Remove from registry">✕</button>
     </div>`).join('');
@@ -132,13 +132,26 @@ function collRenderSlots() {
   const itemOpts = Object.keys(COLL.items).map(k =>
     `<option value="${k}"${s.item === k ? ' selected' : ''}>${k}</option>`).join('');
 
+  const isLayer = s.kind === 'layer';
+  const item = COLL.items[s.item] || {};
+  const geometry = isLayer
+    ? `<p style="font-size:11px;color:#8d84ad;line-height:1.4;margin:2px 0 0">
+         Full-scene layer — position is baked into the art
+         (<code style="color:#9ecbff">${item.layer || '(no layer file!)'}</code>),
+         drawn to fill the picture box. Nothing to place.</p>`
+    : `<div class="prop-row"><label>Left %</label><input type="number" id="sp-left" value="${s.left}" step="0.1"></div>
+       <div class="prop-row"><label>Bottom %</label><input type="number" id="sp-bottom" value="${s.bottom}" step="0.1"></div>
+       <div class="prop-row"><label>Height cqh</label><input type="number" id="sp-h" value="${s.h}" step="0.1"></div>
+       <div class="prop-row"><label>Pedestal cqw</label><input type="number" id="sp-pw" value="${s.pw ?? ''}" step="1" placeholder="(none)"></div>`;
+
   wrap.innerHTML = `<div class="slot-tab-row">${tabs}</div>
     <div class="prop-row"><label>Item</label><select id="sp-item">${itemOpts}</select></div>
     <div class="prop-row"><label>Level id</label><input type="number" id="sp-level" value="${s.levelId}" min="1"></div>
-    <div class="prop-row"><label>Left %</label><input type="number" id="sp-left" value="${s.left}" step="0.1"></div>
-    <div class="prop-row"><label>Bottom %</label><input type="number" id="sp-bottom" value="${s.bottom}" step="0.1"></div>
-    <div class="prop-row"><label>Height cqh</label><input type="number" id="sp-h" value="${s.h}" step="0.1"></div>
-    <div class="prop-row"><label>Pedestal cqw</label><input type="number" id="sp-pw" value="${s.pw ?? ''}" step="1" placeholder="(none)"></div>`;
+    <div class="prop-row"><label>Kind</label><select id="sp-kind">
+      <option value=""${isLayer ? '' : ' selected'}>placed item</option>
+      <option value="layer"${isLayer ? ' selected' : ''}>full-scene layer</option>
+    </select></div>
+    ${geometry}`;
 
   wrap.querySelectorAll('.slot-tab').forEach(t => t.onclick = () => {
     collSlotIdx = +t.dataset.i; collRenderSlots(); collPushPreview();
@@ -149,6 +162,17 @@ function collRenderSlots() {
   const num = (e, apply) => { const v = parseFloat(e.value); if (Number.isFinite(v)) apply(v); };
   bind('sp-item', e => { s.item = e.value; collRenderSlots(); });
   bind('sp-level', e => num(e, v => s.levelId = Math.round(v)));
+  bind('sp-kind', e => {
+    if (e.value === 'layer') { s.kind = 'layer'; }
+    else {
+      delete s.kind;
+      // a placed item needs geometry; seed something visible rather than NaN
+      if (typeof s.left !== 'number') s.left = 50;
+      if (typeof s.bottom !== 'number') s.bottom = 30;
+      if (typeof s.h !== 'number') s.h = 20;
+    }
+    collRenderSlots();
+  });
   bind('sp-left', e => num(e, v => s.left = v));
   bind('sp-bottom', e => num(e, v => s.bottom = v));
   bind('sp-h', e => num(e, v => s.h = v));
@@ -190,8 +214,10 @@ function collValidate() {
   COLL.halls.forEach(h => {
     if (!h.backdrop && !h.theme) push('err', `Hall “${h.name || h.id}” has neither a backdrop nor a CSS theme.`);
     if (h.theme && !(COLL.themes || {})[h.theme]) push('err', `Hall “${h.name || h.id}” uses theme “${h.theme}” which isn't in themes.`);
-    if (COLL.hallSize && (h.slots || []).length !== COLL.hallSize)
-      push('warn', `Hall “${h.name || h.id}” has ${(h.slots || []).length} slots; hallSize is ${COLL.hallSize}.`);
+    const lvls = (h.slots || []).map(s => s.levelId).filter(Number.isFinite).sort((a, b) => a - b);
+    if (lvls.length && lvls.some((v, i) => i && v !== lvls[i - 1] + 1))
+      push('warn', `Hall “${h.name || h.id}” covers non-consecutive levels (${lvls.join(', ')}) — reveal order will jump.`);
+    if (!(h.slots || []).length) push('warn', `Hall “${h.name || h.id}” has no slots.`);
 
     (h.slots || []).forEach(s => {
       const it = COLL.items[s.item];
@@ -204,6 +230,10 @@ function collValidate() {
       if (!ba) push('warn', `Level ${s.levelId} (${s.item}) has no ${style} board art — nothing is revealed as the board clears.`);
       else if (ba.item !== s.item) push('err', `Level ${s.levelId}: board art shows “${ba.item}” but the hall awards “${s.item}”.`);
 
+      if (s.kind === 'layer') {
+        if (!it.layer) push('err', `“${s.item}” is a layer slot but the item has no \`layer\` file.`);
+        return;                         // position is baked in — no geometry to check
+      }
       // geometry: does the art fit the picture?
       const artW = s.h * (it.view.w / it.view.h);
       if (s.bottom + s.h > 100) push('warn', `${s.item} overflows the top of the picture (bottom ${s.bottom} + h ${s.h} > 100).`);
@@ -215,6 +245,7 @@ function collValidate() {
 
     // overlapping slots within a hall
     (h.slots || []).forEach((a, i) => (h.slots || []).slice(i + 1).forEach(b => {
+      if (a.kind === 'layer' || b.kind === 'layer') return;   // layers are meant to stack
       const ia = COLL.items[a.item], ib = COLL.items[b.item];
       if (!ia || !ib) return;
       const aw = a.h * (ia.view.w / ia.view.h), bw = b.h * (ib.view.w / ib.view.h);

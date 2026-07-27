@@ -108,9 +108,9 @@ a level's reveal and its home-screen item can't drift apart:
 COLLECTIONS = {
   hallSize: 5,
   themes:   { music: { label, pedestals, notes, glow }, … },  // each maps to .theme-<id> in style.css
-  items:    { guitar: { name, file, view: {w,h} }, … },        // view = SVG viewBox OR PNG pixel size
+  items:    { guitar: { name, file, view: {w,h}, layer? }, … },  // view = SVG viewBox OR PNG pixel size
   halls:    [ { id, name, theme?, backdrop?, shadow?, glow?, notes?,
-                slots: [ { item, levelId, left, bottom, h, pw? } ] } ],
+                slots: [ { item, levelId, kind?, left, bottom, h, pw? } ] } ],
   boardArt: { cleaningxl: { <levelId>: { item, cx, cy, h } } },
 }
 ```
@@ -140,8 +140,20 @@ COLLECTIONS = {
   "where the item's base sits" — which is what the art is authored against.
 - Authoring a backdrop: keep the aspect near **0.57 w/h** and important scenery in
   the lower two-thirds, since wide screens crop from the top (bottom-anchored).
-- Today: 3 halls — Music Hall + Green Pasture (CSS themes, levels 1–10) and **Coral
-  Reef** (image backdrop, levels 11–15) — and `boardArt` for `cleaningxl` 1–15 + 38–40.
+- **Two kinds of slot.** A *placed item* (the default) is tight-cropped art anchored
+  by `left`/`bottom`/`h`. A **`kind: 'layer'`** slot is a *full-scene tableau layer*:
+  the art (`item.layer`) is a whole canvas with the piece already at its final
+  position, drawn to fill the picture box, so `left`/`bottom`/`h` are unused and
+  stacking a hall's layers reproduces its `final.png`. Placement stops being a
+  problem at the cost of one canvas per piece. Layers get no pedestal/shadow/glow,
+  an unearned one is simply absent, and they fade in via `@keyframes childhoodReveal`
+  (`.spot-layer.new`). An item can carry **both**: `file` (tight, for the
+  behind-board reveal) and `layer` (full-scene, for the hall) — Childhood does.
+  This only lines up because the layers and the backdrop share an aspect ratio and
+  the same cover geometry; `syncBackdropBox()` is what guarantees the second part.
+- Today: **4 halls** — Childhood (image backdrop + tableau layers, levels 1–4),
+  Music Hall (CSS theme, 5–9), Green Pasture (CSS theme, 10–14), Coral Reef (image
+  backdrop + placed items, 15–19) — and `boardArt` for `cleaningxl` 1–19 + 38–40.
 - **Load order**: `collections.js` must load *before* `board-bg.js` (which calls
   `setBgOption` at load time). It sits with the other data files, before `settings.js`.
 
