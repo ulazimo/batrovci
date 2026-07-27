@@ -72,12 +72,19 @@ body {
 #level-banner .level-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #4fc3f7; text-transform: uppercase; flex:1; }
 /* level label takes the left half; hearts/coins/gear sit grouped in the right half */
 #level-banner .settings-gear { margin-left: 10px; text-align:right; }
+/* Dev buttons (Fill / Finish) stacked in one column so the pair costs the banner
+   no more width than the single Fill button used to — the coin pill + gear to the
+   right have no room to spare. */
+#level-banner .dev-btns { display: flex; flex-direction: column; gap: 2px; margin-right: 10px; }
 #level-banner .fill-btn {
-  margin-right: 10px; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  font-size: 8px; font-weight: 700; letter-spacing: .5px; line-height: 1;
   text-transform: uppercase; color: #4fc3f7; background: rgba(79,195,247,.12);
-  border: 1px solid #4fc3f755; border-radius: 6px; padding: 3px 8px; cursor: pointer;
+  border: 1px solid #4fc3f755; border-radius: 5px; padding: 2px 6px; cursor: pointer;
 }
 #level-banner .fill-btn:hover { color: #fff; background: rgba(79,195,247,.25); }
+/* Dev "Finish" (instant win) — amber so it never reads as another Fill. */
+#level-banner .finish-btn { color: #f0c040; background: rgba(240,192,64,.12); border-color: #f0c04055; }
+#level-banner .finish-btn:hover { color: #fff; background: rgba(240,192,64,.28); }
 #level-banner .level-dots { display: flex; gap: 4px; }
 #level-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6a; }
 .lives-pill {

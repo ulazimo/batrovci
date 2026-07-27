@@ -641,6 +641,13 @@ live design/tuning console.
   even though journeys have 16/40/253 levels — cosmetic end-of-journey message.
 - **No build/test/lint.** Verify changes by opening `index.html` and playing.
   Use the Settings panel + "🧪 Test Level" / "🔓 Unlock All" to reach states fast.
+- **Dev buttons in the level banner** (`.dev-btns`, stacked so the pair costs no more
+  width than the old single button — the coin pill + gear have no slack): **Fill**
+  (`fillBoosters`, tops up the tray power-ups) and **Finish** (`devFinishLevel` in
+  [level.js](level.js)) — wipes the board + deck, force-satisfies every goal type, then
+  calls the normal `levelWon()`, so the win overlay / rewards / streak / hall reveal /
+  board art can be inspected without playing the level out. Add new goal types to its
+  switch too, or Finish silently won't satisfy them.
 - **Colors are fixed** to the six in `ALL_COLORS` (red, green, blue, yellow,
   orange, purple); `colorCount` per level slices how many are active
   (`ACTIVE_COLORS`) — so orange/purple only appear at `colorCount` 5/6. Each
