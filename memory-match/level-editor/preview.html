@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hall preview</title>
+<!-- The GAME's real stylesheet, so this preview is pixel-identical to the game
+     rather than a reimplementation. Asset paths are rewritten to ../ by the
+     parent because this page lives one directory deeper than the game. -->
+<link rel="stylesheet" href="../style.css">
+<style>
+  /* height:100% matters — without it the body grows past the iframe element and
+     stageSize() scales against the wrong height, clipping the scene's bottom. */
+  html, body { height: 100%; margin: 0; background: #14101f; overflow: hidden; }
+  /* The scene box stands in for the phone frame's scene area. */
+  #stage { position: relative; margin: 0 auto; background: #000; }
+  #room-scene { position: absolute; inset: 0; overflow: hidden; container-type: size; }
+  /* Authoring affordances — not part of the game. */
+  .room-spot { cursor: grab; }
+  .room-spot.sel { outline: 2px dashed #4fc3f7; outline-offset: 3px; }
+  .room-spot.sel::after {
+    content: ""; position: absolute; left: 50%; bottom: 0; width: 9px; height: 9px;
+    transform: translate(-50%, 50%); background: #4fc3f7; border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(0,0,0,.5);
+  }
+  #crop-warn {
+    position: absolute; left: 0; right: 0; top: 0; z-index: 40; pointer-events: none;
+    background: repeating-linear-gradient(45deg, rgba(255,80,80,.18) 0 8px, rgba(255,80,80,0) 8px 16px);
+    border-bottom: 1px dashed rgba(255,120,120,.7);
+  }
+  #crop-warn span {
+    position: absolute; right: 4px; bottom: 2px; font: 700 9px/1 system-ui;
+    color: rgba(255,190,190,.95); letter-spacing: .5px;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="room-scene">
+    <img id="room-backdrop" alt="" draggable="false">
+    <!-- Mirrors the #room-bg scenery in ../index.html so CSS-theme halls preview
+         with their real windows/stars/sconces/floor. Keep in sync with the game. -->
+    <div id="room-bg">
+      <div class="room-window"><span class="wpane"></span><span class="wpane"></span></div>
+      <div class="room-window tall"><span class="wpane"></span><span class="wpane"></span></div>
+      <div class="room-window"><span class="wpane"></span><span class="wpane"></span></div>
+      <div class="room-stars"></div>
+      <div class="room-sconce left"></div>
+      <div class="room-sconce right"></div>
+      <div class="room-hills"></div>
+      <div class="room-tree">
+        <div class="tree-foliage"></div>
+        <div class="tree-trunk"></div>
+      </div>
+      <div class="room-floor"></div>
+    </div>
+    <div id="room-pedestals"></div>
+    <div id="crop-warn" style="display:none"><span></span></div>
+  </div>
+</div>
+
+<script>
+// Mirrors syncBackdropBox() in ../home-room.js — keep the cover math in sync.
+// The spot layer is sized to the backdrop's cover rect and becomes the
+// container-query container, so slot left/bottom/h stay picture-relative.
+let CFG = { hall: null, items: {}, sel: -1, aspect: [275, 468] };
+
+function stageSize() {
+  const [w, h] = CFG.aspect;
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
+  const s = Math.min((vw - 16) / w, (vh - 16) / h, 1.6);
+  return { w: Math.round(w * s), h: Math.round(h * s) };
+}
+
+function coverRect(sw, sh, img) {
+  if (!img.naturalWidth) return null;
+  const nat = img.naturalWidth / img.naturalHeight;
+  let w, h;
+  if (sw / sh > nat) { w = sw; h = sw / nat; } else { h = sh; w = sh * nat; }
+  return { left: (sw - w) / 2, top: sh - h, w, h };      // object-position: center bottom
+}
+
+function layout() {
+  const st = stageSize();
+  const stage = document.getElementById('stage');
+  stage.style.width = st.w + 'px';
+  stage.style.height = st.h + 'px';
+  stage.style.marginTop = Math.max(0, (document.documentElement.clientHeight - st.h) / 2) + 'px';
+
+  const scene = document.getElementById('room-scene');
+  const img = document.getElementById('room-backdrop');
+  const wrap = document.getElementById('room-pedestals');
+  const hasBd = !!(CFG.hall && CFG.hall.backdrop);
+  scene.classList.toggle('has-backdrop', hasBd);
+
+  const r = hasBd ? coverRect(st.w, st.h, img) : null;
+  if (r) {
+    wrap.style.cssText = `position:absolute;left:${r.left}px;top:${r.top}px;` +
+                         `width:${r.w}px;height:${r.h}px;right:auto;bottom:auto;container-type:size;z-index:1`;
+    const cropped = Math.max(0, r.h - st.h);
+    const warn = document.getElementById('crop-warn');
+    warn.style.display = cropped > 2 ? '' : 'none';
+    warn.style.height = Math.min(cropped, st.h) + 'px';
+    warn.querySelector('span').textContent =
+      'cropped ' + Math.round(cropped / r.h * 100) + '% at this aspect';
+  } else {
+    wrap.style.cssText = 'position:absolute;inset:0;z-index:1';
+    document.getElementById('crop-warn').style.display = 'none';
+  }
+  return r;
+}
+
+function render(cfg) {
+  Object.assign(CFG, cfg);
+  const hall = CFG.hall;
+  const scene = document.getElementById('room-scene');
+  const img = document.getElementById('room-backdrop');
+
+  scene.className = '';
+  if (hall && hall.theme) scene.classList.add('theme-' + hall.theme);
+  if (hall && hall.backdrop) {
+    const want = '../' + hall.backdrop;
+    if (img.getAttribute('src') !== want) { img.onload = () => { layout(); paintSpots(); }; img.src = want; }
+  } else { img.removeAttribute('src'); }
+
+  layout();
+  paintSpots();
+}
+
+function paintSpots() {
+  const wrap = document.getElementById('room-pedestals');
+  const hall = CFG.hall;
+  wrap.innerHTML = '';
+  if (!hall) return;
+  const themePedestals = hall.theme && CFG.themes && CFG.themes[hall.theme]
+    && CFG.themes[hall.theme].pedestals;
+
+  (hall.slots || []).forEach((slot, i) => {
+    const item = CFG.items[slot.item];
+    if (!item) return;
+    const el = document.createElement('div');
+    el.className = 'room-spot revealed' + (i === CFG.sel ? ' sel' : '');
+    el.dataset.i = i;
+    el.style.left = slot.left + '%';
+    el.style.bottom = slot.bottom + '%';
+    if (slot.pw) el.style.setProperty('--pw', slot.pw + 'cqw');
+    let inner = `<img class="spot-instrument" src="../${item.file}" draggable="false" style="height:${slot.h}cqh">`;
+    if (hall.backdrop) { if (hall.shadow) inner += '<div class="spot-shadow"></div>'; }
+    else inner += themePedestals ? '<div class="spot-pedestal"></div>' : '<div class="spot-shadow"></div>';
+    el.innerHTML = inner;
+    wrap.appendChild(el);
+  });
+}
+
+// ---- drag to place -------------------------------------------------------
+let drag = null;
+document.addEventListener('pointerdown', e => {
+  const spot = e.target.closest && e.target.closest('.room-spot');
+  if (!spot) return;
+  const wrap = document.getElementById('room-pedestals').getBoundingClientRect();
+  const i = +spot.dataset.i;
+  const slot = CFG.hall.slots[i];
+  drag = { i, wrap, x0: e.clientX, y0: e.clientY, left0: slot.left, bottom0: slot.bottom };
+  spot.setPointerCapture(e.pointerId);
+  parent.postMessage({ type: 'select', index: i }, '*');
+  e.preventDefault();
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = (e.clientX - drag.x0) / drag.wrap.width * 100;
+  const dy = (e.clientY - drag.y0) / drag.wrap.height * 100;
+  const left = Math.max(0, Math.min(100, drag.left0 + dx));
+  const bottom = Math.max(-20, Math.min(120, drag.bottom0 - dy));
+  parent.postMessage({ type: 'move', index: drag.i,
+    left: Math.round(left * 10) / 10, bottom: Math.round(bottom * 10) / 10 }, '*');
+});
+document.addEventListener('pointerup', () => {
+  if (drag) parent.postMessage({ type: 'commit', index: drag.i }, '*');
+  drag = null;
+});
+
+window.addEventListener('resize', () => { layout(); paintSpots(); });
+window.PREVIEW = { render, setAspect: a => { CFG.aspect = a; layout(); paintSpots(); } };
+parent.postMessage({ type: 'ready' }, '*');
+</script>
+</body>
+</html>

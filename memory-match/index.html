@@ -107,8 +107,11 @@
     </div>
   </div>
 
-  <!-- The room scene: layered background + pedestals (pedestals built by JS) -->
+  <!-- The room scene: backdrop (image OR the procedural CSS scenery below) +
+       item spots, both built by JS. A hall with `backdrop` set in collections.js
+       shows #room-backdrop and hides #room-bg entirely. -->
   <div id="room-scene">
+    <img id="room-backdrop" alt="" draggable="false">
     <div id="room-bg">
       <div class="room-window"><span class="wpane"></span><span class="wpane"></span></div>
       <div class="room-window tall"><span class="wpane"></span><span class="wpane"></span></div>
@@ -299,6 +302,7 @@
 <script src="progression_cleaning.js"></script>
 <script src="progression_cleaningxl.js"></script>
 <script src="progression_long.js"></script>
+<script src="collections.js"></script>
 <script src="settings.js"></script>
 <!-- Former gameplay.js, split by concern. state.js MUST be first, boot.js MUST be last.
      All files share one global namespace (classic scripts). See CLAUDE.md §3/§12. -->

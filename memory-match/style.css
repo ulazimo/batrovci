@@ -1456,6 +1456,29 @@ body.on-home #chain-indicator { display: none !important; }
   container-type: size;             /* enables cqh/cqw sizing of instruments */
 }
 
+/* Image backdrop (halls with `backdrop` set in collections.js) ---
+   Replaces the procedural #room-bg scenery wholesale. `cover` fills the scene
+   box at any device aspect, so keep important art away from the edges. */
+#room-backdrop {
+  position: absolute; inset: 0; z-index: 0; display: none;
+  width: 100%; height: 100%; object-fit: cover; object-position: center bottom;
+  user-select: none; pointer-events: none;
+}
+#room-scene.has-backdrop #room-backdrop { display: block; }
+#room-scene.has-backdrop #room-bg      { display: none; }
+/* Spot layer is resized to the backdrop's cover rect by syncBackdropBox(), and
+   becomes the container so item cqh/cqw sizes track the picture, not the scene. */
+#room-scene.has-backdrop #room-pedestals { container-type: size; }
+/* Take the ground shadow OUT of the column flow. In flow it adds its own height
+   below the art, so a slot's `bottom` landed the shadow — not the item's feet —
+   on the painted plinth, floating every item ~2.5% high. Out of flow, `bottom`
+   means exactly "where the item's base sits", which is what the art is authored
+   against (and what drag-to-place will need). */
+#room-scene.has-backdrop .spot-shadow {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  margin-top: 0; z-index: 0;
+}
+
 /* Layered background ---------------------------------------- */
 #room-bg {
   position: absolute; inset: 0; z-index: 0;
@@ -1672,6 +1695,7 @@ body.on-home #chain-indicator { display: none !important; }
 .room-play-level { font-size: 12px; font-weight: 800; letter-spacing: 3px; opacity: .8; }
 
 /* ---- Hall slide transition (music → pasture, etc.) --------- */
+#room-scene.slide-in #room-backdrop,
 #room-scene.slide-in #room-bg,
 #room-scene.slide-in #room-pedestals,
 #room-scene.slide-in #room-title { animation: hallSlideIn .65s cubic-bezier(.22,.9,.3,1) both; }

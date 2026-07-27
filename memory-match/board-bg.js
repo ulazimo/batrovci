@@ -13,54 +13,12 @@
 // The behind-grid image layer is used by all options; the sharp per-cell reveal
 // is gated to option 3; the opaque empty-cell cover (option 4) lives in CSS.
 // Shared globals live in state.js.
+//
+// DATA: the art registry and the per-level placement both live in
+// collections.js (`COLLECTIONS.items` / `COLLECTIONS.boardArt`), which the same
+// file also feeds to the home halls — so a level's reveal and its home-screen
+// item can't drift apart. Edit via the level-editor, not here.
 // ============================================================
-
-// Board art registry (instruments + animals). aspect = viewBox width / height
-// (used to size the art without stretching it). Keyed by the `img` used in
-// LEVEL_BACKGROUNDS below and in the home halls (home-room.js).
-const BG_INSTRUMENTS = {
-  // Instruments (Music Hall — levels 1–5)
-  guitar:    { file: 'instruments/guitar.svg',    aspect: 220 / 520 },
-  saxophone: { file: 'instruments/saxophone.svg', aspect: 300 / 520 },
-  trumpet:   { file: 'instruments/trumpet.svg',   aspect: 520 / 300 },
-  drum:      { file: 'instruments/drum.svg',      aspect: 460 / 380 },
-  violin:    { file: 'instruments/violin.svg',    aspect: 200 / 520 },
-  piano:     { file: 'instruments/piano.svg',     aspect: 520 / 420 },
-  // Animals (Green Pasture — levels 6–10)
-  deer:      { file: 'animals/deer.svg',          aspect: 220 / 260 },
-  fox:       { file: 'animals/fox.svg',           aspect: 200 / 210 },
-  owl:       { file: 'animals/owl.svg',           aspect: 200 / 210 },
-  rabbit:    { file: 'animals/rabbit.svg',        aspect: 180 / 220 },
-  bird:      { file: 'animals/bird.svg',          aspect: 200 / 170 },
-};
-
-// One instrument per level: journey style → level id → placement.
-// Placement: { img, cx, cy, h } — cx/cy = centre as a fraction of the board
-// (0..1), h = art height as a fraction of board height (clamped to fit the
-// width). Set for the first 3 and last 3 XL levels (small 4×6 and large boards).
-const LEVEL_BACKGROUNDS = {
-  cleaningxl: {
-    // Levels 1–5 are the "instrument" levels — each clears to reveal the
-    // instrument that then appears on its pedestal in the home Music Hall
-    // (see ROOM_INSTRUMENTS in home-room.js — keep these in sync).
-    1:  { img: 'guitar',    cx: 0.5, cy: 0.5, h: 0.96 },
-    2:  { img: 'saxophone', cx: 0.5, cy: 0.5, h: 0.94 },
-    3:  { img: 'trumpet',   cx: 0.5, cy: 0.5, h: 0.9  },
-    4:  { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
-    5:  { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },
-    // Levels 6–10 are the "animal" levels — each clears to reveal the animal
-    // that then appears in the home Green Pasture (see HALLS in home-room.js —
-    // keep these in the same order).
-    6:  { img: 'deer',      cx: 0.5, cy: 0.5, h: 0.92 },
-    7:  { img: 'fox',       cx: 0.5, cy: 0.5, h: 0.9  },
-    8:  { img: 'owl',       cx: 0.5, cy: 0.5, h: 0.9  },
-    9:  { img: 'rabbit',    cx: 0.5, cy: 0.5, h: 0.94 },
-    10: { img: 'bird',      cx: 0.5, cy: 0.5, h: 0.74 },
-    38: { img: 'piano',     cx: 0.5, cy: 0.5, h: 0.9  },
-    39: { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
-    40: { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },
-  },
-};
 
 // Current render option: 0 = off, 1/2/3 = modes. Persisted like the device pick.
 let bgOption = (function () {
@@ -71,7 +29,8 @@ function currentLevelBackground() {
   const style = (typeof progress !== 'undefined' && progress.progressionStyle) || 'cleaningxl';
   const lvl = (typeof LEVELS !== 'undefined') ? LEVELS[currentLevelIndex] : null;
   const id = lvl && lvl.id;
-  return (LEVEL_BACKGROUNDS[style] && LEVEL_BACKGROUNDS[style][id]) || null;
+  const byStyle = COLLECTIONS.boardArt[style];
+  return (byStyle && byStyle[id]) || null;
 }
 
 function setBgOption(n) {
@@ -85,14 +44,14 @@ function setBgOption(n) {
 // Compute the art's pixel box within the board, preserving aspect and clamping
 // so it never overflows the board.
 function bgArtBox(place, BW, BH) {
-  const inst = BG_INSTRUMENTS[place.img];
-  if (!inst) return null;
+  const item = COLLECTIONS.items[place.item];
+  if (!item) return null;
   let h = place.h * BH;
-  let w = h * inst.aspect;
+  let w = h * (item.view.w / item.view.h);   // preserve the SVG's viewBox aspect
   const maxW = 0.98 * BW, maxH = 0.98 * BH;
   if (w > maxW) { const s = maxW / w; w *= s; h *= s; }
   if (h > maxH) { const s = maxH / h; w *= s; h *= s; }
-  return { inst, w, h, left: place.cx * BW - w / 2, top: place.cy * BH - h / 2 };
+  return { item, w, h, left: place.cx * BW - w / 2, top: place.cy * BH - h / 2 };
 }
 
 // (Re)build the background for the current board. Called from fitBoard (render/
@@ -117,7 +76,7 @@ function applyBoardBackground(force) {
   const box = (place && BW > 0 && BH > 0) ? bgArtBox(place, BW, BH) : null;
 
   // Signature: rebuild the behind-grid <img> only when option/level/size change.
-  const sig = box ? `${bgOption}|${place.img}|${Math.round(BW)}x${Math.round(BH)}` : '';
+  const sig = box ? `${bgOption}|${place.item}|${Math.round(BW)}x${Math.round(BH)}` : '';
   if (force || bg.dataset.sig !== sig) {
     bg.dataset.sig = sig;
     bg.innerHTML = '';
@@ -125,7 +84,7 @@ function applyBoardBackground(force) {
     if (box && bgOption) {
       boardEl.classList.add('bg-opt-' + bgOption);
       const img = document.createElement('img');
-      img.src = box.inst.file;
+      img.src = box.item.file;
       img.className = 'board-bg-img';
       img.draggable = false;
       img.style.cssText = `left:${box.left}px;top:${box.top}px;width:${box.w}px;height:${box.h}px`;
@@ -142,7 +101,7 @@ function applyBoardBackground(force) {
     if (box && bgOption === 3 && empty) {
       const r = Math.floor(i / COLS), c = i % COLS;
       const cl = c * (cell + BOARD_GAP), ct = r * (cell + BOARD_GAP);
-      cellEl.style.backgroundImage    = `url("${box.inst.file}")`;
+      cellEl.style.backgroundImage    = `url("${box.item.file}")`;
       cellEl.style.backgroundSize     = `${box.w}px ${box.h}px`;
       cellEl.style.backgroundPosition = `${box.left - cl}px ${box.top - ct}px`;
       cellEl.style.backgroundRepeat   = 'no-repeat';

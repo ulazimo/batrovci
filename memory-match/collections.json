@@ -1,0 +1,395 @@
+{
+  "hallSize": 5,
+  "themes": {
+    "music": {
+      "label": "Concert Hall",
+      "pedestals": true,
+      "notes": true,
+      "glow": true
+    },
+    "pasture": {
+      "label": "Green Pasture",
+      "pedestals": false,
+      "notes": false,
+      "glow": true
+    }
+  },
+  "items": {
+    "guitar": {
+      "name": "Guitar",
+      "file": "instruments/guitar.svg",
+      "view": {
+        "w": 220,
+        "h": 520
+      }
+    },
+    "saxophone": {
+      "name": "Saxophone",
+      "file": "instruments/saxophone.svg",
+      "view": {
+        "w": 300,
+        "h": 520
+      }
+    },
+    "trumpet": {
+      "name": "Trumpet",
+      "file": "instruments/trumpet.svg",
+      "view": {
+        "w": 520,
+        "h": 300
+      }
+    },
+    "drum": {
+      "name": "Drum",
+      "file": "instruments/drum.svg",
+      "view": {
+        "w": 460,
+        "h": 380
+      }
+    },
+    "violin": {
+      "name": "Violin",
+      "file": "instruments/violin.svg",
+      "view": {
+        "w": 200,
+        "h": 520
+      }
+    },
+    "piano": {
+      "name": "Piano",
+      "file": "instruments/piano.svg",
+      "view": {
+        "w": 520,
+        "h": 420
+      }
+    },
+    "deer": {
+      "name": "Deer",
+      "file": "animals/deer.svg",
+      "view": {
+        "w": 220,
+        "h": 260
+      }
+    },
+    "fox": {
+      "name": "Fox",
+      "file": "animals/fox.svg",
+      "view": {
+        "w": 200,
+        "h": 210
+      }
+    },
+    "owl": {
+      "name": "Owl",
+      "file": "animals/owl.svg",
+      "view": {
+        "w": 200,
+        "h": 210
+      }
+    },
+    "rabbit": {
+      "name": "Rabbit",
+      "file": "animals/rabbit.svg",
+      "view": {
+        "w": 180,
+        "h": 220
+      }
+    },
+    "bird": {
+      "name": "Bird",
+      "file": "animals/bird.svg",
+      "view": {
+        "w": 200,
+        "h": 170
+      }
+    },
+    "turtle": {
+      "name": "Sea Turtle",
+      "file": "reef/turtle.png",
+      "view": {
+        "w": 512,
+        "h": 321
+      }
+    },
+    "octopus": {
+      "name": "Octopus",
+      "file": "reef/octopus.png",
+      "view": {
+        "w": 482,
+        "h": 452
+      }
+    },
+    "seahorse": {
+      "name": "Seahorse",
+      "file": "reef/seahorse.png",
+      "view": {
+        "w": 252,
+        "h": 503
+      }
+    },
+    "clownfish": {
+      "name": "Clownfish",
+      "file": "reef/clownfish.png",
+      "view": {
+        "w": 512,
+        "h": 299
+      }
+    },
+    "starfish": {
+      "name": "Starfish",
+      "file": "reef/starfish.png",
+      "view": {
+        "w": 512,
+        "h": 475
+      }
+    }
+  },
+  "halls": [
+    {
+      "id": "music",
+      "name": "Music Hall",
+      "theme": "music",
+      "slots": [
+        {
+          "item": "guitar",
+          "levelId": 1,
+          "left": 50,
+          "bottom": 30,
+          "h": 46,
+          "pw": 26
+        },
+        {
+          "item": "saxophone",
+          "levelId": 2,
+          "left": 19,
+          "bottom": 30,
+          "h": 33,
+          "pw": 20
+        },
+        {
+          "item": "trumpet",
+          "levelId": 3,
+          "left": 81,
+          "bottom": 33,
+          "h": 17,
+          "pw": 22
+        },
+        {
+          "item": "drum",
+          "levelId": 4,
+          "left": 32,
+          "bottom": 6,
+          "h": 18,
+          "pw": 24
+        },
+        {
+          "item": "violin",
+          "levelId": 5,
+          "left": 70,
+          "bottom": 5,
+          "h": 40,
+          "pw": 18
+        }
+      ]
+    },
+    {
+      "id": "pasture",
+      "name": "Green Pasture",
+      "theme": "pasture",
+      "slots": [
+        {
+          "item": "deer",
+          "levelId": 6,
+          "left": 52,
+          "bottom": 30,
+          "h": 36
+        },
+        {
+          "item": "fox",
+          "levelId": 7,
+          "left": 19,
+          "bottom": 16,
+          "h": 21
+        },
+        {
+          "item": "owl",
+          "levelId": 8,
+          "left": 83,
+          "bottom": 33,
+          "h": 20
+        },
+        {
+          "item": "rabbit",
+          "levelId": 9,
+          "left": 33,
+          "bottom": 5,
+          "h": 19
+        },
+        {
+          "item": "bird",
+          "levelId": 10,
+          "left": 71,
+          "bottom": 7,
+          "h": 15
+        }
+      ]
+    },
+    {
+      "id": "reef",
+      "name": "Coral Reef",
+      "backdrop": "backdrops/coral-reef.png",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "turtle",
+          "levelId": 11,
+          "left": 50.9,
+          "bottom": 42.4,
+          "h": 10.5
+        },
+        {
+          "item": "octopus",
+          "levelId": 12,
+          "left": 30.0,
+          "bottom": 33.6,
+          "h": 13.7
+        },
+        {
+          "item": "seahorse",
+          "levelId": 13,
+          "left": 76.9,
+          "bottom": 34.4,
+          "h": 27.8
+        },
+        {
+          "item": "clownfish",
+          "levelId": 14,
+          "left": 64.8,
+          "bottom": 27.2,
+          "h": 10.5
+        },
+        {
+          "item": "starfish",
+          "levelId": 15,
+          "left": 21.5,
+          "bottom": 24.3,
+          "h": 14.5
+        }
+      ]
+    }
+  ],
+  "boardArt": {
+    "cleaningxl": {
+      "1": {
+        "item": "guitar",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.96
+      },
+      "2": {
+        "item": "saxophone",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.94
+      },
+      "3": {
+        "item": "trumpet",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "4": {
+        "item": "drum",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "5": {
+        "item": "violin",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.96
+      },
+      "6": {
+        "item": "deer",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.92
+      },
+      "7": {
+        "item": "fox",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "8": {
+        "item": "owl",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "9": {
+        "item": "rabbit",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.94
+      },
+      "10": {
+        "item": "bird",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.74
+      },
+      "38": {
+        "item": "piano",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "39": {
+        "item": "drum",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "40": {
+        "item": "violin",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.96
+      },
+      "11": {
+        "item": "turtle",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "12": {
+        "item": "octopus",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "13": {
+        "item": "seahorse",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "14": {
+        "item": "clownfish",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "15": {
+        "item": "starfish",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      }
+    }
+  }
+}

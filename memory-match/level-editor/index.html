@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Memory Match — Level Editor</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="collections-editor.css">
 </head>
 <body>
 
@@ -17,6 +18,7 @@
   <div class="top-bar-center">
     <button class="tab-btn active" data-tab="levels">Levels</button>
     <button class="tab-btn" data-tab="progression">Progression</button>
+    <button class="tab-btn" data-tab="collections">Collections</button>
   </div>
   <div class="top-bar-right">
     <button id="btn-load" class="bar-btn">📂 Load JSON</button>
@@ -134,6 +136,70 @@
   </div>
 </main>
 
+<!-- TAB: COLLECTIONS — halls, item registry, board art (authors ../collections.json) -->
+<main id="collections-layout" data-tab="collections" style="display:none">
+
+  <!-- LEFT: halls + item registry -->
+  <aside>
+    <h3 class="panel-title">Halls</h3>
+    <div id="hall-list"></div>
+    <button id="btn-add-hall" class="bar-btn" style="width:100%;margin-top:6px">+ Add Hall</button>
+
+    <h3 class="panel-title">Item Registry</h3>
+    <div id="item-list"></div>
+    <div class="prop-row" style="margin-top:8px">
+      <label>Folder</label><input type="text" id="ingest-folder" value="reef" placeholder="reef">
+    </div>
+    <div id="item-drop">Drop PNG / SVG here<br><small>size read from viewBox or pixels</small></div>
+    <input type="file" id="item-file" accept=".png,.svg,.webp,.jpg,.jpeg" multiple hidden>
+  </aside>
+
+  <!-- CENTER: WYSIWYG preview (the game's own CSS, in an iframe) -->
+  <section id="preview-wrap">
+    <div id="preview-bar">
+      <button class="seg active" data-aspect="275x468">iPhone</button>
+      <button class="seg" data-aspect="300x468">Galaxy</button>
+      <button class="seg" data-aspect="426x468">iPad</button>
+      <button id="btn-coll-reload" class="seg">↺ Reload</button>
+      <button id="btn-coll-grant" class="seg">📂 Grant folder</button>
+      <button id="btn-coll-save" class="seg">💾 Save</button>
+      <button id="btn-coll-download" class="seg">⬇ Download</button>
+      <span id="coll-status"></span>
+      <span class="hint">drag an item to place it</span>
+    </div>
+    <iframe id="preview-frame" src="preview.html"></iframe>
+  </section>
+
+  <!-- RIGHT: hall + slot properties, board art, validator -->
+  <aside>
+    <h3 class="panel-title">Hall</h3>
+    <div id="hall-props"></div>
+
+    <h3 class="panel-title">Slots</h3>
+    <div id="slot-props"></div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button id="btn-add-slot" class="bar-btn" style="flex:1">+ Slot</button>
+      <button id="btn-del-slot" class="bar-btn" style="flex:1">− Slot</button>
+    </div>
+
+    <h3 class="panel-title">Board Art
+      <select id="ba-style" style="float:right;font-size:10px;background:#221e3a;color:#ddd;border:1px solid rgba(255,255,255,.13);border-radius:4px">
+        <option value="cleaningxl">cleaningxl</option>
+        <option value="cleaning">cleaning</option>
+        <option value="short">short</option>
+        <option value="long">long</option>
+        <option value="default">default</option>
+      </select>
+    </h3>
+    <div id="boardart-list"></div>
+
+    <h3 class="panel-title">Validator</h3>
+    <div id="validator"></div>
+  </aside>
+
+</main>
+
 <script src="editor.js"></script>
+<script src="collections-editor.js"></script>
 </body>
 </html>

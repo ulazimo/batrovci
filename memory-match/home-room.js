@@ -5,52 +5,47 @@
 //   Hall 1 — Green Pasture (levels 6–10) → animals on the grass
 // (More halls can be appended; each covers the next block of 5 levels.)
 //
-// A hall's item j maps to global level index (hallIndex*5 + j). An item is
-// "revealed" once that level is completed (progress.stars[levelIndex] > 0), and
-// animates in the first time it's shown after the win (tracked in
-// progress.seenInstruments, keyed by global level index).
+// Each slot names its level outright (`levelId`); an item is "revealed" once
+// that level is completed (progress.stars[levelIndex] > 0), and animates in the
+// first time it's shown after the win (tracked in progress.seenInstruments,
+// keyed by global level index — so slotLevelIndex() resolves id → index).
 //
 // Flow after a win: you always return to the Hall (no "next level" shortcut) so
 // you SEE what you just unlocked appear. When you finish the last level of a
 // hall, the hall reveals that final item and then SLIDES to the next hall.
 //
 // Loaded after endgame.js, before boot.js. Shares one global namespace.
+//
+// DATA: halls, their item slots and the art registry all live in collections.js
+// (`COLLECTIONS`), shared with board-bg.js so a level's board reveal and its
+// home-screen item stay one edit. Each slot carries:
+//   item        — key into COLLECTIONS.items ({ name, file, view })
+//   levelId     — the level whose completion reveals it
+//   left/bottom — spot anchor as % of the scene box
+//   h           — art height in cqh (1% of scene height)
+//   pw          — pedestal width in cqw (pedestal themes only)
+// A hall gets its background one of two ways:
+//   backdrop: 'backdrops/x.png'  — an image; #room-bg's procedural scenery is
+//     hidden. Pedestals/props are painted into the art, so slots add nothing but
+//     an optional ground shadow (hall.shadow). This is what the editor authors.
+//   theme: 'music'               — a hand-authored CSS preset (.theme-<id> in
+//     style.css) declared in COLLECTIONS.themes, where `pedestals` picks
+//     .spot-pedestal vs .spot-shadow. The two original halls still use this.
+// Edit via the level-editor, not here.
 // ============================================================
 
 const MAIN_JOURNEY = 'cleaningxl';
-const HALL_SIZE = 5;   // levels (and items) per hall
 
-// Each hall: assetDir (folder holding its <img>.svg art), theme (drives the
-// background + whether items sit on pedestals), and 5 item spots.
-//   left/bottom — spot anchor as % of the scene box
-//   h           — art height in cqh (1% of scene height)
-//   pw          — pedestal width in cqw (music theme only)
-const HALLS = [
-  {
-    id: 'music', name: 'Music Hall', theme: 'music', assetDir: 'instruments',
-    items: [
-      { img: 'guitar',    name: 'Guitar',    left: 50, bottom: 30, h: 46, pw: 26 },
-      { img: 'saxophone', name: 'Saxophone', left: 19, bottom: 30, h: 33, pw: 20 },
-      { img: 'trumpet',   name: 'Trumpet',   left: 81, bottom: 33, h: 17, pw: 22 },
-      { img: 'drum',      name: 'Drum',      left: 32, bottom: 6,  h: 18, pw: 24 },
-      { img: 'violin',    name: 'Violin',    left: 70, bottom: 5,  h: 40, pw: 18 },
-    ],
-  },
-  {
-    id: 'pasture', name: 'Green Pasture', theme: 'pasture', assetDir: 'animals',
-    items: [
-      { img: 'deer',   name: 'Deer',   left: 52, bottom: 30, h: 36 },
-      { img: 'fox',    name: 'Fox',    left: 19, bottom: 16, h: 21 },
-      { img: 'owl',    name: 'Owl',    left: 83, bottom: 33, h: 20 },
-      { img: 'rabbit', name: 'Rabbit', left: 33, bottom: 5,  h: 19 },
-      { img: 'bird',   name: 'Bird',   left: 71, bottom: 7,  h: 15 },
-    ],
-  },
-];
+const HALLS      = COLLECTIONS.halls;
+const HALL_ITEMS = COLLECTIONS.items;
 
-const TOTAL_HALL_ITEMS = HALLS.length * HALL_SIZE;
-
-function assetSrc(hall, imgKey) { return `${hall.assetDir}/${imgKey}.svg`; }
+// Resolve a slot to its global level index — progress.stars and
+// progress.seenInstruments are both keyed by index, not level id. -1 when the
+// active journey has no level with that id.
+function slotLevelIndex(slot) {
+  if (typeof LEVELS === 'undefined') return -1;
+  return LEVELS.findIndex(l => l.id === slot.levelId);
+}
 
 // The next level the player will play (0-based, clamped to the journey length).
 function nextPlayableIndex() {
@@ -58,17 +53,27 @@ function nextPlayableIndex() {
   return Math.max(0, Math.min(progress.highestUnlocked || 0, n - 1));
 }
 
-// Hall that contains the next level to play (clamped to the last defined hall).
+// Hall that owns the next level to play. Levels past the last authored hall
+// (11+ today) stay on the last hall the player has fully cleared past.
 function currentHallIndex() {
-  return Math.max(0, Math.min(Math.floor(nextPlayableIndex() / HALL_SIZE), HALLS.length - 1));
+  const idx = nextPlayableIndex();
+  const owner = HALLS.findIndex(h => h.slots.some(s => slotLevelIndex(s) === idx));
+  if (owner >= 0) return owner;
+  let last = 0;
+  HALLS.forEach((h, i) => {
+    const passed = h.slots.every(s => { const li = slotLevelIndex(s); return li >= 0 && li < idx; });
+    if (passed) last = i;
+  });
+  return last;
 }
 
 // Lowest hall holding an unlocked-but-not-yet-animated item, or -1 if none.
 function pendingRevealHall() {
   if (!Array.isArray(progress.seenInstruments)) progress.seenInstruments = [];
-  for (let L = 0; L < TOTAL_HALL_ITEMS; L++) {
-    if ((progress.stars?.[L] || 0) > 0 && !progress.seenInstruments.includes(L)) {
-      return Math.floor(L / HALL_SIZE);
+  for (let h = 0; h < HALLS.length; h++) {
+    for (const slot of HALLS[h].slots) {
+      const li = slotLevelIndex(slot);
+      if (li >= 0 && (progress.stars?.[li] || 0) > 0 && !progress.seenInstruments.includes(li)) return h;
     }
   }
   return -1;
@@ -117,15 +122,78 @@ function showHome() {
   }
 }
 
+// Size the spot layer to the backdrop's RENDERED rect. The backdrop uses
+// `object-fit: cover`, so on a wider device the picture is cropped — anchoring
+// spots to the scene box would slide every item off the scenery it was placed
+// against (an iPad crops ~59% of a portrait backdrop's height). Matching the
+// cover geometry keeps a slot's left/bottom/h relative to the PICTURE, so items
+// stay glued to painted pedestals on every device. The layer also becomes the
+// container-query container, so the `cqh`/`cqw` art sizes scale with the picture
+// rather than the scene. No-op for CSS-theme halls, which span the whole scene.
+function syncBackdropBox() {
+  const scene = document.getElementById('room-scene');
+  const img   = document.getElementById('room-backdrop');
+  const wrap  = document.getElementById('room-pedestals');
+  if (!scene || !img || !wrap) return;
+
+  if (!scene.classList.contains('has-backdrop') || !img.naturalWidth) {
+    wrap.style.left = wrap.style.top = wrap.style.width = wrap.style.height = '';
+    wrap.style.right = wrap.style.bottom = '';
+    return;
+  }
+  const sw = scene.clientWidth, sh = scene.clientHeight;
+  if (!sw || !sh) return;
+  const natAspect = img.naturalWidth / img.naturalHeight;
+  let w, h;
+  if (sw / sh > natAspect) { w = sw; h = sw / natAspect; }   // wider box → crop top
+  else                     { h = sh; w = sh * natAspect; }   // taller box → crop sides
+  // Mirrors `object-position: center bottom`.
+  wrap.style.left   = ((sw - w) / 2) + 'px';
+  wrap.style.top    = (sh - h) + 'px';
+  wrap.style.width  = w + 'px';
+  wrap.style.height = h + 'px';
+  wrap.style.right  = 'auto';
+  wrap.style.bottom = 'auto';
+}
+
+// Re-anchor on any scene resize. A ResizeObserver (not a window `resize`
+// listener) because the #device-switcher rescales the phone frame purely in CSS,
+// which never fires a window resize.
+if (typeof ResizeObserver !== 'undefined') {
+  const sceneForObs = document.getElementById('room-scene');
+  if (sceneForObs) new ResizeObserver(syncBackdropBox).observe(sceneForObs);
+} else {
+  window.addEventListener('resize', syncBackdropBox);
+}
+
 function renderHall(hallIdx, opts = {}) {
   const hall = HALLS[hallIdx];
   if (!hall) return;
   if (!Array.isArray(progress.seenInstruments)) progress.seenInstruments = [];
 
+  const theme = COLLECTIONS.themes[hall.theme] || {};
+
+  // Backdrop: an image hall points at a file and hides the procedural scenery;
+  // a CSS-theme hall keeps #room-bg and just swaps the .theme-<id> class.
   const scene = document.getElementById('room-scene');
   if (scene) {
-    scene.classList.remove('theme-music', 'theme-pasture');
-    scene.classList.add('theme-' + hall.theme);
+    Object.keys(COLLECTIONS.themes).forEach(t => scene.classList.remove('theme-' + t));
+    if (hall.theme) scene.classList.add('theme-' + hall.theme);
+    scene.classList.toggle('has-backdrop', !!hall.backdrop);
+  }
+  const backdropEl = document.getElementById('room-backdrop');
+  if (backdropEl) {
+    if (hall.backdrop) {
+      backdropEl.src = hall.backdrop;
+      // Slots are authored against the picture, so re-anchor once it has
+      // intrinsic dimensions (and again on every resize — see the listener).
+      if (backdropEl.complete && backdropEl.naturalWidth) syncBackdropBox();
+      else backdropEl.onload = syncBackdropBox;
+    } else {
+      backdropEl.removeAttribute('src');
+      backdropEl.onload = null;
+    }
+    syncBackdropBox();
   }
   const titleEl = document.getElementById('room-title');
   if (titleEl) titleEl.textContent = hall.name;
@@ -134,27 +202,40 @@ function renderHall(hallIdx, opts = {}) {
   if (!wrap) return;
   wrap.innerHTML = '';
 
-  hall.items.forEach((item, j) => {
-    const levelIdx = hallIdx * HALL_SIZE + j;
-    const revealed = (progress.stars?.[levelIdx] || 0) > 0;
+  hall.slots.forEach(slot => {
+    const item = HALL_ITEMS[slot.item];
+    if (!item) return;                       // slot names art that isn't registered
+    const levelIdx = slotLevelIndex(slot);
+    const revealed = levelIdx >= 0 && (progress.stars?.[levelIdx] || 0) > 0;
     const isNew = revealed && opts.reveal && !progress.seenInstruments.includes(levelIdx);
 
     const spot = document.createElement('div');
     spot.className = 'room-spot ' + (revealed ? 'revealed' : 'empty') + (isNew ? ' new' : '');
-    spot.style.left = item.left + '%';
-    spot.style.bottom = item.bottom + '%';
-    if (item.pw) spot.style.setProperty('--pw', item.pw + 'cqw');
+    spot.style.left = slot.left + '%';
+    spot.style.bottom = slot.bottom + '%';
+    if (slot.pw) spot.style.setProperty('--pw', slot.pw + 'cqw');
+
+    // Ornaments are per-hall for image backdrops (a photographic scene rarely
+    // wants floating ♪), and per-theme for the hand-authored CSS halls.
+    const showGlow  = hall.backdrop ? !!hall.glow  : theme.glow !== false;
+    const showNotes = hall.backdrop ? !!hall.notes : !!theme.notes;
 
     let inner = '';
     if (revealed) {
-      inner += `<div class="spot-glow"></div>`;
-      inner += `<div class="spot-notes"><span>♪</span><span>♫</span><span>♪</span></div>`;
-      inner += `<img class="spot-instrument" src="${assetSrc(hall, item.img)}" alt="${item.name}" draggable="false" style="height:${item.h}cqh">`;
+      if (showGlow)  inner += `<div class="spot-glow"></div>`;
+      if (showNotes) inner += `<div class="spot-notes"><span>♪</span><span>♫</span><span>♪</span></div>`;
+      inner += `<img class="spot-instrument" src="${item.file}" alt="${item.name}" draggable="false" style="height:${slot.h}cqh">`;
     } else {
-      inner += `<div class="spot-instrument spot-locked" style="height:${item.h}cqh"><span>?</span></div>`;
+      inner += `<div class="spot-instrument spot-locked" style="height:${slot.h}cqh"><span>?</span></div>`;
     }
-    // Music items stand on wooden pedestals; pasture items sit on the grass.
-    inner += hall.theme === 'pasture' ? `<div class="spot-shadow"></div>` : `<div class="spot-pedestal"></div>`;
+    // Image backdrops have their pedestals/scenery painted in, so a slot only
+    // adds a ground shadow if the hall asks for one. CSS-theme halls still draw
+    // a pedestal or a shadow per their theme.
+    if (hall.backdrop) {
+      if (hall.shadow) inner += `<div class="spot-shadow"></div>`;
+    } else {
+      inner += theme.pedestals ? `<div class="spot-pedestal"></div>` : `<div class="spot-shadow"></div>`;
+    }
     spot.innerHTML = inner;
     wrap.appendChild(spot);
 
