@@ -19,7 +19,13 @@
 // (used to size the art without stretching it). Keyed by the `img` used in
 // LEVEL_BACKGROUNDS below and in the home halls (home-room.js).
 const BG_INSTRUMENTS = {
-  // Instruments (Music Hall — levels 1–5)
+  // Childhood (Childhood Hall — levels 1–4). PNGs trimmed tight to the subject;
+  // aspect = trimmed width/height.
+  child1:    { file: 'childhood/child1.png',   aspect: 195 / 825 },
+  child2:    { file: 'childhood/child2.png',   aspect: 282 / 681 },
+  jumprope:  { file: 'childhood/jumprope.png', aspect: 473 / 386 },
+  boy:       { file: 'childhood/boy.png',      aspect: 336 / 589 },
+  // Instruments (Music Hall — levels 5–9)
   guitar:    { file: 'instruments/guitar.svg',    aspect: 220 / 520 },
   saxophone: { file: 'instruments/saxophone.svg', aspect: 300 / 520 },
   trumpet:   { file: 'instruments/trumpet.svg',   aspect: 520 / 300 },
@@ -40,32 +46,51 @@ const BG_INSTRUMENTS = {
 // width). Set for the first 3 and last 3 XL levels (small 4×6 and large boards).
 const LEVEL_BACKGROUNDS = {
   cleaningxl: {
-    // Levels 1–5 are the "instrument" levels — each clears to reveal the
+    // Levels 1–4 are the "childhood" levels — each clears to reveal a piece of
+    // the jump-rope tableau that assembles in the home Childhood hall (see
+    // HALLS in home-room.js — keep the order in sync).
+    1:  { img: 'child1',    cx: 0.5, cy: 0.5, h: 0.94 },
+    2:  { img: 'child2',    cx: 0.5, cy: 0.5, h: 0.94 },
+    3:  { img: 'jumprope',  cx: 0.5, cy: 0.5, h: 0.8  },
+    4:  { img: 'boy',       cx: 0.5, cy: 0.5, h: 0.94 },
+    // Levels 5–9 are the "instrument" levels — each clears to reveal the
     // instrument that then appears on its pedestal in the home Music Hall
-    // (see ROOM_INSTRUMENTS in home-room.js — keep these in sync).
-    1:  { img: 'guitar',    cx: 0.5, cy: 0.5, h: 0.96 },
-    2:  { img: 'saxophone', cx: 0.5, cy: 0.5, h: 0.94 },
-    3:  { img: 'trumpet',   cx: 0.5, cy: 0.5, h: 0.9  },
-    4:  { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
-    5:  { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },
-    // Levels 6–10 are the "animal" levels — each clears to reveal the animal
+    // (see HALLS in home-room.js — keep these in sync).
+    5:  { img: 'guitar',    cx: 0.5, cy: 0.5, h: 0.96 },
+    6:  { img: 'saxophone', cx: 0.5, cy: 0.5, h: 0.94 },
+    7:  { img: 'trumpet',   cx: 0.5, cy: 0.5, h: 0.9  },
+    8:  { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
+    9:  { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },
+    // Levels 10–14 are the "animal" levels — each clears to reveal the animal
     // that then appears in the home Green Pasture (see HALLS in home-room.js —
     // keep these in the same order).
-    6:  { img: 'deer',      cx: 0.5, cy: 0.5, h: 0.92 },
-    7:  { img: 'fox',       cx: 0.5, cy: 0.5, h: 0.9  },
-    8:  { img: 'owl',       cx: 0.5, cy: 0.5, h: 0.9  },
-    9:  { img: 'rabbit',    cx: 0.5, cy: 0.5, h: 0.94 },
-    10: { img: 'bird',      cx: 0.5, cy: 0.5, h: 0.74 },
+    10: { img: 'deer',      cx: 0.5, cy: 0.5, h: 0.92 },
+    11: { img: 'fox',       cx: 0.5, cy: 0.5, h: 0.9  },
+    12: { img: 'owl',       cx: 0.5, cy: 0.5, h: 0.9  },
+    13: { img: 'rabbit',    cx: 0.5, cy: 0.5, h: 0.94 },
+    14: { img: 'bird',      cx: 0.5, cy: 0.5, h: 0.74 },
     38: { img: 'piano',     cx: 0.5, cy: 0.5, h: 0.9  },
     39: { img: 'drum',      cx: 0.5, cy: 0.5, h: 0.9  },
     40: { img: 'violin',    cx: 0.5, cy: 0.5, h: 0.96 },
   },
 };
 
-// Current render option: 0 = off, 1/2/3 = modes. Persisted like the device pick.
+// Current render option: 0 = off, 1/2/3/4 = modes. Persisted like the device pick.
+// Defaults to 3 (blur + reveal + highlight) so the level's instrument/animal is
+// visible behind the tiles during play and progressively revealed as cards clear.
 let bgOption = (function () {
-  try { return parseInt(localStorage.getItem('mm_bg_option'), 10) || 0; } catch (e) { return 0; }
+  try {
+    const saved = localStorage.getItem('mm_bg_option');
+    return saved == null ? 3 : (parseInt(saved, 10) || 0);
+  } catch (e) { return 3; }
 })();
+
+// Win highlight: briefly un-blur + glow the level's revealed art (called from
+// levelWon). Toggling `.board-win-reveal` on #board drives the CSS.
+function flashBoardArtWin(on) {
+  const el = document.getElementById('board');
+  if (el) el.classList.toggle('board-win-reveal', !!on);
+}
 
 function currentLevelBackground() {
   const style = (typeof progress !== 'undefined' && progress.progressionStyle) || 'cleaningxl';

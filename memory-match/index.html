@@ -122,6 +122,10 @@
     </div>
     <div id="room-pedestals"></div>
     <div id="room-title">Music Hall</div>
+    <!-- Hall navigation: swipe the scene, or tap the side arrows -->
+    <button class="room-nav left" onclick="swipeHall(-1)" aria-label="Previous hall">‹</button>
+    <button class="room-nav right" onclick="swipeHall(1)" aria-label="Next hall">›</button>
+    <div id="room-dots"></div>
   </div>
 
   <!-- Bottom: win-streak meter, then the Play button + the reward you'll earn -->

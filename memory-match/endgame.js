@@ -107,15 +107,39 @@ function levelWon() {
   saveProgress();
   updateBanner();
 
-  // Show win banner over the board, then open overlay.
+  SFX.win();
+  launchConfetti();
+
+  // If this level shows instrument/animal art behind the board, HIGHLIGHT it
+  // (un-blur + glow) for 1s, then go straight to the home hall to watch the
+  // piece appear + any hall-complete celebration. Otherwise fall back to the
+  // classic banner, then home. No intermediate "Level Complete" overlay.
+  const hasArt = (typeof currentLevelBackground === 'function') && currentLevelBackground() && bgOption > 0;
+  if (hasArt) {
+    if (typeof flashBoardArtWin === 'function') flashBoardArtWin(true);
+    setTimeout(() => {
+      if (typeof flashBoardArtWin === 'function') flashBoardArtWin(false);
+      finishLevelToHome();
+    }, 1000);
+    return;
+  }
+
+  // No board art: show the win banner over the board, then go home.
   // Cleaning journeys hide Score, so skip the score/coins subtitle under the banner.
   const winSub = LEVELS[currentLevelIndex]?.clearBoard
     ? ''
     : `Score: ${score} · +${coinsEarned} <img src="icons/coin_icon.png" class="coin-icon" alt="coins">`;
   showBoardBanner('win', '🎉 LEVEL COMPLETE!', winSub);
-  setTimeout(() => hideBoardBanner(() => showWinOverlay()), 1800);
-  SFX.win();
-  launchConfetti();
+  setTimeout(() => hideBoardBanner(() => finishLevelToHome()), 1800);
+}
+
+// A win no longer opens the "Level Complete" overlay. We still GRANT the level's
+// rewards (silently — the home screen shows the next reward, and inventories
+// update), then return to the home hall so the just-unlocked piece animates in
+// and, if it completed the hall, the celebration plays there.
+function finishLevelToHome() {
+  if (typeof grantLevelRewards === 'function') grantLevelRewards(LEVELS[currentLevelIndex].id);
+  showHome();
 }
 
 function showWinOverlay() {

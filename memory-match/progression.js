@@ -112,6 +112,14 @@ function resetJourneyProgress() {
   delete progress.levelRewards;
   delete progress.comboMapping;
   Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
+  // Clear ALL "seen" state so a reset truly starts fresh: hall pieces re-reveal
+  // (with their animation + celebration) and first-time tutorials replay. These
+  // live on `progress` (not the per-journey snapshot), so clear them explicitly.
+  progress.seenInstruments = [];
+  delete progress.seenHall;
+  progress.seenSpecials = [];
+  progress.seenBoosters = [];
+  progress.seenFeatures = [];
   // Clear saved snapshot too
   if (progress.journeys?.[progress.progressionStyle]) {
     delete progress.journeys[progress.progressionStyle];
