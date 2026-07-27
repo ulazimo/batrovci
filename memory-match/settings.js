@@ -446,6 +446,52 @@ if (!progress.specialInventory) {
   // Defer actual init until SPECIAL_TYPES is defined (see initInventoryDefaults)
 }
 
+// ============================================================
+// PROGRESS MIGRATIONS
+// Saved progress is keyed by level/hall INDEX, so re-ordering halls or levels
+// silently corrupts the meaning of an existing save. Bump PROGRESS_VERSION and
+// add a step whenever that happens; migrateProgress() runs once per save.
+// Runs here because `progress` and saveProgress() are defined just above and
+// this must complete before home-room.js reads any of it. Deliberately does NOT
+// depend on LEVELS — that alias isn't set until applyProgression() later.
+// ============================================================
+const PROGRESS_VERSION = 2;
+
+function migrateProgress() {
+  const from = progress.progressVersion || 1;
+  if (from >= PROGRESS_VERSION) return;
+
+  // v2 — the Childhood hall was inserted AHEAD of the Music Hall, renumbering
+  // everything (Childhood 1–4, Music 5–9, Pasture 10–14, Coral Reef 15–19).
+  //
+  // What a hall *displays* is driven by progress.stars, which the re-ordering
+  // didn't touch, so nothing is corrupt. Two narrower things do break:
+  //   • `seenHall` is a hall INDEX and a hall appeared at 0, so every old value
+  //     is one too low — the player replays a slide-in they've already had.
+  //   • `seenInstruments` holds level INDEXES that have already animated in.
+  //     Indices 0–3 were flagged for the old Music items, but now address the
+  //     Childhood pieces — art the player owns and has never seen. Left flagged,
+  //     the tableau silently never assembles.
+  //
+  // So: shift the hall, and un-flag just the inserted hall's levels. Clearing
+  // the whole list instead would drag the player back through one hall's reveal
+  // per trip home (renderHall only marks the hall it renders) until it drained.
+  // The indices are hardcoded on purpose — a migration must describe the past,
+  // not follow whatever collections.json happens to say later.
+  if (from < 2) {
+    const V2_INSERTED_HALL_LEVEL_INDEXES = [0, 1, 2, 3];   // Childhood, levels 1–4
+    if (Array.isArray(progress.seenInstruments)) {
+      progress.seenInstruments = progress.seenInstruments
+        .filter(i => !V2_INSERTED_HALL_LEVEL_INDEXES.includes(i));
+    }
+    if (typeof progress.seenHall === 'number') progress.seenHall += 1;
+  }
+
+  progress.progressVersion = PROGRESS_VERSION;
+  saveProgress();
+}
+migrateProgress();
+
 function initInventoryDefaults() {
   SPECIAL_TYPES.forEach(s => {
     if (progress.specialInventory[s.id] === undefined) progress.specialInventory[s.id] = 0;

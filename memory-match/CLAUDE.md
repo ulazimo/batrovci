@@ -591,6 +591,23 @@ streak status, and can **deploy owned special cards** onto the board from invent
 Everything lives in one `localStorage` object `mm_progress` (`loadProgress`/
 `saveProgress`). Call `saveProgress()` after mutating `progress`.
 
+**Migrations — `PROGRESS_VERSION` + `migrateProgress()` in `settings.js`.** Several
+fields are keyed by **level index** or **hall index** (`stars`, `seenInstruments`,
+`seenHall`), so re-ordering halls or levels silently changes what an existing save
+*means*. When you do that, bump `PROGRESS_VERSION` and add a step; it runs once per
+save and is a no-op afterwards. Rules that matter:
+- A migration must never touch `stars` or the economy — only the fields whose
+  meaning moved.
+- Pin the step to **hardcoded historical constants**, not to whatever
+  `collections.json` says now, or the migration changes behaviour as data evolves.
+- Note `seenInstruments` / `seenHall` live on `progress` itself, **not** in the
+  per-journey snapshot (which carries `stars`) — see `saveJourneySnapshot`.
+- v2 is the worked example: the Childhood hall was inserted at index 0, so it
+  shifts `seenHall` by one and un-flags just that hall's level indices so its
+  tableau assembles once. Clearing the whole list instead would drag the player
+  through one hall's reveal per trip home, since `renderHall` only marks the hall
+  it renders.
+
 ---
 
 ## 11. Configurable gameplay rules (`GAMEPLAY_RULES`, [settings.js:5-36](settings.js))
