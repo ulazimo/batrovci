@@ -274,6 +274,11 @@ function endTurn(manual, perfectSweep) {
     matched = normalCards.slice(0,-1);
   else matched = normalCards;
 
+  // The trailing card of a genuine mismatch is NOT part of the chain — drop it from chainCards.
+  // Otherwise, if an ice / color-lock break fires mid-resolution (registerCollected →
+  // updateChainIndicator), the chain bar would suddenly render the wrong-colour card as a slot.
+  if (matched !== normalCards) chainCards = chainCards.filter(i => i !== mismatchIdx);
+
   const combo = matched.length + specialsUsed.length;
   const minCombo = getMinCombo();
 
