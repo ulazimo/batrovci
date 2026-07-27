@@ -768,6 +768,9 @@ function removePeekProgress() {
 boardEl.addEventListener('pointerdown', e => {
   longPressTriggered = false;
   if (isBombAiming()) return; // bomb drag-to-place owns board input
+  // Don't arm a long-press during a reveal — its timer sets longPressTriggered before
+  // bailing on inputLocked, which would swallow the tap meant to skip the reveal.
+  if (isRevealing()) return;
   if (!getRule('longPressPeek')) return;
   const el = e.target.closest('.card');
   if (!el) return;
@@ -803,6 +806,9 @@ boardEl.addEventListener('click', e => {
   if (longPressTriggered) { longPressTriggered = false; return; }
   // Swallow the click that trails a bomb drop / while aiming.
   if (isBombAiming() || consumeBombClickSwallow()) return;
+  // A reveal is on screen — the tap hurries it along instead of flipping a card.
+  // (Input is locked during a reveal anyway, so no card tap is lost.)
+  if (isRevealing()) { skipReveal(); return; }
   const el = e.target.closest('.card');
   if (!el) return;
   const i = parseInt(el.dataset.index, 10);

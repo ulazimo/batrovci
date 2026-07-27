@@ -126,13 +126,11 @@ function onCardClick(index) {
         .filter(i => board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
       spawnParticles([index], chainColor || 'red');
 
-      targets.forEach((idx, ti) => {
-        setTimeout(() => {
-          board[idx].flipped = true;
-          const cel = getCardEl(idx);
-          if (cel) { cel.classList.add('flipped', 'reveal-flash'); cel.addEventListener('animationend', () => cel.classList.remove('reveal-flash'), {once:true}); }
-        }, 100 + ti * 70);
-      });
+      const revealSteps = targets.map((idx, ti) => ({ delay: 100 + ti * 70, fn: () => {
+        board[idx].flipped = true;
+        const cel = getCardEl(idx);
+        if (cel) { cel.classList.add('flipped', 'reveal-flash'); cel.addEventListener('animationend', () => cel.classList.remove('reveal-flash'), {once:true}); }
+      } }));
 
       // Colored bombs: find revealed cards that match the bomb's color — they join the chain
       const bombAutoChain = (getRule('coloredBombs') && card.bombColor && isBombType(card.special))
@@ -140,8 +138,7 @@ function onCardClick(index) {
         : [];
 
       // All instant reveals are temporary flashes — peek is shorter
-      const hideDelay = 100 + Math.max(targets.length, 1) * 70 + (spec.temporary ? 1500 : 2000);
-      setTimeout(() => {
+      runSkippableReveal(revealSteps, spec.temporary ? 1500 : 2000, () => {
         targets.forEach(idx => {
           // Keep bomb-color matched cards face-up — they're part of the chain now
           if (bombAutoChain.includes(idx)) return;
@@ -160,7 +157,7 @@ function onCardClick(index) {
         resumeChainTimer();
         updateBoosterUI();
         updateChainIndicator();
-      }, hideDelay);
+      });
       return;
     }
 
@@ -465,11 +462,14 @@ function endTurn(manual, perfectSweep) {
           const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
           const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!itemTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!itemTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };
           if (allRevealed.length > 0) {
-            setTimeout(() => {
+            // The cards are already face-up (revealCardsNoHide above), so there's no stagger
+            // left — just the memorisation hold, which a tap can cut short. This is the beat
+            // that shows the chain-danger tiles + new cards after a collect.
+            runSkippableReveal([], 2200, () => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
               flushLockHide(); // just-unlocked locked/iced/color-locked cards flip face-down in sync with this reveal-hide
               doFinishWithTutorial();
-            }, 2200);
+            });
           } else { flushLockHide(); doFinishWithTutorial(); }
         }, dropDelay);
       }, bombRevealTime);
@@ -579,8 +579,9 @@ function doSimultaneousReveal(targets, cb) {
       if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
     }
   });
-  setTimeout(() => {
+  // No stagger (the flips above are synchronous) — just a skippable hold.
+  runSkippableReveal([], 2200, () => {
     targets.forEach(rIdx => { const c = board[rIdx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(rIdx); if (el) el.classList.remove('flipped'); } });
     cb();
-  }, 2200);
+  });
 }

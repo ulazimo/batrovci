@@ -232,10 +232,10 @@ function detonateBombAt(index, bombType) {
       if (nc.length > 0 && getRule('bombRevealNewCards')) {
         revealCardsNoHide(nc);
         addRecall(nc);
-        setTimeout(() => {
+        runSkippableReveal([], 2000, () => {
           nc.forEach(i => { const c = board[i]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(i); if (el) el.classList.remove('flipped'); } });
           finish();
-        }, 2000);
+        });
       } else finish();
     });
   }, 700);

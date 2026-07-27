@@ -296,6 +296,9 @@ function startGame(preplacedSpecials) {
   bankProgress = 0; bankBombPlacement = false; clearBombPlacement();
   consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
+  // Drop (don't finish) any reveal still in flight — the board below is about to be
+  // rebuilt, so the old reveal's hide/unlock callback would touch stale cards.
+  discardActiveReveal();
   pendingLockHide.clear();
   board = Array.from({ length: TOTAL }, (_, i) => createCard(i));
 

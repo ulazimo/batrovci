@@ -451,22 +451,20 @@ function sweepRevealBoard(cb) {
 
   resetRecall(); addRecall(targets); // whole board was reshuffled + shown
   const stagger = 30;
-  targets.forEach((idx, i) => {
-    setTimeout(() => {
-      board[idx].flipped = true;
-      const el = getCardEl(idx);
-      if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
-      SFX.cardFlip();
-    }, i * stagger);
-  });
+  const steps = targets.map((idx, i) => ({ delay: i * stagger, fn: () => {
+    board[idx].flipped = true;
+    const el = getCardEl(idx);
+    if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+    SFX.cardFlip();
+  } }));
   const holdMs = Math.min(1500 + targets.length * 80, 3000);
-  setTimeout(() => {
+  runSkippableReveal(steps, holdMs, () => {
     targets.forEach(idx => {
       const c = board[idx];
       if (c && c.flipped && !c.special) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); }
     });
     cb();
-  }, targets.length * stagger + holdMs);
+  });
 }
 
 
@@ -514,24 +512,34 @@ function revealEntireBoard(onComplete) {
     indices.slice(0, count).forEach(idx => streakIndices.add(idx));
   }
 
-  // Briefly flash only streak-awarded cards, then hide them
-  if (streakIndices.size > 0) {
-    addRecall([...streakIndices]);
-    board.forEach((c, i) => {
-      if (!c || !streakIndices.has(i)) return;
-      c.flipped = true;
-      const el = getCardEl(i);
-      if (el) setTimeout(() => {
-        el.classList.add('flipped');
-        setTimeout(() => { el.classList.remove('flipped'); c.flipped = false; }, revealMs);
-      }, i * staggerMs);
-    });
+  // Nothing awarded — just hand input back after a beat.
+  if (streakIndices.size === 0) {
+    setTimeout(() => finishBoardReveal(onComplete), 200);
+    return;
   }
 
-  const unlockDelay = streakIndices.size > 0 ? TOTAL * staggerMs + revealMs + 200 : 200;
-  setTimeout(() => {
-    inputLocked = false; updateBoosterUI(); updateRecallButton();
-    advanceTutorial('boardRevealed');
-    if (onComplete) onComplete();
-  }, unlockDelay);
+  // Briefly flash only streak-awarded cards, then hide them together. Staggered by
+  // REVEAL ORDER (not board index, which used to make a card at index 60 wait 3s and
+  // forced the unlock delay to assume the whole board). Skippable — see reveal-skip.js.
+  addRecall([...streakIndices]);
+  const list = [...streakIndices];
+  const steps = list.map((idx, i) => ({ delay: i * staggerMs, fn: () => {
+    const c = board[idx]; if (!c) return;
+    c.flipped = true;
+    const el = getCardEl(idx); if (el) el.classList.add('flipped');
+  } }));
+  runSkippableReveal(steps, revealMs, () => {
+    list.forEach(idx => {
+      const c = board[idx]; if (!c) return;
+      c.flipped = false;
+      const el = getCardEl(idx); if (el) el.classList.remove('flipped');
+    });
+    finishBoardReveal(onComplete);
+  });
+}
+
+function finishBoardReveal(onComplete) {
+  inputLocked = false; updateBoosterUI(); updateRecallButton();
+  advanceTutorial('boardRevealed');
+  if (onComplete) onComplete();
 }

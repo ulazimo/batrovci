@@ -356,14 +356,14 @@ function executePeek(index) {
   } else {
     // Normal peek — flash then hide (remembered by Recall)
     addRecall([index]);
-    setTimeout(() => {
+    runSkippableReveal([], 1500, () => {
       card.flipped = false;
       if (el) el.classList.remove('flipped');
       inputLocked = false;
       resumeChainTimer();
       updateBoosterUI();
       updateChainIndicator();
-    }, 1500);
+    });
   }
 }
 
@@ -440,19 +440,17 @@ function boosterReveal(indices) {
   addRecall(targets); // remember every card a booster (eye, cross, row/col, gamble…) reveals
   inputLocked = true;
   pauseChainTimer();
-  targets.forEach((idx, i) => {
-    setTimeout(() => {
-      board[idx].flipped = true;
-      const el = getCardEl(idx);
-      // Drop the danger/impact highlight as the card flips up (its reveal moment).
-      if (el) { el.classList.remove('reveal-impact','wrong-color-hint'); el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
-      SFX.cardFlip();
-    }, i * 80);
-  });
-  setTimeout(() => {
+  const steps = targets.map((idx, i) => ({ delay: i * 80, fn: () => {
+    board[idx].flipped = true;
+    const el = getCardEl(idx);
+    // Drop the danger/impact highlight as the card flips up (its reveal moment).
+    if (el) { el.classList.remove('reveal-impact','wrong-color-hint'); el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+    SFX.cardFlip();
+  } }));
+  runSkippableReveal(steps, 1500, () => {
     targets.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if(el) el.classList.remove('flipped'); });
     inputLocked = false; resumeChainTimer(); updateBoosterUI(); updateChainIndicator();
-  }, targets.length * 80 + 1500);
+  });
 }
 
 function executeRandom3() {
@@ -472,26 +470,24 @@ function executeRandom3() {
   // Flip all picked cards with a staggered flash. A matching card joins the chain
   // the instant it's revealed: it adopts the chain face right away (updateChainIndicator)
   // and stays on the board — only the non-matching cards hide again at the end.
-  picks.forEach((idx, i) => {
-    setTimeout(() => {
-      board[idx].flipped = true;
-      const el = getCardEl(idx);
-      if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
-      SFX.cardFlip();
-      if (matches(idx) && !chainCards.includes(idx)) {
-        chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1);
-        SFX.match();
-        spawnParticles([idx], board[idx].color);
-        updateChainIndicator(); // instantly turn this card into a chain card (chain face + bar)
-      }
-    }, i * 80);
-  });
+  const steps = picks.map((idx, i) => ({ delay: i * 80, fn: () => {
+    board[idx].flipped = true;
+    const el = getCardEl(idx);
+    if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
+    SFX.cardFlip();
+    if (matches(idx) && !chainCards.includes(idx)) {
+      chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1);
+      SFX.match();
+      spawnParticles([idx], board[idx].color);
+      updateChainIndicator(); // instantly turn this card into a chain card (chain face + bar)
+    }
+  } }));
 
   // After the reveal: hide the non-matching cards, then settle input/booster state.
   // (onChainExtended runs here, not per-card, so the chain timer stays paused for the
   // whole reveal instead of being restarted mid-animation.)
   addRecall(nonMatching); // gamble-revealed cards that didn't join the chain are still remembered
-  setTimeout(() => {
+  runSkippableReveal(steps, 1500, () => {
     nonMatching.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
     onChainExtended(); // chain-3 "Danger cards" reward + timer (fires even if the chain jumped past 3)
     // Colour clear? Random 3 may have flipped the last card(s) of the chain colour —
@@ -503,7 +499,7 @@ function executeRandom3() {
     resumeChainTimer();
     updateBoosterUI();
     updateChainIndicator();
-  }, picks.length * 80 + 1500);
+  });
 }
 // +1 Color: reveal ONE more card whose color matches the active chain. With no
 // chain running, reveal a card of the color that has the most cards on the board

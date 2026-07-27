@@ -41,10 +41,10 @@ function recallCards() {
     const el = getCardEl(idx);
     if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
   });
-  setTimeout(() => {
+  runSkippableReveal([], 1800, () => {
     targets.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
     inputLocked = false; updateBoosterUI(); updateChainIndicator(); updateRecallButton();
-  }, 1800);
+  });
 }
 
 function updateRecallButton() {
