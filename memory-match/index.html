@@ -124,12 +124,26 @@
     <div id="room-title">Music Hall</div>
   </div>
 
-  <!-- Bottom: the single Play button, labelled with the level you'll play next -->
+  <!-- Bottom: win-streak meter, then the Play button + the reward you'll earn -->
   <div id="room-bottom">
-    <button class="room-play-btn" onclick="playFromHome()">
-      <span class="room-play-label">PLAY</span>
-      <span class="room-play-level" id="room-play-level">LEVEL 1</span>
-    </button>
+    <!-- Win-streak meter: 10 bars filled to the current streak, plus an orange
+         circle showing how many cards get revealed at the start of the level. -->
+    <div id="home-streak" class="home-streak">
+      <span class="home-streak-icon">🔥</span>
+      <div class="home-streak-bars" id="home-streak-bars"></div>
+      <div class="home-streak-circle" id="home-streak-circle" title="Cards revealed at level start">
+        <span class="hsc-icon" id="home-streak-glyph">👁</span>
+        <span class="hsc-num" id="home-streak-num">0</span>
+      </div>
+    </div>
+    <!-- Play button + the reward granted for beating this level -->
+    <div id="home-play-row">
+      <button class="room-play-btn" onclick="playFromHome()">
+        <span class="room-play-label">PLAY</span>
+        <span class="room-play-level" id="room-play-level">LEVEL 1</span>
+      </button>
+      <div id="home-next-reward" class="home-next-reward"></div>
+    </div>
   </div>
 </div>
 

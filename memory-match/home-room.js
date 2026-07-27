@@ -95,6 +95,9 @@ function showHome() {
   const lvlEl = document.getElementById('room-play-level');
   if (lvlEl) lvlEl.textContent = 'LEVEL ' + (LEVELS[currentLevelIndex]?.id ?? (currentLevelIndex + 1));
 
+  renderHomeStreak();
+  renderHomeReward();
+
   buildLevelJumper();
   document.body.classList.add('on-home');
   document.getElementById('home-screen').classList.add('active');
@@ -168,6 +171,80 @@ function renderHall(hallIdx, opts = {}) {
     scene.classList.add('slide-in');
     setTimeout(() => scene.classList.remove('slide-in'), 750);
   }
+}
+
+// ============================================================
+// WIN-STREAK METER (above Play) — one bar per streak level, filled up to the
+// current streak, plus an orange circle showing the level-start boost (cards
+// revealed, or shields if the streak effect is set to Shield).
+// ============================================================
+function renderHomeStreak() {
+  const wrap = document.getElementById('home-streak');
+  if (!wrap) return;
+
+  // Hide the whole meter until the win-streak feature is unlocked in the
+  // journey (next level's id has reached the journey's winStreakStartLevel).
+  const unlocked = (typeof isWinStreakActive === 'function') ? isWinStreakActive() : true;
+  wrap.style.display = unlocked ? '' : 'none';
+  if (!unlocked) return;
+
+  const barsEl = document.getElementById('home-streak-bars');
+  if (!barsEl) return;
+  const maxLevels = (typeof getWinStreakMaxLevels === 'function') ? getWinStreakMaxLevels() : 10;
+  const streak    = (typeof getStreakLevel === 'function') ? getStreakLevel() : (progress.winStreak || 0);
+
+  let html = '';
+  for (let i = 1; i <= maxLevels; i++) {
+    html += `<span class="hs-bar${i <= streak ? ' filled' : ''}"></span>`;
+  }
+  barsEl.innerHTML = html;
+
+  // Orange circle: the boost you'll start the next level with at this streak.
+  const effect = (typeof getStreakEffect === 'function') ? getStreakEffect() : 'reveal';
+  const shield = effect === 'shield';
+  const count  = shield
+    ? (typeof getStreakShields === 'function' ? getStreakShields() : 0)
+    : (typeof getStreakRevealCount === 'function' ? getStreakRevealCount() : 0);
+
+  const numEl   = document.getElementById('home-streak-num');
+  const glyphEl = document.getElementById('home-streak-glyph');
+  const circle  = document.getElementById('home-streak-circle');
+  if (numEl)   numEl.textContent = count;
+  if (glyphEl) glyphEl.textContent = shield ? '🛡' : '👁';
+  if (circle)  circle.title = shield
+    ? `${count} shield${count !== 1 ? 's' : ''} at level start`
+    : `${count} card${count !== 1 ? 's' : ''} revealed at level start`;
+}
+
+// ============================================================
+// NEXT-LEVEL REWARD (beside Play) — the booster/special you earn for beating
+// the level you're about to play.
+// ============================================================
+function renderHomeReward() {
+  const el = document.getElementById('home-next-reward');
+  if (!el) return;
+  const lvl = LEVELS[currentLevelIndex];
+  const rewards = (typeof getLevelRewards === 'function' && lvl)
+    ? getLevelRewards().filter(r => r.afterLevel === lvl.id)
+    : [];
+  if (!rewards.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+  el.style.display = '';
+  el.innerHTML = '<div class="hnr-title">Reward</div>' +
+    '<div class="hnr-items">' +
+    rewards.map(r => {
+      let icon = '?', name = '';
+      if ((r.type || 'booster') === 'special') {
+        const s = SPECIAL_TYPES.find(x => x.id === r.specialId);
+        icon = s ? s.icon : '?'; name = s ? s.name : r.specialId;
+      } else {
+        const b = BOOSTERS.find(x => x.id === r.boosterId);
+        icon = b ? b.icon : '?'; name = b ? (b.name || b.id) : r.boosterId;
+      }
+      return `<span class="hnr-pill" title="${name}"><span class="hnr-icon">${icon}</span>` +
+             `<span class="hnr-qty">×${r.qty}</span></span>`;
+    }).join('') +
+    '</div>';
 }
 
 // ============================================================

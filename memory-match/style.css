@@ -1589,7 +1589,68 @@ body.on-home #chain-indicator { display: none !important; }
   position: relative; z-index: 3;
   padding: 14px 20px calc(20px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(0deg, rgba(10,6,24,.9), rgba(10,6,24,0));
-  display: flex; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+/* Win-streak meter (above Play) --------------------------------- */
+.home-streak {
+  display: flex; align-items: center; gap: 9px;
+  width: min(340px, 92%); padding: 7px 12px;
+  border-radius: 14px;
+  background: rgba(0,0,0,.35); border: 1px solid rgba(245,166,35,.28);
+  backdrop-filter: blur(4px);
+}
+.home-streak-icon { font-size: 16px; filter: drop-shadow(0 0 4px rgba(245,140,20,.6)); }
+.home-streak-bars { display: flex; gap: 3px; flex: 1; }
+.hs-bar {
+  flex: 1; height: 10px; border-radius: 3px;
+  background: rgba(255,255,255,.10);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+  transition: background .2s, box-shadow .2s;
+}
+.hs-bar.filled {
+  background: linear-gradient(180deg, #ffd36b, #f5a623);
+  box-shadow: 0 0 6px rgba(245,166,35,.6);
+}
+.home-streak-circle {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #ffb64d, #f5820c);
+  box-shadow: 0 2px 6px rgba(0,0,0,.4), inset 0 0 0 2px rgba(255,255,255,.25);
+  color: #3a2408;
+}
+.home-streak-circle .hsc-icon { font-size: 9px; margin-bottom: 1px; }
+.home-streak-circle .hsc-num  { font-size: 14px; font-weight: 900; }
+
+/* Play button + next-level reward ------------------------------- */
+/* Play keeps its original size and stays centered; the reward rides as small
+   bubble(s) pinned to its right (absolute), so it never shifts Play. */
+#home-play-row {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: fit-content; max-width: 100%;
+}
+.home-next-reward {
+  position: absolute; top: 50%; right: -16px; transform: translateY(-50%);
+  display: flex; align-items: center; gap: 5px;
+}
+.home-next-reward .hnr-title { display: none; }
+.home-next-reward .hnr-items { display: flex; flex-direction: column; gap: 4px; }
+.hnr-pill {
+  position: relative;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 30%, rgba(120,230,150,.97), rgba(39,174,96,.92));
+  border: 1px solid rgba(255,255,255,.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,.45);
+}
+.hnr-pill .hnr-icon { font-size: 13px; line-height: 1; }
+.hnr-pill .hnr-qty {
+  position: absolute; right: -3px; bottom: -4px;
+  padding: 1px 3px; border-radius: 8px;
+  background: #0c2413; color: #b8f5c8;
+  font-size: 8px; font-weight: 900; line-height: 1.2;
+  box-shadow: 0 1px 3px rgba(0,0,0,.5);
 }
 .room-play-btn {
   display: flex; flex-direction: column; align-items: center; gap: 1px;
