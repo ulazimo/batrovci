@@ -182,6 +182,86 @@ COLLECTIONS = {
         "w": 336,
         "h": 589
       }
+    },
+    "sandcastle": {
+      "name": "Sandcastle",
+      "file": "shore/sandcastle.png",
+      "view": {
+        "w": 469,
+        "h": 512
+      }
+    },
+    "beachball": {
+      "name": "Beach Ball",
+      "file": "shore/beachball.png",
+      "view": {
+        "w": 502,
+        "h": 512
+      }
+    },
+    "bucketspade": {
+      "name": "Bucket & Spade",
+      "file": "shore/bucketspade.png",
+      "view": {
+        "w": 512,
+        "h": 465
+      }
+    },
+    "sailboat": {
+      "name": "Sailboat",
+      "file": "shore/sailboat.png",
+      "view": {
+        "w": 374,
+        "h": 512
+      }
+    },
+    "seagull": {
+      "name": "Seagull",
+      "file": "shore/seagull.png",
+      "view": {
+        "w": 393,
+        "h": 512
+      }
+    },
+    "snowman": {
+      "name": "Snowman",
+      "file": "snow/snowman.png",
+      "view": {
+        "w": 343,
+        "h": 512
+      }
+    },
+    "sled": {
+      "name": "Sled",
+      "file": "snow/sled.png",
+      "view": {
+        "w": 512,
+        "h": 367
+      }
+    },
+    "iceskates": {
+      "name": "Ice Skates",
+      "file": "snow/iceskates.png",
+      "view": {
+        "w": 512,
+        "h": 499
+      }
+    },
+    "lantern": {
+      "name": "Snow Lantern",
+      "file": "snow/lantern.png",
+      "view": {
+        "w": 512,
+        "h": 470
+      }
+    },
+    "robin": {
+      "name": "Robin",
+      "file": "snow/robin.png",
+      "view": {
+        "w": 405,
+        "h": 512
+      }
     }
   },
   "halls": [
@@ -348,6 +428,96 @@ COLLECTIONS = {
           "h": 14.5
         }
       ]
+    },
+    {
+      "id": "shore",
+      "name": "Sunny Shore",
+      "backdrop": "backdrops/sunny-shore.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "sandcastle",
+          "levelId": 20,
+          "left": 20.0,
+          "bottom": 30.0,
+          "h": 14.6
+        },
+        {
+          "item": "beachball",
+          "levelId": 21,
+          "left": 34.0,
+          "bottom": 7.0,
+          "h": 9.3
+        },
+        {
+          "item": "bucketspade",
+          "levelId": 22,
+          "left": 66.0,
+          "bottom": 6.0,
+          "h": 10.3
+        },
+        {
+          "item": "sailboat",
+          "levelId": 23,
+          "left": 84.0,
+          "bottom": 25.0,
+          "h": 12.7
+        },
+        {
+          "item": "seagull",
+          "levelId": 24,
+          "left": 49.0,
+          "bottom": 27.0,
+          "h": 9.8
+        }
+      ]
+    },
+    {
+      "id": "snow",
+      "name": "Snow Day",
+      "backdrop": "backdrops/snow-day.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "snowman",
+          "levelId": 25,
+          "left": 19.0,
+          "bottom": 26.0,
+          "h": 16.1
+        },
+        {
+          "item": "sled",
+          "levelId": 26,
+          "left": 33.0,
+          "bottom": 7.0,
+          "h": 8.8
+        },
+        {
+          "item": "iceskates",
+          "levelId": 27,
+          "left": 77.0,
+          "bottom": 30.0,
+          "h": 9.8
+        },
+        {
+          "item": "lantern",
+          "levelId": 28,
+          "left": 62.0,
+          "bottom": 6.0,
+          "h": 9.3
+        },
+        {
+          "item": "robin",
+          "levelId": 29,
+          "left": 42.0,
+          "bottom": 31.0,
+          "h": 8.3
+        }
+      ]
     }
   ],
   "boardArt": {
@@ -462,6 +632,66 @@ COLLECTIONS = {
       },
       "19": {
         "item": "starfish",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "20": {
+        "item": "sandcastle",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "21": {
+        "item": "beachball",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "22": {
+        "item": "bucketspade",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.86
+      },
+      "23": {
+        "item": "sailboat",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "24": {
+        "item": "seagull",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "25": {
+        "item": "snowman",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "26": {
+        "item": "sled",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.8
+      },
+      "27": {
+        "item": "iceskates",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.86
+      },
+      "28": {
+        "item": "lantern",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.86
+      },
+      "29": {
+        "item": "robin",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
