@@ -20,10 +20,26 @@
 // item can't drift apart. Edit via the level-editor, not here.
 // ============================================================
 
-// Current render option: 0 = off, 1/2/3 = modes. Persisted like the device pick.
+// Current render option: 0 = off, 1/2/3/4 = modes. Persisted like the device pick.
+// Defaults to 3 (blur + reveal + highlight) so the level's collectible is visible
+// behind the tiles during play and progressively revealed as cards clear. NOTE:
+// levelWon() gates its whole art-win path on `bgOption > 0`, so a 0 default would
+// silently skip the un-blur celebration for every new player.
 let bgOption = (function () {
-  try { return parseInt(localStorage.getItem('mm_bg_option'), 10) || 0; } catch (e) { return 0; }
+  try {
+    const saved = localStorage.getItem('mm_bg_option');
+    return saved == null ? 3 : (parseInt(saved, 10) || 0);
+  } catch (e) { return 3; }
 })();
+
+// Win highlight: briefly un-blur + glow the level's revealed art (called from
+// levelWon, and cleared again by startGame). Toggling `.board-win-reveal` on
+// #board drives the CSS. Callers guard with `typeof`, so if this goes missing the
+// celebration silently stops happening rather than throwing — don't remove it.
+function flashBoardArtWin(on) {
+  const el = document.getElementById('board');
+  if (el) el.classList.toggle('board-win-reveal', !!on);
+}
 
 function currentLevelBackground() {
   const style = (typeof progress !== 'undefined' && progress.progressionStyle) || 'cleaningxl';
