@@ -336,7 +336,9 @@
           "h": 40,
           "pw": 18
         }
-      ]
+      ],
+      "floatPx": 0,
+      "floatSec": 0.1
     },
     {
       "id": "pasture",
@@ -378,7 +380,8 @@
           "bottom": 7,
           "h": 15
         }
-      ]
+      ],
+      "floatPx": 0
     },
     {
       "id": "reef",
@@ -398,7 +401,7 @@
         {
           "item": "octopus",
           "levelId": 16,
-          "left": 30.0,
+          "left": 30,
           "bottom": 33.6,
           "h": 13.7
         },
@@ -436,39 +439,40 @@
         {
           "item": "sandcastle",
           "levelId": 20,
-          "left": 20.0,
-          "bottom": 30.0,
-          "h": 14.6
+          "left": 77.5,
+          "bottom": 30.1,
+          "h": 12
         },
         {
           "item": "beachball",
           "levelId": 21,
-          "left": 34.0,
-          "bottom": 7.0,
-          "h": 9.3
+          "left": 15.6,
+          "bottom": 3.2,
+          "h": 13.6
         },
         {
           "item": "bucketspade",
           "levelId": 22,
-          "left": 66.0,
-          "bottom": 6.0,
+          "left": 85.8,
+          "bottom": 10.4,
           "h": 10.3
         },
         {
           "item": "sailboat",
           "levelId": 23,
-          "left": 84.0,
-          "bottom": 25.0,
-          "h": 12.7
+          "left": 31.7,
+          "bottom": 38.5,
+          "h": 9.3
         },
         {
           "item": "seagull",
           "levelId": 24,
-          "left": 49.0,
-          "bottom": 27.0,
+          "left": 92,
+          "bottom": 41.6,
           "h": 9.8
         }
-      ]
+      ],
+      "floatPx": 0
     },
     {
       "id": "snow",
@@ -481,39 +485,40 @@
         {
           "item": "snowman",
           "levelId": 25,
-          "left": 19.0,
-          "bottom": 26.0,
-          "h": 16.1
+          "left": 88,
+          "bottom": 11.8,
+          "h": 19.6
         },
         {
           "item": "sled",
           "levelId": 26,
-          "left": 33.0,
-          "bottom": 7.0,
-          "h": 8.8
+          "left": 18.8,
+          "bottom": 13.6,
+          "h": 12
         },
         {
           "item": "iceskates",
           "levelId": 27,
-          "left": 77.0,
-          "bottom": 30.0,
-          "h": 9.8
+          "left": 55,
+          "bottom": 29.2,
+          "h": 7.9
         },
         {
           "item": "lantern",
           "levelId": 28,
-          "left": 62.0,
-          "bottom": 6.0,
-          "h": 9.3
+          "left": 80.6,
+          "bottom": 33,
+          "h": 8.2
         },
         {
           "item": "robin",
           "levelId": 29,
-          "left": 42.0,
-          "bottom": 31.0,
+          "left": 19,
+          "bottom": 40.5,
           "h": 8.3
         }
-      ]
+      ],
+      "floatPx": 0
     }
   ],
   "boardArt": {
