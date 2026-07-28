@@ -262,6 +262,42 @@ COLLECTIONS = {
         "w": 405,
         "h": 512
       }
+    },
+    "carpet": {
+      "name": "Carpet",
+      "file": "bedroom/board/carpet.png",
+      "layer": "bedroom/carpet.png",
+      "view": {
+        "w": 470,
+        "h": 232
+      }
+    },
+    "shelf": {
+      "name": "Shelf",
+      "file": "bedroom/board/shelf.png",
+      "layer": "bedroom/shelf.png",
+      "view": {
+        "w": 303,
+        "h": 180
+      }
+    },
+    "bed": {
+      "name": "Bed",
+      "file": "bedroom/board/bed.png",
+      "layer": "bedroom/bed.png",
+      "view": {
+        "w": 642,
+        "h": 499
+      }
+    },
+    "nighttable": {
+      "name": "Nightstand",
+      "file": "bedroom/board/nighttable.png",
+      "layer": "bedroom/nighttable.png",
+      "view": {
+        "w": 217,
+        "h": 356
+      }
     }
   },
   "halls": [
@@ -523,6 +559,36 @@ COLLECTIONS = {
         }
       ],
       "floatPx": 0
+    },
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "backdrop": "bedroom/background.png",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "carpet",
+          "levelId": 30,
+          "kind": "layer"
+        },
+        {
+          "item": "shelf",
+          "levelId": 31,
+          "kind": "layer"
+        },
+        {
+          "item": "bed",
+          "levelId": 32,
+          "kind": "layer"
+        },
+        {
+          "item": "nighttable",
+          "levelId": 33,
+          "kind": "layer"
+        }
+      ]
     }
   ],
   "boardArt": {
@@ -700,6 +766,30 @@ COLLECTIONS = {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
+      },
+      "30": {
+        "item": "carpet",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
+      },
+      "31": {
+        "item": "shelf",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
+      },
+      "32": {
+        "item": "bed",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
+      },
+      "33": {
+        "item": "nighttable",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
       },
       "38": {
         "item": "piano",
