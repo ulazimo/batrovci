@@ -1402,8 +1402,10 @@ body.on-home #chain-indicator { display: none !important; }
 }
 
 /* Top HUD ---------------------------------------------------- */
+/* Floats OVER the full-screen scene (below), so the room art runs edge-to-edge
+   behind it. The gradient scrim keeps the pills legible on bright backdrops. */
 #room-top {
-  position: relative; z-index: 3;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 12px calc(10px + env(safe-area-inset-top, 0px));
   background: linear-gradient(180deg, rgba(10,6,24,.85), rgba(10,6,24,0));
@@ -1419,9 +1421,10 @@ body.on-home #chain-indicator { display: none !important; }
 .room-icon-btn:hover { border-color: #c9a9ff; background: rgba(0,0,0,.5); }
 .room-icon-btn:active { transform: scale(.9); }
 
-/* The scene (fills the space between HUD and Play button) ---- */
+/* The scene fills the WHOLE home screen (edge-to-edge, behind the HUD and the
+   Play/streak bar which overlay it), so every hall backdrop is full-bleed. */
 #room-scene {
-  position: relative; flex: 1; min-height: 0; overflow: hidden;
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
   container-type: size;             /* enables cqh/cqw sizing of instruments */
 }
 
@@ -1507,7 +1510,7 @@ body.on-home #chain-indicator { display: none !important; }
 .room-sconce.right { right: -6%; }
 
 #room-title {
-  position: absolute; top: 10px; left: 0; right: 0; z-index: 2; text-align: center;
+  position: absolute; top: calc(60px + env(safe-area-inset-top, 0px)); left: 0; right: 0; z-index: 2; text-align: center;
   font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
   color: rgba(255,235,205,.7); text-shadow: 0 2px 8px rgba(0,0,0,.6);
 }
@@ -1597,7 +1600,7 @@ body.on-home #chain-indicator { display: none !important; }
 
 /* Bottom Play button ---------------------------------------- */
 #room-bottom {
-  position: relative; z-index: 3;
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
   padding: 14px 20px calc(20px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(0deg, rgba(10,6,24,.9), rgba(10,6,24,0));
   display: flex; flex-direction: column; align-items: center; gap: 12px;
@@ -1706,7 +1709,7 @@ body.on-home #chain-indicator { display: none !important; }
 .room-nav.show  { opacity: .8; }
 .room-nav.show:hover { background: rgba(0,0,0,.5); opacity: 1; }
 #room-dots {
-  position: absolute; bottom: 8px; left: 0; right: 0; z-index: 4;
+  position: absolute; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 4;
   display: flex; gap: 7px; justify-content: center; pointer-events: none;
 }
 #room-dots .room-dot {
