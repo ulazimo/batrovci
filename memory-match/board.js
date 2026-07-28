@@ -14,11 +14,35 @@ function createCard(i) { return { color: randomColor(), flipped: false, special:
 // Build a color assignment for `n` cards where every color used appears at least
 // 3 times — so a clear-all (no-refill) board is always fully clearable with perfect
 // play (any count >=3 decomposes into chains of 3+; counts of 1 or 2 can never clear).
-function generateClearableColors(n, colors) {
+//
+// The per-colour counts are NOT a flat even split: `skewFrac` (from lvl.colorSkew, the
+// editor's "Ease colours" knob) biases ONE colour upward, and a little noise jitters the
+// rest — both re-rolled every startGame, so the counts (not just the layout) vary run to
+// run and the boosted colour is a *random* colour each play, never fixed to one. Every
+// used colour stays >=3, so the board is still guaranteed clearable. `skewFrac` 0 = no
+// authored skew (still noisy); ~0.5 = one colour about 1.5× the even share.
+function generateClearableColors(n, colors, skewFrac) {
   const m = Math.max(1, Math.min(colors.length, Math.floor(n / 3)));
-  const counts = new Array(m).fill(Math.floor(n / m));
-  const rem = n - counts.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < rem; i++) counts[i]++;
+  const counts = new Array(m).fill(Math.floor(n / m));   // base share is >=3 (m <= n/3)
+  let rem = n - counts.reduce((a, b) => a + b, 0);
+  while (rem-- > 0) counts[Math.floor(Math.random() * m)]++;   // remainder → random colours, not the left ones
+
+  const rand = k => Math.floor(Math.random() * k);
+  // move `times` cards into colour `to`, each pulled from a random colour that can spare one (>3)
+  const shiftTo = (to, times) => {
+    while (times-- > 0) {
+      const donors = [];
+      for (let i = 0; i < m; i++) if (i !== to && counts[i] > 3) donors.push(i);
+      if (!donors.length) break;
+      counts[donors[rand(donors.length)]]--; counts[to]++;
+    }
+  };
+  if (m >= 2) {
+    if (skewFrac > 0) shiftTo(rand(m), Math.round((n / m) * skewFrac)); // authored ease → one random colour dominant
+    const jitter = Math.round(n * 0.06);                                // always-on mild noise
+    for (let k = 0; k < jitter; k++) shiftTo(rand(m), 1);
+  }
+
   const arr = [];
   for (let i = 0; i < m; i++) for (let k = 0; k < counts[i]; k++) arr.push(colors[i]);
   for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
@@ -111,14 +135,16 @@ function assignBoardColors() {
   }
 
   // 4) Fill the rest. Draw from colours the author did NOT pin a count to (so a target stays
-  //    exact); if every active colour is listed, fall back to all of them. clearBoard uses an
-  //    even, clearable spread of the fill colours.
+  //    exact); if every active colour is listed, fall back to all of them. clearBoard uses a
+  //    clearable spread of the fill colours, skewed by lvl.colorSkew (a random colour dominant
+  //    each play) plus mild noise — see generateClearableColors.
   const rest = remaining();
   if (rest.length) {
     let fillColors = ACTIVE_COLORS.filter(c => !listed.has(c));
     if (!fillColors.length) fillColors = ACTIVE_COLORS.slice();
+    const skewFrac = (lvl && Number.isFinite(lvl.colorSkew)) ? Math.max(0, lvl.colorSkew) : 0;
     const fillPool = clearBoard
-      ? generateClearableColors(rest.length, fillColors)
+      ? generateClearableColors(rest.length, fillColors, skewFrac)
       : rest.map(() => fillColors[Math.floor(Math.random() * fillColors.length)]);
     shuffle(rest).forEach((idx, k) => commit(idx, fillPool[k]));
   }

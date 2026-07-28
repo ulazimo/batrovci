@@ -375,6 +375,9 @@ function loadFromJSON(e) {
               .filter(([col, n]) => ALL_COLORS.includes(col) && Number.isFinite(+n))
               .map(([col, n]) => [col, Math.max(0, Math.floor(+n))]))
           : {},
+        // Difficulty-ease knob: bias ONE (random, per-play) colour upward on a clearBoard board.
+        // 0 = even (still noisy); ~0.5 = one colour ≈1.5× the even share.
+        colorSkew: Math.max(0, Math.min(0.5, +lvl.colorSkew || 0)),
         // Beneath-layer authored cards (layers < 0 from Stacks/Elevators): backEffect and/or a
         // fixed colour; layer is a negative int. Drop empty entries.
         beneath: Array.isArray(lvl.beneath)
@@ -447,6 +450,8 @@ function buildLevelsOutput() {
       active.forEach(c => { if (lvl.colorCounts[c] != null) cc[c] = Math.max(0, Math.floor(lvl.colorCounts[c])); });
       if (Object.keys(cc).length > 0) obj.colorCounts = cc;
     }
+    // Difficulty-ease colour skew (bias one random colour per play). Omitted when 0/even.
+    if (lvl.colorSkew > 0) obj.colorSkew = Math.round(lvl.colorSkew * 100) / 100;
     // Back-of-card reveal effects: [[r,c,id]…] — fire when the tagged card is collected.
     if (lvl.backEffects && lvl.backEffects.length > 0) obj.backEffects = lvl.backEffects;
     // Beneath-layer cards: [{r,c,layer,backEffect?,color?}] — a back-effect and/or fixed colour on
@@ -875,6 +880,228 @@ function renderBeneathCell(cell, lvl, r, c, effectId, colorId) {
   }
 }
 
+// ============================================================
+// TURNS ADVISOR — difficulty read-out for a FIXED turn budget.
+//
+// Turns are a memory/mistake budget. A competent player reveals up to 2 cards per
+// turn AND remembers them, and a colour clear REFUNDS its turn — so once a colour is
+// known it clears for free, and the only real cost is the exploration turns spent
+// discovering colours. (My first model ignored this and roughly doubled the cost.)
+// Calibrated to a realistic imperfect-memory player from simulation:
+//   Pmatch = Σ (kᵢ/N)·(kᵢ−1)/(N−1)   Ceff = 1/Pmatch   (effective colour count)
+//   need   = N·(A + B·Ceff) − REVEAL_CREDIT·(pre-revealed obstacle cells)
+// Ice / Lock / Color-Lock tiles sit FACE-UP (revealLockedCards), so the player learns
+// their colour for free → they make a level a bit EASIER: they subtract from `need`.
+//
+// Turns are NEVER changed here. Difficulty is the MARGIN of the authored turns over
+// `need`; the only lever offered is a *gentle* skew of the colour distribution
+// (a dominant colour raises Pmatch → lowers need → raises margin, i.e. easier).
+// All constants are tunable.
+// ============================================================
+const TURN_MODEL = {
+  A: 0.39, B: 0.045,          // BARE exploration need = N·(A + B·Ceff)  (no assists) — realistic-player fit
+  // --- free-information assists (each subtracts from `need`; ~0.2 turns per free card reveal) ---
+  REVEAL_CREDIT: 0.2,         // turns saved per FREE card reveal (face-up cell / back-effect / power-up)
+  DANGER_FRAC: 0.14,          // Chain Danger Reveal (default ON): turns saved ≈ this × N (measured in sim)
+  POWERUP_REVEALS: 3,         // assumed free reveals/level from the reveal power-ups a player brings (tunable)
+  BACKEFFECT_DISCOUNT: 0.5,   // fraction of a back-effect's pattern that lands on NEW (undiscovered) cards
+  TIER: { bad: 1.30, hard: 1.75, normal: 2.5 }, // margin thresholds (turns / need), assists included
+  EASE_STEP: 0.15,            // each "Ease colours" click raises lvl.colorSkew by this
+  EASE_MAX: 0.5,              // …capped here (one colour ≈1.5× the even share); stays subtle + clearable
+};
+
+// Authored back-of-card effects reveal a pattern when collected → free information.
+// row/column span the whole line; cross/circle/star are fixed offset sets (see specials.js).
+function backEffectReveals(lvl) {
+  const SIZE = { row: lvl.cols - 1, column: lvl.rows - 1, cross: 4, circle: 8, star: 12 };
+  let cards = 0, reveals = 0;
+  (lvl.backEffects || []).forEach(([r, c, id]) => {
+    cards++;
+    reveals += (SIZE[id] != null ? SIZE[id] : 4) * TURN_MODEL.BACKEFFECT_DISCOUNT;
+  });
+  return { cards, reveals };
+}
+
+// Every card that must be cleared. Elevator refills and stack under-layers are extra cards.
+function activeCardCount(lvl) {
+  const cells = lvl.cols * lvl.rows;
+  const disabled = (lvl.disabled || []).length;
+  const stackExtra = (lvl.stacks || []).reduce((s, x) => s + Math.max(0, (x[2] || 2) - 1), 0);
+  const elevExtra = (lvl.elevators || []).reduce((s, a) => s + Math.max(0, a.refills || 0) * ((a.cells || []).length), 0);
+  const base = cells - disabled;
+  return { base, stackExtra, elevExtra, total: base + stackExtra + elevExtra };
+}
+
+// Face-up obstacle cells: their colour is known from the start, so they cut discovery cost.
+function revealedObstacleCells(lvl) {
+  const locked = (lvl.locked || []).length;                                           // one tile each
+  const ice    = (lvl.ice || []).reduce((s, a) => s + ((a.cells || []).length), 0);
+  const clk    = (lvl.colorLocks || []).reduce((s, a) => s + ((a.cells || []).length), 0);
+  return { locked, ice, clk, total: locked + ice + clk };
+}
+
+// Best estimate of the top-board colour distribution: authored fixed colours + colorCounts
+// targets, with the remainder spread evenly across the free active colours.
+function estimateColorDistribution(lvl, N) {
+  const C = Math.max(1, Math.min(6, lvl.colorCount || 3));
+  const active = ALL_COLORS.slice(0, C);
+  const counts = {}; active.forEach(c => counts[c] = 0);
+  (lvl.colors || []).forEach(([r, c, col]) => { if (col) counts[col] = (counts[col] || 0) + 1; });
+  const cc = lvl.colorCounts || {};
+  Object.entries(cc).forEach(([col, n]) => { counts[col] = Math.max(counts[col] || 0, Math.floor(+n) || 0); });
+  let assigned = Object.values(counts).reduce((a, b) => a + b, 0);
+  let remaining = Math.max(0, N - assigned);
+  const free = active.filter(c => !(c in cc));
+  const pool = free.length ? free : active;
+  for (let i = 0; i < remaining; i++) counts[pool[i % pool.length]]++;
+  // Apply the ease skew to a REPRESENTATIVE colour. In-game the boosted colour is random per
+  // play, but Pmatch is symmetric, so biasing pool[0] gives the correct average difficulty.
+  const skew = Math.max(0, lvl.colorSkew || 0);
+  if (skew > 0 && pool.length >= 2) {
+    let boost = Math.round((N / active.length) * skew);
+    const dom = pool[0], donors = pool.slice(1);
+    let i = 0, guard = 0;
+    while (boost > 0 && guard++ < 10000) {
+      const d = donors[i++ % donors.length];
+      if (counts[d] > 3) { counts[d]--; counts[dom]++; boost--; }
+      if (donors.every(x => counts[x] <= 3)) break;
+    }
+  }
+  return counts;
+}
+
+function matchProbability(counts) {
+  const vals = Object.values(counts).filter(k => k > 0);
+  const N = vals.reduce((a, b) => a + b, 0);
+  if (N < 2) return 1;
+  let s = 0; for (const k of vals) s += (k / N) * ((k - 1) / (N - 1));
+  return s || (1 / Math.max(1, vals.length));
+}
+
+// Cards on the TOP board (the cells `colorCounts` governs).
+function topBoardCells(lvl) { return lvl.cols * lvl.rows - (lvl.disabled || []).length; }
+
+function computeTurnsModel(lvl) {
+  const cards = activeCardCount(lvl);
+  const N = cards.total;                          // total cards that must be cleared
+  const top = topBoardCells(lvl);
+  const dist = estimateColorDistribution(lvl, top);
+  const pm = matchProbability(dist);
+  const ceff = 1 / pm;
+  const rev = revealedObstacleCells(lvl);
+  const be = backEffectReveals(lvl);
+
+  const bare = N * (TURN_MODEL.A + TURN_MODEL.B * ceff);   // cost with no free info
+  const assist = {                                         // turns saved by each info source
+    danger:  TURN_MODEL.DANGER_FRAC * N,                   // chain danger reveal (default on)
+    backfx:  TURN_MODEL.REVEAL_CREDIT * be.reveals,        // authored back-of-card effects
+    powerup: TURN_MODEL.REVEAL_CREDIT * TURN_MODEL.POWERUP_REVEALS, // reveal power-ups (assumed)
+    faceup:  TURN_MODEL.REVEAL_CREDIT * rev.total,         // face-up ice/lock/color-lock cells
+  };
+  assist.total = assist.danger + assist.backfx + assist.powerup + assist.faceup;
+  const need = Math.max(1, bare - assist.total);
+  const turns = lvl.turns || 0;
+  const margin = need > 0 ? turns / need : 0;
+  let tier, tierClass;
+  if (margin < TURN_MODEL.TIER.bad)         { tier = 'Too Hard'; tierClass = 'tier-bad'; }
+  else if (margin < TURN_MODEL.TIER.hard)   { tier = 'Hard';     tierClass = 'tier-hard'; }
+  else if (margin < TURN_MODEL.TIER.normal) { tier = 'Normal';   tierClass = 'tier-normal'; }
+  else                                      { tier = 'Easy';     tierClass = 'tier-easy'; }
+  return { cards, N, top, dist, pm, ceff, rev, be, bare, assist, need, turns, margin, tier, tierClass };
+}
+
+function renderTurnsAdvisor() {
+  const box = document.getElementById('turns-advisor');
+  if (!box) return;
+  if (selectedLevelIndex < 0) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const lvl = levels[selectedLevelIndex];
+  const m = computeTurnsModel(lvl);
+  const C = Math.max(1, Math.min(6, lvl.colorCount || 3));
+  const active = ALL_COLORS.slice(0, C);
+
+  const cardsBreak = [`${m.cards.base} base`];
+  if (m.cards.stackExtra) cardsBreak.push(`+${m.cards.stackExtra} stack`);
+  if (m.cards.elevExtra)  cardsBreak.push(`+${m.cards.elevExtra} elevator`);
+
+  const a = m.assist;
+
+  // Distribution row. Three cases: hand-pinned colorCounts (show per-colour chips), an ease
+  // skew (show a generic top/others + note that the boosted colour is random per play), or
+  // plain even (show the ~even share + that noise varies it each play).
+  const cc = lvl.colorCounts || {};
+  const hasPins = Object.keys(cc).length > 0;
+  const skew = Math.max(0, lvl.colorSkew || 0);
+  const even = Math.round(m.top / C);
+  let distHtml, distTag;
+  if (hasPins) {
+    distHtml = active.map(c =>
+      `<span class="adv-chip"><span class="adv-dot" style="background:${CL_COLOR_HEX[c] || '#888'}"></span>${m.dist[c] || 0}</span>`).join('');
+    distTag = 'pinned';
+  } else if (skew > 0) {
+    const dom = Math.round(even * (1 + skew));
+    const other = Math.max(3, Math.round((m.top - dom) / Math.max(1, C - 1)));
+    distHtml = `<span class="adv-chip"><span class="adv-dot" style="background:linear-gradient(90deg,#e74c3c,#f1c40f,#2ecc71,#3498db)"></span>top ~${dom}</span>`
+             + `<span class="adv-chip">others ~${other}</span>`
+             + `<span class="adv-dist-note">↻ boosted colour is random each play</span>`;
+    distTag = `skew +${Math.round(skew * 100)}%`;
+  } else {
+    distHtml = `<span class="adv-chip">≈ ${even} each</span><span class="adv-dist-note">↻ jittered each play</span>`;
+    distTag = 'even';
+  }
+
+  box.innerHTML = `
+    <div class="adv-head">🎯 Turns Advisor
+      <span class="adv-note">turns stay fixed — ease the colour mix to adjust</span>
+      <span class="adv-tier ${m.tierClass}">${m.tier} · margin ${m.margin.toFixed(2)}×</span>
+    </div>
+    <div class="adv-grid">
+      <div><span class="adv-k">Cards (N)</span><span class="adv-v">${m.N}</span><span class="adv-sub">${cardsBreak.join(' ')}</span></div>
+      <div><span class="adv-k">Colours</span><span class="adv-v">${C}</span><span class="adv-sub">eff ${m.ceff.toFixed(1)} · match ${(m.pm * 100).toFixed(0)}%</span></div>
+      <div><span class="adv-k">Needs ≈</span><span class="adv-v">${Math.round(m.need)}</span><span class="adv-sub">bare ${Math.round(m.bare)} − assists ${Math.round(a.total)}</span></div>
+      <div><span class="adv-k">Turns (fixed)</span><span class="adv-v">${m.turns}</span><span class="adv-sub">authored budget</span></div>
+    </div>
+    <div class="adv-rec">
+      <span class="adv-reclabel">Distribution</span>
+      ${distHtml}
+      <span class="adv-dist-tag">${distTag}</span>
+      <button class="adv-pill primary" id="adv-ease">Ease colours ▸</button>
+      <button class="adv-pill" id="adv-reset">Reset</button>
+    </div>
+  `;
+  const easeBtn = box.querySelector('#adv-ease');
+  const resetBtn = box.querySelector('#adv-reset');
+  if (easeBtn) easeBtn.addEventListener('click', easeColorDistribution);
+  if (resetBtn) resetBtn.addEventListener('click', resetColorDistribution);
+}
+
+// Gently raise the ease skew (raises Pmatch → easier). Never touches turns. Stores an
+// abstract magnitude in lvl.colorSkew — the game picks a RANDOM colour to boost each play,
+// so no colour is ever fixed as "the easy one" and the counts vary run to run.
+function easeColorDistribution() {
+  if (selectedLevelIndex < 0) return;
+  const lvl = levels[selectedLevelIndex];
+  if (Math.max(1, Math.min(6, lvl.colorCount || 3)) < 2) return;
+  const cur = Math.max(0, lvl.colorSkew || 0);
+  const next = Math.min(TURN_MODEL.EASE_MAX, Math.round((cur + TURN_MODEL.EASE_STEP) * 100) / 100);
+  if (next <= cur) return;                          // already at the cap
+  pushUndo();
+  lvl.colorSkew = next;
+  renderBoard();
+  renderLevelList();
+}
+
+// Back to an even (still noisy) mix. Clears only the ease skew, not hand-authored colorCounts.
+function resetColorDistribution() {
+  if (selectedLevelIndex < 0) return;
+  const lvl = levels[selectedLevelIndex];
+  if (!(lvl.colorSkew > 0)) return;
+  pushUndo();
+  lvl.colorSkew = 0;
+  renderBoard();
+  renderLevelList();
+}
+
 function renderBoard() {
   if (selectedLevelIndex < 0) return;
   const lvl = levels[selectedLevelIndex];
@@ -1081,6 +1308,7 @@ function renderBoard() {
   renderIceAreas();
   renderColorLockAreas();
   renderColorCounts();
+  renderTurnsAdvisor();
 }
 
 function mkInsertBtn(cls, title, disabled) {
