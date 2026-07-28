@@ -757,7 +757,7 @@ function addLevel() {
     colorCount: 4,
     turns: 10,
     target: 500,
-    clearBoard: false,
+    clearBoard: true,
     deck: 0,
     locked: [],
     disabled: [],
@@ -768,7 +768,7 @@ function addLevel() {
     elevators: [],
     ice: [],
     colorLocks: [],
-    goals: [{ type: 'score', target: 500 }],
+    goals: [{ type: 'clearAll' }],
   };
   levels.push(newLevel);
   selectLevel(levels.length - 1);
@@ -778,9 +778,9 @@ function insertLevel(atIndex) {
   const newLevel = {
     id: atIndex + 1,
     cols: 6, rows: 6, colorCount: 4, turns: 10, target: 500,
-    clearBoard: false, deck: 0,
+    clearBoard: true, deck: 0,
     locked: [], disabled: [], stacks: [], colors: [], colorCounts: {}, elevators: [], ice: [], colorLocks: [], beneath: [],
-    goals: [{ type: 'score', target: 500 }],
+    goals: [{ type: 'clearAll' }],
   };
   levels.splice(atIndex, 0, newLevel);
   levels.forEach((lvl, i) => lvl.id = i + 1);
