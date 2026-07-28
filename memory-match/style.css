@@ -445,14 +445,14 @@ body {
 }
 
 /* Per-level collectible art (see board-bg.js). The image layer sits blurred
-   behind the grid; broken cells get a sharp slice of it painted on by JS, and the
-   sharp-over-blur reads as a per-cell highlight. */
+   behind the grid and stays blurred; cleared cells go transparent (below) so the
+   blurred art shows through — it never sharpens as you clear ("option 2"). */
 #board-bg {
   position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
 }
 #board-bg .board-bg-img {
   position: absolute; object-fit: contain; -webkit-user-drag: none; user-select: none;
-  filter: blur(4px) saturate(.8) opacity(.6);
+  filter: blur(4px) saturate(.85) opacity(.55);
 }
 #board .cell { z-index: 1; } /* keep cells above #board-bg */
 /* The art reveals through empty cells — drop the empty-cell highlight (faint fill

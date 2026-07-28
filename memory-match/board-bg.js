@@ -4,13 +4,14 @@
 // board background — i.e. the gaps between tiles and any broken/cleared/empty
 // cell. A white "?" tile never shows art; only the purple/blue board bg does.
 //
-// One render mode: the whole piece sits BLURRED behind the grid (so the level's
-// collectible is legible while you play) and every broken cell gets a SHARP slice
-// of it painted on, so the art gets crisper as you clear — the sharp-over-blur
-// reads as a per-cell highlight. This shipped as "option 3" of a five-way dev
-// switcher; the other four were dropped (see git history if you want them back).
-// The blur + empty-cell treatment live in CSS; the sharp per-cell slices are
-// painted here. Shared globals live in state.js.
+// One render mode ("option 2"): the whole piece sits BLURRED behind the grid and
+// stays blurred everywhere — a cleared cell just goes transparent so the blurred
+// image shows through it, so the collectible is legible while you play but never
+// sharpens as you clear. (An earlier "option 3" painted a sharp per-cell slice to
+// crisp-up cleared cells; that mode was dropped — see git history / the removed
+// five-way dev switcher if you want it back.) The blur + empty-cell transparency
+// live in CSS; this file just builds/places the behind-grid image. Shared globals
+// live in state.js.
 //
 // DATA: the art registry and the per-level placement both live in
 // collections.js (`COLLECTIONS.items` / `COLLECTIONS.boardArt`), which the same
@@ -85,21 +86,13 @@ function applyBoardBackground(force) {
     }
   }
 
-  // Per-cell sharp reveal: paint each EMPTY cell (cleared/disabled) with its slice
-  // of the art so broken cells read sharper than the blurred gaps. Cells that
-  // aren't empty (or levels with no art) get their background cleared, so a
-  // refilled slot leaves no residue behind the new card.
-  const cell = box ? (BW - BOARD_GAP * (COLS - 1)) / COLS : 0;
-  boardEl.querySelectorAll('.cell').forEach((cellEl, i) => {
-    const empty = cellEl.classList.contains('cleared-cell') || cellEl.classList.contains('disabled-cell');
-    if (box && empty) {
-      const r = Math.floor(i / COLS), c = i % COLS;
-      const cl = c * (cell + BOARD_GAP), ct = r * (cell + BOARD_GAP);
-      cellEl.style.backgroundImage    = `url("${box.item.file}")`;
-      cellEl.style.backgroundSize     = `${box.w}px ${box.h}px`;
-      cellEl.style.backgroundPosition = `${box.left - cl}px ${box.top - ct}px`;
-      cellEl.style.backgroundRepeat   = 'no-repeat';
-    } else if (cellEl.style.backgroundImage) {
+  // The art stays BLURRED everywhere — a cleared cell just goes transparent (CSS,
+  // .board-has-art) so the single blurred #board-bg image shows through it; it
+  // never sharpens as you clear. (The old "option 3" painted a sharp per-cell
+  // slice here; that mode was dropped — always-blurred is "option 2".) Any stale
+  // per-cell slice from an older build is cleared so a refill leaves no residue.
+  boardEl.querySelectorAll('.cell').forEach((cellEl) => {
+    if (cellEl.style.backgroundImage) {
       cellEl.style.backgroundImage = '';
       cellEl.style.backgroundSize = '';
       cellEl.style.backgroundPosition = '';

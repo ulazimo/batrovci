@@ -72,7 +72,7 @@ loaded in this order after `settings.js` (see [index.html](index.html)):
 | `specials.js` | `SPECIAL_TYPES`, `BACK_EFFECTS`, level rewards, `getMinCombo`. (Also the vestigial combo→special mapping — see §6.) |
 | `goals.js` | Level goals: `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet`, goal HUD. |
 | `board.js` | Card model/factory, `renderBoard`, board-cell UI, chain tension/faces/indicators, long-press peek, `boardEl` event listeners. Also the **obstacle areas** (ice / color-lock decoration + break logic), `assignBoardColors`, `buildDeck`, the Collection tray, and `registerCollected` (the counter that drives ice/color-lock breaks). |
-| `board-bg.js` | Per-level collectible art revealed **behind** the grid as tiles break, so clearing a level uncovers the item you then see in its hall. Placement read from `COLLECTIONS.boardArt`. `currentLevelBackground`, `bgArtBox`, `applyBoardBackground`. One render mode: the piece sits blurred behind the grid (CSS) and each empty cell gets a sharp slice painted on, so clearing sharpens the art. Keeps `#board-bg` as the **last child** of `#board` — lots of code indexes `boardEl.children[i]` as board index `i`. |
+| `board-bg.js` | Per-level collectible art revealed **behind** the grid as tiles break, so clearing a level uncovers the item you then see in its hall. Placement read from `COLLECTIONS.boardArt`. `currentLevelBackground`, `bgArtBox`, `applyBoardBackground`. One render mode (**"option 2"**): the piece sits blurred behind the grid (CSS) and **stays blurred** — a cleared cell just goes transparent so the blurred art shows through; it never sharpens as you clear. (An earlier "option 3" painted a sharp per-cell slice; dropped.) Keeps `#board-bg` as the **last child** of `#board` — lots of code indexes `boardEl.children[i]` as board index `i`. |
 | `chain-timer.js` | Optional chain countdown timer. |
 | `boosters.js` | `BOOSTERS`, booster inventory/consume/UI + booster execution actions. |
 | `bank.js` | Bank-It button + `detonateBombAt` (bomb blast + refill). |
@@ -661,7 +661,12 @@ The Settings panel also exposes: chain-timer duration, chain-hint count, win-str
 start level & effect, deploy/recall/sweep start levels, the (vestigial, §6)
 combo→special mapping, **level rewards**, per-booster enable+quantity, special-card
 inventory, journey picker, reset-tutorials, and unlock-all-levels. It's essentially a
-live design/tuning console.
+live design/tuning console. A **Default Settings** row at the very top
+(`resetAllSettings`) reverts everything the panel controls to defaults (rules,
+tuning values, streak config, feature start-levels, booster enable/qty, special
+inventory, combo mapping) and re-renders the panel; it deliberately leaves game
+progress — stars, coins, lives, unlocked level, win-streak counter, seen-flags —
+untouched.
 
 ---
 

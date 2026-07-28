@@ -531,6 +531,23 @@ function showSettings(returnTo) {
   const list = document.getElementById('settings-list');
   list.innerHTML = '';
 
+  // Reset-to-defaults — sits at the very top so it's the first thing you can hit.
+  // Reverts everything the panel controls to defaults; game progress is untouched.
+  const resetRow = document.createElement('div');
+  resetRow.className = 'setting-row';
+  resetRow.style.cursor = 'pointer';
+  resetRow.innerHTML = `
+    <span class="setting-icon">♻️</span>
+    <div class="setting-info">
+      <div class="setting-name">Default Settings</div>
+      <div class="setting-desc">Reset every setting on this menu to its default value (keeps your levels, coins & stars)</div>
+    </div>
+    <div class="setting-controls">
+      <button class="qty-btn" style="padding:4px 12px;font-size:12px;" onclick="resetAllSettings()">Reset</button>
+    </div>
+  `;
+  list.appendChild(resetRow);
+
   // Gameplay rules section
   if (GAMEPLAY_RULES.length > 0) {
     const header = document.createElement('div');
@@ -881,6 +898,51 @@ function unlockAllLevels() {
   progress.highestUnlocked = LEVELS.length - 1;
   saveProgress();
   alert('All ' + LEVELS.length + ' levels unlocked!');
+}
+
+// Reset EVERYTHING the Settings panel controls back to its default. This is the
+// "design console reset". It deliberately does NOT touch game PROGRESS — stars,
+// coins, lives, unlocked level, the win-streak counter, or seen-tutorial/hall
+// flags all survive. Each field below is either cleared to {} (so getRule /
+// getBoosterSetting fall back to their coded defaults) or deleted (so the get*()
+// helpers return their DEFAULT_* constant / PROGRESSION_UNLOCK_LEVELS value).
+function resetAllSettings() {
+  if (!confirm('Reset all game settings to their defaults?\n\nYour level progress, coins and stars are kept.')) return;
+
+  // Gameplay-rule toggles → each rule's `default`.
+  progress.gameplayRules = {};
+  // Tuning values → DEFAULT_CHAIN_TIMER (10s) / DEFAULT_CHAIN_HINT_COUNT (3).
+  delete progress.chainTimerDuration;
+  delete progress.chainHintCount;
+  // Win-streak config → 'reveal' effect + WIN_STREAK_CARDS_DEFAULT.
+  delete progress.streakEffect;
+  delete progress.winStreakCards;
+  // Staggered feature-unlock start levels → PROGRESSION_UNLOCK_LEVELS defaults.
+  delete progress.winStreakStartLevel;
+  delete progress.deploySpecialsStartLevel;
+  delete progress.sweepRevealStartLevel;
+  delete progress.recallStartLevel;
+  // Per-booster enable/quantity config → per-booster defaults.
+  progress.boosterSettings = {};
+  // Combo→special mapping (vestigial) → DEFAULT_COMBO_MAP.
+  delete progress.comboMapping;
+
+  // Owned special cards → 0, in-play booster counts → each booster's default qty.
+  progress.specialInventory = {};
+  if (typeof SPECIAL_TYPES !== 'undefined') SPECIAL_TYPES.forEach(s => { progress.specialInventory[s.id] = 0; });
+  if (typeof BOOSTERS !== 'undefined') BOOSTERS.forEach(b => { boosterCounts[b.id] = getBoosterSetting(b.id).qty; });
+
+  saveBoosterCounts();                                    // boosterCounts → progress + save
+  if (typeof saveJourneySnapshot === 'function') saveJourneySnapshot(); // fold inventory reset into this journey's snapshot
+  saveProgress();
+
+  // Re-apply anything with a live effect, then rebuild the panel so every control
+  // shows its default (this is also what "resets the settings menu").
+  if (typeof applyTheme === 'function') applyTheme();
+  if (typeof updateCollectionVisibility === 'function') updateCollectionVisibility();
+  if (typeof updateBoosterUI === 'function') updateBoosterUI();
+  if (typeof updateRecallButton === 'function') updateRecallButton();
+  showSettings(settingsReturnTo);
 }
 
 function closeSettings() {
