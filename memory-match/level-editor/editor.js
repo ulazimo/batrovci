@@ -1891,6 +1891,7 @@ let progression = {
 const BOOSTER_TYPES = [
   { id: 'peek',      icon: '👁',  name: 'Peek' },
   { id: 'random3',   icon: '🎲',  name: 'Random 3' },
+  { id: 'pluscolor', icon: '➕🎨', name: '+1 Color' },
   { id: 'cross',     icon: '✚',  name: 'Cross' },
   { id: 'row',       icon: '↔',  name: 'Row' },
   { id: 'col',       icon: '↕',  name: 'Column' },
