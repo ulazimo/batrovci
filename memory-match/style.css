@@ -1709,7 +1709,7 @@ body.on-home #chain-indicator { display: none !important; }
 .room-nav.show  { opacity: .8; }
 .room-nav.show:hover { background: rgba(0,0,0,.5); opacity: 1; }
 #room-dots {
-  position: absolute; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; z-index: 4;
+  z-index: 4;
   display: flex; gap: 7px; justify-content: center; pointer-events: none;
 }
 #room-dots .room-dot {

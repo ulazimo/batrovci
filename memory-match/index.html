@@ -116,11 +116,19 @@
     <!-- Hall navigation: swipe the scene, or tap the side arrows -->
     <button class="room-nav left" onclick="swipeHall(-1)" aria-label="Previous hall">‹</button>
     <button class="room-nav right" onclick="swipeHall(1)" aria-label="Next hall">›</button>
-    <div id="room-dots"></div>
   </div>
 
-  <!-- Bottom: win-streak meter, then the Play button + the reward you'll earn -->
+  <!-- Bottom: the Play button + the reward you'll earn, then the win-streak
+       meter, then the hall page-dots pinned at the very bottom. -->
   <div id="room-bottom">
+    <!-- Play button + the reward granted for beating this level -->
+    <div id="home-play-row">
+      <button class="room-play-btn" onclick="playFromHome()">
+        <span class="room-play-label">PLAY</span>
+        <span class="room-play-level" id="room-play-level">LEVEL 1</span>
+      </button>
+      <div id="home-next-reward" class="home-next-reward"></div>
+    </div>
     <!-- Win-streak meter: 10 bars filled to the current streak, plus an orange
          circle showing how many cards get revealed at the start of the level. -->
     <div id="home-streak" class="home-streak">
@@ -131,14 +139,8 @@
         <span class="hsc-num" id="home-streak-num">0</span>
       </div>
     </div>
-    <!-- Play button + the reward granted for beating this level -->
-    <div id="home-play-row">
-      <button class="room-play-btn" onclick="playFromHome()">
-        <span class="room-play-label">PLAY</span>
-        <span class="room-play-level" id="room-play-level">LEVEL 1</span>
-      </button>
-      <div id="home-next-reward" class="home-next-reward"></div>
-    </div>
+    <!-- Hall page-dots -->
+    <div id="room-dots"></div>
   </div>
 </div>
 
