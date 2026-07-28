@@ -1709,7 +1709,7 @@ body.on-home #chain-indicator { display: none !important; }
 .room-nav.show  { opacity: .8; }
 .room-nav.show:hover { background: rgba(0,0,0,.5); opacity: 1; }
 #room-dots {
-  z-index: 4;
+  z-index: 4; min-height: 7px;   /* reserve the row even when empty, so Play stays put */
   display: flex; gap: 7px; justify-content: center; pointer-events: none;
 }
 #room-dots .room-dot {
@@ -1812,9 +1812,9 @@ body.on-home #chain-indicator { display: none !important; }
   100% { opacity: 1; transform: scale(1); filter: brightness(1); }
 }
 
-/* Hall-complete celebration prompt — a title banner + Continue button laid over
-   the finished scene. The wrapper is click-through so the scene stays swipeable;
-   only the button captures taps. */
+/* Hall-complete celebration prompt — a title banner laid over the finished
+   scene. The whole wrapper is click-through, so the scene stays swipeable and
+   the Play button underneath stays tappable. */
 #room-hall-complete {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
 }
@@ -1827,18 +1827,7 @@ body.on-home #chain-indicator { display: none !important; }
 }
 #room-hall-complete .rhc-title span { animation: rhcSparkle 1.4s ease-in-out infinite; }
 @keyframes rhcSparkle { 0%,100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.2); } }
-#room-hall-complete .rhc-btn {
-  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(14px);
-  pointer-events: auto; cursor: pointer; border: none; white-space: nowrap;
-  padding: 12px 28px; border-radius: 14px; color: #3a2408;
-  font-size: 16px; font-weight: 900; letter-spacing: 1px; font-family: inherit;
-  background: linear-gradient(180deg, #ffc964 0%, #f5a623 100%);
-  box-shadow: 0 5px 0 #c07f10, 0 8px 18px rgba(0,0,0,.4);
-  opacity: 0; transition: opacity .5s ease .25s, transform .5s cubic-bezier(.2,1.4,.4,1) .25s;
-}
-#room-hall-complete .rhc-btn:active { transform: translateX(-50%) translateY(3px); box-shadow: 0 2px 0 #c07f10; }
 #room-hall-complete.show .rhc-title { opacity: 1; transform: translateX(-50%) translateY(0); }
-#room-hall-complete.show .rhc-btn   { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ================================================================
    DEV LEVEL JUMPER — right-side panel, OUTSIDE the phone (desktop only).

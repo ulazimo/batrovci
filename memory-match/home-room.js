@@ -159,12 +159,12 @@ function showHome() {
   if (revealHall >= 0 && revealHall !== nextHall) {
     // Finished the LAST level of a hall: show that stage and let its final item
     // appear (after REVEAL_APPEAR_DELAY). Once it lands, CELEBRATE the completed
-    // scene and WAIT — the player must acknowledge (tap Continue or swipe) to
-    // move on; we no longer auto-slide to the next hall.
+    // scene and WAIT — the player lingers on the finished hall and moves on by
+    // tapping Play or swiping to the next hall; we no longer auto-slide.
     viewedHall = revealHall;
     renderHall(revealHall, { reveal: true });
     const animMs = HALLS[revealHall].theme === 'childhood' ? CHILDHOOD_REVEAL_ANIM_MS : REVEAL_ANIM_MS;
-    _celebrateTimer = setTimeout(() => celebrateHallComplete(revealHall, nextHall),
+    _celebrateTimer = setTimeout(() => celebrateHallComplete(revealHall),
       REVEAL_APPEAR_DELAY + animMs + STAGE_STAY_MS);
   } else {
     // Same-hall reveal (or nothing new). Slide in if we're arriving on a hall
@@ -263,8 +263,11 @@ function renderHall(hallIdx, opts = {}) {
   if (!hall) return;
   if (!Array.isArray(progress.seenInstruments)) progress.seenInstruments = [];
 
-  // A fresh render cancels any in-flight reveal from a previous render.
+  // A fresh render cancels any in-flight reveal from a previous render, and
+  // clears a lingering hall-complete banner (Play now dismisses it implicitly,
+  // so nothing else would).
   clearTimeout(_revealTimer);
+  dismissHallComplete();
 
   // Backdrop: an image hall points at a file and hides the procedural scenery;
   // a CSS-theme hall keeps #room-bg and just swaps the .theme-<id> class.
@@ -367,8 +370,11 @@ function renderHomeStreak() {
 
   // Hide the whole meter until the win-streak feature is unlocked in the
   // journey (next level's id has reached the journey's winStreakStartLevel).
+  // Use visibility (not display) so the meter's space stays reserved below the
+  // Play button — that keeps Play at a fixed height whether or not the streak
+  // (or the hall dots) is showing.
   const unlocked = (typeof isWinStreakActive === 'function') ? isWinStreakActive() : true;
-  wrap.style.display = unlocked ? '' : 'none';
+  wrap.style.visibility = unlocked ? '' : 'hidden';
   if (!unlocked) return;
 
   const barsEl = document.getElementById('home-streak-bars');
@@ -432,16 +438,16 @@ function renderHomeReward() {
 
 // ============================================================
 // HALL-COMPLETE CELEBRATION — when the final piece of a hall lands, throw
-// confetti and show a "Continue" prompt. We DON'T auto-advance; the player
-// lingers on the finished scene and moves on only when they acknowledge it
-// (tap Continue, or swipe/arrow to the next hall).
+// confetti and show a title banner. We DON'T auto-advance; the player lingers
+// on the finished scene and moves on by tapping Play or swiping/arrowing to the
+// next hall (the banner is click-through, so both stay available underneath).
 // ============================================================
 function dismissHallComplete() {
   const el = document.getElementById('room-hall-complete');
   if (el) el.remove();
 }
 
-function celebrateHallComplete(completedHall, nextHall) {
+function celebrateHallComplete(completedHall) {
   const scene = document.getElementById('room-scene');
   if (!scene || viewedHall !== completedHall) return;   // navigated away meanwhile
   if (typeof launchConfetti === 'function') launchConfetti();
@@ -451,15 +457,10 @@ function celebrateHallComplete(completedHall, nextHall) {
   prompt.id = 'room-hall-complete';
   const name = HALLS[completedHall]?.name || '';
   prompt.innerHTML =
-    `<div class="rhc-title"><span>✨</span>${name} complete!<span>✨</span></div>` +
-    `<button class="rhc-btn" type="button">Continue →</button>`;
+    `<div class="rhc-title"><span>✨</span>${name} complete!<span>✨</span></div>`;
   scene.appendChild(prompt);
   // Fire the entrance animation on the next frame.
   requestAnimationFrame(() => prompt.classList.add('show'));
-  prompt.querySelector('.rhc-btn').addEventListener('click', () => {
-    dismissHallComplete();
-    gotoHall(nextHall, 1);
-  });
 }
 
 // ============================================================
