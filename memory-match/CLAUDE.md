@@ -110,8 +110,8 @@ COLLECTIONS = {
   hallSize: 5,
   themes:   { music: { label, pedestals, notes, glow }, … },  // each maps to .theme-<id> in style.css
   items:    { guitar: { name, file, view: {w,h}, layer? }, … },  // view = SVG viewBox OR PNG pixel size
-  halls:    [ { id, name, theme?, backdrop?, shadow?, glow?, notes?,
-                slots: [ { item, levelId, kind?, left, bottom, h, pw? } ] } ],
+  halls:    [ { id, name, theme?, backdrop?, shadow?, glow?, notes?, floatPx?, floatSec?,
+                slots: [ { item, levelId, kind?, left, bottom, h, pw?, floatPx?, floatSec? } ] } ],
   boardArt: { cleaningxl: { <levelId>: { item, cx, cy, h } } },
 }
 ```
@@ -127,6 +127,17 @@ COLLECTIONS = {
   - **`theme`** — a hand-authored `.theme-<id>` CSS preset declared in
     `COLLECTIONS.themes`, where `pedestals` picks `.spot-pedestal` vs `.spot-shadow`.
     Only the two original halls use this; prefer a backdrop for new ones.
+- **Idle bob** (`@keyframes roomFloat`): every *revealed placed* item drifts up and
+  down. Amplitude/period are authored per hall (`floatPx` / `floatSec`) with an
+  optional per-slot override, applied by `applySpotFloat()` as `--float-px` /
+  `--float-sec` on the spot. **Absent = the historical 5px / 5s**, so untouched halls
+  are unchanged; **`floatPx: 0`** adds `.no-float` (`animation: none`) rather than
+  animating to nowhere — the first-time reveal pop still plays. Tune it in the
+  editor's Collections tab; `kind: 'layer'` slots never bob (CSS forces
+  `animation: none`) because a tableau is aligned to the backdrop. On image
+  backdrops the pedestals are painted in, so a bob visibly lifts an item off its
+  plinth — the shipped backdrop halls still run the 5px default, which is a design
+  call, not an accident of the data.
 - **`syncBackdropBox()` (home-room.js) is load-bearing — don't remove it.** The
   backdrop is `object-fit: cover`, so a wider device crops it (iPad crops ~59% of a
   portrait backdrop's height). Slots are authored against the *picture*, so the spot

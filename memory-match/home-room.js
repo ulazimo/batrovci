@@ -194,6 +194,25 @@ function revealedInnerHTML(hall, slot) {
     `<img class="spot-instrument" src="${art.src}" alt="${art.item.name}" draggable="false" style="${style}">`;
 }
 
+// Idle-bob defaults — the values the animation used before it became authorable,
+// so a hall that sets neither `floatPx` nor `floatSec` is unchanged.
+const FLOAT_DEFAULT_PX = 5;
+const FLOAT_DEFAULT_SEC = 5;
+
+// Drive `@keyframes roomFloat` for one spot. A slot may override its hall, and
+// amplitude 0 switches the animation off entirely (`.no-float`) rather than
+// animating to nowhere. Both fields are authored in the level-editor's
+// Collections tab; `kind: 'layer'` slots never bob (CSS sets `animation: none`),
+// so this is a no-op for them.
+function applySpotFloat(spot, hall, slot) {
+  const pick = (a, b, dflt) => Number.isFinite(a) ? a : (Number.isFinite(b) ? b : dflt);
+  const px  = pick(slot.floatPx,  hall.floatPx,  FLOAT_DEFAULT_PX);
+  const sec = pick(slot.floatSec, hall.floatSec, FLOAT_DEFAULT_SEC);
+  if (!(px > 0)) { spot.classList.add('no-float'); return; }
+  spot.style.setProperty('--float-px', px + 'px');
+  spot.style.setProperty('--float-sec', sec + 's');
+}
+
 // Size the spot layer to the backdrop's RENDERED rect. The backdrop uses
 // `object-fit: cover`, so on a wider device the picture is cropped — anchoring
 // spots to the scene box would slide every item off the scenery it was placed
@@ -286,6 +305,7 @@ function renderHall(hallIdx, opts = {}) {
       spot.style.left = slot.left + '%';
       spot.style.bottom = slot.bottom + '%';
       if (slot.pw) spot.style.setProperty('--pw', slot.pw + 'cqw');
+      applySpotFloat(spot, hall, slot);
     }
 
     // Image backdrops have their pedestals painted in, so a slot adds only an

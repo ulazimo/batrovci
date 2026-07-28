@@ -1538,8 +1538,17 @@ body.on-home #chain-indicator { display: none !important; }
   display: block; width: auto; position: relative; z-index: 2;
   filter: drop-shadow(0 10px 14px rgba(0,0,0,.5));
 }
-.room-spot.revealed .spot-instrument { animation: roomFloat 5s ease-in-out infinite; }
-@keyframes roomFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+/* Idle bob. Amplitude/period come from --float-px / --float-sec, set per spot by
+   renderHall from the hall's (or slot's) `floatPx`/`floatSec` — authored in the
+   level-editor's Collections tab. The fallbacks below are the historical values,
+   so a hall that sets nothing looks exactly as it always did. Amplitude 0 gets
+   `.no-float` instead of a 0px animation, so nothing runs at all. */
+.room-spot.revealed .spot-instrument { animation: roomFloat var(--float-sec, 5s) ease-in-out infinite; }
+@keyframes roomFloat {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(calc(-1 * var(--float-px, 5px))); }
+}
+.room-spot.no-float.revealed .spot-instrument { animation: none; }
 /* empty / locked placeholder — fixed low height so every "?" sits just above
    its pedestal regardless of the instrument that will eventually fill the spot. */
 .spot-locked {
@@ -1588,7 +1597,9 @@ body.on-home #chain-indicator { display: none !important; }
 }
 /* first-time reveal — the art is injected by JS after a delay (see renderHall),
    so the `.new` class triggers the pop immediately when it appears. */
-.room-spot.new .spot-instrument { animation: roomReveal .9s cubic-bezier(.2,1.4,.4,1) both, roomFloat 5s ease-in-out .9s infinite; }
+.room-spot.new .spot-instrument { animation: roomReveal .9s cubic-bezier(.2,1.4,.4,1) both, roomFloat var(--float-sec, 5s) ease-in-out .9s infinite; }
+/* a no-bob spot still pops in — it just doesn't keep moving afterwards */
+.room-spot.no-float.new .spot-instrument { animation: roomReveal .9s cubic-bezier(.2,1.4,.4,1) both; }
 .room-spot.new .spot-glow { animation: roomRevealGlow 1.2s ease-out both; }
 @keyframes roomReveal {
   0%   { opacity: 0; transform: translateY(24px) scale(.4); }

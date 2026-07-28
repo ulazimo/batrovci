@@ -18,9 +18,13 @@ It reads `../collections.json`; **Save** writes both that and its `.js` twin.
    - **full-scene layer** — art that is a whole canvas with the piece already in
      place. Nothing to position; stacking a hall's layers rebuilds the full
      scene. Needs a `layer` file on the item (see `../art/childhood/README.md`).
-5. **Board Art** — click *use "item"* per level so clearing that level reveals
+5. **Bob px / Bob sec** (Hall panel) — the idle up-down float of revealed items.
+   Blank = the default 5px / 5s, **0 = off**. A slot can override its hall (blank
+   there = inherit). Full-scene layers never bob. The preview animates live, so
+   set it and watch.
+6. **Board Art** — click *use "item"* per level so clearing that level reveals
    the same piece it awards.
-6. Check **Validator** is green, then **💾 Save** and reload the game.
+7. Check **Validator** is green, then **💾 Save** and reload the game.
 
 ## Two things that actually bite
 

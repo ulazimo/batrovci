@@ -110,14 +110,30 @@ function collRenderHallProps() {
     <div class="prop-row"><label>CSS theme</label><select id="hp-theme">${themeOpts}</select></div>
     <div class="prop-row"><label>Shadow</label><input type="checkbox" id="hp-shadow"${h.shadow ? ' checked' : ''}></div>
     <div class="prop-row"><label>Glow</label><input type="checkbox" id="hp-glow"${h.glow ? ' checked' : ''}></div>
-    <div class="prop-row"><label>Notes ♪</label><input type="checkbox" id="hp-notes"${h.notes ? ' checked' : ''}></div>`;
+    <div class="prop-row"><label>Notes ♪</label><input type="checkbox" id="hp-notes"${h.notes ? ' checked' : ''}></div>
+    <div class="prop-row"><label>Bob px</label><input type="number" id="hp-floatpx" value="${h.floatPx ?? ''}" step="1" min="0" placeholder="5 (default)"></div>
+    <div class="prop-row"><label>Bob sec</label><input type="number" id="hp-floatsec" value="${h.floatSec ?? ''}" step=".5" min=".1" placeholder="5 (default)"></div>
+    <p style="font-size:11px;color:#8d84ad;line-height:1.4;margin:2px 0 0">
+      Idle up-down float of every revealed item in this hall. <b>0 = off</b>, blank = the
+      default 5px / 5s. On an image backdrop the pedestals are painted in, so a bob
+      lifts items off their plinth — usually you want 0 there. Overridable per slot.</p>`;
   const bind = (id, fn) => { const e = collEl(id); if (e) e.onchange = () => { fn(e); collTouch(); collRenderAll(); }; };
+  // Blank means "inherit the default" — store nothing rather than 0, or the hall
+  // would silently pin the bob off the moment someone clears the field.
+  const optNum = (e, set, unset) => {
+    const raw = e.value.trim();
+    if (raw === '') { unset(); return; }
+    const v = parseFloat(raw);
+    if (Number.isFinite(v)) set(v);
+  };
   bind('hp-name', e => h.name = e.value);
   bind('hp-backdrop', e => { const v = e.value.trim(); if (v) h.backdrop = v; else delete h.backdrop; });
   bind('hp-theme', e => { const v = e.value; if (v) h.theme = v; else delete h.theme; });
   bind('hp-shadow', e => h.shadow = e.checked);
   bind('hp-glow', e => h.glow = e.checked);
   bind('hp-notes', e => h.notes = e.checked);
+  bind('hp-floatpx', e => optNum(e, v => h.floatPx = Math.max(0, v), () => delete h.floatPx));
+  bind('hp-floatsec', e => optNum(e, v => h.floatSec = Math.max(.1, v), () => delete h.floatSec));
 }
 
 function collRenderSlots() {
@@ -142,7 +158,9 @@ function collRenderSlots() {
     : `<div class="prop-row"><label>Left %</label><input type="number" id="sp-left" value="${s.left}" step="0.1"></div>
        <div class="prop-row"><label>Bottom %</label><input type="number" id="sp-bottom" value="${s.bottom}" step="0.1"></div>
        <div class="prop-row"><label>Height cqh</label><input type="number" id="sp-h" value="${s.h}" step="0.1"></div>
-       <div class="prop-row"><label>Pedestal cqw</label><input type="number" id="sp-pw" value="${s.pw ?? ''}" step="1" placeholder="(none)"></div>`;
+       <div class="prop-row"><label>Pedestal cqw</label><input type="number" id="sp-pw" value="${s.pw ?? ''}" step="1" placeholder="(none)"></div>
+       <div class="prop-row"><label>Bob px</label><input type="number" id="sp-floatpx" value="${s.floatPx ?? ''}" step="1" min="0" placeholder="(hall: ${h.floatPx ?? 5})"></div>
+       <div class="prop-row"><label>Bob sec</label><input type="number" id="sp-floatsec" value="${s.floatSec ?? ''}" step=".5" min=".1" placeholder="(hall: ${h.floatSec ?? 5})"></div>`;
 
   wrap.innerHTML = `<div class="slot-tab-row">${tabs}</div>
     <div class="prop-row"><label>Item</label><select id="sp-item">${itemOpts}</select></div>
@@ -177,6 +195,9 @@ function collRenderSlots() {
   bind('sp-bottom', e => num(e, v => s.bottom = v));
   bind('sp-h', e => num(e, v => s.h = v));
   bind('sp-pw', e => { const v = e.value.trim(); if (v === '') delete s.pw; else num(e, x => s.pw = x); });
+  // Blank = inherit the hall's bob; 0 = this one item stays still.
+  bind('sp-floatpx', e => { const v = e.value.trim(); if (v === '') delete s.floatPx; else num(e, x => s.floatPx = Math.max(0, x)); });
+  bind('sp-floatsec', e => { const v = e.value.trim(); if (v === '') delete s.floatSec; else num(e, x => s.floatSec = Math.max(.1, x)); });
 }
 
 function collRenderBoardArt() {

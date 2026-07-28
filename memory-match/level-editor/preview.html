@@ -153,6 +153,13 @@ function paintSpots() {
       el.style.left = slot.left + '%';
       el.style.bottom = slot.bottom + '%';
       if (slot.pw) el.style.setProperty('--pw', slot.pw + 'cqw');
+      // Idle bob — mirrors applySpotFloat() in ../home-room.js (same defaults).
+      const pick = (a, b, d) => Number.isFinite(a) ? a : (Number.isFinite(b) ? b : d);
+      const fpx = pick(slot.floatPx, hall.floatPx, 5);
+      if (fpx > 0) {
+        el.style.setProperty('--float-px', fpx + 'px');
+        el.style.setProperty('--float-sec', pick(slot.floatSec, hall.floatSec, 5) + 's');
+      } else el.classList.add('no-float');
       let inner = `<img class="spot-instrument" src="../${item.file}" draggable="false" style="height:${slot.h}cqh">`;
       if (hall.backdrop) { if (hall.shadow) inner += '<div class="spot-shadow"></div>'; }
       else inner += themePedestals ? '<div class="spot-pedestal"></div>' : '<div class="spot-shadow"></div>';
