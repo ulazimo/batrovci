@@ -28,6 +28,16 @@
   background: rgba(0,0,0,.35); color: #9d92c4; letter-spacing: .4px;
 }
 .hall-row .hr-kind.img { color: #7ee08f; }
+.hall-row .hr-name { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hall-row .hr-ctl { display: flex; gap: 3px; margin-left: 6px; }
+.hall-row .hr-btn {
+  border: 1px solid rgba(255,255,255,.15); background: rgba(0,0,0,.3); color: #ded7f5;
+  border-radius: 4px; width: 20px; height: 20px; line-height: 1; font-size: 12px;
+  cursor: pointer; padding: 0;
+}
+.hall-row .hr-btn:hover:not(:disabled) { background: rgba(79,195,247,.25); }
+.hall-row .hr-btn:disabled { opacity: .3; cursor: default; }
+.hall-row .hr-del:hover { background: rgba(247,79,79,.35); border-color: #f77; }
 
 /* item registry */
 .item-row {

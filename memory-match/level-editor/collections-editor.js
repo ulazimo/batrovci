@@ -64,14 +64,38 @@ function collRenderAll() {
 
 function collRenderHalls() {
   const wrap = collEl('hall-list');
+  const last = COLL.halls.length - 1;
   wrap.innerHTML = COLL.halls.map((h, i) => {
     const kind = h.backdrop ? 'image' : ('theme:' + (h.theme || '—'));
     return `<div class="hall-row${i === collHallIdx ? ' active' : ''}" data-i="${i}">
-      <span>${h.name || h.id}</span>
-      <span class="hr-kind${h.backdrop ? ' img' : ''}">${kind}</span></div>`;
+      <span class="hr-name">${h.name || h.id}</span>
+      <span class="hr-kind${h.backdrop ? ' img' : ''}">${kind}</span>
+      <span class="hr-ctl">
+        <button class="hr-btn" data-move="up" data-i="${i}" ${i === 0 ? 'disabled' : ''} title="Move up">↑</button>
+        <button class="hr-btn" data-move="down" data-i="${i}" ${i === last ? 'disabled' : ''} title="Move down">↓</button>
+        <button class="hr-btn hr-del" data-del="${i}" title="Delete hall">✕</button>
+      </span></div>`;
   }).join('');
   wrap.querySelectorAll('.hall-row').forEach(r => r.onclick = () => {
     collHallIdx = +r.dataset.i; collSlotIdx = 0; collRenderAll();
+  });
+  wrap.querySelectorAll('.hr-btn[data-move]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const i = +b.dataset.i;
+    const j = b.dataset.move === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= COLL.halls.length) return;
+    const [h] = COLL.halls.splice(i, 1);
+    COLL.halls.splice(j, 0, h);
+    collHallIdx = j; collSlotIdx = 0; collTouch(); collRenderAll();
+  });
+  wrap.querySelectorAll('.hr-del').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const i = +b.dataset.del;
+    const h = COLL.halls[i];
+    if (!confirm(`Delete hall "${h.name || h.id}"? Its ${(h.slots || []).length} slot(s) will be removed. (Board art is kept.)`)) return;
+    COLL.halls.splice(i, 1);
+    collHallIdx = Math.max(0, Math.min(collHallIdx, COLL.halls.length - 1));
+    collSlotIdx = 0; collTouch(); collRenderAll();
   });
 }
 
