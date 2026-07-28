@@ -341,7 +341,9 @@ body {
 #chain-indicator {
   position: relative;
   width: auto; max-width: calc(100% - 24px); align-self: center;
-  margin: 4px auto 18px; display: flex; align-items: center; gap: 14px;
+  /* top+bottom total held at 22px so the board and booster bar don't shift; the
+     split just slides the chain down — more air above it, less below. */
+  margin: 12px auto 10px; display: flex; align-items: center; gap: 14px;
   padding: 10px 18px; background: rgba(0,0,0,.28); border-radius: 18px;
   font-size: 13px; font-weight: 600; color: #8b93ad;
 }
@@ -952,7 +954,6 @@ body {
 .nudge-hand { position:absolute;font-size:24px;pointer-events:none;z-index:100;animation:nudgeBounce .8s ease-in-out infinite; }
 #booster-bar.nudge { animation:nudgeGlow 1s ease-in-out infinite;position:relative; }
 #booster-bar.nudge .nudge-hand { bottom:100%;left:50%;margin-left:-12px;margin-bottom:4px; }
-.recall-btn.nudge { animation:nudgeGlow 1s ease-in-out infinite; }
 .recall-wrap.nudge .nudge-hand { bottom:100%;left:50%;margin-left:-12px;margin-bottom:4px; }
 
 /* ================================================================
@@ -960,21 +961,21 @@ body {
 ================================================================ */
 #booster-bar {
   width:100%;max-width:500px;background:transparent;
-  padding:8px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;
+  padding:8px 4px;display:flex;justify-content:center;gap:4px;flex-wrap:wrap;
   position:relative;overflow:visible;margin-bottom:12px;
 }
 #booster-bar.highlight { animation:boosterBarPulse 1.5s ease-in-out 3; }
 @keyframes boosterBarPulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px 4px rgba(240,192,64,.6), inset 0 0 8px rgba(240,192,64,.3)} }
 .booster-btn {
-  width:calc((100% - 32px) / 5);max-width:64px;aspect-ratio:1;border-radius:12px;
+  width:calc((100% - 20px) / 6);max-width:72px;aspect-ratio:1;border-radius:12px;
   border:2px solid #3a3a6a;background:#2a2a4a;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:24px;
   position:relative;transition:all .15s;flex-shrink:0;
 }
 /* +1 Color carries two glyphs (➕🎨) — shrink them so they fit the tile. */
 .booster-btn[data-booster="pluscolor"] > span:not(.badge) { font-size:16px;letter-spacing:-1px; }
-/* Recall tile reuses .recall-wrap for nudge hooks — keep it laid out like a tile. */
-.booster-btn.recall-wrap { flex-direction:row;gap:0;justify-content:center; }
+/* Recall tile reuses .recall-wrap for nudge hooks — stack the 🔄 over its cost. */
+.booster-btn.recall-wrap { flex-direction:column;gap:1px;justify-content:center; }
 .booster-btn:active { transform:scale(.9); }
 .booster-btn.active   { border-color:#f0c040;background:#3a3a5a;box-shadow:0 0 10px rgba(240,192,64,.4); }
 .booster-btn.disabled { opacity:.3;pointer-events:none; }
@@ -1140,35 +1141,18 @@ body.bomb-aiming #board { touch-action: none; }
 /* ================================================================
    RECALL BUTTON
 ================================================================ */
-#recall-bar {
-  width:100%;max-width:500px;display:flex;justify-content:flex-end;
-  padding:0 16px;margin-bottom:10px;background:transparent;
-}
-.recall-wrap {
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  position:relative;
-}
-.recall-label {
-  font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;
-}
-.recall-btn {
-  width:58px;height:58px;font-weight:700;
-  border:2px solid #3a3a6a;border-radius:14px;
-  background:#2a2a4a;color:#ccc;cursor:pointer;
-  transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-  padding:0;
-}
-.recall-btn .recall-icon { font-size:22px;line-height:1; }
-.recall-btn .recall-cost { display:flex;align-items:center;gap:2px;font-size:10px;font-weight:800;color:#f0c040;line-height:1; }
-.recall-btn .recall-cost .coin-icon { width:9px;height:9px; }
-.recall-btn:active { transform:scale(.93); }
-.recall-btn:hover:not(.disabled) { border-color:#4fc3f7;color:#4fc3f7;background:#2a2a5a; }
-.recall-btn.disabled { opacity:.25;pointer-events:none; }
-.recall-btn.disabled + .recall-label, .recall-wrap:has(.disabled) .recall-label { opacity:.25; }
+/* Recall now lives as the FIRST tile in the booster tray (#booster-bar), the
+   same size as the other power-ups. It keeps id #recall-btn (state driven by
+   updateRecallButton) and the .recall-wrap class (idle-nudge hook). The chain
+   returns to its own centred row above the tray. Base tile look/size/disabled
+   come from .booster-btn; only the stacked icon + coin cost are styled here. */
+.recall-wrap .recall-icon { font-size:22px;line-height:1; }
+.recall-wrap .recall-cost { display:flex;align-items:center;gap:2px;font-size:9px;font-weight:800;color:#f0c040;line-height:1; }
+.recall-wrap .recall-cost .coin-icon { width:8px;height:8px; }
+.recall-wrap.nudge { animation:nudgeGlow 1s ease-in-out infinite; }
 
 /* LEGO skin recall */
-.skin-lego .recall-btn { background:#E8C000;border-color:#D01012;color:#555; }
-.skin-lego .recall-btn:hover:not(.disabled) { background:#FFD700;color:#D01012; }
+.skin-lego .booster-btn.recall-wrap { background:#E8C000;border-color:#D01012;color:#555; }
 
 /* ================================================================
    OVERLAYS — base
@@ -1402,7 +1386,6 @@ body.bomb-aiming #board { touch-action: none; }
 body.on-home #level-banner,
 body.on-home #header,
 body.on-home #goal-hud,
-body.on-home #recall-bar,
 body.on-home #booster-bar,
 body.on-home #bank-bar,
 body.on-home #chain-indicator { display: none !important; }

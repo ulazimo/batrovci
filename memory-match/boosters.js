@@ -52,7 +52,20 @@ function initBoosters() {
     // Enforce per-booster inventory cap (bombs are capped low)
     boosterCounts[b.id] = Math.min(boosterCounts[b.id], getBoosterMax(b.id));
   });
-  // Render only the tray boosters, in VISIBLE_BOOSTERS order.
+  // Recall tile — first in the tray, only on levels where recall is unlocked.
+  // No data-booster, so updateBoosterUI() skips it (see the guard there); its
+  // enabled/disabled state is driven by updateRecallButton(). Reuses .recall-wrap
+  // so the idle-nudge system still finds it.
+  if (isRecallActive()) {
+    const rc = document.createElement('div');
+    rc.id = 'recall-btn';
+    rc.className = 'booster-btn recall-wrap disabled';
+    rc.innerHTML = `<span class="recall-icon">🔄</span>` +
+      `<span class="recall-cost"><img src="icons/coin_icon.png" class="coin-icon" alt="coins">${RECALL_COST}</span>`;
+    rc.addEventListener('click', () => recallCards());
+    boosterBar.appendChild(rc);
+  }
+  // Render the tray boosters, in VISIBLE_BOOSTERS order (after Recall).
   VISIBLE_BOOSTERS.forEach(id => {
     const b = BOOSTERS.find(x => x.id === id);
     if (!b || !getBoosterSetting(b.id).enabled) return;
