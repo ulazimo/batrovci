@@ -106,7 +106,7 @@ function collRenderHallProps() {
       `<option value="${t}"${h.theme === t ? ' selected' : ''}>${t}</option>`)).join('');
   wrap.innerHTML = `
     <div class="prop-row"><label>Name</label><input type="text" id="hp-name" value="${h.name || ''}"></div>
-    <div class="prop-row"><label>Backdrop</label><input type="text" id="hp-backdrop" value="${h.backdrop || ''}" placeholder="backdrops/x.png"></div>
+    <div class="prop-row"><label>Backdrop</label><input type="text" id="hp-backdrop" value="${h.backdrop || ''}" placeholder="art/backdrops/x.png"></div>
     <div class="prop-row"><label>CSS theme</label><select id="hp-theme">${themeOpts}</select></div>
     <div class="prop-row"><label>Shadow</label><input type="checkbox" id="hp-shadow"${h.shadow ? ' checked' : ''}></div>
     <div class="prop-row"><label>Glow</label><input type="checkbox" id="hp-glow"${h.glow ? ' checked' : ''}></div>
@@ -326,7 +326,7 @@ async function collIngestFiles(files) {
       } catch (err) { alert(`${file.name}: ${err.message}`); continue; }
       finally { URL.revokeObjectURL(url); }
     }
-    const folder = collEl('ingest-folder').value.trim().replace(/^\/+|\/+$/g, '') || 'reef';
+    const folder = collEl('ingest-folder').value.trim().replace(/^\/+|\/+$/g, '') || 'art/new-hall';
     COLL.items[key] = {
       name: key.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
       file: `${folder}/${file.name}`, view: { w, h },
@@ -340,7 +340,12 @@ async function collIngestFiles(files) {
   if (collDirHandle) {
     for (const a of added) {
       try {
-        const dir = await collDirHandle.getDirectoryHandle(a.folder, { create: true });
+        // getDirectoryHandle takes ONE path segment — walk them, since hall art
+        // lives a level down (art/<hall>/).
+        let dir = collDirHandle;
+        for (const seg of a.folder.split('/')) {
+          dir = await dir.getDirectoryHandle(seg, { create: true });
+        }
         const fh = await dir.getFileHandle(a.file.name, { create: true });
         const ws = await fh.createWritable();
         await ws.write(await a.file.arrayBuffer());

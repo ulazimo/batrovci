@@ -1776,7 +1776,7 @@ body.on-home #chain-indicator { display: none !important; }
 }
 
 /* ================================================================
-   CHILDHOOD HALL THEME — a photographic garden background (childhood/
+   CHILDHOOD HALL THEME — a photographic garden background (art/childhood/
    background.jpeg) onto which a jump-rope scene assembles piece-by-piece
    (two rope-turners, the rope, then the jumper). Unlike Music/Pasture this
    is a single COMPOSED tableau, so the pieces are positioned to line up and
@@ -1786,7 +1786,7 @@ body.on-home #chain-indicator { display: none !important; }
 /* ============================================================
    FULL-SCENE TABLEAU LAYERS — slot `kind: 'layer'` in collections.js.
    A layer's art is a full canvas with the piece already at its final position
-   (childhood/scene/*.png), so it is NOT a positioned pedestal: it fills the
+   (art/childhood/scene/*.png), so it is NOT a positioned pedestal: it fills the
    picture box and is cover-cropped exactly like the backdrop, which keeps the
    baked-in positions aligned with the background art on any device. Stacking
    every layer of a hall reproduces its final.png.

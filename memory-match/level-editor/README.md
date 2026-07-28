@@ -7,16 +7,17 @@ It reads `../collections.json`; **Save** writes both that and its `.js` twin.
    **💾 Save** stays disabled until you do. (Chrome/Edge. Otherwise use
    **⬇ Download** and move both files in yourself.)
 2. **+ Add Hall**, then on the right set **Name** and **Backdrop**
-   (e.g. `backdrops/my-hall.png`). Leave **CSS theme** as *(none)*.
-3. Set the art **Folder** on the left (e.g. `my-hall`), then drop the element
-   PNGs on the drop zone. Sizes are read from the file — never typed. With
-   folder access granted the files are copied in for you.
+   (e.g. `art/backdrops/my-hall.png`). Leave **CSS theme** as *(none)*.
+3. Set the art **Folder** on the left (e.g. `art/my-hall` — all hall art lives
+   under `art/`), then drop the element PNGs on the drop zone. Sizes are read
+   from the file — never typed. With folder access granted the files are copied
+   in for you, nested folders included.
 4. **+ Slot** per item. Set **Item**, **Level id**, and **Kind**:
    - **placed item** — tight-cropped art you position. Drag it in the preview,
      or type Left / Bottom / Height.
    - **full-scene layer** — art that is a whole canvas with the piece already in
      place. Nothing to position; stacking a hall's layers rebuilds the full
-     scene. Needs a `layer` file on the item (see `../childhood/README.md`).
+     scene. Needs a `layer` file on the item (see `../art/childhood/README.md`).
 5. **Board Art** — click *use "item"* per level so clearing that level reveals
    the same piece it awards.
 6. Check **Validator** is green, then **💾 Save** and reload the game.

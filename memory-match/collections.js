@@ -21,7 +21,7 @@ COLLECTIONS = {
   "items": {
     "guitar": {
       "name": "Guitar",
-      "file": "instruments/guitar.svg",
+      "file": "art/instruments/guitar.svg",
       "view": {
         "w": 220,
         "h": 520
@@ -29,7 +29,7 @@ COLLECTIONS = {
     },
     "saxophone": {
       "name": "Saxophone",
-      "file": "instruments/saxophone.svg",
+      "file": "art/instruments/saxophone.svg",
       "view": {
         "w": 300,
         "h": 520
@@ -37,7 +37,7 @@ COLLECTIONS = {
     },
     "trumpet": {
       "name": "Trumpet",
-      "file": "instruments/trumpet.svg",
+      "file": "art/instruments/trumpet.svg",
       "view": {
         "w": 520,
         "h": 300
@@ -45,7 +45,7 @@ COLLECTIONS = {
     },
     "drum": {
       "name": "Drum",
-      "file": "instruments/drum.svg",
+      "file": "art/instruments/drum.svg",
       "view": {
         "w": 460,
         "h": 380
@@ -53,7 +53,7 @@ COLLECTIONS = {
     },
     "violin": {
       "name": "Violin",
-      "file": "instruments/violin.svg",
+      "file": "art/instruments/violin.svg",
       "view": {
         "w": 200,
         "h": 520
@@ -61,7 +61,7 @@ COLLECTIONS = {
     },
     "piano": {
       "name": "Piano",
-      "file": "instruments/piano.svg",
+      "file": "art/instruments/piano.svg",
       "view": {
         "w": 520,
         "h": 420
@@ -69,7 +69,7 @@ COLLECTIONS = {
     },
     "deer": {
       "name": "Deer",
-      "file": "animals/deer.svg",
+      "file": "art/animals/deer.svg",
       "view": {
         "w": 220,
         "h": 260
@@ -77,7 +77,7 @@ COLLECTIONS = {
     },
     "fox": {
       "name": "Fox",
-      "file": "animals/fox.svg",
+      "file": "art/animals/fox.svg",
       "view": {
         "w": 200,
         "h": 210
@@ -85,7 +85,7 @@ COLLECTIONS = {
     },
     "owl": {
       "name": "Owl",
-      "file": "animals/owl.svg",
+      "file": "art/animals/owl.svg",
       "view": {
         "w": 200,
         "h": 210
@@ -93,7 +93,7 @@ COLLECTIONS = {
     },
     "rabbit": {
       "name": "Rabbit",
-      "file": "animals/rabbit.svg",
+      "file": "art/animals/rabbit.svg",
       "view": {
         "w": 180,
         "h": 220
@@ -101,7 +101,7 @@ COLLECTIONS = {
     },
     "bird": {
       "name": "Bird",
-      "file": "animals/bird.svg",
+      "file": "art/animals/bird.svg",
       "view": {
         "w": 200,
         "h": 170
@@ -109,7 +109,7 @@ COLLECTIONS = {
     },
     "turtle": {
       "name": "Sea Turtle",
-      "file": "reef/turtle.png",
+      "file": "art/reef/turtle.png",
       "view": {
         "w": 512,
         "h": 321
@@ -117,7 +117,7 @@ COLLECTIONS = {
     },
     "octopus": {
       "name": "Octopus",
-      "file": "reef/octopus.png",
+      "file": "art/reef/octopus.png",
       "view": {
         "w": 482,
         "h": 452
@@ -125,7 +125,7 @@ COLLECTIONS = {
     },
     "seahorse": {
       "name": "Seahorse",
-      "file": "reef/seahorse.png",
+      "file": "art/reef/seahorse.png",
       "view": {
         "w": 252,
         "h": 503
@@ -133,7 +133,7 @@ COLLECTIONS = {
     },
     "clownfish": {
       "name": "Clownfish",
-      "file": "reef/clownfish.png",
+      "file": "art/reef/clownfish.png",
       "view": {
         "w": 512,
         "h": 299
@@ -141,7 +141,7 @@ COLLECTIONS = {
     },
     "starfish": {
       "name": "Starfish",
-      "file": "reef/starfish.png",
+      "file": "art/reef/starfish.png",
       "view": {
         "w": 512,
         "h": 475
@@ -149,8 +149,8 @@ COLLECTIONS = {
     },
     "child1": {
       "name": "Friend",
-      "file": "childhood/child1.png",
-      "layer": "childhood/scene/child1.png",
+      "file": "art/childhood/child1.png",
+      "layer": "art/childhood/scene/child1.png",
       "view": {
         "w": 195,
         "h": 825
@@ -158,8 +158,8 @@ COLLECTIONS = {
     },
     "child2": {
       "name": "Friend",
-      "file": "childhood/child2.png",
-      "layer": "childhood/scene/child2.png",
+      "file": "art/childhood/child2.png",
+      "layer": "art/childhood/scene/child2.png",
       "view": {
         "w": 282,
         "h": 681
@@ -167,8 +167,8 @@ COLLECTIONS = {
     },
     "jumprope": {
       "name": "Jump Rope",
-      "file": "childhood/jumprope.png",
-      "layer": "childhood/scene/jumprope.png",
+      "file": "art/childhood/jumprope.png",
+      "layer": "art/childhood/scene/jumprope.png",
       "view": {
         "w": 473,
         "h": 386
@@ -176,8 +176,8 @@ COLLECTIONS = {
     },
     "boy": {
       "name": "The Jumper",
-      "file": "childhood/boy.png",
-      "layer": "childhood/scene/boy.png",
+      "file": "art/childhood/boy.png",
+      "layer": "art/childhood/scene/boy.png",
       "view": {
         "w": 336,
         "h": 589
@@ -185,7 +185,7 @@ COLLECTIONS = {
     },
     "sandcastle": {
       "name": "Sandcastle",
-      "file": "shore/sandcastle.png",
+      "file": "art/shore/sandcastle.png",
       "view": {
         "w": 469,
         "h": 512
@@ -193,7 +193,7 @@ COLLECTIONS = {
     },
     "beachball": {
       "name": "Beach Ball",
-      "file": "shore/beachball.png",
+      "file": "art/shore/beachball.png",
       "view": {
         "w": 502,
         "h": 512
@@ -201,7 +201,7 @@ COLLECTIONS = {
     },
     "bucketspade": {
       "name": "Bucket & Spade",
-      "file": "shore/bucketspade.png",
+      "file": "art/shore/bucketspade.png",
       "view": {
         "w": 512,
         "h": 465
@@ -209,7 +209,7 @@ COLLECTIONS = {
     },
     "sailboat": {
       "name": "Sailboat",
-      "file": "shore/sailboat.png",
+      "file": "art/shore/sailboat.png",
       "view": {
         "w": 374,
         "h": 512
@@ -217,7 +217,7 @@ COLLECTIONS = {
     },
     "seagull": {
       "name": "Seagull",
-      "file": "shore/seagull.png",
+      "file": "art/shore/seagull.png",
       "view": {
         "w": 393,
         "h": 512
@@ -225,7 +225,7 @@ COLLECTIONS = {
     },
     "snowman": {
       "name": "Snowman",
-      "file": "snow/snowman.png",
+      "file": "art/snow/snowman.png",
       "view": {
         "w": 343,
         "h": 512
@@ -233,7 +233,7 @@ COLLECTIONS = {
     },
     "sled": {
       "name": "Sled",
-      "file": "snow/sled.png",
+      "file": "art/snow/sled.png",
       "view": {
         "w": 512,
         "h": 367
@@ -241,7 +241,7 @@ COLLECTIONS = {
     },
     "iceskates": {
       "name": "Ice Skates",
-      "file": "snow/iceskates.png",
+      "file": "art/snow/iceskates.png",
       "view": {
         "w": 512,
         "h": 499
@@ -249,7 +249,7 @@ COLLECTIONS = {
     },
     "lantern": {
       "name": "Snow Lantern",
-      "file": "snow/lantern.png",
+      "file": "art/snow/lantern.png",
       "view": {
         "w": 512,
         "h": 470
@@ -257,7 +257,7 @@ COLLECTIONS = {
     },
     "robin": {
       "name": "Robin",
-      "file": "snow/robin.png",
+      "file": "art/snow/robin.png",
       "view": {
         "w": 405,
         "h": 512
@@ -268,7 +268,7 @@ COLLECTIONS = {
     {
       "id": "childhood",
       "name": "Childhood",
-      "backdrop": "childhood/background.jpeg",
+      "backdrop": "art/childhood/background.jpeg",
       "shadow": false,
       "glow": false,
       "notes": false,
@@ -387,7 +387,7 @@ COLLECTIONS = {
     {
       "id": "reef",
       "name": "Coral Reef",
-      "backdrop": "backdrops/coral-reef.png",
+      "backdrop": "art/backdrops/coral-reef.png",
       "shadow": true,
       "glow": false,
       "notes": false,
@@ -432,7 +432,7 @@ COLLECTIONS = {
     {
       "id": "shore",
       "name": "Sunny Shore",
-      "backdrop": "backdrops/sunny-shore.jpeg",
+      "backdrop": "art/backdrops/sunny-shore.jpeg",
       "shadow": true,
       "glow": false,
       "notes": false,
@@ -477,7 +477,7 @@ COLLECTIONS = {
     {
       "id": "snow",
       "name": "Snow Day",
-      "backdrop": "backdrops/snow-day.jpeg",
+      "backdrop": "art/backdrops/snow-day.jpeg",
       "shadow": true,
       "glow": false,
       "notes": false,
