@@ -19,26 +19,6 @@ body {
 .device-btn:hover { border-color: #4fc3f7; color: #dbe7ff; }
 .device-btn.active { background: #0f3460; border-color: #4fc3f7; color: #4fc3f7; }
 
-/* Background-art switcher — fixed vertical panel on the left (desktop only). */
-#bg-switcher {
-  position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 9999;
-  display: flex; flex-direction: column; gap: 8px; padding: 10px;
-  background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.1);
-  border-radius: 12px; backdrop-filter: blur(6px);
-}
-.bg-switcher-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-  color: #8b93ad; text-align: center; font-family: system-ui, sans-serif; margin-bottom: 2px;
-}
-.bg-btn {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 112px;
-  padding: 7px 11px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
-  background: #1a1a2e; border: 1px solid #333a55; color: #9aa4c0; font-family: inherit; transition: all .15s;
-}
-.bg-btn small { font-size: 9px; font-weight: 500; opacity: .65; }
-.bg-btn:hover { border-color: #4fc3f7; color: #dbe7ff; }
-.bg-btn.active { background: #0f3460; border-color: #4fc3f7; color: #4fc3f7; }
-
 #device-frame {
   --device-h: 852px; --device-aspect: 393/852; --device-radius: 52px;
   position: relative; flex-shrink: 0;
@@ -54,7 +34,6 @@ body {
 @media (max-width: 520px) {
   body { padding: 0; gap: 0; }
   #device-switcher { display: none; }
-  #bg-switcher { display: none; }
   #level-jumper { display: none; }
   #device-frame {
     width: 100%; height: 100dvh; max-width: 100%; aspect-ratio: auto;
@@ -463,29 +442,21 @@ body {
   position: relative; /* positioning context for #board-bg */
 }
 
-/* Optional per-level instrument art (see board-bg.js + #bg-switcher). */
+/* Per-level collectible art (see board-bg.js). The image layer sits blurred
+   behind the grid; broken cells get a sharp slice of it painted on by JS, and the
+   sharp-over-blur reads as a per-cell highlight. */
 #board-bg {
   position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
 }
-#board-bg .board-bg-img { position: absolute; object-fit: contain; -webkit-user-drag: none; user-select: none; }
-/* Option 1 — sharp grayed reveal. Option 2 — same but blurred. Option 3 — blurred
-   layer + a sharp per-cell reveal (the sharp-over-blur reads as a highlight).
-   Option 4 — brighter, gaps only. */
-#board.bg-opt-1 #board-bg .board-bg-img { filter: saturate(.85) opacity(.55); }
-#board.bg-opt-2 #board-bg .board-bg-img { filter: blur(4px) saturate(.85) opacity(.55); }
-#board.bg-opt-3 #board-bg .board-bg-img { filter: blur(4px) saturate(.8) opacity(.6); }
-#board.bg-opt-4 #board-bg .board-bg-img { filter: saturate(.95) opacity(.85); }
+#board-bg .board-bg-img {
+  position: absolute; object-fit: contain; -webkit-user-drag: none; user-select: none;
+  filter: blur(4px) saturate(.8) opacity(.6);
+}
 #board .cell { z-index: 1; } /* keep cells above #board-bg */
-/* Option 4 = gaps only: empty cells stay opaque (board-bg colour) so the art
-   shows only in the thin gaps, never filling a broken cell. */
-#board.bg-opt-4 .cell.cleared-cell, #board.bg-opt-4 .cell.disabled-cell { background: #16213e; }
-.theme-purple #board.bg-opt-4 .cell.cleared-cell,
-.theme-purple #board.bg-opt-4 .cell.disabled-cell { background: #271539; }
-/* Options 1-3 reveal the art through empty cells — drop the empty-cell highlight
-   (faint fill + inset border) so there's no glow over the reveal. */
-#board.bg-opt-1 .cell.cleared-cell,
-#board.bg-opt-2 .cell.cleared-cell,
-#board.bg-opt-3 .cell.cleared-cell { background: transparent; box-shadow: none; }
+/* The art reveals through empty cells — drop the empty-cell highlight (faint fill
+   + inset border) so there's no glow over the reveal. `.board-has-art` is only set
+   on levels that actually place art, so plain levels keep the normal look. */
+#board.board-has-art .cell.cleared-cell { background: transparent; box-shadow: none; }
 
 /* Win highlight (see flashBoardArtWin in board-bg.js): on level complete, lift
    the revealed art above the grid, un-blur it and give it a warm glow + pop for
@@ -1873,7 +1844,6 @@ body.on-home #chain-indicator { display: none !important; }
 
 /* ================================================================
    DEV LEVEL JUMPER — right-side panel, OUTSIDE the phone (desktop only).
-   Mirrors #bg-switcher (which is fixed on the left).
 ================================================================ */
 #level-jumper {
   position: fixed; right: 12px; top: 50%; transform: translateY(-50%); z-index: 9999;

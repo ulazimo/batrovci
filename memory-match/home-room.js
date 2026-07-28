@@ -518,8 +518,8 @@ function playFromHome() {
 }
 
 // ============================================================
-// DEV LEVEL JUMPER — panel OUTSIDE the phone frame (right side, desktop only,
-// like #bg-switcher). Jumps to ANY level; the in-phone map stays forward-only.
+// DEV LEVEL JUMPER — panel OUTSIDE the phone frame (right side, desktop only).
+// Jumps to ANY level; the in-phone map stays forward-only.
 // ============================================================
 function buildLevelJumper() {
   let panel = document.getElementById('level-jumper');

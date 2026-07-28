@@ -4,33 +4,19 @@
 // board background — i.e. the gaps between tiles and any broken/cleared/empty
 // cell. A white "?" tile never shows art; only the purple/blue board bg does.
 //
-// Driven by the #bg-switcher (Off + 4 render options), mirroring #device-switcher:
-//   Option 1 — sharp grayed art revealed on broken cells (+ gaps). Emerges as you clear.
-//   Option 2 — same as 1 but blurred (no per-cell highlight).
-//   Option 3 — blurred art everywhere + a sharp per-cell reveal on broken cells
-//              (the sharp-over-blur reads as a highlight).
-//   Option 4 — art only in the GAPS between tiles (empty cells stay covered).
-// The behind-grid image layer is used by all options; the sharp per-cell reveal
-// is gated to option 3; the opaque empty-cell cover (option 4) lives in CSS.
-// Shared globals live in state.js.
+// One render mode: the whole piece sits BLURRED behind the grid (so the level's
+// collectible is legible while you play) and every broken cell gets a SHARP slice
+// of it painted on, so the art gets crisper as you clear — the sharp-over-blur
+// reads as a per-cell highlight. This shipped as "option 3" of a five-way dev
+// switcher; the other four were dropped (see git history if you want them back).
+// The blur + empty-cell treatment live in CSS; the sharp per-cell slices are
+// painted here. Shared globals live in state.js.
 //
 // DATA: the art registry and the per-level placement both live in
 // collections.js (`COLLECTIONS.items` / `COLLECTIONS.boardArt`), which the same
 // file also feeds to the home halls — so a level's reveal and its home-screen
 // item can't drift apart. Edit via the level-editor, not here.
 // ============================================================
-
-// Current render option: 0 = off, 1/2/3/4 = modes. Persisted like the device pick.
-// Defaults to 3 (blur + reveal + highlight) so the level's collectible is visible
-// behind the tiles during play and progressively revealed as cards clear. NOTE:
-// levelWon() gates its whole art-win path on `bgOption > 0`, so a 0 default would
-// silently skip the un-blur celebration for every new player.
-let bgOption = (function () {
-  try {
-    const saved = localStorage.getItem('mm_bg_option');
-    return saved == null ? 3 : (parseInt(saved, 10) || 0);
-  } catch (e) { return 3; }
-})();
 
 // Win highlight: briefly un-blur + glow the level's revealed art (called from
 // levelWon, and cleared again by startGame). Toggling `.board-win-reveal` on
@@ -47,14 +33,6 @@ function currentLevelBackground() {
   const id = lvl && lvl.id;
   const byStyle = COLLECTIONS.boardArt[style];
   return (byStyle && byStyle[id]) || null;
-}
-
-function setBgOption(n) {
-  bgOption = n;
-  try { localStorage.setItem('mm_bg_option', n); } catch (e) {}
-  document.querySelectorAll('#bg-switcher .bg-btn').forEach(b =>
-    b.classList.toggle('active', +b.dataset.bg === n));
-  applyBoardBackground(true);
 }
 
 // Compute the art's pixel box within the board, preserving aspect and clamping
@@ -91,14 +69,13 @@ function applyBoardBackground(force) {
   const BW = boardEl.clientWidth, BH = boardEl.clientHeight;
   const box = (place && BW > 0 && BH > 0) ? bgArtBox(place, BW, BH) : null;
 
-  // Signature: rebuild the behind-grid <img> only when option/level/size change.
-  const sig = box ? `${bgOption}|${place.item}|${Math.round(BW)}x${Math.round(BH)}` : '';
+  // Signature: rebuild the behind-grid <img> only when the level/size change.
+  const sig = box ? `${place.item}|${Math.round(BW)}x${Math.round(BH)}` : '';
   if (force || bg.dataset.sig !== sig) {
     bg.dataset.sig = sig;
     bg.innerHTML = '';
-    boardEl.classList.remove('bg-opt-1', 'bg-opt-2', 'bg-opt-3', 'bg-opt-4');
-    if (box && bgOption) {
-      boardEl.classList.add('bg-opt-' + bgOption);
+    boardEl.classList.toggle('board-has-art', !!box);
+    if (box) {
       const img = document.createElement('img');
       img.src = box.item.file;
       img.className = 'board-bg-img';
@@ -108,13 +85,14 @@ function applyBoardBackground(force) {
     }
   }
 
-  // Per-cell sharp reveal (option 3 only): paint each EMPTY cell (cleared/disabled)
-  // with its slice of the art so broken cells read sharper than the blurred gaps.
-  // Always reset cell backgrounds first so switching options leaves no residue.
+  // Per-cell sharp reveal: paint each EMPTY cell (cleared/disabled) with its slice
+  // of the art so broken cells read sharper than the blurred gaps. Cells that
+  // aren't empty (or levels with no art) get their background cleared, so a
+  // refilled slot leaves no residue behind the new card.
   const cell = box ? (BW - BOARD_GAP * (COLS - 1)) / COLS : 0;
   boardEl.querySelectorAll('.cell').forEach((cellEl, i) => {
     const empty = cellEl.classList.contains('cleared-cell') || cellEl.classList.contains('disabled-cell');
-    if (box && bgOption === 3 && empty) {
+    if (box && empty) {
       const r = Math.floor(i / COLS), c = i % COLS;
       const cl = c * (cell + BOARD_GAP), ct = r * (cell + BOARD_GAP);
       cellEl.style.backgroundImage    = `url("${box.item.file}")`;
@@ -129,6 +107,3 @@ function applyBoardBackground(force) {
     }
   });
 }
-
-// Reflect the persisted option on the switcher buttons once the DOM is ready.
-setBgOption(bgOption);

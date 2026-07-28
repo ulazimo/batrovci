@@ -114,7 +114,7 @@ function levelWon() {
   // (un-blur + glow) for 1s, then go straight to the home hall to watch the
   // piece appear + any hall-complete celebration. Otherwise fall back to the
   // classic banner, then home. No intermediate "Level Complete" overlay.
-  const hasArt = (typeof currentLevelBackground === 'function') && currentLevelBackground() && bgOption > 0;
+  const hasArt = (typeof currentLevelBackground === 'function') && !!currentLevelBackground();
   if (hasArt) {
     if (typeof flashBoardArtWin === 'function') flashBoardArtWin(true);
     setTimeout(() => {

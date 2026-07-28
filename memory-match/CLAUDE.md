@@ -72,7 +72,7 @@ loaded in this order after `settings.js` (see [index.html](index.html)):
 | `specials.js` | `SPECIAL_TYPES`, `BACK_EFFECTS`, level rewards, `getMinCombo`. (Also the vestigial combo→special mapping — see §6.) |
 | `goals.js` | Level goals: `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet`, goal HUD. |
 | `board.js` | Card model/factory, `renderBoard`, board-cell UI, chain tension/faces/indicators, long-press peek, `boardEl` event listeners. Also the **obstacle areas** (ice / color-lock decoration + break logic), `assignBoardColors`, `buildDeck`, the Collection tray, and `registerCollected` (the counter that drives ice/color-lock breaks). |
-| `board-bg.js` | Per-level collectible art revealed **behind** the grid as tiles break, so clearing a level uncovers the item you then see in its hall. Placement read from `COLLECTIONS.boardArt`. `currentLevelBackground`, `bgArtBox`, `applyBoardBackground`, `bgOption` (0=off, 1–4 render modes, persisted in `mm_bg_option`, driven by the `#bg-switcher` dev panel). Keeps `#board-bg` as the **last child** of `#board` — lots of code indexes `boardEl.children[i]` as board index `i`. |
+| `board-bg.js` | Per-level collectible art revealed **behind** the grid as tiles break, so clearing a level uncovers the item you then see in its hall. Placement read from `COLLECTIONS.boardArt`. `currentLevelBackground`, `bgArtBox`, `applyBoardBackground`. One render mode: the piece sits blurred behind the grid (CSS) and each empty cell gets a sharp slice painted on, so clearing sharpens the art. Keeps `#board-bg` as the **last child** of `#board` — lots of code indexes `boardEl.children[i]` as board index `i`. |
 | `chain-timer.js` | Optional chain countdown timer. |
 | `boosters.js` | `BOOSTERS`, booster inventory/consume/UI + booster execution actions. |
 | `bank.js` | Bank-It button + `detonateBombAt` (bomb blast + refill). |
@@ -155,8 +155,9 @@ COLLECTIONS = {
   Music Hall (CSS theme, 5–9), Green Pasture (CSS theme, 10–14), Coral Reef (image
   backdrop + placed items, 15–19), Sunny Shore (20–24), Snow Day (25–29) — and
   `boardArt` for `cleaningxl` 1–29 + 38–40.
-- **Load order**: `collections.js` must load *before* `board-bg.js` (which calls
-  `setBgOption` at load time). It sits with the other data files, before `settings.js`.
+- **Load order**: `collections.js` sits with the other data files, before
+  `settings.js`. Nothing reads `COLLECTIONS` at load time any more, so this is
+  convention rather than a hard constraint.
 
 ---
 
@@ -665,12 +666,10 @@ live design/tuning console.
   2. Ordering only matters for code that runs *at load time* (not functions, which
      run later). So **`state.js` must stay first** (declares shared state + DOM refs;
      its `currentLevelIndex = progress.highestUnlocked` needs `progress` from the
-     earlier `settings.js`) and **`boot.js` must stay last**. Two other load-time
-     calls exist in between: `initInventoryDefaults()` in `specials.js` (needs only
-     `SPECIAL_TYPES`, same file) and `setBgOption()` at the bottom of `board-bg.js`
-     (needs `#bg-switcher` in the DOM — fine, since all scripts sit at the end of
-     `index.html` — and `COLLECTIONS`, so `collections.js` must load earlier).
-     Everything else is call-time-only and order-independent.
+     earlier `settings.js`) and **`boot.js` must stay last**. One other load-time
+     call exists in between: `initInventoryDefaults()` in `specials.js` (needs only
+     `SPECIAL_TYPES`, same file). Everything else is call-time-only and
+     order-independent.
 - **Any remaining `gameplay.js:NNNN` citation** predates the split and is stale — use
   the file map in §3 and the function index in §13 to find the owning file.
 - **Don't hardcode the combo minimum.** Use `getMinCombo()` (§4).
@@ -722,7 +721,7 @@ live design/tuning console.
 |---------|------|--------------|
 | Boot / journeys | `boot.js` / `progression.js` | `boot()`, `applyProgression`, `loadProgression` |
 | Home screen / halls | `home-room.js` | `showHome`, `renderHall`, `slotLevelIndex`, `playFromHome`, `renderHomeStreak`, `renderHomeReward`, `jumpToLevel`, `MAIN_JOURNEY` |
-| Board background art | `board-bg.js` | `applyBoardBackground`, `bgArtBox`, `setBgOption`, `currentLevelBackground` |
+| Board background art | `board-bg.js` | `applyBoardBackground`, `bgArtBox`, `currentLevelBackground`, `flashBoardArtWin` |
 | Halls / board art data | `collections.js` | `COLLECTIONS` (`themes`, `items`, `halls`, `boardArt`) |
 | Start a level | `level.js` | `showPreLevel` → `confirmPreLevel` → `startGame`; `initLevelConfig` |
 | Core loop | `turn.js` | `onCardClick`, `endTurn`, `placeNewCards` |
