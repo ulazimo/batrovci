@@ -215,6 +215,18 @@ function detonateBombAt(index, bombType) {
   // slots it collected (they'll be refilled with fresh, unseen cards).
   removeRecall(targets);
 
+  // Back-of-card effects: any card the bomb COLLECTS fires its reveal pattern, exactly like a
+  // chain collect (endTurn). Capture now, before the fly/refill mutates those slots. Reveal
+  // targets exclude the blast cells themselves (they're being destroyed / joined to the chain
+  // and already face-up) and mirror endTurn's canReveal (face-down, non-special, unlocked).
+  const bombFired = [];
+  targets.forEach(i => { const c = board[i]; if (c && c.backEffect) bombFired.push({ idx: i, effect: c.backEffect }); });
+  const bombBlast = new Set([index, ...targets, ...joinChain]);
+  let bombBETargets = [];
+  bombFired.forEach(({ idx, effect }) => bombBETargets.push(...getBackEffectPattern(effect, idx)));
+  bombBETargets = [...new Set(bombBETargets)].filter(i =>
+    i >= 0 && board[i] && !board[i].special && !board[i].locked && !board[i].flipped && !bombBlast.has(i));
+
   // Hold on the revealed cards so the player can read them, THEN collect (slower than before)
   setTimeout(() => {
     flushLockHide(); // flip any just-unlocked reveal cards face-down in sync with the bomb collect
@@ -228,15 +240,25 @@ function detonateBombAt(index, bombType) {
         if (bombCleared.length > 0) { resolveBombColorClear(); return; }
         inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator();
       };
-      // Refilled cards drop in face-up (like a normal clear), then hide after a beat
-      if (nc.length > 0 && getRule('bombRevealNewCards')) {
-        revealCardsNoHide(nc);
-        addRecall(nc);
+      // Reveal batch: collected back-effect patterns (+ the refilled cards when
+      // bombRevealNewCards is on) flash face-up together, land in Recall, then hide.
+      const showNewCards = nc.length > 0 && getRule('bombRevealNewCards');
+      const doReveal = () => {
+        if (bombBETargets.length) revealCardsNoHide(bombBETargets);
+        if (showNewCards) revealCardsNoHide(nc);
+        const allRevealed = [...bombBETargets, ...(showNewCards ? nc : [])];
+        if (allRevealed.length === 0) { finish(); return; }
+        addRecall(allRevealed);
         runSkippableReveal([], 2000, () => {
-          nc.forEach(i => { const c = board[i]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(i); if (el) el.classList.remove('flipped'); } });
+          allRevealed.forEach(i => { const c = board[i]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(i); if (el) el.classList.remove('flipped'); } });
           finish();
         });
-      } else finish();
+      };
+      // Back-effect activation: slam the collected effect icon(s) down over their tiles, then
+      // the reveal bursts out as they land (mirrors endTurn). Skip the slam when there's
+      // nothing left to reveal (e.g. the whole pattern sat inside the blast).
+      if (bombFired.length && bombBETargets.length) { slamBackEffectIcons(bombFired); setTimeout(doReveal, BACK_EFFECT_PREVIEW_MS); }
+      else doReveal();
     });
   }, 700);
 }
