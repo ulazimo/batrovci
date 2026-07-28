@@ -294,6 +294,206 @@
         "w": 217,
         "h": 356
       }
+    },
+    "rockinghorse": {
+      "name": "Rocking Horse",
+      "file": "art/attic/rockinghorse.png",
+      "view": {
+        "w": 512,
+        "h": 482
+      }
+    },
+    "globe": {
+      "name": "Antique Globe",
+      "file": "art/attic/globe.png",
+      "view": {
+        "w": 362,
+        "h": 512
+      }
+    },
+    "teddybear": {
+      "name": "Teddy Bear",
+      "file": "art/attic/teddybear.png",
+      "view": {
+        "w": 336,
+        "h": 512
+      }
+    },
+    "oillamp": {
+      "name": "Oil Lamp",
+      "file": "art/attic/oillamp.png",
+      "view": {
+        "w": 339,
+        "h": 512
+      }
+    },
+    "trunk": {
+      "name": "Steamer Trunk",
+      "file": "art/attic/trunk.png",
+      "view": {
+        "w": 512,
+        "h": 422
+      }
+    },
+    "kettle": {
+      "name": "Copper Kettle",
+      "file": "art/kitchen/kettle.png",
+      "view": {
+        "w": 454,
+        "h": 512
+      }
+    },
+    "pie": {
+      "name": "Apple Pie",
+      "file": "art/kitchen/pie.png",
+      "view": {
+        "w": 512,
+        "h": 359
+      }
+    },
+    "mixingbowl": {
+      "name": "Mixing Bowl",
+      "file": "art/kitchen/mixingbowl.png",
+      "view": {
+        "w": 512,
+        "h": 509
+      }
+    },
+    "jamjars": {
+      "name": "Jam Jars",
+      "file": "art/kitchen/jamjars.png",
+      "view": {
+        "w": 512,
+        "h": 387
+      }
+    },
+    "cat": {
+      "name": "Sleeping Cat",
+      "file": "art/kitchen/cat.png",
+      "view": {
+        "w": 512,
+        "h": 410
+      }
+    },
+    "wateringcan": {
+      "name": "Watering Can",
+      "file": "art/greenhouse/wateringcan.png",
+      "view": {
+        "w": 512,
+        "h": 459
+      }
+    },
+    "orchid": {
+      "name": "Moth Orchid",
+      "file": "art/greenhouse/orchid.png",
+      "view": {
+        "w": 375,
+        "h": 512
+      }
+    },
+    "claypots": {
+      "name": "Clay Pots",
+      "file": "art/greenhouse/claypots.png",
+      "view": {
+        "w": 312,
+        "h": 512
+      }
+    },
+    "trowelgloves": {
+      "name": "Trowel & Gloves",
+      "file": "art/greenhouse/trowelgloves.png",
+      "view": {
+        "w": 512,
+        "h": 431
+      }
+    },
+    "cloche": {
+      "name": "Glass Cloche",
+      "file": "art/greenhouse/cloche.png",
+      "view": {
+        "w": 336,
+        "h": 512
+      }
+    },
+    "gramophone": {
+      "name": "Gramophone",
+      "file": "art/musicroom/gramophone.png",
+      "view": {
+        "w": 344,
+        "h": 512
+      }
+    },
+    "cello": {
+      "name": "Cello",
+      "file": "art/musicroom/cello.png",
+      "view": {
+        "w": 204,
+        "h": 512
+      }
+    },
+    "metronome": {
+      "name": "Metronome",
+      "file": "art/musicroom/metronome.png",
+      "view": {
+        "w": 381,
+        "h": 512
+      }
+    },
+    "sheetmusic": {
+      "name": "Sheet Music",
+      "file": "art/musicroom/sheetmusic.png",
+      "view": {
+        "w": 512,
+        "h": 470
+      }
+    },
+    "accordion": {
+      "name": "Accordion",
+      "file": "art/musicroom/accordion.png",
+      "view": {
+        "w": 512,
+        "h": 346
+      }
+    },
+    "toytrain": {
+      "name": "Wooden Train",
+      "file": "art/workshop/toytrain.png",
+      "view": {
+        "w": 512,
+        "h": 469
+      }
+    },
+    "tinrobot": {
+      "name": "Tin Robot",
+      "file": "art/workshop/tinrobot.png",
+      "view": {
+        "w": 347,
+        "h": 512
+      }
+    },
+    "kite": {
+      "name": "Paper Kite",
+      "file": "art/workshop/kite.png",
+      "view": {
+        "w": 512,
+        "h": 432
+      }
+    },
+    "jackinthebox": {
+      "name": "Jack-in-the-Box",
+      "file": "art/workshop/jackinthebox.png",
+      "view": {
+        "w": 369,
+        "h": 512
+      }
+    },
+    "toolbox": {
+      "name": "Toolbox",
+      "file": "art/workshop/toolbox.png",
+      "view": {
+        "w": 512,
+        "h": 500
+      }
     }
   },
   "halls": [
@@ -585,6 +785,236 @@
           "kind": "layer"
         }
       ]
+    },
+    {
+      "id": "attic",
+      "name": "Cozy Attic",
+      "backdrop": "art/backdrops/cozy-attic.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "floatPx": 0,
+      "slots": [
+        {
+          "item": "rockinghorse",
+          "levelId": 34,
+          "left": 20,
+          "bottom": 10,
+          "h": 13
+        },
+        {
+          "item": "globe",
+          "levelId": 35,
+          "left": 10,
+          "bottom": 38,
+          "h": 11
+        },
+        {
+          "item": "teddybear",
+          "levelId": 36,
+          "left": 62,
+          "bottom": 41,
+          "h": 11
+        },
+        {
+          "item": "oillamp",
+          "levelId": 37,
+          "left": 89,
+          "bottom": 37,
+          "h": 10
+        },
+        {
+          "item": "trunk",
+          "levelId": 38,
+          "left": 78,
+          "bottom": 12,
+          "h": 11
+        }
+      ]
+    },
+    {
+      "id": "kitchen",
+      "name": "Grandma's Kitchen",
+      "backdrop": "art/backdrops/kitchen.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "floatPx": 0,
+      "slots": [
+        {
+          "item": "kettle",
+          "levelId": 39,
+          "left": 13,
+          "bottom": 24,
+          "h": 12
+        },
+        {
+          "item": "pie",
+          "levelId": 40,
+          "left": 22,
+          "bottom": 40,
+          "h": 10
+        },
+        {
+          "item": "mixingbowl",
+          "levelId": 41,
+          "left": 50,
+          "bottom": 40,
+          "h": 11
+        },
+        {
+          "item": "jamjars",
+          "levelId": 42,
+          "left": 84,
+          "bottom": 40,
+          "h": 8
+        },
+        {
+          "item": "cat",
+          "levelId": 43,
+          "left": 84,
+          "bottom": 10,
+          "h": 10
+        }
+      ]
+    },
+    {
+      "id": "greenhouse",
+      "name": "Victorian Greenhouse",
+      "backdrop": "art/backdrops/greenhouse.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "floatPx": 0,
+      "slots": [
+        {
+          "item": "wateringcan",
+          "levelId": 44,
+          "left": 18,
+          "bottom": 22,
+          "h": 12
+        },
+        {
+          "item": "orchid",
+          "levelId": 45,
+          "left": 20,
+          "bottom": 38,
+          "h": 13
+        },
+        {
+          "item": "claypots",
+          "levelId": 46,
+          "left": 50,
+          "bottom": 36,
+          "h": 13
+        },
+        {
+          "item": "trowelgloves",
+          "levelId": 47,
+          "left": 88,
+          "bottom": 49,
+          "h": 7
+        },
+        {
+          "item": "cloche",
+          "levelId": 48,
+          "left": 89,
+          "bottom": 14,
+          "h": 11
+        }
+      ]
+    },
+    {
+      "id": "musicroom",
+      "name": "Music Room",
+      "backdrop": "art/backdrops/music-room.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "floatPx": 0,
+      "slots": [
+        {
+          "item": "gramophone",
+          "levelId": 49,
+          "left": 14,
+          "bottom": 50,
+          "h": 11
+        },
+        {
+          "item": "cello",
+          "levelId": 50,
+          "left": 38,
+          "bottom": 20,
+          "h": 26
+        },
+        {
+          "item": "metronome",
+          "levelId": 51,
+          "left": 18,
+          "bottom": 37,
+          "h": 9
+        },
+        {
+          "item": "sheetmusic",
+          "levelId": 52,
+          "left": 87,
+          "bottom": 45,
+          "h": 8
+        },
+        {
+          "item": "accordion",
+          "levelId": 53,
+          "left": 70,
+          "bottom": 10,
+          "h": 10
+        }
+      ]
+    },
+    {
+      "id": "workshop",
+      "name": "Toy Workshop",
+      "backdrop": "art/backdrops/workshop.jpeg",
+      "shadow": true,
+      "glow": false,
+      "notes": false,
+      "floatPx": 0,
+      "slots": [
+        {
+          "item": "toytrain",
+          "levelId": 54,
+          "left": 17,
+          "bottom": 10,
+          "h": 12
+        },
+        {
+          "item": "tinrobot",
+          "levelId": 55,
+          "left": 30,
+          "bottom": 52,
+          "h": 10
+        },
+        {
+          "item": "kite",
+          "levelId": 56,
+          "left": 57,
+          "bottom": 52,
+          "h": 10
+        },
+        {
+          "item": "jackinthebox",
+          "levelId": 57,
+          "left": 48,
+          "bottom": 11,
+          "h": 10
+        },
+        {
+          "item": "toolbox",
+          "levelId": 58,
+          "left": 84,
+          "bottom": 12,
+          "h": 10
+        }
+      ]
     }
   ],
   "boardArt": {
@@ -787,23 +1217,155 @@
         "cy": 0.5,
         "h": 0.85
       },
-      "38": {
-        "item": "piano",
+      "34": {
+        "item": "rockinghorse",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "35": {
+        "item": "globe",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
+      "36": {
+        "item": "teddybear",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "37": {
+        "item": "oillamp",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "38": {
+        "item": "trunk",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
       "39": {
-        "item": "drum",
+        "item": "kettle",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
       "40": {
-        "item": "violin",
+        "item": "pie",
         "cx": 0.5,
         "cy": 0.5,
-        "h": 0.96
+        "h": 0.82
+      },
+      "41": {
+        "item": "mixingbowl",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "42": {
+        "item": "jamjars",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "43": {
+        "item": "cat",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "44": {
+        "item": "wateringcan",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "45": {
+        "item": "orchid",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "46": {
+        "item": "claypots",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "47": {
+        "item": "trowelgloves",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "48": {
+        "item": "cloche",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "49": {
+        "item": "gramophone",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "50": {
+        "item": "cello",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "51": {
+        "item": "metronome",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "52": {
+        "item": "sheetmusic",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "53": {
+        "item": "accordion",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "54": {
+        "item": "toytrain",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "55": {
+        "item": "tinrobot",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "56": {
+        "item": "kite",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "57": {
+        "item": "jackinthebox",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "58": {
+        "item": "toolbox",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
       }
     }
   }
