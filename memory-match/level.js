@@ -434,7 +434,7 @@ function startGame(preplacedSpecials) {
   if (tLabel) tLabel.textContent = lvl.clearBoard ? 'Deck' : 'Target';
   initLevelGoals();
   updateDeckHUD();
-  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); initCollection(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateRecallBar(); updateGoalHUD();
+  renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); initCollection(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateGoalHUD();
   fitBoard(); // re-fit now that goal HUD / coverage indicators are in place (renderBoard's own call ran before them)
 
   // Booster hint flag — will be shown after all popups are done

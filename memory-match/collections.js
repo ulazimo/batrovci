@@ -909,14 +909,14 @@ COLLECTIONS = {
           "item": "claypots",
           "levelId": 46,
           "left": 50,
-          "bottom": 36,
+          "bottom": 41,
           "h": 13
         },
         {
           "item": "trowelgloves",
           "levelId": 47,
-          "left": 88,
-          "bottom": 49,
+          "left": 82,
+          "bottom": 51,
           "h": 7
         },
         {
@@ -940,7 +940,7 @@ COLLECTIONS = {
         {
           "item": "gramophone",
           "levelId": 49,
-          "left": 14,
+          "left": 44,
           "bottom": 50,
           "h": 11
         },

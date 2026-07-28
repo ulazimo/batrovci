@@ -35,8 +35,8 @@ function isBoosterFull(id) {
 }
 
 // Tray tiles, in display order: Peek · Random 3 · +1 Color · Baby Bomb · BIG Bomb.
-// Recall lives in its own bar above the chain (not in the tray). Hidden boosters
-// still keep their inventory counts — see initBoosters.
+// Recall is prepended as a 6th tile by initBoosters (not listed here — it isn't a
+// BOOSTERS entry). Hidden boosters still keep their inventory counts — see initBoosters.
 const VISIBLE_BOOSTERS = ['peek', 'random3', 'pluscolor', 'babybomb', 'bigbomb'];
 
 // ============================================================

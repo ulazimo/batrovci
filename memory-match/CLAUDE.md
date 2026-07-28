@@ -480,7 +480,11 @@ cards (specials live on the board; boosters are inventory buttons).
   `startQty:0`) and show a `count/max` badge; everything else is uncapped.
 - **Recall** (🔄) re-reveals `lastRevealedCards` for **`RECALL_COST` = 10 coins**
   ([endgame.js:29](endgame.js)) — it is *not* free — and is unlocked from a
-  configurable level. It lives in its own bar above the chain, not in the tray.
+  configurable level. It is **the first tile in the booster tray**, prepended by
+  `initBoosters` — it is not a `BOOSTERS` entry, carries no `data-booster` (so
+  `updateBoosterUI` skips it) and its enabled state comes from `updateRecallButton`.
+  Because the tray is built once per `startGame`, changing the unlock level at
+  runtime has to rebuild it — that is what `updateRecallBar()` now does.
   **Bank It** (💰) manually resolves a qualifying chain and, after 3 banks, lets you
   place a Baby Bomb. (`bankButton` now defaults **off**.)
 - **Bombs are drag-only** ([bomb-aim.js](bomb-aim.js)): press the Baby/BIG bomb

@@ -1354,9 +1354,10 @@ body.bomb-aiming #board { touch-action: none; }
 .theme-purple #device-frame { background: #271539; }
 .theme-purple #level-banner { background: #1b0f2b; }
 .theme-purple #header { background: #271539; border-bottom-color: #3a2358; }
-/* Darker panels behind the power-ups, recall and chain */
+/* Darker panels behind the power-ups, recall and chain. Recall is a .booster-btn
+   tile too (see initBoosters), so the one rule covers it — the old .recall-btn
+   selector died with #recall-bar. */
 .theme-purple .booster-btn { background: #190c2a; border-color: #3a2358; }
-.theme-purple .recall-btn  { background: #190c2a; border-color: #3a2358; color: #d8c9f0; }
 .theme-purple #chain-indicator { background: #150a24; color: #9f93b8; }
 .theme-purple .chain-label { color: #9f93b8; }
 /* White face-down cards with a dark question mark (revealed colour tiles untouched) */

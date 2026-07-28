@@ -362,9 +362,11 @@ function adjustRecallStartLevel(delta) {
 function isRecallActive() {
   return LEVELS[currentLevelIndex].id >= getRecallStartLevel();
 }
+// Recall is the first tile in the booster tray (see initBoosters), and the tray is
+// built once per startGame — so flipping the "Recall from Level" setting mid-level
+// has to rebuild it, or the tile lingers (or stays missing) until the next level.
 function updateRecallBar() {
-  const bar = document.getElementById('recall-bar');
-  if (bar) bar.style.display = isRecallActive() ? '' : 'none';
+  if (typeof initBoosters === 'function') { initBoosters(); updateBoosterUI(); updateRecallButton(); }
 }
 
 // Effective streak level, capped at the configured max.
@@ -543,7 +545,8 @@ function showSettings(returnTo) {
       <div class="setting-desc">Reset every setting on this menu to its default value (keeps your levels, coins & stars)</div>
     </div>
     <div class="setting-controls">
-      <button class="qty-btn" style="padding:4px 12px;font-size:12px;" onclick="resetAllSettings()">Reset</button>
+      <!-- .qty-btn is a fixed 24px −/+ square; a text label needs width:auto or it overflows. -->
+      <button class="qty-btn" style="width:auto;padding:4px 12px;font-size:12px;" onclick="resetAllSettings()">Reset</button>
     </div>
   `;
   list.appendChild(resetRow);
@@ -940,8 +943,9 @@ function resetAllSettings() {
   // shows its default (this is also what "resets the settings menu").
   if (typeof applyTheme === 'function') applyTheme();
   if (typeof updateCollectionVisibility === 'function') updateCollectionVisibility();
-  if (typeof updateBoosterUI === 'function') updateBoosterUI();
-  if (typeof updateRecallButton === 'function') updateRecallButton();
+  // Rebuilds the tray, not just its badges — the reset can flip a booster's `enabled`
+  // flag and recallStartLevel, and both decide which tiles exist at all.
+  updateRecallBar();
   showSettings(settingsReturnTo);
 }
 
