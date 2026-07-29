@@ -93,7 +93,6 @@ function showPreLevel() {
 function showPreLevelUI() {
   closeAllOverlays();
   preLevelSelections = [];
-  if (typeof applyHallTheme === 'function') applyHallTheme(getActiveHallId());
 
   // Title
   document.getElementById('pre-level-title').textContent = `Level ${LEVELS[currentLevelIndex].id} — Prepare`;
@@ -288,7 +287,6 @@ function updateLivesDisplay() {
 function startGame(preplacedSpecials) {
   closeAllOverlays();
   document.body.classList.remove('on-home');   // reveal in-game HUD chrome
-  if (typeof applyHallTheme === 'function') applyHallTheme(getActiveHallId());
   if (typeof flashBoardArtWin === 'function') flashBoardArtWin(false);  // clear any win highlight
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;

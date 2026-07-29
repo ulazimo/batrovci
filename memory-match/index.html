@@ -13,12 +13,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Memory Match</title>
 <link rel="stylesheet" href="style.css">
-<!-- Nunito — prototype only; self-host before shipping to production -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 
 </head>
-<body>
+<body class="theme-purple">
 <a href="../index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.55);font-size:12px;font-family:system-ui,sans-serif;text-decoration:none;backdrop-filter:blur(6px);transition:opacity 0.2s,background 0.2s;opacity:0.45;" onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,0.75)'" onmouseout="this.style.opacity='0.45';this.style.background='rgba(0,0,0,0.45)'">← All Games</a>
 
 <!-- Device frame switcher (desktop only; hidden on real phones) -->
@@ -196,11 +193,11 @@
 <!-- Level Failed -->
 <div id="overlay-fail" class="overlay-screen">
   <div class="overlay-box">
-    <h1 class="overlay-title--fail">Level Failed</h1>
+    <h1 style="color:#e74c3c">Level Failed</h1>
     <div class="stars">💔</div>
     <div class="sub" id="fail-sub"></div>
     <div id="fail-streak-info" style="font-size:14px;font-weight:700;color:#f39c12;margin:6px 0;min-height:20px;"></div>
-    <button class="overlay-btn btn-coin" id="keep-streak-btn" onclick="continueLevelWithCoins()">+5 Turns (<span id="keep-streak-cost"></span> <img src="icons/coin_icon.png" class="coin-icon" alt="coins">)</button>
+    <button class="overlay-btn" id="keep-streak-btn" style="background:linear-gradient(135deg,#f39c12,#e67e22);color:#fff;" onclick="continueLevelWithCoins()">+5 Turns (<span id="keep-streak-cost"></span> <img src="icons/coin_icon.png" class="coin-icon" alt="coins">)</button>
     <button class="overlay-btn primary" onclick="retryLevel()">Try Again</button>
     <button class="overlay-btn secondary" onclick="showHome()">🏠 Music Hall</button>
   </div>
@@ -209,7 +206,7 @@
 <!-- Level Complete -->
 <div id="overlay-win" class="overlay-screen">
   <div class="overlay-box">
-    <h1 class="overlay-title--win" id="win-title">Level Complete!</h1>
+    <h1 style="color:#2ecc71" id="win-title">Level Complete!</h1>
     <div class="stars" id="win-stars"></div>
     <div class="sub" id="win-score"></div>
     <div style="font-size:15px;font-weight:700;min-height:22px;" id="win-streak"></div>
@@ -297,7 +294,6 @@
 <script src="levels/progression_long.js"></script>
 <script src="collections.js"></script>
 <script src="difficulty.js"></script>
-<script src="hall-themes.js"></script>
 <script src="settings.js"></script>
 <!-- Former gameplay.js, split by concern. state.js MUST be first, boot.js MUST be last.
      All files share one global namespace (classic scripts). See CLAUDE.md §3/§12. -->
@@ -344,11 +340,12 @@
   }
   setDevice((() => { try { const s = localStorage.getItem('mm_device'); return DEVICE_PRESETS[s] ? s : 'ip15pro'; } catch (e) { return 'ip15pro'; } })());
 
-  // Hall theming replaces the purple/blue colour scheme for this prototype.
-  // theme-purple is disabled; hall vars (set by applyHallTheme) drive all colours.
+  // Color theme: purple is the default; the "Blue Theme (Classic)" setting turns it off.
   function applyTheme() {
-    // no-op for prototype — hall-themes.js + applyHallTheme() handle all colour vars
+    const blue = (typeof getRule === 'function') && getRule('blueTheme');
+    document.body.classList.toggle('theme-purple', !blue);
   }
+  applyTheme();
 </script>
 
 <!-- FIREBASE TRACKING -->
