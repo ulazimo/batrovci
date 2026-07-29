@@ -9,6 +9,13 @@
   gap: 12px;
   padding: 12px;
   align-items: start;
+  /* style.css sets `body { height: 100vh; overflow: hidden }` (every other tab
+     scrolls INSIDE its own panel instead — see #level-list-panel, .dg-scroll).
+     Without this, content taller than the viewport — the iPad preset alone is
+     1260px — was simply unreachable: nothing on the page could scroll to it. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* ---- left: hall list ---- */
