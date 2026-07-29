@@ -75,22 +75,44 @@ function finishTurn() {
   });
   if (checkAllGoalsMet()) levelWon();
   else if (turns <= 0) levelFailed();
+  else if (isBoardStuck()) levelFailed(); // only locked/iced/color-locked tiles left, no bomb
   else revealChainDangerCards();
 }
 
-// Called after a card joins the current chain. If every remaining card of the active
-// colour(s) is now open, the colour is cleared — resolve the turn regardless of chain
-// length (a lone last card counts). endTurn awards the collect, refunds the spent turn,
-// and shows the "<COLOUR> Cleared" banner. Returns true if it resolved the turn.
+// Called after a card joins the current chain. If every remaining INTERACTABLE card of the
+// active colour(s) is now open, resolve the turn regardless of chain length (a lone last card
+// counts) — there's nothing more the player can do with the colour. Locked / iced / color-locked
+// cards of the colour DON'T block this (they can't be chained). endTurn then decides the payoff
+// from the board state: if the colour is gone ENTIRELY it's a full clear (banner + turn refund);
+// if frozen cards of it remain the chain simply auto-collects (no banner, no refund — the frozen
+// ones are dealt with when their lock breaks). Returns true if it resolved the turn.
 function tryAutoResolveColor() {
   if (chainColor === null) return false;
   const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
-  const stillClosed = board.some(c => c && !c.special && !c.flipped && activeColors.includes(c.color));
-  if (stillClosed) return false; // not every card of the colour is open yet
+  const stillClosed = board.some(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
+  if (stillClosed) return false; // not every interactable card of the colour is open yet
   stopChainTimer();
   inputLocked = true;
   setTimeout(() => endTurn(true, false), 300);
   return true;
+}
+
+// A placed bomb (Baby/BIG booster, or a charged Bank bomb) is the only power-up that can
+// break a lock: every other booster just reveals, and special bomb CARDS skip locked tiles
+// (§8). Feeds isBoardStuck.
+function hasBombAvailable() {
+  if (hasBooster('babybomb') || hasBooster('bigbomb')) return true; // includes unlimitedPowerUps
+  return getRule('bankButton') && bankProgress >= 3;
+}
+
+// Dead end: it's the player's turn (no active chain) but nothing on the board can be flipped
+// and no bomb is available to break a lock. Ice / color-lock thresholds only advance by
+// collecting, so a board of only locked/iced/color-locked tiles with no bomb can never
+// progress — the level is unwinnable. Callers declare the loss.
+function isBoardStuck() {
+  if (turnActive) return false;                                    // mid-chain — resolves first
+  if (board.some(c => c && !c.special && !c.locked)) return false; // a flippable card remains
+  return !hasBombAvailable();
 }
 
 function levelWon() {

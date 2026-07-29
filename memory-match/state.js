@@ -20,7 +20,8 @@ let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = n
 let lastRevealedCards = []; // accumulated cards seen since the last chain that cleared (for recall) — see resetRecall/addRecall
 let pendingDangerReveal = []; // chain-3 danger tiles to flip up once the chain ends (chainDangerReveal rule)
 let pendingLockHide = new Set(); // just-unlocked cards (revealed face-up by revealLockedCards) held face-up until the turn's reveal beat, then flipped face-down together (flushLockHide)
-let bombColorClearOverride = null; // colours a bomb cleared pre-refill — forces endTurn's colour clear despite the bomb's own refill
+let bombColorClearOverride = null; // colours a bomb exhausted (all interactable cards gone) pre-refill — forces endTurn to at least collect them despite the bomb's own refill
+let bombColorFullyCleared = null;  // subset of the above with NO card of the colour left at all (incl. frozen) — those earn the banner + turn refund
 let remnantHintShown = false; // one-time per-level hint for Cleaning remnant collection
 let deck = []; // Cleaning journey: finite refill pool (colors) drawn into cleared slots
 

@@ -497,7 +497,7 @@ function showScorePopup(pts, indices, extraMsg) {
 function revealEntireBoard(onComplete) {
   inputLocked = true;
   const revealCount = isWinStreakActive() ? getStreakRevealCount() : 0;
-  const revealMs  = Math.min(1500 + progress.winStreak * 250, 3500);
+  const revealMs  = Math.min(1000 + progress.winStreak * 150, 2000);
   const staggerMs = 50;
 
   // Decide which cards get the streak pre-reveal (stay face-up permanently)

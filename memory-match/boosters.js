@@ -243,17 +243,19 @@ function onChainExtended() {
 }
 
 // The active chain colour(s) that are now fully collected into the chain — i.e. no
-// card of that colour remains off the chain. Pure (no side effects). Locked cards of
-// the colour can't be chained, so they block the clear (matches endTurn's own check).
-// `alsoRemoved` lets a caller treat extra indices (e.g. cards a bomb is about to
-// collect) as already gone when judging the clear.
-function chainClearedColors(alsoRemoved) {
+// card of that colour remains off the chain. Pure (no side effects).
+// `alsoRemoved` lets a caller treat extra indices (e.g. cards a bomb is about to collect) as
+// already gone when judging the clear. By default frozen (locked / iced / color-locked) cards
+// of the colour DON'T block — the player can't chain them, so this reports "interactables
+// exhausted" (matches tryAutoResolveColor). Pass includeFrozen=true to require the colour be
+// gone ENTIRELY (a genuine full clear that earns the banner + turn refund).
+function chainClearedColors(alsoRemoved, includeFrozen) {
   if (chainColor === null) return [];
   const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
   const gone = new Set(chainCards);
   if (alsoRemoved) alsoRemoved.forEach(i => gone.add(i));
   return activeColors.filter(color =>
-    !board.some(c => c && !c.special && c.color === color && !gone.has(c.index)));
+    !board.some(c => c && !c.special && (includeFrozen || !c.locked) && c.color === color && !gone.has(c.index)));
 }
 
 // Returns true (and resolves the turn) when a power-up has just added the last

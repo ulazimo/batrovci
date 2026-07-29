@@ -279,27 +279,41 @@ function endTurn(manual, perfectSweep) {
   const combo = matched.length + specialsUsed.length;
   const minCombo = getMinCombo();
 
-  // Colour clear: for each colour we're collecting, is every card of that colour on the
-  // board part of this collect? Measured before removal, so a lone last card counts. A
-  // locked card of that colour still on the board means it is NOT cleared (locked cards
-  // can't be chained, so they'd remain).
+  // How a colour resolves when every card the player can still touch has been collected.
+  // Measured before removal, so a lone last card counts. Two distinct outcomes:
+  //   • FULLY cleared — no card of the colour remains on the board at all, not even a frozen
+  //     (locked / iced / color-locked) one → the "<COLOUR> Cleared" banner + a refunded turn.
+  //   • EXHAUSTED — every INTERACTABLE card of the colour is collected but frozen cards of it
+  //     remain → the chain still collects at ANY length (nothing more the player can do with
+  //     the colour), but with NO banner and NO refund; the frozen cards are still to come.
+  // Both let the collect bypass the combo minimum; only a full clear grants the bonuses.
   const matchedSet = new Set(matched);
   const matchedColors = [...new Set(matched.map(i => board[i]?.color).filter(Boolean))];
-  let clearedColors = matchedColors.filter(color => !board.some(c => c && !c.special && c.color === color && !matchedSet.has(c.index)));
-  // A bomb that revealed the last card of the chain colour forces the clear, even
-  // though its own refill may have since dropped a fresh card of that colour onto the
-  // board (which would otherwise defeat the recompute above). Only honour colours that
-  // are actually part of this collect.
+  const colorLeftOnBoard = (color, countFrozen) =>
+    board.some(c => c && !c.special && (countFrozen || !c.locked) && c.color === color && !matchedSet.has(c.index));
+  let clearedColors = matchedColors.filter(color => !colorLeftOnBoard(color, true));
+  let exhaustedColors = matchedColors.filter(color => !clearedColors.includes(color) && !colorLeftOnBoard(color, false));
+  // A bomb collects AND refills before this runs, so its refill may have dropped a fresh card of
+  // the chain colour, masking the recompute above. The bomb judged the outcome at blast time and
+  // stashed it: bombColorFullyCleared → gone entirely (banner + refund), bombColorClearOverride →
+  // interactables gone (at least collect). Only honour colours that are part of this collect.
   if (bombColorClearOverride && bombColorClearOverride.length) {
-    clearedColors = [...new Set([...clearedColors, ...bombColorClearOverride.filter(c => matchedColors.includes(c))])];
+    const full = new Set((bombColorFullyCleared || []).filter(c => matchedColors.includes(c)));
+    bombColorClearOverride.filter(c => matchedColors.includes(c)).forEach(c => {
+      if (full.has(c)) { if (!clearedColors.includes(c)) clearedColors.push(c); }
+      else if (!exhaustedColors.includes(c)) exhaustedColors.push(c);
+    });
+    exhaustedColors = exhaustedColors.filter(c => !clearedColors.includes(c)); // full clear wins
   }
-  bombColorClearOverride = null;
+  bombColorClearOverride = null; bombColorFullyCleared = null;
   const colorCleared = clearedColors.length > 0;
-  const willCollect = combo >= minCombo || colorCleared;
-  // A colour clear flashes the whole board when the Perfect Sweep Reveal rule is on.
+  const colorExhausted = exhaustedColors.length > 0;
+  const willCollect = combo >= minCombo || colorCleared || colorExhausted;
+  // A full colour clear flashes the whole board when the Perfect Sweep Reveal rule is on.
   const willSweepReveal = (perfectSweep || colorCleared) && isSweepRevealActive();
 
-  // Every resolved turn costs one — but a colour clear refunds it (net zero).
+  // Every resolved turn costs one — but a full colour clear refunds it (net zero). An
+  // "exhausted" collect gets NO refund.
   turns--;
   if (colorCleared) turns++;
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
