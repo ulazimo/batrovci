@@ -1510,71 +1510,448 @@ LEVELS_CLEANINGXL = [
   {
     "id": 26,
     "cols": 5,
-    "rows": 8,
-    "colorCount": 4,
-    "turns": 36,
+    "rows": 5,
+    "colorCount": 5,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "locked": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "colors": [
+      [
+        3,
+        2,
+        "blue"
+      ],
+      [
+        2,
+        1,
+        "blue"
+      ],
+      [
+        1,
+        2,
+        "blue"
+      ],
+      [
+        2,
+        3,
+        "blue"
+      ]
+    ],
+    "colorCounts": {
+      "blue": 4
+    },
+    "backEffects": [
+      [
+        1,
+        4,
+        "cross"
+      ],
+      [
+        1,
+        0,
+        "cross"
+      ],
+      [
+        3,
+        0,
+        "cross"
+      ],
+      [
+        3,
+        4,
+        "cross"
+      ]
     ]
   },
   {
     "id": 27,
-    "cols": 6,
-    "rows": 9,
+    "cols": 5,
+    "rows": 5,
     "colorCount": 4,
-    "turns": 49,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "locked": [
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        3
+      ],
+      [
+        2,
+        2
+      ]
     ]
   },
   {
     "id": 28,
-    "cols": 6,
+    "cols": 5,
     "rows": 9,
-    "colorCount": 4,
-    "turns": 49,
+    "colorCount": 5,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
-    ]
+    ],
+    "locked": [
+      [
+        5,
+        2
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        3
+      ]
+    ],
+    "disabled": [
+      [
+        8,
+        1
+      ],
+      [
+        8,
+        0
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        4
+      ],
+      [
+        7,
+        4
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        8,
+        3
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        5,
+        4
+      ],
+      [
+        8,
+        2
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        7,
+        3
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        2
+      ]
+    ],
+    "colors": [
+      [
+        5,
+        2,
+        "red"
+      ],
+      [
+        6,
+        2,
+        "red"
+      ],
+      [
+        7,
+        2,
+        "red"
+      ],
+      [
+        6,
+        1,
+        "red"
+      ],
+      [
+        6,
+        3,
+        "red"
+      ]
+    ],
+    "colorCounts": {
+      "red": 5
+    }
   },
   {
     "id": 29,
-    "cols": 5,
-    "rows": 8,
-    "colorCount": 4,
-    "turns": 36,
+    "cols": 4,
+    "rows": 6,
+    "colorCount": 5,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "locked": [
+      [
+        3,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        3,
+        1
+      ]
     ]
   },
   {
     "id": 30,
-    "cols": 6,
-    "rows": 9,
-    "colorCount": 4,
-    "turns": 49,
+    "cols": 5,
+    "rows": 5,
+    "colorCount": 5,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "locked": [
+      [
+        4,
+        0
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "colors": [
+      [
+        1,
+        0,
+        "red"
+      ],
+      [
+        0,
+        0,
+        "red"
+      ],
+      [
+        0,
+        1,
+        "red"
+      ],
+      [
+        0,
+        3,
+        "green"
+      ],
+      [
+        0,
+        4,
+        "green"
+      ],
+      [
+        1,
+        4,
+        "green"
+      ],
+      [
+        3,
+        0,
+        "blue"
+      ],
+      [
+        4,
+        0,
+        "blue"
+      ],
+      [
+        4,
+        1,
+        "blue"
+      ],
+      [
+        4,
+        3,
+        "yellow"
+      ],
+      [
+        4,
+        4,
+        "yellow"
+      ],
+      [
+        3,
+        4,
+        "yellow"
+      ]
+    ],
+    "colorCounts": {
+      "orange": 5
+    },
+    "backEffects": [
+      [
+        2,
+        2,
+        "star"
+      ]
     ]
   },
   {
@@ -1607,6 +1984,20 @@ LEVELS_CLEANINGXL = [
   },
   {
     "id": 33,
+    "cols": 6,
+    "rows": 9,
+    "colorCount": 4,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 0,
+    "goals": [
+      {
+        "type": "clearAll"
+      }
+    ]
+  },
+  {
+    "id": 34,
     "cols": 8,
     "rows": 8,
     "colorCount": 4,
@@ -1620,7 +2011,7 @@ LEVELS_CLEANINGXL = [
     ]
   },
   {
-    "id": 34,
+    "id": 35,
     "cols": 5,
     "rows": 8,
     "colorCount": 4,
@@ -1634,7 +2025,7 @@ LEVELS_CLEANINGXL = [
     ]
   },
   {
-    "id": 35,
+    "id": 36,
     "cols": 7,
     "rows": 9,
     "colorCount": 4,
@@ -1648,25 +2039,11 @@ LEVELS_CLEANINGXL = [
     ]
   },
   {
-    "id": 36,
+    "id": 37,
     "cols": 5,
     "rows": 8,
     "colorCount": 4,
     "turns": 36,
-    "clearBoard": true,
-    "deck": 0,
-    "goals": [
-      {
-        "type": "clearAll"
-      }
-    ]
-  },
-  {
-    "id": 37,
-    "cols": 6,
-    "rows": 9,
-    "colorCount": 4,
-    "turns": 49,
     "clearBoard": true,
     "deck": 0,
     "goals": [
@@ -1691,6 +2068,20 @@ LEVELS_CLEANINGXL = [
   },
   {
     "id": 39,
+    "cols": 6,
+    "rows": 9,
+    "colorCount": 4,
+    "turns": 49,
+    "clearBoard": true,
+    "deck": 0,
+    "goals": [
+      {
+        "type": "clearAll"
+      }
+    ]
+  },
+  {
+    "id": 40,
     "cols": 7,
     "rows": 9,
     "colorCount": 4,
@@ -1704,7 +2095,7 @@ LEVELS_CLEANINGXL = [
     ]
   },
   {
-    "id": 40,
+    "id": 41,
     "cols": 8,
     "rows": 9,
     "colorCount": 4,
@@ -1718,7 +2109,7 @@ LEVELS_CLEANINGXL = [
     ]
   },
   {
-    "id": 41,
+    "id": 42,
     "cols": 7,
     "rows": 6,
     "colorCount": 4,
