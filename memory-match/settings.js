@@ -457,7 +457,7 @@ if (!progress.specialInventory) {
 // this must complete before home-room.js reads any of it. Deliberately does NOT
 // depend on LEVELS — that alias isn't set until applyProgression() later.
 // ============================================================
-const PROGRESS_VERSION = 2;
+const PROGRESS_VERSION = 3;
 
 function migrateProgress() {
   const from = progress.progressVersion || 1;
@@ -487,6 +487,35 @@ function migrateProgress() {
         .filter(i => !V2_INSERTED_HALL_LEVEL_INDEXES.includes(i));
     }
     if (typeof progress.seenHall === 'number') progress.seenHall += 1;
+  }
+
+  // v3 — the Sunny Shore and Snow Day halls (the first TWO, covering levels 1–10)
+  // were removed, so Bedroom is now the opening hall and every remaining hall +
+  // its board art shifted DOWN by 2 halls / 10 levels.
+  //
+  // Stars are keyed by level INDEX and the level list itself didn't change, so
+  // nothing is corrupt. Two cosmetic caches are now stale:
+  //   • `seenInstruments` holds level INDEXES whose art has animated in. The art
+  //     that lived at index i is now at index i−10, so an old flag at i marks the
+  //     wrong (new) piece as seen and its tableau never assembles. Re-point each
+  //     flag down by 10; drop the removed halls' indices (0–9) that go negative.
+  //   • `seenHall` is a hall INDEX high-water mark; two halls vanished from the
+  //     front, so it is two too high — shift it down by 2 (clamped, cleared if it
+  //     now points before the first hall).
+  // Constants are hardcoded on purpose — a migration describes the past.
+  if (from < 3) {
+    const V3_REMOVED_HALLS = 2;
+    const V3_REMOVED_LEVELS = 10;
+    if (Array.isArray(progress.seenInstruments)) {
+      progress.seenInstruments = progress.seenInstruments
+        .map(i => i - V3_REMOVED_LEVELS)
+        .filter(i => i >= 0);
+    }
+    if (typeof progress.seenHall === 'number') {
+      const shifted = progress.seenHall - V3_REMOVED_HALLS;
+      if (shifted < 0) delete progress.seenHall;
+      else progress.seenHall = shifted;
+    }
   }
 
   progress.progressVersion = PROGRESS_VERSION;

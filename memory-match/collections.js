@@ -183,86 +183,6 @@ COLLECTIONS = {
         "h": 589
       }
     },
-    "sandcastle": {
-      "name": "Sandcastle",
-      "file": "art/shore/sandcastle.png",
-      "view": {
-        "w": 469,
-        "h": 512
-      }
-    },
-    "beachball": {
-      "name": "Beach Ball",
-      "file": "art/shore/beachball.png",
-      "view": {
-        "w": 502,
-        "h": 512
-      }
-    },
-    "bucketspade": {
-      "name": "Bucket & Spade",
-      "file": "art/shore/bucketspade.png",
-      "view": {
-        "w": 512,
-        "h": 465
-      }
-    },
-    "sailboat": {
-      "name": "Sailboat",
-      "file": "art/shore/sailboat.png",
-      "view": {
-        "w": 374,
-        "h": 512
-      }
-    },
-    "seagull": {
-      "name": "Seagull",
-      "file": "art/shore/seagull.png",
-      "view": {
-        "w": 393,
-        "h": 512
-      }
-    },
-    "snowman": {
-      "name": "Snowman",
-      "file": "art/snow/snowman.png",
-      "view": {
-        "w": 343,
-        "h": 512
-      }
-    },
-    "sled": {
-      "name": "Sled",
-      "file": "art/snow/sled.png",
-      "view": {
-        "w": 512,
-        "h": 367
-      }
-    },
-    "iceskates": {
-      "name": "Ice Skates",
-      "file": "art/snow/iceskates.png",
-      "view": {
-        "w": 512,
-        "h": 499
-      }
-    },
-    "lantern": {
-      "name": "Snow Lantern",
-      "file": "art/snow/lantern.png",
-      "view": {
-        "w": 512,
-        "h": 470
-      }
-    },
-    "robin": {
-      "name": "Robin",
-      "file": "art/snow/robin.png",
-      "view": {
-        "w": 405,
-        "h": 512
-      }
-    },
     "carpet": {
       "name": "Carpet",
       "file": "art/bedroom/board/carpet.png",
@@ -650,98 +570,6 @@ COLLECTIONS = {
   },
   "halls": [
     {
-      "id": "shore",
-      "name": "Sunny Shore",
-      "backdrop": "art/backdrops/sunny-shore.jpeg",
-      "shadow": true,
-      "glow": false,
-      "notes": false,
-      "slots": [
-        {
-          "item": "sandcastle",
-          "levelId": 1,
-          "left": 77.5,
-          "bottom": 30.1,
-          "h": 12
-        },
-        {
-          "item": "beachball",
-          "levelId": 2,
-          "left": 15.6,
-          "bottom": 3.2,
-          "h": 13.6
-        },
-        {
-          "item": "bucketspade",
-          "levelId": 3,
-          "left": 85.8,
-          "bottom": 10.4,
-          "h": 10.3
-        },
-        {
-          "item": "sailboat",
-          "levelId": 4,
-          "left": 31.7,
-          "bottom": 38.5,
-          "h": 9.3
-        },
-        {
-          "item": "seagull",
-          "levelId": 5,
-          "left": 92,
-          "bottom": 41.6,
-          "h": 9.8
-        }
-      ],
-      "floatPx": 0
-    },
-    {
-      "id": "snow",
-      "name": "Snow Day",
-      "backdrop": "art/backdrops/snow-day.jpeg",
-      "shadow": true,
-      "glow": false,
-      "notes": false,
-      "slots": [
-        {
-          "item": "snowman",
-          "levelId": 6,
-          "left": 88,
-          "bottom": 11.8,
-          "h": 19.6
-        },
-        {
-          "item": "sled",
-          "levelId": 7,
-          "left": 18.8,
-          "bottom": 13.6,
-          "h": 12
-        },
-        {
-          "item": "iceskates",
-          "levelId": 8,
-          "left": 55,
-          "bottom": 29.2,
-          "h": 7.9
-        },
-        {
-          "item": "lantern",
-          "levelId": 9,
-          "left": 80.6,
-          "bottom": 33,
-          "h": 8.2
-        },
-        {
-          "item": "robin",
-          "levelId": 10,
-          "left": 19,
-          "bottom": 40.5,
-          "h": 8.3
-        }
-      ],
-      "floatPx": 0
-    },
-    {
       "id": "bedroom",
       "name": "Bedroom",
       "backdrop": "art/bedroom/backdrop.png",
@@ -751,21 +579,21 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "carpet",
-          "levelId": 11,
+          "levelId": 1,
           "left": 39.4,
           "bottom": 22.5,
           "h": 14.5
         },
         {
           "item": "shelf",
-          "levelId": 12,
+          "levelId": 2,
           "left": 49.5,
           "bottom": 60.5,
           "h": 12.0
         },
         {
           "item": "bed",
-          "levelId": 13,
+          "levelId": 3,
           "left": 61.0,
           "bottom": 31.5,
           "h": 28.5
@@ -783,27 +611,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "rockinghorse",
-          "levelId": 14,
+          "levelId": 4,
           "kind": "layer"
         },
         {
           "item": "globe",
-          "levelId": 15,
+          "levelId": 5,
           "kind": "layer"
         },
         {
           "item": "teddybear",
-          "levelId": 16,
+          "levelId": 6,
           "kind": "layer"
         },
         {
           "item": "oillamp",
-          "levelId": 17,
+          "levelId": 7,
           "kind": "layer"
         },
         {
           "item": "trunk",
-          "levelId": 18,
+          "levelId": 8,
           "kind": "layer"
         }
       ]
@@ -818,27 +646,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "kettle",
-          "levelId": 19,
+          "levelId": 9,
           "kind": "layer"
         },
         {
           "item": "pie",
-          "levelId": 20,
+          "levelId": 10,
           "kind": "layer"
         },
         {
           "item": "mixingbowl",
-          "levelId": 21,
+          "levelId": 11,
           "kind": "layer"
         },
         {
           "item": "jamjars",
-          "levelId": 22,
+          "levelId": 12,
           "kind": "layer"
         },
         {
           "item": "cat",
-          "levelId": 23,
+          "levelId": 13,
           "kind": "layer"
         }
       ]
@@ -853,27 +681,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "wateringcan",
-          "levelId": 24,
+          "levelId": 14,
           "kind": "layer"
         },
         {
           "item": "orchid",
-          "levelId": 25,
+          "levelId": 15,
           "kind": "layer"
         },
         {
           "item": "claypots",
-          "levelId": 26,
+          "levelId": 16,
           "kind": "layer"
         },
         {
           "item": "trowelgloves",
-          "levelId": 27,
+          "levelId": 17,
           "kind": "layer"
         },
         {
           "item": "cloche",
-          "levelId": 28,
+          "levelId": 18,
           "kind": "layer"
         }
       ]
@@ -888,27 +716,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "gramophone",
-          "levelId": 29,
+          "levelId": 19,
           "kind": "layer"
         },
         {
           "item": "cello",
-          "levelId": 30,
+          "levelId": 20,
           "kind": "layer"
         },
         {
           "item": "metronome",
-          "levelId": 31,
+          "levelId": 21,
           "kind": "layer"
         },
         {
           "item": "sheetmusic",
-          "levelId": 32,
+          "levelId": 22,
           "kind": "layer"
         },
         {
           "item": "accordion",
-          "levelId": 33,
+          "levelId": 23,
           "kind": "layer"
         }
       ]
@@ -923,27 +751,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "toytrain",
-          "levelId": 34,
+          "levelId": 24,
           "kind": "layer"
         },
         {
           "item": "tinrobot",
-          "levelId": 35,
+          "levelId": 25,
           "kind": "layer"
         },
         {
           "item": "kite",
-          "levelId": 36,
+          "levelId": 26,
           "kind": "layer"
         },
         {
           "item": "jackinthebox",
-          "levelId": 37,
+          "levelId": 27,
           "kind": "layer"
         },
         {
           "item": "toolbox",
-          "levelId": 38,
+          "levelId": 28,
           "kind": "layer"
         }
       ]
@@ -958,27 +786,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "readinglamp",
-          "levelId": 39,
+          "levelId": 29,
           "kind": "layer"
         },
         {
           "item": "bookstack",
-          "levelId": 40,
+          "levelId": 30,
           "kind": "layer"
         },
         {
           "item": "inkwell",
-          "levelId": 41,
+          "levelId": 31,
           "kind": "layer"
         },
         {
           "item": "hourglass",
-          "levelId": 42,
+          "levelId": 32,
           "kind": "layer"
         },
         {
           "item": "telescope",
-          "levelId": 43,
+          "levelId": 33,
           "kind": "layer"
         }
       ]
@@ -993,27 +821,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "palette",
-          "levelId": 44,
+          "levelId": 34,
           "kind": "layer"
         },
         {
           "item": "paintpots",
-          "levelId": 45,
+          "levelId": 35,
           "kind": "layer"
         },
         {
           "item": "brushjar",
-          "levelId": 46,
+          "levelId": 36,
           "kind": "layer"
         },
         {
           "item": "claybust",
-          "levelId": 47,
+          "levelId": 37,
           "kind": "layer"
         },
         {
           "item": "easel",
-          "levelId": 48,
+          "levelId": 38,
           "kind": "layer"
         }
       ]
@@ -1028,27 +856,27 @@ COLLECTIONS = {
       "slots": [
         {
           "item": "yarnbasket",
-          "levelId": 49,
+          "levelId": 39,
           "kind": "layer"
         },
         {
           "item": "sewingmachine",
-          "levelId": 50,
+          "levelId": 40,
           "kind": "layer"
         },
         {
           "item": "pincushion",
-          "levelId": 51,
+          "levelId": 41,
           "kind": "layer"
         },
         {
           "item": "threadspools",
-          "levelId": 52,
+          "levelId": 42,
           "kind": "layer"
         },
         {
           "item": "quiltstack",
-          "levelId": 53,
+          "levelId": 43,
           "kind": "layer"
         }
       ]
@@ -1057,240 +885,180 @@ COLLECTIONS = {
   "boardArt": {
     "cleaningxl": {
       "1": {
-        "item": "sandcastle",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.9
-      },
-      "2": {
-        "item": "beachball",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.9
-      },
-      "3": {
-        "item": "bucketspade",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.86
-      },
-      "4": {
-        "item": "sailboat",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.9
-      },
-      "5": {
-        "item": "seagull",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.9
-      },
-      "6": {
-        "item": "snowman",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.9
-      },
-      "7": {
-        "item": "sled",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.8
-      },
-      "8": {
-        "item": "iceskates",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.86
-      },
-      "9": {
-        "item": "lantern",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.86
-      },
-      "10": {
-        "item": "robin",
-        "cx": 0.5,
-        "cy": 0.5,
-        "h": 0.9
-      },
-      "11": {
         "item": "carpet",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.85
       },
-      "12": {
+      "2": {
         "item": "shelf",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.85
       },
-      "13": {
+      "3": {
         "item": "bed",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.85
       },
-      "14": {
+      "4": {
         "item": "rockinghorse",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "15": {
+      "5": {
         "item": "globe",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "16": {
+      "6": {
         "item": "teddybear",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "17": {
+      "7": {
         "item": "oillamp",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "18": {
+      "8": {
         "item": "trunk",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "19": {
+      "9": {
         "item": "kettle",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "20": {
+      "10": {
         "item": "pie",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "21": {
+      "11": {
         "item": "mixingbowl",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "22": {
+      "12": {
         "item": "jamjars",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "23": {
+      "13": {
         "item": "cat",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "24": {
+      "14": {
         "item": "wateringcan",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "25": {
+      "15": {
         "item": "orchid",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "26": {
+      "16": {
         "item": "claypots",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "27": {
+      "17": {
         "item": "trowelgloves",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "28": {
+      "18": {
         "item": "cloche",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "29": {
+      "19": {
         "item": "gramophone",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "30": {
+      "20": {
         "item": "cello",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "31": {
+      "21": {
         "item": "metronome",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "32": {
+      "22": {
         "item": "sheetmusic",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "33": {
+      "23": {
         "item": "accordion",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "34": {
+      "24": {
         "item": "toytrain",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "35": {
+      "25": {
         "item": "tinrobot",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "36": {
+      "26": {
         "item": "kite",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "37": {
+      "27": {
         "item": "jackinthebox",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.9
       },
-      "38": {
+      "28": {
         "item": "toolbox",
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
       },
-      "39": {
+      "29": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "readinglamp"
       },
-      "40": {
+      "30": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
