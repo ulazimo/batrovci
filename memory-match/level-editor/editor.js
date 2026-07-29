@@ -1073,6 +1073,125 @@ function renderTurnsAdvisor() {
   const resetBtn = box.querySelector('#adv-reset');
   if (easeBtn) easeBtn.addEventListener('click', easeColorDistribution);
   if (resetBtn) resetBtn.addEventListener('click', resetColorDistribution);
+
+  renderDifficultyGraph();
+}
+
+// ============================================================
+// DIFFICULTY CURVE — margin (turns / need) plotted across every level, so you can
+// see the whole progression's shape at a glance instead of one level at a time.
+// The four TURN_MODEL.TIER thresholds paint horizontal zone bands (Too Hard / Hard /
+// Normal / Easy) behind the curve; each level's dot is coloured by its own tier and
+// clicking a dot jumps to that level. Reads the same computeTurnsModel() as the advisor.
+// ============================================================
+const TIER_COLORS = {
+  'tier-bad':    '#ff6b81',   // Too Hard
+  'tier-hard':   '#ffb454',   // Hard
+  'tier-normal': '#67e0a3',   // Normal
+  'tier-easy':   '#4fc3f7',   // Easy
+};
+
+function renderDifficultyGraph() {
+  const box = document.getElementById('difficulty-graph');
+  if (!box) return;
+  if (!levels.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+
+  // One margin per level (same model as the Turns Advisor).
+  const data = levels.map((lvl, i) => {
+    const m = computeTurnsModel(lvl);
+    return { i, id: lvl.id, margin: m.margin, tier: m.tier, tierClass: m.tierClass };
+  });
+
+  const T = TURN_MODEL.TIER;                 // { bad, hard, normal }
+  const maxMargin = data.reduce((mx, d) => Math.max(mx, d.margin), 0);
+  // Give the Easy band headroom above the top threshold; cap so one outlier can't squash the rest.
+  const yMax = Math.min(6, Math.max(T.normal + 0.6, Math.ceil((maxMargin + 0.3) * 2) / 2));
+  const yMin = 0;
+
+  // Layout. Fixed px per level → the SVG grows and the box scrolls horizontally for long journeys.
+  const padL = 46, padR = 14, padT = 8, padB = 26, plotH = 176;
+  const perLevel = 16;
+  const innerW = Math.max((box.clientWidth || 620) - padL - padR - 4, data.length * perLevel);
+  const W = padL + innerW + padR;
+  const H = padT + plotH + padB;
+  const stepX = data.length > 1 ? innerW / (data.length - 1) : 0;
+  const xAt = i => padL + (data.length > 1 ? i * stepX : innerW / 2);
+  const yAt = v => padT + (yMax - Math.min(v, yMax)) / (yMax - yMin) * plotH;
+
+  // Zone bands: [valueLo, valueHi, tierClass, label]. Top band (Easy) is capped at yMax.
+  const zones = [
+    [T.normal, yMax,     'tier-easy',   'Easy'],
+    [T.hard,   T.normal, 'tier-normal', 'Normal'],
+    [T.bad,    T.hard,   'tier-hard',   'Hard'],
+    [yMin,     T.bad,    'tier-bad',    'Too Hard'],
+  ];
+  const bands = zones.map(([lo, hi, cls]) => {
+    const yTop = yAt(hi), yBot = yAt(lo);
+    return `<rect x="${padL}" y="${yTop.toFixed(1)}" width="${innerW}" height="${(yBot - yTop).toFixed(1)}" fill="${TIER_COLORS[cls]}" fill-opacity="0.12"/>`;
+  }).join('');
+
+  // Threshold lines + right-edge value labels.
+  const thresholds = [T.bad, T.hard, T.normal].map(v => {
+    const y = yAt(v).toFixed(1);
+    return `<line x1="${padL}" y1="${y}" x2="${padL + innerW}" y2="${y}" stroke="#ffffff" stroke-opacity="0.14" stroke-dasharray="3 3"/>`
+         + `<text x="${padL - 6}" y="${(+y + 3).toFixed(1)}" text-anchor="end" class="dg-axis">${v.toFixed(2)}×</text>`;
+  }).join('');
+
+  // The curve itself + a subtle fill under it.
+  const linePts = data.map(d => `${xAt(d.i).toFixed(1)},${yAt(d.margin).toFixed(1)}`);
+  const linePath = linePts.length ? `M${linePts.join(' L')}` : '';
+  const areaPath = linePts.length
+    ? `M${xAt(0).toFixed(1)},${(padT + plotH).toFixed(1)} L${linePts.join(' L')} L${xAt(data.length - 1).toFixed(1)},${(padT + plotH).toFixed(1)} Z`
+    : '';
+
+  // Dots (coloured by tier). The selected level gets a white ring; each dot is clickable.
+  const dots = data.map(d => {
+    const cx = xAt(d.i).toFixed(1), cy = yAt(d.margin).toFixed(1);
+    const sel = d.i === selectedLevelIndex;
+    const r = sel ? 5 : 3;
+    const ring = sel ? `<circle cx="${cx}" cy="${cy}" r="${r + 2.5}" fill="none" stroke="#fff" stroke-width="1.6"/>` : '';
+    return `<g class="dg-dot" data-i="${d.i}">`
+         + `<circle cx="${cx}" cy="${cy}" r="9" fill="transparent"/>`   /* fat hit area */
+         + ring
+         + `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${TIER_COLORS[d.tierClass]}" stroke="#0d1226" stroke-width="1"/>`
+         + `<title>Level ${d.id} · ${d.tier} · margin ${d.margin.toFixed(2)}×</title>`
+         + `</g>`;
+  }).join('');
+
+  // X-axis level labels: thin out so they never collide (~every ceil(N/24) levels + last).
+  const stride = Math.max(1, Math.ceil(data.length / 24));
+  const xlabels = data.map((d, k) => {
+    if (k % stride !== 0 && k !== data.length - 1) return '';
+    return `<text x="${xAt(d.i).toFixed(1)}" y="${(padT + plotH + 15).toFixed(1)}" text-anchor="middle" class="dg-axis">${d.id}</text>`;
+  }).join('');
+
+  const legend = zones.slice().reverse().map(([, , cls, label]) =>
+    `<span class="dg-leg"><span class="dg-swatch" style="background:${TIER_COLORS[cls]}"></span>${label}</span>`).join('');
+
+  box.innerHTML = `
+    <div class="dg-head">📈 Difficulty Curve
+      <span class="dg-note">margin = turns ÷ need · per level</span>
+      <span class="dg-legend">${legend}</span>
+    </div>
+    <div class="dg-scroll">
+      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" class="dg-svg">
+        ${bands}
+        ${thresholds}
+        <path d="${areaPath}" fill="#4fc3f7" fill-opacity="0.06"/>
+        <path d="${linePath}" fill="none" stroke="#cdd6f4" stroke-opacity="0.55" stroke-width="1.5"/>
+        ${dots}
+        ${xlabels}
+      </svg>
+    </div>
+  `;
+  box.querySelectorAll('.dg-dot').forEach(g => {
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', () => {
+      const i = +g.getAttribute('data-i');
+      if (i !== selectedLevelIndex) selectLevel(i);
+    });
+  });
 }
 
 // Gently raise the ease skew (raises Pmatch → easier). Never touches turns. Stores an

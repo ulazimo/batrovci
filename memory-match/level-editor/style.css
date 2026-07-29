@@ -249,6 +249,29 @@ body {
 .adv-dist-tag { font-size: 10px; color: #9aa; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 .adv-dist-note { font-size: 10px; color: #778; font-style: italic; }
 .adv-rec .adv-pill#adv-ease { margin-left: auto; }
+
+/* ---- Difficulty Curve ------------------------------------------------- */
+#difficulty-graph {
+  width: 100%; margin-top: 10px; padding: 12px 16px;
+  background: #16213e; border: 1px solid #0f3460; border-radius: 10px;
+  color: #cdd6f4; font-size: 12px;
+  /* editor-content is a centered flex column; align-self:stretch fills its width and
+     min-width:0 lets the oversized SVG scroll inside .dg-scroll instead of blowing the box out. */
+  align-self: stretch; min-width: 0; box-sizing: border-box;
+}
+.dg-head {
+  display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap;
+  font-size: 13px; font-weight: 700; color: #4fc3f7; margin-bottom: 8px;
+}
+.dg-note { font-size: 10px; font-weight: 600; color: #778; text-transform: uppercase; letter-spacing: .5px; }
+.dg-legend { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.dg-leg { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #cdd6f4; }
+.dg-swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.dg-scroll { width: 100%; overflow-x: auto; overflow-y: hidden; }
+.dg-svg { display: block; }
+.dg-axis { fill: #8b93b8; font-size: 10px; font-weight: 600; }
+.dg-dot circle:last-of-type { transition: r .1s; }
+.dg-dot:hover circle:last-of-type { r: 6; }
 .prop select:focus, .prop input:focus { outline: none; border-color: #4fc3f7; }
 .prop input { width: 90px; }
 .prop input::-webkit-inner-spin-button { opacity: 1; }
