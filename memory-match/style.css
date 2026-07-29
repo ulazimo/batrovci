@@ -1,6 +1,31 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ================================================================
+   HALL THEMING — eleven CSS variables re-keyed per hall by applyHallTheme().
+   Defaults = Bedroom (fallback if JS never runs).
+================================================================ */
+#device-frame, :root {
+  --hall-bar:    #7b3c25;
+  --hall-screen: #f7e7cd;
+  --hall-pad:    #eec89e;
+  --hall-panel:  #fbf0dc;
+  --hall-edge:   #e3c49a;
+  --hall-label:  #a97b56;
+  --hall-value:  #7b3c25;
+  --hall-soft:   #c07a3e;
+  --hall-accent: #7b3c25;
+  --hall-badge:  #f5bc62;
+  --hall-chip:   #f0d6ac;
+
+  --card-back:        #fffdf5;
+  --state-win:        #3f8a52;
+  --state-win-shadow: #2c6a3c;
+  --state-fail:       #c0492f;
+  --ink:              #4a2a1c;
+}
+
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: Nunito, system-ui, -apple-system, sans-serif;
   background: #0c0c13; color: #eee; min-height: 100vh; min-height: 100dvh;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   padding: 12px 0;
@@ -25,7 +50,7 @@ body {
   display: flex; flex-direction: column; align-items: center;
   height: min(var(--device-h), calc(100dvh - 72px));
   aspect-ratio: var(--device-aspect); width: auto; max-width: calc(100vw - 16px);
-  background: #16213e; overflow: hidden;
+  background: var(--hall-screen); overflow: hidden;
   border: 12px solid #0a0a0c; border-radius: var(--device-radius);
   box-shadow: 0 18px 50px rgba(0,0,0,.65), inset 0 0 0 2px #1c1c22;
 }
@@ -45,12 +70,12 @@ body {
    LEVEL BANNER + HEADER
 ================================================================ */
 #level-banner {
-  width: 100%; max-width: 500px; background: #0f3460;
+  width: 100%; max-width: 500px; background: var(--hall-bar);
   padding: 5px 16px; display: flex; align-items: center; justify-content: space-between;
 }
-#level-banner .level-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #4fc3f7; text-transform: uppercase; flex:1; }
+#level-banner .level-label { font-size: 11px; font-weight: 900; letter-spacing: 2px; color: rgba(255,255,255,.9); text-transform: uppercase; flex:1; }
 /* level label takes the left half; hearts/coins/gear sit grouped in the right half */
-#level-banner .settings-gear { margin-left: 10px; text-align:right; }
+#level-banner .settings-gear { margin-left: 10px; text-align:right; color: rgba(255,255,255,.9); }
 /* Dev buttons (Fill / Finish) stacked in one column so the pair costs the banner
    no more width than the single Fill button used to — the coin pill + gear to the
    right have no room to spare. */
@@ -68,33 +93,33 @@ body {
 #level-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: #1a3a6a; }
 .lives-pill {
   display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(231,76,60,.3);
-  font-size:14px;font-weight:800;color:#e74c3c;margin-right:6px;
-  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:rgba(255,255,255,.18);border:none;
+  font-size:14px;font-weight:900;color:#fff2e6;margin-right:6px;
+  font-family:Nunito,system-ui,-apple-system,sans-serif;
 }
 .lives-icon { width:14px;height:14px;object-fit:contain; }
 .coin-pill {
   display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,215,0,.3);
-  font-size:14px;font-weight:800;color:#f0c040;
-  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:rgba(255,255,255,.18);border:none;
+  font-size:14px;font-weight:900;color:#fff2e6;
+  font-family:Nunito,system-ui,-apple-system,sans-serif;
 }
 .coin-icon { width:14px;height:14px;object-fit:contain; }
 .coin-pill #coin-count { font-weight:900; }
 
 #header {
   width: 100%; max-width: 500px; display: flex; justify-content: space-between;
-  align-items: center; padding: 10px 16px; background: #16213e; border-bottom: 2px solid #0f3460;
+  align-items: center; padding: 10px 16px; background: var(--hall-panel); border-bottom: 2px solid var(--hall-edge);
 }
 .stat { text-align: center; flex: 1; }
-.stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 2px; }
-.stat-value { font-size: 20px; font-weight: 700; }
-#score-value  { color: #f0c040; }
-#turns-value  { color: #4fc3f7; transition: color .3s, text-shadow .3s; }
-#turns-value.danger { color: #ff4444; text-shadow: 0 0 8px rgba(255,68,68,.6); }
+.stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--hall-label); margin-bottom: 2px; font-weight: 700; }
+.stat-value { font-size: 20px; font-weight: 900; color: var(--hall-value); }
+#score-value  { color: var(--hall-badge); }
+#turns-value  { color: var(--hall-value); transition: color .3s, text-shadow .3s; }
+#turns-value.danger { color: var(--state-fail); text-shadow: none; }
 @keyframes turns-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.25); } }
 #turns-value.danger-pulse { animation: turns-pulse .45s ease-in-out 2; }
-#target-value { color: #aaa; }
+#target-value { color: var(--hall-soft); }
 
 /* Cleaning journeys: the objective is always "clear the board", so hide Score + the
    Goals HUD and show just Turns + Deck, slightly larger, spread across the width. */
@@ -132,13 +157,13 @@ body {
 .collection-pile { position: relative; width: 30px; height: 28px; }
 .collection-tile {
   position: absolute; bottom: 0; left: 0; width: 22px; height: 22px; border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.5);
+  box-shadow: 0 1px 3px rgba(74,42,28,.3);
   transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px));
 }
 .collection-tile.just-collected { animation: collectPop .28s ease-out; }
 @keyframes collectPop { 0% { transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px)) scale(1.5); } 100% { transform: translate(calc(var(--i) * 3px), calc(var(--i) * -3px)) scale(1); } }
-.collection-count { font-size: 17px; font-weight: 800; color: #cfc3e6; }
-.theme-purple .collection-count { color: #e7dcff; }
+.collection-count { font-size: 17px; font-weight: 900; color: var(--hall-value); }
+.theme-purple .collection-count { color: var(--hall-value); }
 
 /* ================================================================
    CHAIN INDICATOR
@@ -146,18 +171,18 @@ body {
 /* Goal HUD */
 #goal-hud {
   width:100%;max-width:500px;display:none;flex-direction:column;gap:6px;
-  padding:10px 14px;background:linear-gradient(180deg,#1a2744,#16213e);
-  border-bottom:2px solid #0f3460;
+  padding:10px 14px;background:var(--hall-panel);
+  border-bottom:2px solid var(--hall-edge);
 }
 #goal-hud .goal-hud-title {
   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
-  color:#4fc3f7;text-align:center;margin-bottom:2px;
+  color:var(--hall-value);text-align:center;margin-bottom:2px;
 }
 #goal-hud .goal-items { display:flex;flex-wrap:wrap;gap:8px;justify-content:center; }
 .goal-pill {
   display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:16px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  font-size:14px;color:#ddd;white-space:nowrap;transition:all .3s;
+  background:var(--hall-chip);border:1px solid var(--hall-edge);
+  font-size:14px;color:var(--hall-value);white-space:nowrap;transition:all .3s;
 }
 .goal-pill.goal-done { background:rgba(46,204,113,.15);border-color:rgba(46,204,113,.4);color:#2ecc71; }
 .goal-pill.goal-fail { background:rgba(231,76,60,.12);border-color:rgba(231,76,60,.35);color:#e74c3c; }
@@ -167,9 +192,9 @@ body {
 .goal-icon { font-size:16px; }
 .goal-text { font-weight:500; }
 .color-swatch { display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;border:1px solid rgba(255,255,255,.3);box-shadow:0 0 4px rgba(0,0,0,.3); }
-.goal-count { font-weight:800;color:#f0c040;font-size:15px; }
+.goal-count { font-weight:800;color:var(--hall-badge);font-size:15px; }
 .goal-pill.goal-done .goal-count { color:#2ecc71; }
-.goal-color-item { font-weight:700;color:#f0c040;transition:color .3s; }
+.goal-color-item { font-weight:700;color:var(--hall-badge);transition:color .3s; }
 .goal-color-item.done { color:#2ecc71; }
 
 /* Marked cards */
@@ -300,7 +325,7 @@ body {
   display:grid;gap:3px;width:140px;margin:4px auto 8px;
 }
 .pre-level-mini-cell {
-  width:100%;aspect-ratio:1;background:#2a2a5a;border-radius:3px;position:relative;
+  width:100%;aspect-ratio:1;background:var(--hall-chip);border-radius:3px;position:relative;
 }
 .pre-level-mini-cell.locked {
   background:#6a4a2a;border:1px solid #f0c040;
@@ -323,17 +348,17 @@ body {
 }
 .pre-level-reward-pill {
   display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;
-  background:rgba(240,192,64,.12);border:1px solid rgba(240,192,64,.35);font-size:12px;font-weight:600;color:#f0c040;
+  background:var(--hall-chip);font-size:12px;font-weight:800;color:var(--hall-value);
 }
 .pre-level-reward-pill .reward-icon { font-size:14px; }
 
 /* Pre-level goals */
 .pre-level-goals { width:100%;padding:0; }
-.pre-level-goal-title { font-size:13px;font-weight:700;color:#4fc3f7;margin:10px 0 8px;text-transform:uppercase;letter-spacing:1px;text-align:center; }
+.pre-level-goal-title { font-size:13px;font-weight:700;color:var(--hall-label);margin:10px 0 8px;text-transform:uppercase;letter-spacing:1px;text-align:center; }
 .pre-level-goal-pills { display:flex;flex-wrap:wrap;gap:6px;justify-content:center; }
 .pre-level-goal-pill {
   display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;
-  background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.3);font-size:14px;font-weight:600;color:#e0e0e0;
+  background:var(--hall-chip);border:none;font-size:14px;font-weight:800;color:var(--hall-value);
 }
 .pre-level-goal-pill .goal-pill-icon { font-size:16px; }
 
@@ -344,10 +369,10 @@ body {
   /* top+bottom total held at 22px so the board and booster bar don't shift; the
      split just slides the chain down — more air above it, less below. */
   margin: 12px auto 10px; display: flex; align-items: center; gap: 14px;
-  padding: 10px 18px; background: rgba(0,0,0,.28); border-radius: 18px;
-  font-size: 13px; font-weight: 600; color: #8b93ad;
+  padding: 10px 18px; background: var(--hall-accent); border-radius: 18px;
+  font-size: 13px; font-weight: 600; color: rgba(255,255,255,.88);
 }
-#chain-indicator.chain-prompt { font-weight: 600; color: #cdd4e6; letter-spacing: .2px; }
+#chain-indicator.chain-prompt { font-weight: 600; color: rgba(255,255,255,.9); letter-spacing: .2px; }
 /* Targeting mode (booster/spotlight): dim the chain in place; the board must not
    move, so the bar keeps its size and the prompt floats above it. */
 .chain-bar.dimmed .chain-label,
@@ -360,8 +385,8 @@ body {
   box-shadow: 0 3px 10px rgba(0,0,0,.4);
 }
 .chain-label {
-  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-  color: #7f879e; text-transform: uppercase; flex-shrink: 0;
+  font-size: 11px; font-weight: 900; letter-spacing: 1.5px;
+  color: rgba(255,255,255,.88); text-transform: uppercase; flex-shrink: 0;
 }
 /* Fixed 5-slot window: 5*30 + 4*8 = 182px. Content clips; the inner track slides. */
 .chain-slots {
@@ -372,7 +397,7 @@ body {
   width: max-content; will-change: transform;
 }
 .chain-slot { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.chain-slot.empty { border: 2px dashed rgba(255,255,255,.22); background: transparent; }
+.chain-slot.empty { border: 2px dashed rgba(255,255,255,.35); background: transparent; }
 .chain-slot.filled { box-shadow: inset 0 -2px 4px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.35); }
 .chain-slot.just-added { animation: chainSlotPop .3s ease-out; }
 @keyframes chainSlotPop { 0% { transform: scale(.4); opacity: .3; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
@@ -432,7 +457,8 @@ body {
 ================================================================ */
 #board-container {
   flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 8px; width: 100%; max-width: 500px; position: relative;
+  padding: 12px 8px; width: 100%; max-width: 500px; position: relative;
+  background: var(--hall-pad);
 }
 #board-row-wrap { display: flex; align-items: stretch; justify-content: center; width: 100%; min-height: 0; }
 #board {
@@ -646,10 +672,10 @@ body {
   border-radius: 14px; display: flex; align-items: center; justify-content: center;
 }
 .card-back {
-  background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
-  border: 2px solid #4a4a7a; box-shadow: inset 0 0 8px rgba(100,100,180,0.3);
+  background: var(--card-back);
+  border: 2px solid var(--hall-edge); box-shadow: 0 2px 4px rgba(74,42,28,.2);
 }
-.card-back::after { content:'?'; font-size:clamp(10px,2.5vw,18px); color:#6a6a9a; font-weight:700; font-size: 2rem; }
+.card-back::after { content:'?'; font-size: 1.7rem; color:#c9a377; font-weight:900; }
 .card-front { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,0.3); }
 .card-front.red, .card-front.green, .card-front.blue, .card-front.yellow, .card-front.orange, .card-front.purple { background: transparent; border: none; }
 .card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
@@ -1002,19 +1028,20 @@ body {
 #booster-bar.highlight { animation:boosterBarPulse 1.5s ease-in-out 3; }
 @keyframes boosterBarPulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 16px 4px rgba(240,192,64,.6), inset 0 0 8px rgba(240,192,64,.3)} }
 .booster-btn {
-  width:calc((100% - 20px) / 6);max-width:72px;aspect-ratio:1;border-radius:12px;
-  border:2px solid #3a3a6a;background:#2a2a4a;cursor:pointer;
+  width:calc((100% - 20px) / 6);max-width:72px;aspect-ratio:1;border-radius:14px;
+  border:2px solid var(--hall-edge);background:var(--card-back);cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:24px;
   position:relative;transition:all .15s;flex-shrink:0;
+  box-shadow: 0 2px 0 var(--hall-edge);
 }
 /* +1 Color carries two glyphs (➕🎨) — shrink them so they fit the tile. */
 .booster-btn[data-booster="pluscolor"] > span:not(.badge) { font-size:16px;letter-spacing:-1px; }
 /* Recall tile reuses .recall-wrap for nudge hooks — stack the 🔄 over its cost. */
 .booster-btn.recall-wrap { flex-direction:column;gap:1px;justify-content:center; }
-.booster-btn:active { transform:scale(.9); }
-.booster-btn.active   { border-color:#f0c040;background:#3a3a5a;box-shadow:0 0 10px rgba(240,192,64,.4); }
+.booster-btn:active { transform:translateY(2px); box-shadow:none; }
+.booster-btn.active   { border-color:var(--hall-badge);background:var(--hall-chip);box-shadow:0 0 10px rgba(240,192,64,.4); }
 .booster-btn.disabled { opacity:.3;pointer-events:none; }
-.booster-btn .badge   { position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:flex;align-items:center;justify-content:center; }
+.booster-btn .badge   { position:absolute;top:-4px;right:-4px;background:var(--hall-badge);color:var(--ink);font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--card-back); }
 /* At capacity (bombs only) — green badge so "full" reads at a glance. */
 .booster-btn.full .badge { background:#2ecc71;color:#fff; }
 .booster-tooltip { display:none;position:fixed;background:#222;color:#ddd;padding:10px 14px;border-radius:8px;font-size:13px;max-width:220px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.6);border:1px solid #444;line-height:1.4;text-align:center; }
@@ -1192,20 +1219,23 @@ body.bomb-aiming #board { touch-action: none; }
 /* ================================================================
    OVERLAYS — base
 ================================================================ */
-.overlay-screen { display:none;position:absolute;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;flex-direction:column; }
+.overlay-screen { display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;flex-direction:column; }
 .overlay-screen.active { display:flex; }
-.overlay-box { background:#16213e;border:1px solid #0f3460;border-radius:16px;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:360px;width:92%;text-align:center; }
-.overlay-box h1 { font-size:26px;font-weight:800; }
-.overlay-box h2 { font-size:20px;font-weight:800; }
-.overlay-box .sub { font-size:14px;color:#aaa; }
-.overlay-btn { padding:12px 32px;font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;color:#fff;transition:transform .15s;width:100%; }
-.overlay-btn:active { transform:scale(.95); }
-.overlay-btn.primary   { background:linear-gradient(135deg,#0f3460,#533483); }
-.overlay-btn.btn-green { background:linear-gradient(135deg,#1a8a4a,#2ecc71);color:#fff; }
+.overlay-box { background:var(--hall-panel);border:2px solid var(--hall-edge);border-radius:20px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:14px;max-width:300px;width:92%;text-align:center;box-shadow:0 8px 20px rgba(74,42,28,.13);color:var(--hall-value);font-family:Nunito,system-ui,sans-serif; }
+.overlay-box h1 { font-size:22px;font-weight:900; }
+.overlay-box h2 { font-size:19px;font-weight:900;color:var(--hall-value); }
+.overlay-box .sub { font-size:13px;color:var(--hall-label);font-weight:700; }
+.overlay-btn { padding:12px 32px;font-size:15px;font-weight:900;border:none;border-radius:12px;cursor:pointer;color:#fff;transition:transform .15s,box-shadow .12s;width:100%;font-family:Nunito,system-ui,sans-serif; }
+.overlay-btn:active { transform:translateY(3px);box-shadow:none; }
+.overlay-btn.primary   { background:var(--state-win);color:#fdf5e6;box-shadow:0 3px 0 var(--state-win-shadow); }
+.overlay-btn.btn-green { background:var(--state-win);color:#fdf5e6;box-shadow:0 3px 0 var(--state-win-shadow); }
 .overlay-btn.btn-green:hover { filter:brightness(1.1); }
-.overlay-btn.btn-red   { background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c; }
-.overlay-btn.btn-red:hover { background:rgba(231,76,60,.25); }
-.overlay-btn.secondary { background:#2a2a4a;border:1px solid #3a3a6a; }
+.overlay-btn.btn-red   { background:transparent;border:2px solid var(--hall-edge);color:var(--hall-value);font-weight:800; }
+.overlay-btn.btn-red:hover { background:rgba(0,0,0,.04); }
+.overlay-btn.secondary { background:transparent;border:2px solid var(--hall-edge);color:var(--hall-value);font-weight:800; }
+.overlay-btn.btn-coin  { background:var(--hall-badge);color:var(--ink);box-shadow:0 3px 0 var(--hall-soft); }
+.overlay-title--win  { color: var(--state-win) !important; }
+.overlay-title--fail { color: var(--state-fail) !important; }
 
 /* Progression picker buttons */
 .prog-pick-btn {
@@ -1262,16 +1292,16 @@ body.bomb-aiming #board { touch-action: none; }
    SETTINGS PANEL
 ================================================================ */
 #settings-panel .overlay-box { max-width:420px;gap:12px; }
-#settings-panel h2 { color:#4fc3f7; }
+#settings-panel h2 { color:var(--hall-value); }
 .settings-list { width:100%;display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow-y:auto;padding-right:4px; }
 .setting-row {
   display:flex;align-items:center;gap:8px;padding:8px 10px;
-  background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.06);
+  background:rgba(0,0,0,.04);border-radius:8px;border:1px solid var(--hall-edge);
 }
 .setting-icon { font-size:20px;flex-shrink:0;width:28px;text-align:center; }
 .setting-info { flex:1;text-align:left;min-width:0; }
-.setting-name { font-size:13px;font-weight:700;color:#ddd; }
-.setting-desc { font-size:10px;color:#888;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.setting-name { font-size:13px;font-weight:700;color:var(--hall-value); }
+.setting-desc { font-size:10px;color:var(--hall-label);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .setting-controls { display:flex;align-items:center;gap:6px;flex-shrink:0; }
 .setting-toggle {
   width:36px;height:20px;border-radius:10px;border:none;cursor:pointer;
@@ -1308,7 +1338,7 @@ body.bomb-aiming #board { touch-action: none; }
 .combo-map-add:hover { background:rgba(79,195,247,.1); }
 
 /* Pre-level overlay */
-.pre-level-streak { font-size:14px; color:#f0c040; margin:8px 0; min-height:20px; }
+.pre-level-streak { font-size:14px; color:var(--hall-badge); margin:8px 0; min-height:20px; }
 .pre-level-streak-breakdown { font-size:11px; color:#888; margin:2px 0 10px; }
 .pre-level-section-title { font-size:13px; font-weight:700; color:#ccc; text-transform:uppercase; letter-spacing:1px; margin:10px 0 6px; }
 .pre-level-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:8px 0; }
