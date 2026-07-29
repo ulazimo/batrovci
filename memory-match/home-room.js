@@ -154,7 +154,7 @@ function showHome() {
   const diff = (typeof levelDifficulty === 'function') ? levelDifficulty(LEVELS[currentLevelIndex]) : null;
   const hard = !!(diff && diff.hard);
   if (playBtn) playBtn.classList.toggle('hard', hard);
-  if (lvlEl)   lvlEl.textContent = (hard ? diff.tier.toUpperCase() + ' ' : '') + 'LEVEL ' + lvlId;
+  if (lvlEl)   lvlEl.textContent = (hard ? 'HARD ' : '') + 'LEVEL ' + lvlId;
 
   renderHomeStreak();
   renderHomeReward();
