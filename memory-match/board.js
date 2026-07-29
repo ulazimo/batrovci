@@ -285,15 +285,26 @@ function breakLockLayer(idx) {
     if (el) {
       const lc = el.querySelector('.lock-count');
       if (lc) lc.textContent = card.lockCount;
-      el.classList.add('lock-crack');
-      el.addEventListener('animationend', () => el.classList.remove('lock-crack'), {once:true});
     }
-    if (cell) decorateLock(cell, card); // refresh the cell counter when the card is shown face-up
+    if (cell) decorateLock(cell, card); // refresh the cell counter (rebuilds .lock-fill when shown face-up)
+    // Shake whatever actually SHOWS the lock — the .lock-fill overlay (revealLockedCards, the
+    // default) or the face-down card itself (rule off) — plus a few fragments, so an adjacent
+    // clear that chips a layer is visible.
+    const fill = cell ? cell.querySelector('.lock-fill') : null;
+    if (fill) { fill.classList.add('lock-fill-crack'); fill.addEventListener('animationend', () => fill.classList.remove('lock-fill-crack'), {once:true}); }
+    else if (el) { el.classList.add('lock-crack'); el.addEventListener('animationend', () => el.classList.remove('lock-crack'), {once:true}); }
+    if (typeof spawnLockShards === 'function') spawnLockShards([idx], 4);
     return false;
   }
   // Final layer broken → fully unlock.
   card.locked = false;
-  if (cell) decorateLock(cell, card); // drop the dark lock overlay — the card is no longer locked
+  // Shatter the visible lock overlay as it goes (revealLockedCards) instead of snapping it away
+  // — animate the existing .lock-fill out, then remove it (revealing the card colour underneath).
+  // With the rule off there's no overlay, so decorateLock just clears the card's lock state.
+  const breakFill = cell ? cell.querySelector('.lock-fill') : null;
+  if (breakFill) { breakFill.classList.add('lock-fill-break'); breakFill.addEventListener('animationend', () => breakFill.remove(), {once:true}); }
+  else if (cell) decorateLock(cell, card);
+  if (typeof spawnLockShards === 'function') spawnLockShards([idx], 9);
   if (el) {
     const lc = el.querySelector('.lock-count');
     if (lc) lc.remove();

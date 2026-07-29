@@ -99,6 +99,29 @@ function spawnIceShards(indices) {
   });
 }
 
+// Lock shatter: a burst of gold fragments from each broken lock cell. Shared by the
+// adjacent-combo break (turn.js) and the bomb break (bank.js) via breakLockLayer.
+function spawnLockShards(indices, count) {
+  const n = count || 9;
+  indices.forEach(idx => {
+    const cell = boardEl.children[idx];
+    if (!cell) return;
+    const r = cell.getBoundingClientRect();
+    if (!r.width) return;
+    for (let i = 0; i < n; i++) {
+      const shard = document.createElement('div');
+      shard.className = 'lock-shard';
+      const dx = (Math.random() - 0.5) * 100;
+      const dy = (Math.random() - 0.4) * 100;
+      shard.style.cssText = `left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px;` +
+        `--dx:${dx}px;--dy:${dy}px;--rot:${(Math.random() - 0.5) * 240}deg;` +
+        `animation-duration:${0.45 + Math.random() * 0.35}s`;
+      document.body.appendChild(shard);
+      setTimeout(() => shard.remove(), 850);
+    }
+  });
+}
+
 // Collected back-effect cards "activate": their icon scales up and slams down over the tile
 // they were collected from, right before the reveal fires (see endTurn). `fired` is
 // [{ idx, effect }] — one large floating icon per collected back-effect card.

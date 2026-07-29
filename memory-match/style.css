@@ -698,6 +698,33 @@ body {
   font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
   border: 1.5px solid #fff; box-shadow: 0 0 6px rgba(240,192,64,.6);
 }
+/* Lock break on the .lock-fill overlay (revealLockedCards). A layer chipped → shake in place;
+   the final layer → flash + pop out, revealing the card colour underneath. The card behind is
+   rotated face-up, so these MUST live on the overlay (not the card) or nothing shows. */
+.lock-fill.lock-fill-crack { animation: lockFillCrack .4s ease; }
+@keyframes lockFillCrack {
+  0%,100% { transform: translate(0,0) rotate(0); }
+  20% { transform: translate(-2px,1px) rotate(-3deg); filter: brightness(1.5); }
+  40% { transform: translate(2px,-1px) rotate(3deg); }
+  60% { transform: translate(-2px,0) rotate(-2deg); filter: brightness(1.4); }
+  80% { transform: translate(2px,1px) rotate(2deg); }
+}
+.lock-fill.lock-fill-break { animation: lockFillBreak .45s ease-out forwards; }
+@keyframes lockFillBreak {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; filter: brightness(1); }
+  15%  { transform: translate(-2px,1px) rotate(-3deg) scale(1.03); filter: brightness(1.6); }
+  30%  { transform: translate(2px,-1px) rotate(3deg) scale(1.06); }
+  45%  { transform: translate(-2px,0) rotate(-2deg) scale(1.09); filter: brightness(1.9); }
+  100% { transform: scale(1.3); opacity: 0; filter: brightness(2.2); }
+}
+/* Flying lock shards (spawnLockShards) — reuses iceShardFly for motion. */
+.lock-shard {
+  position: fixed; width: 10px; height: 10px; z-index: 9999; pointer-events: none;
+  background: linear-gradient(135deg, #ffe9a8, #d18e02);
+  clip-path: polygon(50% 0, 100% 78%, 20% 100%);
+  box-shadow: 0 0 5px rgba(240,192,64,.9);
+  animation: iceShardFly forwards cubic-bezier(.2,.6,.3,1);
+}
 
 /* special cards */
 .card.special { transform: none; }
