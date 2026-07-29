@@ -208,7 +208,7 @@ function detonateBombAt(index, bombType) {
       // Breaking a lock may have completed the breakLocks goal.
       if (checkAllGoalsMet()) { levelWon(); return; }
       // Used the last bomb into a board that still can't progress? Dead end.
-      if (isBoardStuck()) { levelFailed(); return; }
+      if (isBoardStuck()) { levelFailed('stuck'); return; }
       inputLocked = false;
       updateBoosterUI(); updateBankButton(); updateChainIndicator();
     };
@@ -251,7 +251,7 @@ function detonateBombAt(index, bombType) {
         // clear instead of leaving the (now complete) chain dangling.
         if (bombCleared.length > 0) { resolveBombColorClear(); return; }
         // Used the last bomb into a board that still can't progress? Dead end.
-        if (isBoardStuck()) { levelFailed(); return; }
+        if (isBoardStuck()) { levelFailed('stuck'); return; }
         inputLocked = false; updateBoosterUI(); updateBankButton(); updateChainIndicator();
       };
       // Reveal batch: collected back-effect patterns (+ the refilled cards when

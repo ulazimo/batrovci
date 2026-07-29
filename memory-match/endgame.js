@@ -75,7 +75,7 @@ function finishTurn() {
   });
   if (checkAllGoalsMet()) levelWon();
   else if (turns <= 0) levelFailed();
-  else if (isBoardStuck()) levelFailed(); // only locked/iced/color-locked tiles left, no bomb
+  else if (isBoardStuck()) levelFailed('stuck'); // only locked/iced/color-locked tiles left, no bomb
   else revealChainDangerCards();
 }
 
@@ -202,7 +202,10 @@ function showWinOverlay() {
   document.getElementById('overlay-win').classList.add('active');
 }
 
-function levelFailed() {
+// `reason === 'stuck'` means the board has no possible moves (only locked/iced/color-locked
+// tiles left and no bomb) — buying more turns can't change that, so the fail overlay hides the
+// "+5 Turns" purchase in that case.
+function levelFailed(reason) {
   const hadStreak = progress.winStreak;
   _failSavedStreak = hadStreak;   // stash so keepStreak() can restore it
   progress.winStreak = 0;
@@ -224,10 +227,10 @@ function levelFailed() {
   showBoardBanner('fail', '💔 LEVEL FAILED', failBannerSub);
   SFX.fail();
   shakeBoard();
-  setTimeout(() => hideBoardBanner(() => showFailOverlay(hadStreak)), 1800);
+  setTimeout(() => hideBoardBanner(() => showFailOverlay(hadStreak, reason)), 1800);
 }
 
-function showFailOverlay(hadStreak) {
+function showFailOverlay(hadStreak, reason) {
   // Show goal status instead of score/target
   const failSub = document.getElementById('fail-sub');
   if (levelGoals && levelGoals.definitions.length > 0) {
@@ -246,19 +249,25 @@ function showFailOverlay(hadStreak) {
   }
 
   const streakInfo = document.getElementById('fail-streak-info');
-  if (hadStreak > 0) {
-    streakInfo.textContent = `You lost your 🔥 ${hadStreak} win streak!`;
-  } else {
-    streakInfo.textContent = '';
-  }
+  const infoParts = [];
+  if (reason === 'stuck') infoParts.push("No moves left — more turns won't help.");
+  if (hadStreak > 0) infoParts.push(`You lost your 🔥 ${hadStreak} win streak!`);
+  streakInfo.innerHTML = infoParts.join('<br>');
 
-  // Show continue option — disabled if player can't afford it
+  // Continue-with-coins (+5 Turns) — pointless when the board is stuck (no possible moves), so
+  // hide it there. Otherwise show it, disabled when the player can't afford it. The overlay is
+  // reused across levels, so always restore display in the non-stuck path.
   const continueBtn = document.getElementById('keep-streak-btn');
-  const canAfford = (progress.coins || 0) >= KEEP_STREAK_COST;
-  document.getElementById('keep-streak-cost').textContent = KEEP_STREAK_COST;
-  continueBtn.disabled = !canAfford;
-  continueBtn.style.opacity = canAfford ? '1' : '0.4';
-  continueBtn.style.cursor = canAfford ? 'pointer' : 'not-allowed';
+  if (reason === 'stuck') {
+    continueBtn.style.display = 'none';
+  } else {
+    continueBtn.style.display = '';
+    const canAfford = (progress.coins || 0) >= KEEP_STREAK_COST;
+    document.getElementById('keep-streak-cost').textContent = KEEP_STREAK_COST;
+    continueBtn.disabled = !canAfford;
+    continueBtn.style.opacity = canAfford ? '1' : '0.4';
+    continueBtn.style.cursor = canAfford ? 'pointer' : 'not-allowed';
+  }
 
   document.getElementById('overlay-fail').classList.add('active');
 }
