@@ -1,3 +1,11 @@
+> **⚠️ The item half of this file is SUPERSEDED** by `SCENE-LAYERS-PLAN.md`
+> (done 2026-07-29). The five interior halls no longer use separately-rendered,
+> keyed, `left`/`bottom`/`h`-placed items — each item is now painted into the
+> room by a Layer image-edit and detached by pixel-diff (`kind: 'layer'`). The
+> **backdrop recipe here still stands**. Also note this file's model id and its
+> "takes no reference image" claim are about a text-to-image model; editing needs
+> `71f83b71-…` Gemini 3 Pro Image Edit, which does take input images.
+
 # Plan — 5 new interior-room halls (halls 7–11)
 
 > **EXECUTED 2026-07-28.** All 5 backdrops and 25 items are generated, keyed, and

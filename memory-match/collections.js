@@ -305,7 +305,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 482
-      }
+      },
+      "layer": "art/attic/scene/rockinghorse.png"
     },
     "globe": {
       "name": "Antique Globe",
@@ -313,7 +314,8 @@ COLLECTIONS = {
       "view": {
         "w": 362,
         "h": 512
-      }
+      },
+      "layer": "art/attic/scene/globe.png"
     },
     "teddybear": {
       "name": "Teddy Bear",
@@ -321,7 +323,8 @@ COLLECTIONS = {
       "view": {
         "w": 336,
         "h": 512
-      }
+      },
+      "layer": "art/attic/scene/teddybear.png"
     },
     "oillamp": {
       "name": "Oil Lamp",
@@ -329,7 +332,8 @@ COLLECTIONS = {
       "view": {
         "w": 339,
         "h": 512
-      }
+      },
+      "layer": "art/attic/scene/oillamp.png"
     },
     "trunk": {
       "name": "Steamer Trunk",
@@ -337,7 +341,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 422
-      }
+      },
+      "layer": "art/attic/scene/trunk.png"
     },
     "kettle": {
       "name": "Copper Kettle",
@@ -345,7 +350,8 @@ COLLECTIONS = {
       "view": {
         "w": 454,
         "h": 512
-      }
+      },
+      "layer": "art/kitchen/scene/kettle.png"
     },
     "pie": {
       "name": "Apple Pie",
@@ -353,7 +359,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 359
-      }
+      },
+      "layer": "art/kitchen/scene/pie.png"
     },
     "mixingbowl": {
       "name": "Mixing Bowl",
@@ -361,7 +368,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 509
-      }
+      },
+      "layer": "art/kitchen/scene/mixingbowl.png"
     },
     "jamjars": {
       "name": "Jam Jars",
@@ -369,7 +377,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 387
-      }
+      },
+      "layer": "art/kitchen/scene/jamjars.png"
     },
     "cat": {
       "name": "Sleeping Cat",
@@ -377,7 +386,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 410
-      }
+      },
+      "layer": "art/kitchen/scene/cat.png"
     },
     "wateringcan": {
       "name": "Watering Can",
@@ -385,7 +395,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 459
-      }
+      },
+      "layer": "art/greenhouse/scene/wateringcan.png"
     },
     "orchid": {
       "name": "Moth Orchid",
@@ -393,7 +404,8 @@ COLLECTIONS = {
       "view": {
         "w": 375,
         "h": 512
-      }
+      },
+      "layer": "art/greenhouse/scene/orchid.png"
     },
     "claypots": {
       "name": "Clay Pots",
@@ -401,7 +413,8 @@ COLLECTIONS = {
       "view": {
         "w": 312,
         "h": 512
-      }
+      },
+      "layer": "art/greenhouse/scene/claypots.png"
     },
     "trowelgloves": {
       "name": "Trowel & Gloves",
@@ -409,7 +422,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 431
-      }
+      },
+      "layer": "art/greenhouse/scene/trowelgloves.png"
     },
     "cloche": {
       "name": "Glass Cloche",
@@ -417,7 +431,8 @@ COLLECTIONS = {
       "view": {
         "w": 336,
         "h": 512
-      }
+      },
+      "layer": "art/greenhouse/scene/cloche.png"
     },
     "gramophone": {
       "name": "Gramophone",
@@ -425,7 +440,8 @@ COLLECTIONS = {
       "view": {
         "w": 344,
         "h": 512
-      }
+      },
+      "layer": "art/musicroom/scene/gramophone.png"
     },
     "cello": {
       "name": "Cello",
@@ -433,7 +449,8 @@ COLLECTIONS = {
       "view": {
         "w": 204,
         "h": 512
-      }
+      },
+      "layer": "art/musicroom/scene/cello.png"
     },
     "metronome": {
       "name": "Metronome",
@@ -441,7 +458,8 @@ COLLECTIONS = {
       "view": {
         "w": 381,
         "h": 512
-      }
+      },
+      "layer": "art/musicroom/scene/metronome.png"
     },
     "sheetmusic": {
       "name": "Sheet Music",
@@ -449,7 +467,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 470
-      }
+      },
+      "layer": "art/musicroom/scene/sheetmusic.png"
     },
     "accordion": {
       "name": "Accordion",
@@ -457,7 +476,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 346
-      }
+      },
+      "layer": "art/musicroom/scene/accordion.png"
     },
     "toytrain": {
       "name": "Wooden Train",
@@ -465,7 +485,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 469
-      }
+      },
+      "layer": "art/workshop/scene/toytrain.png"
     },
     "tinrobot": {
       "name": "Tin Robot",
@@ -473,7 +494,8 @@ COLLECTIONS = {
       "view": {
         "w": 347,
         "h": 512
-      }
+      },
+      "layer": "art/workshop/scene/tinrobot.png"
     },
     "kite": {
       "name": "Paper Kite",
@@ -481,7 +503,8 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 432
-      }
+      },
+      "layer": "art/workshop/scene/kite.png"
     },
     "jackinthebox": {
       "name": "Jack-in-the-Box",
@@ -489,7 +512,8 @@ COLLECTIONS = {
       "view": {
         "w": 369,
         "h": 512
-      }
+      },
+      "layer": "art/workshop/scene/jackinthebox.png"
     },
     "toolbox": {
       "name": "Toolbox",
@@ -497,7 +521,143 @@ COLLECTIONS = {
       "view": {
         "w": 512,
         "h": 500
-      }
+      },
+      "layer": "art/workshop/scene/toolbox.png"
+    },
+    "readinglamp": {
+      "name": "Banker's Lamp",
+      "file": "art/library/readinglamp.png",
+      "view": {
+        "w": 431,
+        "h": 512
+      },
+      "layer": "art/library/scene/readinglamp.png"
+    },
+    "bookstack": {
+      "name": "Stack of Books",
+      "file": "art/library/bookstack.png",
+      "view": {
+        "w": 512,
+        "h": 466
+      },
+      "layer": "art/library/scene/bookstack.png"
+    },
+    "inkwell": {
+      "name": "Inkwell & Quill",
+      "file": "art/library/inkwell.png",
+      "view": {
+        "w": 441,
+        "h": 512
+      },
+      "layer": "art/library/scene/inkwell.png"
+    },
+    "hourglass": {
+      "name": "Hourglass",
+      "file": "art/library/hourglass.png",
+      "view": {
+        "w": 354,
+        "h": 512
+      },
+      "layer": "art/library/scene/hourglass.png"
+    },
+    "telescope": {
+      "name": "Brass Telescope",
+      "file": "art/library/telescope.png",
+      "view": {
+        "w": 440,
+        "h": 512
+      },
+      "layer": "art/library/scene/telescope.png"
+    },
+    "palette": {
+      "name": "Paint Palette",
+      "file": "art/artstudio/palette.png",
+      "view": {
+        "w": 512,
+        "h": 351
+      },
+      "layer": "art/artstudio/scene/palette.png"
+    },
+    "paintpots": {
+      "name": "Paint Pots",
+      "file": "art/artstudio/paintpots.png",
+      "view": {
+        "w": 512,
+        "h": 500
+      },
+      "layer": "art/artstudio/scene/paintpots.png"
+    },
+    "brushjar": {
+      "name": "Jar of Brushes",
+      "file": "art/artstudio/brushjar.png",
+      "view": {
+        "w": 313,
+        "h": 512
+      },
+      "layer": "art/artstudio/scene/brushjar.png"
+    },
+    "claybust": {
+      "name": "Clay Bust",
+      "file": "art/artstudio/claybust.png",
+      "view": {
+        "w": 447,
+        "h": 512
+      },
+      "layer": "art/artstudio/scene/claybust.png"
+    },
+    "easel": {
+      "name": "Little Easel",
+      "file": "art/artstudio/easel.png",
+      "view": {
+        "w": 347,
+        "h": 512
+      },
+      "layer": "art/artstudio/scene/easel.png"
+    },
+    "yarnbasket": {
+      "name": "Basket of Yarn",
+      "file": "art/sewingroom/yarnbasket.png",
+      "view": {
+        "w": 455,
+        "h": 512
+      },
+      "layer": "art/sewingroom/scene/yarnbasket.png"
+    },
+    "sewingmachine": {
+      "name": "Sewing Machine",
+      "file": "art/sewingroom/sewingmachine.png",
+      "view": {
+        "w": 512,
+        "h": 405
+      },
+      "layer": "art/sewingroom/scene/sewingmachine.png"
+    },
+    "pincushion": {
+      "name": "Pincushion",
+      "file": "art/sewingroom/pincushion.png",
+      "view": {
+        "w": 512,
+        "h": 379
+      },
+      "layer": "art/sewingroom/scene/pincushion.png"
+    },
+    "threadspools": {
+      "name": "Thread Spools",
+      "file": "art/sewingroom/threadspools.png",
+      "view": {
+        "w": 512,
+        "h": 430
+      },
+      "layer": "art/sewingroom/scene/threadspools.png"
+    },
+    "quiltstack": {
+      "name": "Stack of Quilts",
+      "file": "art/sewingroom/quiltstack.png",
+      "view": {
+        "w": 512,
+        "h": 347
+      },
+      "layer": "art/sewingroom/scene/quiltstack.png"
     }
   },
   "halls": [
@@ -627,45 +787,34 @@ COLLECTIONS = {
       "id": "attic",
       "name": "Cozy Attic",
       "backdrop": "art/backdrops/cozy-attic.jpeg",
-      "shadow": true,
+      "shadow": false,
       "glow": false,
       "notes": false,
-      "floatPx": 0,
       "slots": [
         {
           "item": "rockinghorse",
           "levelId": 15,
-          "left": 20,
-          "bottom": 10,
-          "h": 13
+          "kind": "layer"
         },
         {
           "item": "globe",
           "levelId": 16,
-          "left": 10,
-          "bottom": 38,
-          "h": 11
+          "kind": "layer"
         },
         {
           "item": "teddybear",
           "levelId": 17,
-          "left": 62,
-          "bottom": 41,
-          "h": 11
+          "kind": "layer"
         },
         {
           "item": "oillamp",
           "levelId": 18,
-          "left": 89,
-          "bottom": 37,
-          "h": 10
+          "kind": "layer"
         },
         {
           "item": "trunk",
           "levelId": 19,
-          "left": 78,
-          "bottom": 12,
-          "h": 11
+          "kind": "layer"
         }
       ]
     },
@@ -673,45 +822,34 @@ COLLECTIONS = {
       "id": "kitchen",
       "name": "Grandma's Kitchen",
       "backdrop": "art/backdrops/kitchen.jpeg",
-      "shadow": true,
+      "shadow": false,
       "glow": false,
       "notes": false,
-      "floatPx": 0,
       "slots": [
         {
           "item": "kettle",
           "levelId": 20,
-          "left": 13,
-          "bottom": 24,
-          "h": 12
+          "kind": "layer"
         },
         {
           "item": "pie",
           "levelId": 21,
-          "left": 22,
-          "bottom": 40,
-          "h": 10
+          "kind": "layer"
         },
         {
           "item": "mixingbowl",
           "levelId": 22,
-          "left": 50,
-          "bottom": 40,
-          "h": 11
+          "kind": "layer"
         },
         {
           "item": "jamjars",
           "levelId": 23,
-          "left": 84,
-          "bottom": 40,
-          "h": 8
+          "kind": "layer"
         },
         {
           "item": "cat",
           "levelId": 24,
-          "left": 84,
-          "bottom": 10,
-          "h": 10
+          "kind": "layer"
         }
       ]
     },
@@ -719,45 +857,34 @@ COLLECTIONS = {
       "id": "greenhouse",
       "name": "Victorian Greenhouse",
       "backdrop": "art/backdrops/greenhouse.jpeg",
-      "shadow": true,
+      "shadow": false,
       "glow": false,
       "notes": false,
-      "floatPx": 0,
       "slots": [
         {
           "item": "wateringcan",
           "levelId": 25,
-          "left": 18,
-          "bottom": 22,
-          "h": 12
+          "kind": "layer"
         },
         {
           "item": "orchid",
           "levelId": 26,
-          "left": 20,
-          "bottom": 38,
-          "h": 13
+          "kind": "layer"
         },
         {
           "item": "claypots",
           "levelId": 27,
-          "left": 50,
-          "bottom": 41,
-          "h": 13
+          "kind": "layer"
         },
         {
           "item": "trowelgloves",
           "levelId": 28,
-          "left": 82,
-          "bottom": 51,
-          "h": 7
+          "kind": "layer"
         },
         {
           "item": "cloche",
           "levelId": 29,
-          "left": 89,
-          "bottom": 14,
-          "h": 11
+          "kind": "layer"
         }
       ]
     },
@@ -765,45 +892,34 @@ COLLECTIONS = {
       "id": "musicroom",
       "name": "Music Room",
       "backdrop": "art/backdrops/music-room.jpeg",
-      "shadow": true,
+      "shadow": false,
       "glow": false,
       "notes": false,
-      "floatPx": 0,
       "slots": [
         {
           "item": "gramophone",
           "levelId": 30,
-          "left": 44,
-          "bottom": 50,
-          "h": 11
+          "kind": "layer"
         },
         {
           "item": "cello",
           "levelId": 31,
-          "left": 38,
-          "bottom": 20,
-          "h": 26
+          "kind": "layer"
         },
         {
           "item": "metronome",
           "levelId": 32,
-          "left": 18,
-          "bottom": 37,
-          "h": 9
+          "kind": "layer"
         },
         {
           "item": "sheetmusic",
           "levelId": 33,
-          "left": 87,
-          "bottom": 45,
-          "h": 8
+          "kind": "layer"
         },
         {
           "item": "accordion",
           "levelId": 34,
-          "left": 70,
-          "bottom": 10,
-          "h": 10
+          "kind": "layer"
         }
       ]
     },
@@ -811,45 +927,139 @@ COLLECTIONS = {
       "id": "workshop",
       "name": "Toy Workshop",
       "backdrop": "art/backdrops/workshop.jpeg",
-      "shadow": true,
+      "shadow": false,
       "glow": false,
       "notes": false,
-      "floatPx": 0,
       "slots": [
         {
           "item": "toytrain",
           "levelId": 35,
-          "left": 17,
-          "bottom": 10,
-          "h": 12
+          "kind": "layer"
         },
         {
           "item": "tinrobot",
           "levelId": 36,
-          "left": 30,
-          "bottom": 52,
-          "h": 10
+          "kind": "layer"
         },
         {
           "item": "kite",
           "levelId": 37,
-          "left": 57,
-          "bottom": 52,
-          "h": 10
+          "kind": "layer"
         },
         {
           "item": "jackinthebox",
           "levelId": 38,
-          "left": 48,
-          "bottom": 11,
-          "h": 10
+          "kind": "layer"
         },
         {
           "item": "toolbox",
           "levelId": 39,
-          "left": 84,
-          "bottom": 12,
-          "h": 10
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "name": "Cosy Library",
+      "backdrop": "art/backdrops/library.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "readinglamp",
+          "levelId": 40,
+          "kind": "layer"
+        },
+        {
+          "item": "bookstack",
+          "levelId": 41,
+          "kind": "layer"
+        },
+        {
+          "item": "inkwell",
+          "levelId": 42,
+          "kind": "layer"
+        },
+        {
+          "item": "hourglass",
+          "levelId": 43,
+          "kind": "layer"
+        },
+        {
+          "item": "telescope",
+          "levelId": 44,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "artstudio",
+      "name": "Artist's Studio",
+      "backdrop": "art/backdrops/artstudio.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "palette",
+          "levelId": 45,
+          "kind": "layer"
+        },
+        {
+          "item": "paintpots",
+          "levelId": 46,
+          "kind": "layer"
+        },
+        {
+          "item": "brushjar",
+          "levelId": 47,
+          "kind": "layer"
+        },
+        {
+          "item": "claybust",
+          "levelId": 48,
+          "kind": "layer"
+        },
+        {
+          "item": "easel",
+          "levelId": 49,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "sewingroom",
+      "name": "Sewing Room",
+      "backdrop": "art/backdrops/sewingroom.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "yarnbasket",
+          "levelId": 50,
+          "kind": "layer"
+        },
+        {
+          "item": "sewingmachine",
+          "levelId": 51,
+          "kind": "layer"
+        },
+        {
+          "item": "pincushion",
+          "levelId": 52,
+          "kind": "layer"
+        },
+        {
+          "item": "threadspools",
+          "levelId": 53,
+          "kind": "layer"
+        },
+        {
+          "item": "quiltstack",
+          "levelId": 54,
+          "kind": "layer"
         }
       ]
     }
@@ -1089,6 +1299,18 @@ COLLECTIONS = {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
+      },
+      "40": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "readinglamp"
+      },
+      "41": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "bookstack"
       }
     }
   }

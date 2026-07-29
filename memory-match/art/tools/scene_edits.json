@@ -1,0 +1,136 @@
+{
+  "_doc": [
+    "The 25 scene-layer edits. Every prompt = object_line + INTEGRATE + PRESERVE,",
+    "joined by blank lines, in that order.",
+    "",
+    "Verified against Layer on 2026-07-29:",
+    "  model    71f83b71-7918-4258-9e79-02d4f69f2b0d  Gemini 3 Pro Image Edit",
+    "           (NOT 520f3a09 'Gemini 3 Pro Image' — that one is text-to-image only:",
+    "            session_modes ['create'], no guidance_file_types, so it cannot edit.)",
+    "  guidance backdrop as type 'init' + the existing 512px item PNG as",
+    "           type 'editing_reference'. The second reference is NOT optional: with",
+    "           init alone the diff's primary blob was global drift rather than the",
+    "           object in 2 of 4 test runs. It also keeps the hall render on-design",
+    "           with the board-art PNG.",
+    "  size     width 1152 height 2048 (2x the 576x1024 backdrops, same 9:16 aspect)",
+    "  batch    2, then pick per SCENE-LAYERS-PLAN.md",
+    "",
+    "teddybear's object line says 'right of centre': the plan's table claims the",
+    "three-legged stool is at x=33 'left of centre', but the grid and the shipped",
+    "slot (left: 62) both put it right of centre. The plan is wrong there."
+  ],
+  "model_id": "71f83b71-7918-4258-9e79-02d4f69f2b0d",
+  "workspace_id": "6d9da2da-be2f-4189-80f9-54148e55a3ef",
+  "width": 1152,
+  "height": 2048,
+  "batch_size": 2,
+  "_CONFINE_doc": [
+    "Added after the attic pass, inserted between INTEGRATE and PRESERVE.",
+    "PRESERVE already says the room's furniture 'must survive untouched' and the",
+    "model still moved things: the steamer trunk repainted the three-legged stool",
+    "the teddy bear sits on and the wall nook holding the oil lamp (28.8% mask",
+    "overlap), and one globe variant relocated the crate. Both scored clean on",
+    "keep%/spill/margin — only check_hall_layers.py caught them. Naming the",
+    "non-overlap requirement explicitly is what fixed the trunk."
+  ],
+  "_HALLS_9_11_doc": [
+    "library / artstudio / sewingroom (levels 40-54) were authored 2026-07-29 after",
+    "the first-pass Library layers came back clipped: 'at far left' / 'at right' in an",
+    "object_line pushes the object into the band the device crop trims (~10.4% off",
+    "each side on the iPhone frame, ~18% off the top on the iPad). Every one of these",
+    "15 lines therefore ends with an explicit percent-of-width window, and every",
+    "window is inside 12-84%. Surfaces were measured on the v2 backdrops with",
+    "grid_overlay.py --ceiling 60; the per-item plan (surface, x window, painted",
+    "height band) is in RUNLOG-HALLS-9-11.md. Tall items also carry a named scene",
+    "anchor for their ceiling (a cabinet-door top, a curtain hem, a box's top edge)",
+    "rather than a percentage, because the model follows landmarks better than numbers.",
+    "No two items in a hall share a surface except the artstudio trestle table and the",
+    "library desk, and those pairs are separated by at least 4% of the picture width."
+  ],
+  "CONFINE": "Keep the new object clear of every other piece of furniture in the room: it must not overlap, cover, extend behind, or alter anything except the single surface it rests on, and no existing furniture or fitting may be moved, resized, recoloured or redrawn.",
+  "INTEGRATE": "The object must read as having been painted as part of the original scene, not pasted on: match the room's existing art direction, palette and light direction exactly, let the room's light fall across it with the same warmth and softness, and ground it with a soft contact shadow on the surface it rests on. It must sit physically ON that surface with its base in believable contact — not floating above it, not clipping into it.",
+  "PRESERVE": "Return the input image completely unchanged except for the one object described above and the shadow it casts. Do not redraw, recolour, relight, restyle, sharpen, crop or reframe anything else — every existing pixel of the room, its walls, its floor, its furniture, its window light and its framing detail must survive untouched. Do not add any other object, prop, clutter, ornament, text or watermark. Keep the exact input resolution and framing.",
+  "REFERENCE_PREFIX": "The second image is {desc} on a transparent background. Paint that exact object — same design, same colour, same proportions — into the first image, ",
+  "halls": {
+    "attic": {
+      "backdrop": "art/backdrops/cozy-attic.jpeg",
+      "items": {
+        "rockinghorse": {"level": 15, "desc": "a small wooden rocking horse", "object_line": "Add a small wooden rocking horse standing on the bare floorboards in the lower left foreground, in front of the wooden crate, turned three-quarters toward the viewer. It stands about as tall as the crate beside it, and its curved rockers rest flat on the boards."},
+        "globe": {"level": 16, "desc": "a small antique globe on a brass stand", "object_line": "Add a small antique globe on a brass stand sitting on top of the low wooden crate at far left, centred on the crate's lid. It is about two-thirds as wide as the crate's lid."},
+        "teddybear": {"level": 17, "desc": "a plush honey-brown teddy bear", "object_line": "Add a plush honey-brown teddy bear sitting on the seat of the three-legged stool right of centre, facing the viewer, slumped comfortably. It is roughly as tall as the stool's seat is wide, and its bottom and paws settle into contact with the seat."},
+        "oillamp": {"level": 18, "desc": "a brass oil lamp with a clear glass chimney", "object_line": "Add a brass oil lamp with a clear glass chimney standing inside the open shelf nook in the right knee wall, resting on the nook's floor. It is about two-thirds the height of the nook opening, comfortably inside it, and its warm glow spills onto the nook's back and side walls."},
+        "trunk": {"level": 19, "desc": "an old leather-and-brass steamer trunk", "object_line": "Add an old leather-and-brass steamer trunk, lid closed, sitting on the bare floorboards at right, angled three-quarters toward the viewer. It is about as tall as the wooden crate at far left."}
+      }
+    },
+    "kitchen": {
+      "backdrop": "art/backdrops/kitchen.jpeg",
+      "items": {
+        "kettle": {"level": 20, "desc": "a polished copper kettle", "object_line": "Add a polished copper kettle standing on the round wooden stool at far left, centred on the seat. It is about two-thirds the width of the seat — small enough that the seat reads clearly around it."},
+        "pie": {"level": 21, "desc": "a golden latticed apple pie in a ceramic dish", "object_line": "Add a golden latticed apple pie in a ceramic dish resting on the butcher-block counter, left of centre, near the front edge of the counter with its base flat on the wood. It is about as wide as the enamel trivet."},
+        "mixingbowl": {"level": 22, "desc": "a duck-egg-blue ceramic mixing bowl with a wooden spoon in it", "object_line": "Add a duck-egg-blue ceramic mixing bowl with a wooden spoon resting in it, standing on the bare enamel trivet at the centre of the butcher-block counter, seated squarely on the trivet. It is about as wide as the trivet."},
+        "jamjars": {"level": 23, "desc": "three small jars of jam with gingham-covered lids", "object_line": "Add three small jars of jam with gingham-covered lids standing in a row on the bare wooden counter running along the right-hand wall, their bases on the counter top. Each jar is about a third as tall as the cabinet doors below the counter are wide."},
+        "cat": {"level": 24, "desc": "a ginger tabby cat curled up asleep", "object_line": "Add a ginger tabby cat curled up asleep on the terracotta floor tiles at right, in front of the cabinets, its body flattening slightly where it meets the floor. It spans about three floor tiles."}
+      }
+    },
+    "greenhouse": {
+      "backdrop": "art/backdrops/greenhouse.jpeg",
+      "items": {
+        "wateringcan": {"level": 25, "desc": "a weathered galvanised watering can", "object_line": "Add a weathered galvanised watering can standing on the gravel at far left, just in front of the upturned wooden crate, its base settled into the gravel. It is about as tall as the crate."},
+        "orchid": {"level": 26, "desc": "a white moth orchid in a terracotta pot", "object_line": "Add a white moth orchid in a terracotta pot standing on the left arm of the slatted potting bench, its pot base flat on the slats. The pot is about as wide as one bench slat, and the whole plant including the arching flower spike is about twice the pot's height."},
+        "claypots": {"level": 27, "desc": "a small stack of three terracotta plant pots", "object_line": "Add a small stack of three terracotta plant pots resting on the bare bench top across the middle of the frame, under the window, sitting squarely on the slats. The stack is about a third of the bench top's depth in width."},
+        "trowelgloves": {"level": 28, "desc": "a hand trowel and a pair of folded canvas gardening gloves", "object_line": "Add a hand trowel and a pair of folded canvas gardening gloves lying flat on the white wire shelf on the right glazing bar, draped over the wire so the shelf reads through them. Together they fill about two-thirds of the shelf."},
+        "cloche": {"level": 29, "desc": "a bell-shaped glass cloche with a seedling inside", "object_line": "Add a bell-shaped glass cloche standing on the gravel at right, with a small seedling visible inside it, its rim settled into the gravel. It is about as tall as the watering can."}
+      }
+    },
+    "musicroom": {
+      "backdrop": "art/backdrops/music-room.jpeg",
+      "items": {
+        "gramophone": {"level": 30, "desc": "a brass-horned gramophone in a wooden case", "object_line": "Add a brass-horned gramophone in a wooden case standing on top of the low leather sideboard along the left wall, its case flat on the sideboard's top surface. Keep it compact: the very top of its brass horn must stay below the top edge of the green wainscot panelling on the wall behind it."},
+        "cello": {"level": 31, "desc": "a warm-varnished cello", "object_line": "Add a warm-varnished cello resting upright on the patterned rug, leaning back against the front of the leather sideboard just right of the pouf, its endpin in contact with the rug. It reaches about to the top of the sideboard."},
+        "metronome": {"level": 32, "desc": "a small pyramid-shaped wooden metronome", "object_line": "Add a small pyramid-shaped wooden metronome standing on the blue-grey velvet pouf at left, its base pressing a slight dimple into the velvet. It is about half the pouf's width."},
+        "sheetmusic": {"level": 33, "desc": "a loose sheaf of open sheet music", "object_line": "Add a loose sheaf of open sheet music lying on the wall-mounted wooden console shelf at right, its pages resting on the shelf and one corner overhanging the front edge. It covers about two-thirds of the shelf."},
+        "accordion": {"level": 34, "desc": "a red button accordion", "object_line": "Add a red button accordion resting on the herringbone parquet floor at right, standing on its base and angled three-quarters toward the viewer. It is about as tall as the console shelf above is deep, times three."}
+      }
+    },
+    "workshop": {
+      "backdrop": "art/backdrops/workshop.jpeg",
+      "items": {
+        "toytrain": {"level": 35, "desc": "a small painted wooden toy locomotive", "object_line": "Add a small painted wooden toy locomotive standing on the plank floor in the lower left foreground, in front of the sawhorse, turned three-quarters toward the viewer, its wheels touching the planks. It is about as wide as one floor plank."},
+        "tinrobot": {"level": 36, "desc": "a squat boxy retro wind-up tin robot", "object_line": "Add a squat boxy retro wind-up tin robot standing on the workbench top, left of centre, its feet flat on the bench. It is small — no taller than the metal vice mounted on the bench beside it."},
+        "kite": {"level": 37, "desc": "a red diamond paper kite with a ribbon tail", "object_line": "Add a red diamond paper kite with a ribbon tail propped against the front edge of the workbench right of centre, its lower corner resting on the plank floor and its face angled toward the viewer. Its top corner must stay below the level of the workbench top, not rise above it."},
+        "jackinthebox": {"level": 38, "desc": "an open jack-in-the-box, a painted wooden cube with a grinning spring puppet leaning out", "object_line": "Add an open jack-in-the-box — a painted wooden cube with a grinning spring puppet leaning out of it — standing on the workbench top right of centre, the cube flat on the bench. The cube is about as wide as the vice beside it."},
+        "toolbox": {"level": 39, "desc": "a wooden toolbox with a handle", "object_line": "Add a wooden toolbox with a handle sitting on the plank floor at right, angled three-quarters toward the viewer. It is about as wide as two floor planks."}
+      }
+    },
+    "library": {
+      "backdrop": "art/backdrops/library.jpeg",
+      "items": {
+        "readinglamp": {"level": 40, "desc": "a green-shaded brass banker's desk lamp", "object_line": "Add a green-shaded brass banker's desk lamp standing on the leather top of the writing desk, left of centre, its weighted base flat on the leather. Keep it small — about a quarter of the desk top's width — and the top of its green glass shade must stay below the top edge of the closed cabinet doors of the bookcase behind the desk. Position it so the whole lamp sits between 34% and 48% of the picture width measured from the left edge, clear of both side edges."},
+        "bookstack": {"level": 41, "desc": "a stack of three hardback books, a maroon one on a yellow one on a teal one, with a red ribbon bookmark", "object_line": "Add a stack of three hardback books lying on the patterned round rug on the floor in the foreground, in the clear space between the three-legged stool at left and the front of the writing desk, the bottom book flat on the rug. It is about as wide as the stool's seat, and its top stays well below the desk's front edge. Position it so the whole stack sits between 38% and 56% of the picture width measured from the left edge, clear of both side edges."},
+        "inkwell": {"level": 42, "desc": "a glass inkwell with a hinged brass lid and a white quill pen standing in it", "object_line": "Add a glass inkwell with a hinged brass lid and a white quill pen standing in it, sitting on the leather top of the writing desk, right of centre, its base flat on the leather. Keep it small — about a fifth of the desk top's width — and the tip of the quill must stay below the top edge of the closed cabinet doors of the bookcase behind the desk. Position it so the whole object sits between 60% and 73% of the picture width measured from the left edge, clear of both side edges."},
+        "hourglass": {"level": 43, "desc": "a brass-framed hourglass with pale sand", "object_line": "Add a brass-framed hourglass with pale sand standing on the round seat of the three-legged wooden stool at left, centred on the seat and settled flat on it. It is about half the width of the seat and no taller than the seat is wide. Position it so the whole hourglass sits between 15% and 29% of the picture width measured from the left edge, clear of the left edge of the picture."},
+        "telescope": {"level": 44, "desc": "a small brass telescope on a short wooden tripod", "object_line": "Add a small brass telescope on a short wooden tripod standing on the flat bench seat of the window seat at left, at the right-hand end of the bench nearest the hanging curtain, its three tripod feet flat on the bench and its barrel tilted up toward the window. Keep it small — no taller than a tenth of the picture height — and keep it entirely clear of the white cushion behind it, which must not be touched, covered or redrawn. Position it so the whole telescope sits between 18% and 33% of the picture width measured from the left edge, clear of the left edge of the picture.", "_v1": "First pass (inference 668b7e16) said 'on the cushion of the arched window seat, on the right-hand half of the cushion'. Both variants landed at x 4-26% — inside the ~10.4% the iPhone frame trims — and variant a reached 90% of the picture height, b 67%, because 'the cushion' is the upright pillow at x 14-27%/y 48-56%, not the bench seat at 44%. Naming the bench seat and forbidding the cushion is the fix."}
+      }
+    },
+    "artstudio": {
+      "backdrop": "art/backdrops/artstudio.jpeg",
+      "items": {
+        "palette": {"level": 45, "desc": "a wooden artist's palette with dabs of pastel paint and two brushes lying across it", "object_line": "Add a wooden artist's palette with dabs of pastel paint and two brushes lying across it, lying flat on the long trestle table top in the foreground at its right-hand end, flat on the planks with its thumb hole toward the viewer. It is about a fifth of the picture wide. Keep it flat on the table — no part of it may rise as high as the bottom of the open wooden storage box behind it. Position it so the whole palette sits between 62% and 82% of the picture width measured from the left edge, clear of both side edges."},
+        "paintpots": {"level": 46, "desc": "four small glass jars of poster paint — blue, orange, yellow and green — with a brush standing in the orange one", "object_line": "Add four small glass jars of poster paint — blue, orange, yellow and green — with a brush standing in the orange one, grouped together inside the open compartment of the wooden storage box on the right, pushed to the RIGHT-HAND half of that compartment, their bases standing on the compartment's floor. Together they are about a third of the width of the compartment opening and their tops stay comfortably inside it. Position them so the whole group sits between 70% and 86% of the picture width measured from the left edge, and no part of the group may reach left of 70% of the picture width.", "_v1": "First pass (inference ea2c5d55) put them at x 56-89% and variant b's mask shared 15.6% with the easel's, disagreement 80.8 — a real collision: the easel stands on the table directly in front of the compartment's left end, so whichever layer draws last wins there. Pushing the jars into the compartment's right half clears the easel."},
+        "brushjar": {"level": 47, "desc": "a cream ceramic jar holding a fan of paintbrushes", "object_line": "Add a cream ceramic jar holding a fan of paintbrushes standing on the long trestle table top in the foreground, left of centre, its base flat on the planks. The jar is small and narrow — about a twelfth of the picture wide — with the brush handles fanning up above it, and its cast shadow stays tight around its base rather than stretching across the planks. Position it so the whole object, shadow included, sits between 22% and 34% of the picture width measured from the left edge: no part of it may reach left of 20% of the picture width, and no part of it may reach right of 36% of the picture width.", "_v1": "First pass (inference cfe3d50b) asked for 34-44% and landed the jar at x 20-38% with a shadow spreading the mask to 14-45%, which shared 25.7% with the easel's mask (disagreement 49.4). Second pass said 'far LEFT end / 13-27%' and overshot to x 0-25%, putting 38% of the jar's alpha inside the ~10.4% the iPhone frame trims. Third pass brackets it from BOTH sides — the gap between the stool's clipped band and the easel's left foot is only about 14% of the picture wide.", "_v2": "inference 8836c276 — the far-left overshoot described above."},
+        "claybust": {"level": 48, "desc": "a small grey clay bust of a bearded man on a round wooden base", "object_line": "Add a small grey clay bust of a bearded man on a round wooden base standing on the round seat of the paint-splattered wooden stool at left, centred on the seat with its base flat on it. It is about half the width of the seat. Position it so the whole bust sits between 14% and 29% of the picture width measured from the left edge, clear of the left edge of the picture."},
+        "easel": {"level": 49, "desc": "a small wooden tabletop easel holding a blank canvas", "object_line": "Add a small wooden tabletop easel holding a blank canvas standing on the long trestle table top in the foreground, left of the centre of the frame, its feet flat on the planks. Keep it compact: the top of the easel must stay below the top edge of the open wooden storage box on the right. Position it so the whole easel, its shadow included, sits between 32% and 52% of the picture width measured from the left edge — no part of it may reach right of 54% of the picture width, because it must stay completely clear of the open storage box behind it.", "_v1": "First pass (inference c2f94cee) asked for 46-61% and landed a mask at 37-64% x 21-49%. That right edge stands in front of the storage box's open compartment, so it shared 15.6% with the paint pots inside it at disagreement 80.8 — a real collision, and the pots would not move (two firings both put them at x 56-90%, because the compartment is the surface). Moving the easel left of the box instead is what cleared it."}
+      }
+    },
+    "sewingroom": {
+      "backdrop": "art/backdrops/sewingroom.jpeg",
+      "items": {
+        "yarnbasket": {"level": 50, "desc": "a woven wicker basket full of pastel yarn balls with two wooden knitting needles stuck in it", "object_line": "Add a woven wicker basket full of pastel yarn balls with two wooden knitting needles stuck in it, standing on the braided oval rug on the floor in the foreground, in the clear space between the wicker stool at left and the near leg of the work table, its base settled onto the rug. It is about as wide as the stool's seat and its top stays below the level of the work table's lower stretcher rail. Position it so the whole basket sits between 32% and 49% of the picture width measured from the left edge, clear of both side edges."},
+        "sewingmachine": {"level": 51, "desc": "a cream and gold vintage hand-crank sewing machine", "object_line": "Add a cream and gold vintage hand-crank sewing machine standing on the green cutting mat at the centre of the work table, squarely on the mat with its base plate in full contact, turned three-quarters toward the viewer. It is about two-fifths of the picture wide, and the top of its handwheel and spool pin must stay below the bottom hem of the window's lace curtain behind it. Position it so the whole machine sits between 36% and 63% of the picture width measured from the left edge, clear of both side edges."},
+        "pincushion": {"level": 52, "desc": "a plump red tomato pincushion stuck with coloured-head pins, with a small metal thimble beside it", "object_line": "Add a plump red tomato pincushion stuck with coloured-head pins, with a small metal thimble lying beside it, sitting on the white painted window sill on the left-hand half of the sill, its base flattening slightly where it meets the sill. It is about a third of the sill's width. Position it so the whole object sits between 18% and 31% of the picture width measured from the left edge, clear of the left edge of the picture."},
+        "threadspools": {"level": 53, "desc": "a wooden rack of six pastel thread spools", "object_line": "Add a wooden rack of six pastel thread spools standing inside the upper open compartment of the low wooden shelf unit on the right, pushed to the LEFT-HAND end of that compartment, resting on the shelf's floor with its front edge just inside the opening. It is about a third of the width of the compartment opening and its top stays comfortably inside it. Position it so the whole rack sits between 62% and 80% of the picture width measured from the left edge — no part of it may come closer to the right edge of the picture than one-fifth of the picture width.", "_v1": "First pass (inference 69610db3) said 'about half the width of the compartment' with a 64-84% window; variant a landed at 72-94%, past the 85% safe edge, because the compartment itself runs off the right of the frame and the model centred the rack in it. Naming the compartment's left-hand end plus a right-edge keep-out is the fix."},
+        "quiltstack": {"level": 54, "desc": "a neatly folded stack of three pastel patchwork quilts", "object_line": "Add a neatly folded stack of three pastel patchwork quilts resting on the round seat of the wicker stool at left, centred on the seat, the bottom quilt settling softly onto it. It is about four-fifths as wide as the seat. Position it so the whole stack sits between 12% and 29% of the picture width measured from the left edge, clear of the left edge of the picture.", "_shipped_note": "SHIPPED as written (inference ebdcaf34, variant a, extracted at --thresh 26). It lands at x 0-30% with 28% of its alpha inside the ~10.4% the iPhone frame trims, because the wicker stool itself is at x 3-30% — nothing standing on that stool can clear the trim. The alternative was tried and is no better: 'lying on the LOWER open shelf of the shelf unit on the right ... between 63% and 85%' (inference a975fa7a) came back at x 71-96% and x 71-99%, i.e. 28-35% of the alpha past the RIGHT trim, because that compartment runs off the frame. Both of this room's spare surfaces straddle a trimmed edge; the stool at least reads as deliberate framing. Do not re-fire this expecting a win."}
+      }
+    }
+  }
+}
