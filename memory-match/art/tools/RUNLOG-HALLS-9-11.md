@@ -4,13 +4,20 @@
 `check_hall_layers.py`, wired into `collections.json`/`.js` by
 `add_halls_9_11.py`, verified in the real game. Levels **40–54**.
 
-**None of the three reveals anything yet.** They were wired when `cleaningxl` ran
-to 41 levels, and the level rebuild landing in the same push cut it back to **35**,
-so Toy Workshop now shows only its first slot and halls 9–11 show nothing. Verified
-that this degrades gracefully rather than breaking: `slotLevelIndex` returns −1, the
-spot is absent, the hall renders, nothing throws. `boardArt` 36–41 are orphaned and
-deliberately left in place — inert, and correct again the moment those levels exist.
-Re-run `add_halls_9_11.py` after authoring levels 42+ to fill in the rest.
+**Don't trust the level numbers here, or anywhere else.** These halls were wired at
+levels 40–54 against a 41-level journey; within a day the journey went to 35, then
+to 50, and the halls were renumbered to **39–53** by the editor. Any slot past the
+end of the journey simply never reveals, which degrades gracefully by design
+(`slotLevelIndex` returns −1, the spot is absent, nothing throws) — verified at both
+35 and 50 levels. Two things follow:
+
+- `add_halls_9_11.py` now keeps whatever `levelId`s `collections.json` already has,
+  so a re-run cannot undo a renumbering. Re-run it as the journey grows to fill in
+  `boardArt` for the newly-real levels.
+- The **Hall Walkthrough** tab (`level-editor/`, added 2026-07-29) is the live
+  answer: it drives the real game, reveals a hall item by item, and flags per slot
+  whether it can reveal at all, whether its board art exists, and whether its art
+  is inside the current device's crop.
 
 Follows the recipe verified in `RUNLOG.md` (halls 4–8), not the stale one in
 `NEW-HALLS-PLAN.md`. Kept as the reproducibility record: the file_ids and

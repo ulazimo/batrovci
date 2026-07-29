@@ -121,18 +121,35 @@ trowelgloves 45c4ab32-5b83-4ca6-8d65-6bcd609d17a4, cloche 0d608087-f53f-436e-a4a
 musicroom + workshop item PNGs were uploaded by the second pass; their ids are in
 that run's history rather than here (re-upload is cheap if a redo is needed).
 
-## Verified in-game (not via the editor preview)
+## Verified in-game
 
-The level-editor's Collections preview needs a **granted folder** to resolve art, so
-its `#room-backdrop` src stays null over plain HTTP — it cannot verify the art. Use
-the real game instead (`http://localhost:3458/memory-match/index.html`, set
-`progress.stars` in the console and call `renderHall(i)`). All five halls: 5 slots,
+~~The level-editor's Collections preview needs a **granted folder** to resolve art, so
+its `#room-backdrop` src stays null over plain HTTP — it cannot verify the art.~~
+**Both halves of that are wrong** (checked 2026-07-29): the preview resolves art fine
+over plain HTTP — it prefixes paths with `../`, and a granted folder is only needed to
+*write* files on Save. The Collections preview is still the wrong tool for checking
+reveals, but for a different reason: it is a mirror of the renderer and knows nothing
+about `progress.stars` or the pop-in. Use the **Hall Walkthrough** tab, which drives
+the real game in an iframe.
+
+The manual route still works too (`http://localhost:3458/memory-match/index.html`, set
+`progress.stars` in the console and call `renderHall(i)`) — but note `boot()` calls
+`restoreJourneySnapshot()` unconditionally, so stars written only to `progress.stars`
+vanish on reload. Call `saveJourneySnapshot()` as well. All five halls: 5 slots,
 all `spot-layer`, all images loaded, 0 pedestals/shadows, `animationName: none`
 (no bob). Only console errors are Firebase referer blocks, unrelated.
 
-**The dev device-switcher cannot test the crop** — it rescales the phone frame purely
-in CSS, so all four presets report the same visible fraction. Measured by resizing
-the real viewport instead: worst vertical case **75% visible** (highest real object
+~~**The dev device-switcher cannot test the crop** — it rescales the phone frame purely
+in CSS, so all four presets report the same visible fraction.~~ **Also wrong** (checked
+2026-07-29): the switcher sets `--device-aspect` on `#device-frame`, which really does
+change `#room-scene`'s aspect and therefore the crop — iPhone trims 10.4% off each
+side and 0% off the top, iPad 0% and 18.1%, matching the figures below exactly. What
+produces the bogus "same fraction everywhere" reading is measuring
+`getBoundingClientRect()` (the bezel is CSS-scaled to fit) instead of comparing
+`#room-scene.clientWidth/Height` against the cover rect `syncBackdropBox()` writes
+inline on `#room-pedestals`. The Hall Walkthrough tab does the latter and prints it.
+
+Figures below were measured by resizing the real viewport: worst vertical case **75% visible** (highest real object
 is workshop/jackinthebox at 70.8%, so nothing clips), and the iPhone frame trims
 **~10.4% off each side**, which does clip `attic/globe` (object at x≈5–20%). That
 horizontal safe zone is a gap the plan never mentions; see CLAUDE.md §3.

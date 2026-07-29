@@ -1,0 +1,116 @@
+/* Hall Walkthrough tab — see hall-walkthrough.js for what it drives and why. */
+
+#walkthrough-layout {
+  display: grid;
+  /* The middle column is `auto` on purpose: hall-walkthrough.js resizes the
+     iframe per device preset, and the column has to follow it rather than
+     squeeze it — a squeezed frame reports the wrong crop. */
+  grid-template-columns: 290px auto minmax(400px, 1fr);
+  gap: 12px;
+  padding: 12px;
+  align-items: start;
+}
+
+/* ---- left: hall list ---- */
+#wt-hall-panel, #wt-side-panel {
+  background: #12121f; border: 1px solid #262a40; border-radius: 10px; padding: 12px;
+}
+#wt-halls { display: flex; flex-direction: column; gap: 4px; }
+.wt-hall {
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 7px 9px; border-radius: 7px; cursor: pointer;
+  background: #171728; border: 1px solid #262a40; color: #cfd6ea;
+  font-family: inherit; font-size: 12px; transition: all .12s;
+}
+.wt-hall:hover { border-color: #4fc3f7; color: #eaf2ff; }
+.wt-hall.active { background: #0f3460; border-color: #4fc3f7; color: #4fc3f7; }
+.wt-hall-name { font-weight: 600; }
+.wt-hall-meta { font-size: 10.5px; opacity: .7; }
+
+/* ---- centre: the real game ---- */
+#wt-game-panel {
+  background: #0c0c13; border: 1px solid #262a40; border-radius: 10px;
+  overflow: hidden; display: flex; flex-direction: column; align-items: center;
+}
+/* width/height are set from JS per device preset; these are just the first paint. */
+#wt-frame { width: 560px; height: 932px; border: 0; display: block; background: #0c0c13; }
+
+/* ---- right: controls + slot state ---- */
+.wt-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.wt-btn {
+  padding: 7px 11px; border-radius: 7px; cursor: pointer;
+  background: #1a1a2e; border: 1px solid #333a55; color: #c8d2ea;
+  font-family: inherit; font-size: 12px; font-weight: 600; transition: all .12s;
+}
+.wt-btn:hover { border-color: #4fc3f7; color: #eaf2ff; }
+.wt-btn.primary { background: #0f3460; border-color: #4fc3f7; color: #4fc3f7; }
+.wt-btn.warn { border-color: #5a3a3a; color: #e0a2a2; }
+.wt-btn.warn:hover { border-color: #ff7b7b; color: #ffd0d0; }
+
+#wt-devices { display: flex; gap: 5px; }
+.wt-dev {
+  padding: 5px 9px; border-radius: 6px; cursor: pointer; font-size: 11px;
+  background: #171728; border: 1px solid #2b2f47; color: #9aa4c0; font-family: inherit;
+}
+.wt-dev.active { background: #0f3460; border-color: #4fc3f7; color: #4fc3f7; }
+
+.wt-check {
+  display: flex; align-items: center; gap: 6px; font-size: 12px; color: #c8d2ea;
+  padding: 6px 0; cursor: pointer;
+}
+.wt-status {
+  font-size: 11.5px; color: #8fe0a8; background: #12261a; border: 1px solid #1f4630;
+  border-radius: 6px; padding: 6px 8px; margin-bottom: 10px; min-height: 28px;
+}
+.wt-status.bad { color: #ffb3b3; background: #2a1414; border-color: #522; }
+.wt-journey {
+  font-size: 11px; color: #9aa4c0; background: #14141f; border: 1px solid #262a40;
+  border-radius: 6px; padding: 5px 8px; margin-bottom: 10px;
+}
+.wt-muted { color: #7b849c; font-weight: 400; }
+.wt-note { font-size: 11px; color: #7b849c; line-height: 1.5; margin-top: 8px; }
+
+.wt-hall-head {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline;
+  padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #262a40; font-size: 12px;
+}
+.wt-crop { font-size: 11px; color: #4fc3f7; }
+
+#wt-slots { display: flex; flex-direction: column; gap: 4px; }
+.wt-slot {
+  padding: 7px 9px; border-radius: 7px; cursor: pointer;
+  background: #171728; border: 1px solid #262a40; transition: all .12s;
+}
+.wt-slot:hover { border-color: #4fc3f7; }
+.wt-slot.revealed { background: #15251c; border-color: #27492f; }
+.wt-slot-main { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 12px; color: #dfe6f5; }
+.wt-slot-meta {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 3px;
+  font-size: 10.5px; color: #8b93ab;
+}
+.wt-state { display: flex; align-items: center; gap: 4px; }
+.wt-tags { display: flex; gap: 4px; }
+.wt-chip {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em;
+  padding: 1px 5px; border-radius: 4px; background: #232840; color: #93a0c0;
+}
+.wt-chip.sim { background: #3a2c14; color: #e0b877; }
+.wt-chip.warn { background: #3a1c1c; color: #ffb3b3; }
+.wt-dot {
+  width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+  background: #3a4059; border: 1px solid #4a5170;
+}
+.wt-dot.on { background: #4ade80; border-color: #4ade80; }
+.wt-dot.dead { background: #6b2f2f; border-color: #8a3a3a; }
+.wt-fit.ok { color: #6fbf8a; }
+.wt-fit.bad { color: #ffb3b3; }
+
+/* Narrow: keep the CONTROLS beside the hall list and drop the game below, not the
+   other way round — the iPad preset makes the frame 1180px tall, so a side panel
+   underneath it would be a full screen-height of scrolling away from the buttons. */
+@media (max-width: 1560px) {
+  #walkthrough-layout { grid-template-columns: 260px minmax(360px, 1fr); }
+  #wt-hall-panel { grid-column: 1; grid-row: 1; }
+  #wt-side-panel { grid-column: 2; grid-row: 1; }
+  #wt-game-panel { grid-column: 1 / -1; grid-row: 2; align-items: center; }
+}

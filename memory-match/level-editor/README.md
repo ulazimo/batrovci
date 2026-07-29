@@ -1,3 +1,25 @@
+# Checking a hall (Hall Walkthrough tab)
+
+Runs the **real game** in an iframe and walks it hall by hall, so what you see is
+the actual unlock path — not the Collections preview, which is a mirror of the
+renderer and knows nothing about stars or reveal animations.
+
+- **Reveal next item** sets that level's star and re-renders with the pop-in, the
+  same beat a win produces. Click any row to flip one item on its own; **Reset
+  hall** empties it so you can watch the sequence again.
+- The **device buttons** drive the game's own frame, so the `crop now:` line is the
+  real trim for that device (iPhone ~10.4% off each side, iPad ~18% off the top).
+  Each layer row shows the art's own extent measured from its alpha, and flags it
+  when the object falls in the trimmed band — that defect can only be fixed by
+  regenerating the art, so catch it here.
+- **no board art** on a row means the level exists but `boardArt` has no entry, so
+  clearing it reveals the hall item with nothing behind the board.
+- Slots whose `levelId` is past the end of the journey say **no such level** and
+  cannot reveal — that is correct game behaviour for art authored ahead of the
+  levels. Tick **Simulate** to force them for a look; they are still not playable.
+- Revealing writes the real `mm_progress` save. The first write snapshots it and
+  **↩ Restore save** puts your playthrough back.
+
 # Adding a hall (Collections tab)
 
 Open `level-editor/` over HTTP (not `file://`) and pick **Collections**.

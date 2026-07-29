@@ -6,6 +6,7 @@
 <title>Memory Match — Level Editor</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="collections-editor.css">
+<link rel="stylesheet" href="hall-walkthrough.css">
 </head>
 <body>
 
@@ -19,6 +20,7 @@
     <button class="tab-btn active" data-tab="levels">Levels</button>
     <button class="tab-btn" data-tab="progression">Progression</button>
     <button class="tab-btn" data-tab="collections">Collections</button>
+    <button class="tab-btn" data-tab="walkthrough">Hall Walkthrough</button>
   </div>
   <div class="top-bar-right">
     <button id="btn-load" class="bar-btn">📂 Load JSON</button>
@@ -203,7 +205,73 @@
 
 </main>
 
+<!-- TAB: HALL WALKTHROUGH — drives the REAL game in an iframe, so revealing an
+     item exercises progress.stars / seenInstruments / the pop-in exactly as a
+     win does. See hall-walkthrough.js for why this is not built on preview.html. -->
+<main id="walkthrough-layout" data-tab="walkthrough" style="display:none">
+
+  <aside id="wt-hall-panel">
+    <h3 class="panel-title">Halls</h3>
+    <div id="wt-halls"></div>
+    <div class="wt-note">
+      Click a hall to show it. Click any item row to reveal or hide just that one.
+    </div>
+  </aside>
+
+  <section id="wt-game-panel">
+    <iframe id="wt-frame" title="Memory Match"></iframe>
+  </section>
+
+  <aside id="wt-side-panel">
+    <div id="wt-status" class="wt-status">opening the game…</div>
+    <div id="wt-journey" class="wt-journey"></div>
+
+    <div class="wt-row">
+      <button id="wt-prev" class="wt-btn">◀ Hall</button>
+      <button id="wt-next" class="wt-btn">Hall ▶</button>
+      <button id="wt-reveal" class="wt-btn primary">✨ Reveal next item</button>
+    </div>
+    <div class="wt-row">
+      <button id="wt-reveal-all" class="wt-btn">Reveal all</button>
+      <button id="wt-hide" class="wt-btn">Reset hall</button>
+      <button id="wt-replay" class="wt-btn">↻ Replay pop-in</button>
+      <button id="wt-celebrate" class="wt-btn">🎉 Hall complete</button>
+    </div>
+    <div class="wt-row" id="wt-devices">
+      <button class="wt-dev active" data-device="ip15pro">iPhone 15 Pro</button>
+      <button class="wt-dev" data-device="galaxys24p">Galaxy S24+</button>
+      <button class="wt-dev" data-device="pixel8">Pixel 8</button>
+      <button class="wt-dev" data-device="ipad">iPad</button>
+    </div>
+
+    <label class="wt-check">
+      <input type="checkbox" id="wt-simulate">
+      Simulate slots whose level doesn't exist yet
+    </label>
+
+    <div class="wt-row">
+      <button id="wt-reload" class="wt-btn">⟳ Reload game</button>
+      <button id="wt-reset-all" class="wt-btn warn">Clear all halls</button>
+      <button id="wt-restore" class="wt-btn warn">↩ Restore save</button>
+    </div>
+
+    <h3 class="panel-title">Items in this hall</h3>
+    <div id="wt-slots"></div>
+
+    <div class="wt-note">
+      Revealing writes the real save (<code>mm_progress</code>), because that is the
+      path being tested. The first write snapshots it — <b>↩ Restore save</b> puts
+      your playthrough back.<br>
+      <b>x … / top …</b> is the art's own extent, measured from its alpha, checked
+      against the crop the selected device actually applies. A ⚠ there means the
+      object is cut off on that device and only regenerating the art fixes it.
+    </div>
+  </aside>
+
+</main>
+
 <script src="editor.js"></script>
 <script src="collections-editor.js"></script>
+<script src="hall-walkthrough.js"></script>
 </body>
 </html>

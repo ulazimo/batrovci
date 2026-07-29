@@ -23,20 +23,22 @@ Each hall gets `shadow/glow/notes: false`: all three are inert for a layer slot,
 and a stale `shadow: true` reads as "this hall draws a contact ellipse" when the
 shadow is painted into the art.
 
-**boardArt is written only for levels that exist** in levels_cleaningxl.json when
-the script runs. The three halls cover levels 40-54 but the live journey is
-mid-rebuild and ends well short of that, so the rest get a hall slot (which
-`slotLevelIndex` resolves to -1 and simply never reveals) and no board art.
-Fabricating board art for a level that does not exist would be dead data that
-looks live. Re-run the script once those levels are authored; it is idempotent.
+**boardArt is written only for levels that exist** in levels_cleaningxl.json at the
+moment the script runs. These halls were authored ahead of the levels, and the
+journey's length keeps moving as levels are added and deleted, so anything past its
+end gets a hall slot (which `slotLevelIndex` resolves to -1 and simply never
+reveals) and no board art. Fabricating board art for a level that does not exist
+would be dead data that looks live. Re-run the script whenever the journey grows;
+it is idempotent, and the Hall Walkthrough tab flags any slot still missing its
+board art.
 
 The reverse case — an entry **orphaned later** by a level deletion — is left
 alone, both here and by hand: it is inert (a level that cannot be played is never
-looked up) and it correctly pre-wires that level if it comes back. 36-41 are
-orphaned as of 2026-07-29, when the journey was cut back to 35 levels.
+looked up) and it correctly pre-wires that level if it comes back.
 
-Idempotent: re-running rewrites the same three halls in place rather than
-appending them twice.
+Idempotent, and safe to re-run against a re-authored level map: it rewrites the
+same three halls in place, keeping whatever `levelId`s collections.json already
+has (see the note in main()).
 
 Writes both twins byte-identically to what the level-editor's Collections tab
 produces:
@@ -139,6 +141,26 @@ def main():
     coll = load(JSON_PATH)
     new_ids = {h["id"] for h in HALLS}
     existing = {h["id"] for h in coll["halls"]}
+    by_id = {h["id"]: h for h in coll["halls"]}
+
+    # LEVEL IDS BELONG TO THE DATA, NOT TO THIS SCRIPT.
+    # The `first` values below are only a seed for creating a hall that does not
+    # exist yet. Once it exists, whatever collections.json says wins: the level map
+    # is re-authored constantly (these three halls were renumbered from 40/45/50 to
+    # 39/44/49 by the editor within a day of being added), and a re-run that reset
+    # them to the seed would silently undo that — and `progress.stars` /
+    # `seenInstruments` are keyed by level INDEX, so it would also change what every
+    # existing save means. See ../../CLAUDE.md §10 on migrations.
+    for spec in HALLS:
+        hall = by_id.get(spec["id"])
+        if not hall or not hall.get("slots"):
+            continue
+        ids = [s["levelId"] for s in hall["slots"]]
+        if ids != [spec["first"] + i for i in range(len(spec["items"]))]:
+            print("  %-11s keeping the level ids already in collections.json: %s (seed said %d-%d)"
+                  % (spec["id"], ids, spec["first"], spec["first"] + len(spec["items"]) - 1))
+            spec["first"] = ids[0]
+            spec["level_ids"] = ids
 
     levels = load(LEVELS_PATH)
     level_ids = {lv["id"] for lv in (levels["levels"] if isinstance(levels, dict) else levels)}
@@ -152,7 +174,7 @@ def main():
         bw, bh = Image.open(backdrop).size
 
         for i, (key, name) in enumerate(spec["items"]):
-            level = spec["first"] + i
+            level = spec.get("level_ids", [spec["first"] + j for j in range(len(spec["items"]))])[i]
             tight_rel = "art/%s/%s.png" % (spec["id"], key)
             layer_rel = "art/%s/scene/%s.png" % (spec["id"], key)
             tight_abs, layer_abs = os.path.join(MM, tight_rel), os.path.join(MM, layer_rel)
@@ -221,16 +243,20 @@ def main():
             "shadow": False,
             "glow": False,
             "notes": False,
-            "slots": [{"item": key, "levelId": spec["first"] + i, "kind": "layer"}
-                      for i, (key, _) in enumerate(spec["items"])],
+            "slots": [
+                {"item": key,
+                 "levelId": spec.get("level_ids", [spec["first"] + j for j in range(len(spec["items"]))])[i],
+                 "kind": "layer"}
+                for i, (key, _) in enumerate(spec["items"])],
         }
         if spec["id"] in halls_by_id:                     # idempotent re-run
             coll["halls"][coll["halls"].index(halls_by_id[spec["id"]])] = hall
             print("hall %-11s %-18s replaced in place" % (spec["id"], spec["name"]))
         else:
             coll["halls"].append(hall)
+            lv = spec.get("level_ids", [spec["first"] + j for j in range(len(spec["items"]))])
             print("hall %-11s %-18s appended (levels %d-%d)"
-                  % (spec["id"], spec["name"], spec["first"], spec["first"] + 4))
+                  % (spec["id"], spec["name"], lv[0], lv[-1]))
 
     print("\n%d halls, %d slots, %d items, %d boardArt entries"
           % (len(HALLS), len(plan), len(coll["items"]), len(plan) - len(skipped)))
