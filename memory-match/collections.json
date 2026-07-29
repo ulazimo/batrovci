@@ -562,6 +562,303 @@
         "h": 347
       },
       "layer": "art/sewingroom/scene/quiltstack.png"
+    },
+    "typewriter": {
+      "name": "Vintage Typewriter",
+      "file": "art/study/typewriter.png",
+      "view": {
+        "w": 512,
+        "h": 383
+      },
+      "layer": "art/study/scene/typewriter.png"
+    },
+    "letterbundle": {
+      "name": "Bundle of Letters",
+      "file": "art/study/letterbundle.png",
+      "view": {
+        "w": 512,
+        "h": 423
+      },
+      "layer": "art/study/scene/letterbundle.png"
+    },
+    "fountainpen": {
+      "name": "Fountain Pen & Journal",
+      "file": "art/study/fountainpen.png",
+      "view": {
+        "w": 512,
+        "h": 417
+      },
+      "layer": "art/study/scene/fountainpen.png"
+    },
+    "deskclock": {
+      "name": "Brass Carriage Clock",
+      "file": "art/study/deskclock.png",
+      "view": {
+        "w": 370,
+        "h": 512
+      },
+      "layer": "art/study/scene/deskclock.png"
+    },
+    "candlestick": {
+      "name": "Candlestick",
+      "file": "art/study/candlestick.png",
+      "view": {
+        "w": 467,
+        "h": 512
+      },
+      "layer": "art/study/scene/candlestick.png"
+    },
+    "paperweight": {
+      "name": "Glass Paperweight",
+      "file": "art/study/paperweight.png",
+      "view": {
+        "w": 506,
+        "h": 512
+      },
+      "layer": "art/study/scene/paperweight.png"
+    },
+    "magnifyingglass": {
+      "name": "Magnifying Glass",
+      "file": "art/study/magnifyingglass.png",
+      "view": {
+        "w": 512,
+        "h": 428
+      },
+      "layer": "art/study/scene/magnifyingglass.png"
+    },
+    "musicbox": {
+      "name": "Musical Carousel",
+      "file": "art/nursery/musicbox.png",
+      "view": {
+        "w": 512,
+        "h": 504
+      },
+      "layer": "art/nursery/scene/musicbox.png"
+    },
+    "nightlight": {
+      "name": "Moon Nightlight",
+      "file": "art/nursery/nightlight.png",
+      "view": {
+        "w": 459,
+        "h": 512
+      },
+      "layer": "art/nursery/scene/nightlight.png"
+    },
+    "blocks": {
+      "name": "Alphabet Blocks",
+      "file": "art/nursery/blocks.png",
+      "view": {
+        "w": 512,
+        "h": 492
+      },
+      "layer": "art/nursery/scene/blocks.png"
+    },
+    "plushbunny": {
+      "name": "Plush Bunny",
+      "file": "art/nursery/plushbunny.png",
+      "view": {
+        "w": 421,
+        "h": 512
+      },
+      "layer": "art/nursery/scene/plushbunny.png"
+    },
+    "rattle": {
+      "name": "Ring Rattle",
+      "file": "art/nursery/rattle.png",
+      "view": {
+        "w": 512,
+        "h": 502
+      },
+      "layer": "art/nursery/scene/rattle.png"
+    },
+    "babyshoes": {
+      "name": "Baby Bootees",
+      "file": "art/nursery/babyshoes.png",
+      "view": {
+        "w": 512,
+        "h": 461
+      },
+      "layer": "art/nursery/scene/babyshoes.png"
+    },
+    "winebottles": {
+      "name": "Crate of Wine",
+      "file": "art/winecellar/winebottles.png",
+      "view": {
+        "w": 512,
+        "h": 492
+      },
+      "layer": "art/winecellar/scene/winebottles.png"
+    },
+    "decanter": {
+      "name": "Wine Decanter",
+      "file": "art/winecellar/decanter.png",
+      "view": {
+        "w": 302,
+        "h": 512
+      },
+      "layer": "art/winecellar/scene/decanter.png"
+    },
+    "cheesewheel": {
+      "name": "Cheese Wheel",
+      "file": "art/winecellar/cheesewheel.png",
+      "view": {
+        "w": 512,
+        "h": 377
+      },
+      "layer": "art/winecellar/scene/cheesewheel.png"
+    },
+    "corkscrew": {
+      "name": "Brass Corkscrew",
+      "file": "art/winecellar/corkscrew.png",
+      "view": {
+        "w": 512,
+        "h": 423
+      },
+      "layer": "art/winecellar/scene/corkscrew.png"
+    },
+    "grapebasket": {
+      "name": "Basket of Grapes",
+      "file": "art/winecellar/grapebasket.png",
+      "view": {
+        "w": 509,
+        "h": 512
+      },
+      "layer": "art/winecellar/scene/grapebasket.png"
+    },
+    "cellarlantern": {
+      "name": "Cellar Lantern",
+      "file": "art/winecellar/cellarlantern.png",
+      "view": {
+        "w": 338,
+        "h": 512
+      },
+      "layer": "art/winecellar/scene/cellarlantern.png"
+    },
+    "oldledger": {
+      "name": "Cellar Ledger",
+      "file": "art/winecellar/oldledger.png",
+      "view": {
+        "w": 512,
+        "h": 430
+      },
+      "layer": "art/winecellar/scene/oldledger.png"
+    },
+    "teaset": {
+      "name": "Wicker Tea Set",
+      "file": "art/sunroom/teaset.png",
+      "view": {
+        "w": 512,
+        "h": 374
+      },
+      "layer": "art/sunroom/scene/teaset.png"
+    },
+    "birdcage": {
+      "name": "Wire Birdcage",
+      "file": "art/sunroom/birdcage.png",
+      "view": {
+        "w": 425,
+        "h": 512
+      },
+      "layer": "art/sunroom/scene/birdcage.png"
+    },
+    "parasol": {
+      "name": "Lace Parasol",
+      "file": "art/sunroom/parasol.png",
+      "view": {
+        "w": 463,
+        "h": 512
+      },
+      "layer": "art/sunroom/scene/parasol.png"
+    },
+    "croquetset": {
+      "name": "Croquet Set",
+      "file": "art/sunroom/croquetset.png",
+      "view": {
+        "w": 483,
+        "h": 512
+      },
+      "layer": "art/sunroom/scene/croquetset.png"
+    },
+    "sundial": {
+      "name": "Garden Sundial",
+      "file": "art/sunroom/sundial.png",
+      "view": {
+        "w": 367,
+        "h": 512
+      },
+      "layer": "art/sunroom/scene/sundial.png"
+    },
+    "gardenhat": {
+      "name": "Sun Hat",
+      "file": "art/sunroom/gardenhat.png",
+      "view": {
+        "w": 512,
+        "h": 327
+      },
+      "layer": "art/sunroom/scene/gardenhat.png"
+    },
+    "pocketwatch": {
+      "name": "Pocket Watch",
+      "file": "art/curiosityshop/pocketwatch.png",
+      "view": {
+        "w": 512,
+        "h": 499
+      },
+      "layer": "art/curiosityshop/scene/pocketwatch.png"
+    },
+    "trinketbox": {
+      "name": "Trinket Box",
+      "file": "art/curiosityshop/trinketbox.png",
+      "view": {
+        "w": 501,
+        "h": 512
+      },
+      "layer": "art/curiosityshop/scene/trinketbox.png"
+    },
+    "mantelclock": {
+      "name": "Mantel Clock",
+      "file": "art/curiosityshop/mantelclock.png",
+      "view": {
+        "w": 482,
+        "h": 512
+      },
+      "layer": "art/curiosityshop/scene/mantelclock.png"
+    },
+    "compass": {
+      "name": "Ship's Compass",
+      "file": "art/curiosityshop/compass.png",
+      "view": {
+        "w": 512,
+        "h": 469
+      },
+      "layer": "art/curiosityshop/scene/compass.png"
+    },
+    "mapscroll": {
+      "name": "Rolled Map",
+      "file": "art/curiosityshop/mapscroll.png",
+      "view": {
+        "w": 267,
+        "h": 512
+      },
+      "layer": "art/curiosityshop/scene/mapscroll.png"
+    },
+    "stampalbum": {
+      "name": "Stamp Album",
+      "file": "art/curiosityshop/stampalbum.png",
+      "view": {
+        "w": 512,
+        "h": 385
+      },
+      "layer": "art/curiosityshop/scene/stampalbum.png"
+    },
+    "antiquekey": {
+      "name": "Skeleton Key",
+      "file": "art/curiosityshop/antiquekey.png",
+      "view": {
+        "w": 456,
+        "h": 512
+      },
+      "layer": "art/curiosityshop/scene/antiquekey.png"
     }
   },
   "halls": [
@@ -876,6 +1173,221 @@
           "kind": "layer"
         }
       ]
+    },
+    {
+      "id": "study",
+      "name": "Writer's Study",
+      "backdrop": "art/backdrops/study.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "typewriter",
+          "levelId": 55,
+          "kind": "layer"
+        },
+        {
+          "item": "letterbundle",
+          "levelId": 56,
+          "kind": "layer"
+        },
+        {
+          "item": "fountainpen",
+          "levelId": 57,
+          "kind": "layer"
+        },
+        {
+          "item": "deskclock",
+          "levelId": 58,
+          "kind": "layer"
+        },
+        {
+          "item": "candlestick",
+          "levelId": 59,
+          "kind": "layer"
+        },
+        {
+          "item": "paperweight",
+          "levelId": 60,
+          "kind": "layer"
+        },
+        {
+          "item": "magnifyingglass",
+          "levelId": 61,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "nursery",
+      "name": "Nursery",
+      "backdrop": "art/backdrops/nursery.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "musicbox",
+          "levelId": 62,
+          "kind": "layer"
+        },
+        {
+          "item": "nightlight",
+          "levelId": 63,
+          "kind": "layer"
+        },
+        {
+          "item": "blocks",
+          "levelId": 64,
+          "kind": "layer"
+        },
+        {
+          "item": "plushbunny",
+          "levelId": 65,
+          "kind": "layer"
+        },
+        {
+          "item": "rattle",
+          "levelId": 66,
+          "kind": "layer"
+        },
+        {
+          "item": "babyshoes",
+          "levelId": 67,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "winecellar",
+      "name": "Wine Cellar",
+      "backdrop": "art/backdrops/winecellar.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "winebottles",
+          "levelId": 68,
+          "kind": "layer"
+        },
+        {
+          "item": "decanter",
+          "levelId": 69,
+          "kind": "layer"
+        },
+        {
+          "item": "cheesewheel",
+          "levelId": 70,
+          "kind": "layer"
+        },
+        {
+          "item": "corkscrew",
+          "levelId": 71,
+          "kind": "layer"
+        },
+        {
+          "item": "grapebasket",
+          "levelId": 72,
+          "kind": "layer"
+        },
+        {
+          "item": "cellarlantern",
+          "levelId": 73,
+          "kind": "layer"
+        },
+        {
+          "item": "oldledger",
+          "levelId": 74,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "sunroom",
+      "name": "Sunroom",
+      "backdrop": "art/backdrops/sunroom.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "teaset",
+          "levelId": 75,
+          "kind": "layer"
+        },
+        {
+          "item": "birdcage",
+          "levelId": 76,
+          "kind": "layer"
+        },
+        {
+          "item": "parasol",
+          "levelId": 77,
+          "kind": "layer"
+        },
+        {
+          "item": "croquetset",
+          "levelId": 78,
+          "kind": "layer"
+        },
+        {
+          "item": "sundial",
+          "levelId": 79,
+          "kind": "layer"
+        },
+        {
+          "item": "gardenhat",
+          "levelId": 80,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "curiosityshop",
+      "name": "Curiosity Shop",
+      "backdrop": "art/backdrops/curiosityshop.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "pocketwatch",
+          "levelId": 81,
+          "kind": "layer"
+        },
+        {
+          "item": "trinketbox",
+          "levelId": 82,
+          "kind": "layer"
+        },
+        {
+          "item": "mantelclock",
+          "levelId": 83,
+          "kind": "layer"
+        },
+        {
+          "item": "compass",
+          "levelId": 84,
+          "kind": "layer"
+        },
+        {
+          "item": "mapscroll",
+          "levelId": 85,
+          "kind": "layer"
+        },
+        {
+          "item": "stampalbum",
+          "levelId": 86,
+          "kind": "layer"
+        },
+        {
+          "item": "antiquekey",
+          "levelId": 87,
+          "kind": "layer"
+        }
+      ]
     }
   ],
   "boardArt": {
@@ -1137,6 +1649,96 @@
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82
+      },
+      "55": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "typewriter"
+      },
+      "56": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "letterbundle"
+      },
+      "57": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "fountainpen"
+      },
+      "58": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "deskclock"
+      },
+      "59": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "candlestick"
+      },
+      "60": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "paperweight"
+      },
+      "61": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "magnifyingglass"
+      },
+      "62": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "musicbox"
+      },
+      "63": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "nightlight"
+      },
+      "64": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "blocks"
+      },
+      "65": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "plushbunny"
+      },
+      "66": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "rattle"
+      },
+      "67": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "babyshoes"
+      },
+      "68": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "winebottles"
+      },
+      "69": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "decanter"
       }
     }
   }
