@@ -548,6 +548,9 @@ function placeNewCards(toRemove, skip) {
         if (be) board[i].backEffect = be;
         const bcol = (typeof getBeneathColor === 'function') ? getBeneathColor(i, layer) : null;
         if (bcol) board[i].color = bcol;
+        // Authored beneath lock: this refill batch emerges already locked.
+        const blk = (typeof getBeneathLock === 'function') ? getBeneathLock(i, layer) : 0;
+        if (blk >= 1) { board[i].locked = true; board[i].lockCount = blk; }
         replaceCell(i); nc.push(i);
         const el = getCardEl(i);
         if (el) { el.classList.add('elevator-emerge'); el.addEventListener('animationend',()=>el.classList.remove('elevator-emerge'),{once:true}); }

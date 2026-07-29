@@ -357,7 +357,11 @@ Cards are plain objects created by helpers at [board.js](board.js) (`createCard`
   until it's exhausted. A **square** counter (top-right) shows the total on the tile, and
   `.card.stacked` draws offset "sheets" hinting at more below. Placed via
   `stacks: [[r,c,N]…]` in the level data. `countBoardCards()` (board.js) counts a stacked
-  tile as all N layers (used by the `clearAll` goal so it stays winnable).
+  tile as all N layers (used by the `clearAll` goal so it stays winnable). A stack tile can
+  **also be locked and/or carry a back-effect** — `locked`, `stack` and `backEffect` are
+  orthogonal flags on the same card object (all applied independently in `initLevelConfig`).
+  For the layers *underneath*, `beneath[].lockCount` locks the surfacing card (see below), so a
+  whole pile can be frozen layer-by-layer.
 - **Disabled cell**: the board slot is `null` (level `disabled: [[r,c],...]`).
 - **Back-effect card**: a normal card carrying `backEffect=<id>` (one of `row`/`column`/
   `cross`/`circle`/`star`; see `BACK_EFFECTS` in [specials.js](specials.js)). The effect icon
@@ -419,6 +423,12 @@ Cards are plain objects created by helpers at [board.js](board.js) (`createCard`
   color-lock levels solvable by adjusting only the *un-authored* cells. Cards emerging later from
   a Stack/Elevator can carry an authored colour too via `beneath[].color` (read by
   `getBeneathColor`, applied in `reseedStackTile`/elevator refill — same path as `beneath[].backEffect`).
+- **Authored beneath lock**: a card surfacing from a Stack pile or Elevator refill can be
+  *pre-locked* via `beneath[].lockCount` (≥1) — read by `getBeneathLock` and applied in
+  `reseedStackTile` (board.js) / the elevator refill (turn.js), same path as `beneath[].color`.
+  This is the "whole stack / refill batch is frozen" mechanic: each layer surfaces already
+  locked and needs its own adjacent-combo/bomb breaks. Authorable in the level-editor via the
+  **Locked** tool on a beneath layer (the layer-bar's ◀ ▶).
 
 Grid math: `toRC(i)` → `{r,c}`, `toIndex(r,c)` → flat index. `COLS`/`ROWS`/`TOTAL`
 are set per-level in `initLevelConfig()`.
@@ -581,7 +591,7 @@ fail** mid-turn.
   stacks?: [[r,c,N]...], backEffects?: [[r,c,effectId]...],
   colors?: [[r,c,color]...],        // authored FIXED card colours (any tile)
   colorCounts?: { color: n, ... },  // per-colour total on the top board (authored count toward it)
-  beneath?: [{ r,c,layer, backEffect?, color? }],  // authored cards emerging from Stacks/Elevators
+  beneath?: [{ r,c,layer, backEffect?, color?, lockCount? }],  // authored cards emerging from Stacks/Elevators (lockCount ⇒ surfaces locked)
   elevators?: [{ cells:[[r,c]...], refills:N }...],    // batch-refill areas
   ice?:       [{ cells:[[r,c]...], threshold:N }...],  // melt at N total cards collected
   colorLocks?:[{ cells:[[r,c]...], color, count }...], // open at N of `color` collected

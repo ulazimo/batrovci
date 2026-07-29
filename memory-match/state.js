@@ -43,6 +43,12 @@ let beneathBackEffects = new Map();
 // beneathBackEffects. Absent → the emerging card keeps its random refill colour.
 let beneathColors = new Map();
 
+// Beneath-layer authored locks: a Stack pile or Elevator refill can surface a card that is
+// itself locked (needs N adjacent-combo/bomb breaks before it can be flipped). Keyed
+// "r,c,layer" (layer < 0) → lock-layer count (≥1). Consulted alongside beneathBackEffects /
+// beneathColors by reseedStackTile (board.js) and the elevator refill (turn.js).
+let beneathLocks = new Map();
+
 // Ice: one or more AREAS of frozen cards. Cards under ice can't be interacted with (marked
 // locked + iced) until the ice melts, which happens once the level's running collected-card
 // count reaches that area's threshold. Each area melts independently.

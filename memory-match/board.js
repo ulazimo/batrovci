@@ -401,6 +401,10 @@ function reseedStackTile(idx) {
   if (be) next.backEffect = be;
   const bcol = (typeof getBeneathColor === 'function') ? getBeneathColor(idx, layer) : null;
   if (bcol) next.color = bcol;
+  // Authored beneath lock: this layer of the pile surfaces already locked (needs N adjacent
+  // breaks before it can be flipped) — a "whole stack is frozen" mechanic.
+  const blk = (typeof getBeneathLock === 'function') ? getBeneathLock(idx, layer) : 0;
+  if (blk >= 1) { next.locked = true; next.lockCount = blk; }
   board[idx] = next;
   replaceCell(idx);
   stackReseededSlots.add(idx);

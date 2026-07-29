@@ -65,6 +65,14 @@ function getBeneathColor(idx, layer) {
   return beneathColors.get(`${r},${c},${layer}`) || null;
 }
 
+// Authored lock-layer count for the card emerging at board index `idx` on `layer` (negative),
+// or 0. Built from lvl.beneath in initLevelConfig; read by the stack/elevator emergence paths so
+// a whole pile / refill batch can surface already locked.
+function getBeneathLock(idx, layer) {
+  const { r, c } = toRC(idx);
+  return beneathLocks.get(`${r},${c},${layer}`) || 0;
+}
+
 // Color-lock areas: [{ cells:[[r,c]…], color, count }] — count = cards of `color` to collect to unlock.
 function normalizeColorLocks(lvl) {
   return Array.isArray(lvl.colorLocks) ? lvl.colorLocks : [];
@@ -366,10 +374,12 @@ function startGame(preplacedSpecials) {
   // card emerges later from a Stack pile (reseedStackTile) or an Elevator refill (placeNewCards).
   beneathBackEffects = new Map();
   beneathColors = new Map();
+  beneathLocks = new Map();
   (lvl.beneath || []).forEach(b => {
     if (!b || typeof b.layer !== 'number' || b.layer >= 0) return;
     if (getBackEffect(b.backEffect)) beneathBackEffects.set(`${b.r},${b.c},${b.layer}`, b.backEffect);
     if (ALL_COLORS.includes(b.color)) beneathColors.set(`${b.r},${b.c},${b.layer}`, b.color);
+    if (b.lockCount >= 1) beneathLocks.set(`${b.r},${b.c},${b.layer}`, Math.max(1, Math.floor(b.lockCount)));
   });
 
   // Elevator areas: each area only refills as one batch once its whole area is cleared

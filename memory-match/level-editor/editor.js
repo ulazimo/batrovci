@@ -21,14 +21,14 @@ let loadedProgressionFileName = 'progression';
 const TOOLS = [
   { id: 'normal',   icon: '🟦', name: 'Normal',   desc: 'Regular card cell' },
   { id: 'color',    icon: '🎨', name: 'Color',    desc: 'Paint a FIXED card colour on any tile (coexists with locks/ice/color-lock). Pick the colour with ‹ ›; click again to remove.' },
-  { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Click to add lock layers (1–4, then clears)' },
+  { id: 'locked',   icon: '🔒', name: 'Locked',   desc: 'Click to add lock layers (1–4, then clears). Coexists with Stacks 🃏 / Elevators 🛗 / Back Effects — lock a stack or elevator card. On a beneath layer it locks that layer of the pile/refill.' },
   { id: 'disabled', icon: '<img src="../blocks/disabled.png" style="width:32px;height:32px;border-radius:4px;opacity:.7">', name: 'Disabled', desc: 'Empty cell — no card, no interaction' },
   { id: 'ordered',  icon: '🔢', name: 'Ordered',  desc: 'Place numbered positions for orderedCards goal' },
-  { id: 'stack',    icon: '🃏', name: 'Stack',    desc: 'Stamp a pile of cards on a tile (set the size with − / +)' },
-  { id: 'elevator', icon: '🛗', name: 'Elevator', desc: 'Paint batch-refill areas — adjacent cells form one area. Set each area\'s refills in the list below. Can share a tile with a stack.' },
+  { id: 'stack',    icon: '🃏', name: 'Stack',    desc: 'Stamp a pile of cards on a tile (set the size with − / +). Can be Locked 🔒 and/or carry a Back Effect; step to a beneath layer to author the cards underneath.' },
+  { id: 'elevator', icon: '🛗', name: 'Elevator', desc: 'Paint batch-refill areas — adjacent cells form one area. Set each area\'s refills in the list below. Can share a tile with a stack, a Lock 🔒 or a Back Effect.' },
   { id: 'ice',      icon: '🧊', name: 'Ice',      desc: 'Paint ice areas — cards frozen until enough cards are collected. Set each area\'s melt count in the list below. Can share a tile with a stack.' },
   { id: 'colorlock', icon: '🔐', name: 'Color Lock', desc: 'Paint color-lock areas — cards locked until enough of a chosen colour is collected. Set each area\'s colour + count in the list below. Can share a tile with a stack.' },
-  { id: 'backeffect', icon: '✴️', name: 'Back Effect', desc: 'Stamp a reveal effect on a card — it fires when that card is collected. Pick the pattern with ‹ ›; click again to remove.' },
+  { id: 'backeffect', icon: '✴️', name: 'Back Effect', desc: 'Stamp a reveal effect on a card — it fires when that card is collected. Pick the pattern with ‹ ›; click again to remove. Works on the top card of a Stack 🃏 / Elevator 🛗 too, or on a beneath layer.' },
   { id: 'eraser',   icon: '🧹', name: 'Eraser',   desc: 'Clear cell to normal' },
 ];
 const MAX_STACK = 10;
@@ -47,8 +47,10 @@ function beName(id) { const b = BACK_EFFECTS.find(x => x.id === id); return b ? 
 
 // ============================================================
 // BENEATH LAYERS — cards that emerge later from Stacks/Elevators can carry an authored
-// back-effect (stored in `lvl.beneath: [{r,c,layer,backEffect}]`, layer < 0). A Stack of N
-// exposes layers -1…-(N-1); an Elevator area with R refills exposes -1…-R.
+// back-effect, fixed colour and/or lock (stored in `lvl.beneath: [{r,c,layer,backEffect?,color?,
+// lockCount?}]`, layer < 0). A Stack of N exposes layers -1…-(N-1); an Elevator area with R
+// refills exposes -1…-R. A beneath lock surfaces that layer already locked (a "whole stack /
+// refill batch is frozen" mechanic) — applied by reseedStackTile / the elevator refill.
 // ============================================================
 function stackSizeAt(lvl, row, col) {
   const s = (lvl.stacks || []).find(([r, c]) => r === row && c === col);
@@ -378,14 +380,15 @@ function loadFromJSON(e) {
         // Difficulty-ease knob: bias ONE (random, per-play) colour upward on a clearBoard board.
         // 0 = even (still noisy); ~0.5 = one colour ≈1.5× the even share.
         colorSkew: Math.max(0, Math.min(0.5, +lvl.colorSkew || 0)),
-        // Beneath-layer authored cards (layers < 0 from Stacks/Elevators): backEffect and/or a
-        // fixed colour; layer is a negative int. Drop empty entries.
+        // Beneath-layer authored cards (layers < 0 from Stacks/Elevators): backEffect, a fixed
+        // colour and/or a lock count; layer is a negative int. Drop empty entries.
         beneath: Array.isArray(lvl.beneath)
-          ? lvl.beneath.filter(b => b && typeof b.layer === 'number' && b.layer < 0 && (b.backEffect || ALL_COLORS.includes(b.color)))
+          ? lvl.beneath.filter(b => b && typeof b.layer === 'number' && b.layer < 0 && (b.backEffect || ALL_COLORS.includes(b.color) || b.lockCount >= 1))
                        .map(b => {
                          const e = { r: b.r, c: b.c, layer: b.layer };
                          if (b.backEffect) e.backEffect = b.backEffect;
                          if (ALL_COLORS.includes(b.color)) e.color = b.color;
+                         if (b.lockCount >= 1) e.lockCount = Math.max(1, Math.min(MAX_LOCK_LAYERS, Math.floor(b.lockCount)));
                          return e;
                        })
           : [],
@@ -842,7 +845,7 @@ function buildLayerBar(lvl) {
   if (currentLayer < 0) {
     const hint = document.createElement('span');
     hint.className = 'layer-hint';
-    hint.textContent = 'Stamp Back Effects on cards coming in from Stacks 🃏 / Elevators 🛗';
+    hint.textContent = 'Stamp Back Effects / Colours / Locks 🔒 on cards coming in from Stacks 🃏 / Elevators 🛗';
     bar.appendChild(hint);
   }
   return bar;
@@ -850,7 +853,7 @@ function buildLayerBar(lvl) {
 
 // Render a cell while viewing a beneath layer (currentLayer < 0). Active tiles are ones that
 // will produce a card at this depth; everything else is dimmed and inert.
-function renderBeneathCell(cell, lvl, r, c, effectId, colorId) {
+function renderBeneathCell(cell, lvl, r, c, effectId, colorId, lockN) {
   if (!tileHasCardAtLayer(lvl, r, c, currentLayer)) {
     cell.classList.add('layer-inactive');
     return;
@@ -861,6 +864,16 @@ function renderBeneathCell(cell, lvl, r, c, effectId, colorId) {
     cell.classList.add('authored');
     cell.style.background = CL_COLOR_HEX[colorId] || '#888';
     cell.title = 'Card colour: ' + colorId;
+  }
+  // Authored lock on this beneath card — surfaces already locked. Shown as a bottom-right chip
+  // (🔒, or the layer count when >1), the same corner the layer-0 lock count uses.
+  if (lockN >= 1) {
+    cell.classList.add('beneath-locked');
+    const lb = document.createElement('span');
+    lb.className = 'lock-count-badge' + (lockN > 1 ? '' : ' lock-glyph');
+    lb.textContent = lockN > 1 ? lockN : '🔒';
+    lb.title = lockN > 1 ? `Locked (${lockN} layers)` : 'Locked';
+    cell.appendChild(lb);
   }
   // Source hint (top-right): which mechanism produces this beneath card.
   const fromStack = (stackSizeAt(lvl, r, c) - 1) >= -currentLayer;
@@ -1228,10 +1241,12 @@ function renderBoard() {
   const beneathMode = currentLayer < 0;
   const beneathMap = {};      // key → backEffect id, only for the layer being viewed
   const beneathColorMap = {}; // key → authored colour, only for the layer being viewed
+  const beneathLockMap = {};  // key → lock-layer count, only for the layer being viewed
   if (beneathMode) (lvl.beneath || []).forEach(b => {
     if (b.layer !== currentLayer) return;
     if (b.backEffect) beneathMap[`${b.r},${b.c}`] = b.backEffect;
     if (b.color) beneathColorMap[`${b.r},${b.c}`] = b.color;
+    if (b.lockCount >= 1) beneathLockMap[`${b.r},${b.c}`] = b.lockCount;
   });
   const colorMap    = {}; (lvl.colors || []).forEach(([r, c, col]) => { colorMap[`${r},${c}`] = col; });
   const lockedCount = {}; (lvl.locked || []).forEach(([r, c, n]) => { lockedCount[`${r},${c}`] = n || 1; });
@@ -1315,7 +1330,7 @@ function renderBoard() {
       const cell = document.createElement('div');
       cell.className = 'board-cell';
       if (beneathMode) {
-        renderBeneathCell(cell, lvl, r, c, beneathMap[key], beneathColorMap[key]);
+        renderBeneathCell(cell, lvl, r, c, beneathMap[key], beneathColorMap[key], beneathLockMap[key]);
       } else {
       if (disabledSet.has(key)) {
         cell.classList.add('disabled');
@@ -1326,10 +1341,14 @@ function renderBoard() {
       } else if (lockedSet.has(key)) {
         cell.classList.add('locked');
         const nLock = lockedCount[key] || 1;
-        if (nLock > 1) {
+        // The lock's 🔒 glyph is a `.locked::after`. When an elevator shares the tile it too
+        // draws a center `::after` (🛗) that wins the cascade and hides the 🔒 — so in that case
+        // surface the lock as an explicit bottom-right chip (with the count when >1) instead.
+        const centerTaken = elevAreaOf.has(key) || iceAreaOf.has(key) || clAreaOf.has(key);
+        if (nLock > 1 || centerTaken) {
           const badge = document.createElement('span');
-          badge.className = 'lock-count-badge';
-          badge.textContent = nLock;
+          badge.className = 'lock-count-badge' + (nLock > 1 ? '' : ' lock-glyph');
+          badge.textContent = nLock > 1 ? nLock : '🔒';
           cell.appendChild(badge);
         }
       }
@@ -1532,27 +1551,32 @@ function onCellClick(row, col) {
   if (selectedLevelIndex < 0) return;
   const lvl = levels[selectedLevelIndex];
 
-  // Beneath-layer editing (viewing layer < 0): only Back Effect, Color + Eraser act, and only on
-  // a tile that actually produces a card at this depth. Back-effect and colour are independent —
-  // each toggles on its own while preserving the other. Stamps into lvl.beneath[{r,c,layer,…}].
+  // Beneath-layer editing (viewing layer < 0): only Back Effect, Color, Locked + Eraser act, and
+  // only on a tile that actually produces a card at this depth. Back-effect, colour and lock are
+  // independent — each toggles on its own while preserving the others. A lock authored here means
+  // that layer of the Stack pile / Elevator refill surfaces already locked (the "whole stack is
+  // frozen" mechanic). Stamps into lvl.beneath[{r,c,layer,backEffect?,color?,lockCount?}].
   if (currentLayer < 0) {
-    if (activeTool !== 'backeffect' && activeTool !== 'color' && activeTool !== 'eraser') return;
+    if (activeTool !== 'backeffect' && activeTool !== 'color' && activeTool !== 'locked' && activeTool !== 'eraser') return;
     if (!tileHasCardAtLayer(lvl, row, col, currentLayer)) return;
     pushUndo();
     if (!Array.isArray(lvl.beneath)) lvl.beneath = [];
     const existing = beneathAt(lvl, row, col, currentLayer);
-    // Start from the existing back-effect/colour, then toggle whichever this tool controls.
+    // Start from the existing back-effect/colour/lock, then toggle whichever this tool controls.
     let be = existing ? existing.backEffect : undefined;
     let col2 = existing ? existing.color : undefined;
-    if (activeTool === 'eraser')      { be = undefined; col2 = undefined; }
-    else if (activeTool === 'backeffect') be  = (be === backEffectValue) ? undefined : backEffectValue;
+    let lock = existing ? (existing.lockCount || 0) : 0;
+    if (activeTool === 'eraser')      { be = undefined; col2 = undefined; lock = 0; }
+    else if (activeTool === 'backeffect') be   = (be === backEffectValue) ? undefined : backEffectValue;
     else if (activeTool === 'color')      col2 = (col2 === colorValue)    ? undefined : colorValue;
+    else if (activeTool === 'locked')     lock = lock >= MAX_LOCK_LAYERS ? 0 : lock + 1; // cycle 1→…→MAX→clear
     // Rewrite the entry for this cell+layer (drop it entirely if nothing remains).
     lvl.beneath = lvl.beneath.filter(b => !(b.r === row && b.c === col && b.layer === currentLayer));
-    if (be || col2) {
+    if (be || col2 || lock) {
       const entry = { r: row, c: col, layer: currentLayer };
       if (be) entry.backEffect = be;
       if (col2) entry.color = col2;
+      if (lock) entry.lockCount = lock;
       lvl.beneath.push(entry);
     }
     renderBoard(); renderLevelList();
@@ -1603,42 +1627,52 @@ function onCellClick(row, col) {
   const hadIce = !!iceAreaAt(lvl, row, col);
   const hadColorLock = !!colorLockAreaAt(lvl, row, col);
 
-  // Elevator, Ice and Color Lock are independent area layers that may each coexist with a
-  // stack, but are mutually exclusive with each other. Keep the stack when toggling any of
-  // them; every other tool clears all three.
-  const keepStack = (activeTool === 'elevator' || activeTool === 'ice' || activeTool === 'colorlock');
+  // ── Orthogonal card layers ─────────────────────────────────────────────────────────────
+  // A tile may carry any combination that makes sense; a tool only clears the layers it is
+  // incompatible with. Hard rules:
+  //   • eraser / normal / disabled RESET the tile (drop lock, stack, back-effect and all areas).
+  //   • the three AREA types (elevator / ice / color-lock) are mutually exclusive with each other.
+  //   • a plain LOCK can't share a tile with ice / color-lock (those carry their own internal lock).
+  //   • STACK, BACK-EFFECT, ELEVATOR and a plain LOCK are otherwise independent and coexist freely,
+  //     so a stack card or elevator card can also be locked and/or carry a back-effect.
+  const isReset = (activeTool === 'eraser' || activeTool === 'normal' || activeTool === 'disabled');
+  // Each tool clears the layer it "owns" (so it can re-stamp fresh) plus any it's incompatible with.
+  const clearLock  = isReset || activeTool === 'locked' || activeTool === 'ice' || activeTool === 'colorlock';
+  const clearStack = isReset || activeTool === 'stack';
+  const clearBack  = isReset || activeTool === 'backeffect';
 
-  lvl.locked   = (lvl.locked   || []).filter(([r, c]) => !(r === row && c === col));
+  if (clearLock)  lvl.locked      = (lvl.locked      || []).filter(([r, c]) => !(r === row && c === col));
+  if (clearStack) lvl.stacks      = (lvl.stacks      || []).filter(([r, c]) => !(r === row && c === col));
+  if (clearBack)  lvl.backEffects = (lvl.backEffects || []).filter(([r, c]) => !(r === row && c === col));
   lvl.disabled = (lvl.disabled || []).filter(([r, c]) => !(r === row && c === col));
-  if (!keepStack) lvl.stacks = (lvl.stacks || []).filter(([r, c]) => !(r === row && c === col));
-  // Back-effect layer: preserved by the area tools (like stacks), toggled by its own tool,
-  // cleared by everything else.
-  if (!keepStack) lvl.backEffects = (lvl.backEffects || []).filter(([r, c]) => !(r === row && c === col));
-  // Authored-colour layer (lvl.colors): independent — coexists with every tile type, so only the
-  // Eraser and turning a cell Disabled remove it. All other tools leave it in place.
+  // Authored-colour layer (lvl.colors): fully independent — only the Eraser and turning a cell
+  // Disabled remove it. All other tools leave it in place.
   if (activeTool === 'eraser' || activeTool === 'disabled') {
     lvl.colors = (lvl.colors || []).filter(([r, c]) => !(r === row && c === col));
   }
 
-  // Elevator membership: toggle with the elevator tool; ice/color-lock and any other non-stack
-  // tool removes it (the three area types can't share a cell).
+  // Area membership. Each area toggles with its own tool. A reset drops every area; each area
+  // tool drops the two it's mutually exclusive with; the Locked tool drops ice/color-lock
+  // (incompatible with a plain lock) but LEAVES an elevator (a plain lock may sit on an elevator).
+  const removeElevator = isReset || activeTool === 'ice' || activeTool === 'colorlock';
+  const removeIce      = isReset || activeTool === 'elevator' || activeTool === 'colorlock' || activeTool === 'locked';
+  const removeColorLk  = isReset || activeTool === 'elevator' || activeTool === 'ice' || activeTool === 'locked';
+
   if (activeTool === 'elevator') {
     if (!disabledSet.has(key)) { hadElevator ? removeElevatorCell(lvl, row, col) : addElevatorCell(lvl, row, col); }
-  } else if (activeTool !== 'stack' && hadElevator) {
+  } else if (removeElevator && hadElevator) {
     removeElevatorCell(lvl, row, col);
   }
 
-  // Ice membership: toggle with the ice tool; elevator/color-lock and any other non-stack tool removes it.
   if (activeTool === 'ice') {
     if (!disabledSet.has(key)) { hadIce ? removeIceCell(lvl, row, col) : addIceCell(lvl, row, col); }
-  } else if (activeTool !== 'stack' && hadIce) {
+  } else if (removeIce && hadIce) {
     removeIceCell(lvl, row, col);
   }
 
-  // Color-lock membership: toggle with the color-lock tool; elevator/ice and any other non-stack tool removes it.
   if (activeTool === 'colorlock') {
     if (!disabledSet.has(key)) { hadColorLock ? removeColorLockCell(lvl, row, col) : addColorLockCell(lvl, row, col); }
-  } else if (activeTool !== 'stack' && hadColorLock) {
+  } else if (removeColorLk && hadColorLock) {
     removeColorLockCell(lvl, row, col);
   }
 
@@ -1739,10 +1773,10 @@ function updateUndoRedoButtons() {
 // ============================================================
 function renderToolbar() {
   toolListEl.innerHTML = '';
-  // On beneath layers only Back Effect + Eraser act; the rest are structural (layer-0 only).
   const beneathMode = currentLayer < 0;
-  // On beneath layers only Back Effect, Color + Eraser act; the rest are structural (layer-0 only).
-  const usableOnBeneath = id => id === 'backeffect' || id === 'color' || id === 'eraser';
+  // On beneath layers only Back Effect, Color, Locked + Eraser act; the rest are structural
+  // (layer-0 only). Locked authors a lock on the card that surfaces from that stack/elevator layer.
+  const usableOnBeneath = id => id === 'backeffect' || id === 'color' || id === 'locked' || id === 'eraser';
   TOOLS.forEach(tool => {
     const card = document.createElement('div');
     const dimmed = beneathMode && !usableOnBeneath(tool.id);
