@@ -397,11 +397,18 @@ function endTurn(manual, perfectSweep) {
   // effect icons down over their tiles (firedBackEffects) before the cards flip up.
   let showImpactPreview = false;
   const firedBackEffects = [];
+  // Every cell any fired back-effect targets, UNFILTERED — including cells collected this turn,
+  // which is exactly where stack/elevator refills land. Drives the "affect new cards" reveal in
+  // Step 2: a fresh stack/elevator card that surfaces inside a fired pattern is flashed too.
+  const bePatternCells = new Set();
   if (willCollect) {
     let beTargets = [];
-    matched.forEach(idx => { const bc = board[idx]; if (bc && bc.backEffect) { beTargets.push(...getBackEffectPattern(bc.backEffect, idx)); firedBackEffects.push({ idx, effect: bc.backEffect }); } });
+    matched.forEach(idx => { const bc = board[idx]; if (bc && bc.backEffect) { const pat = getBackEffectPattern(bc.backEffect, idx); beTargets.push(...pat); pat.forEach(t => bePatternCells.add(t)); firedBackEffects.push({ idx, effect: bc.backEffect }); } });
     beTargets = beTargets.filter(canReveal);
-    if (beTargets.length) { revealTargets = [...new Set([...revealTargets, ...beTargets])]; showImpactPreview = true; }
+    // Any collected back-effect fires (slam + reveal batch), even if every surviving pattern cell
+    // was filtered out — its fresh stack/elevator cards may still be the only thing to reveal.
+    if (firedBackEffects.length) showImpactPreview = true;
+    if (beTargets.length) revealTargets = [...new Set([...revealTargets, ...beTargets])];
   }
 
   // Sync the Chain Danger Reveal into this SAME reveal batch (whenever one runs) so the
@@ -452,17 +459,30 @@ function endTurn(manual, perfectSweep) {
       const bombExplodeDelay = bombCards.length > 0 ? 450 : 0;
       setTimeout(() => {
         const revealAndContinue = () => {
-        // Step 1: Reveal targets (stay face-up, no auto-hide). revealCardsNoHide strips each
-        // card's danger/impact highlight as it flips up, so the glow never blinks off then on.
-        if (revealTargets.length > 0) {
-          revealCardsNoHide(revealTargets);
-        }
+        // Back-effect "affect new cards": a fired pattern also flashes the FRESH cards that
+        // surface inside it from a stack or elevator, even under hiddenNewCards. STACK reseeds
+        // already sit face-down on the board (reseeded during the fly, tracked in
+        // stackReseededSlots), so they flash NOW — in the SAME beat as the rest of the pattern —
+        // not a beat later with the elevator/deck refills. Snapshot before placeNewCards (Step 2)
+        // consumes stackReseededSlots.
+        const beStackNew = showImpactPreview
+          ? [...stackReseededSlots].filter(i => bePatternCells.has(i) && board[i] && !board[i].special && !board[i].locked && !board[i].flipped)
+          : [];
+        // Step 1: Reveal targets + in-pattern stack cards (stay face-up, no auto-hide).
+        // revealCardsNoHide strips each card's danger/impact highlight as it flips up, so the
+        // glow never blinks off then on.
+        const step1 = [...new Set([...revealTargets, ...beStackNew])];
+        if (step1.length > 0) revealCardsNoHide(step1);
       // Step 2: After reveal animation, drop in new cards
-      const bombRevealTime = revealTargets.length > 0 ? 300 : 0;
+      const bombRevealTime = step1.length > 0 ? 300 : 0;
       setTimeout(() => {
         const nc = placeNewCards(toRemove, newSP);
         const showNewCards = nc.length > 0 && !getRule('hiddenNewCards') && !willSweepReveal;
         const dropDelay = nc.length > 0 ? 450 : 0;
+        // ELEVATOR batch cells emerge only now (placeNewCards), so their in-pattern reveal
+        // happens here, as they arrive.
+        const beElevNew = showImpactPreview ? nc.filter(i => bePatternCells.has(i) && elevatorCellArea.has(i)) : [];
+        const beElevReveal = beElevNew.filter(i => board[i] && !board[i].special && !board[i].locked && !board[i].flipped);
 
         // Show sweep banner in parallel with new cards dropping
         if (willSweepReveal) showSweepBanner();
@@ -470,8 +490,12 @@ function endTurn(manual, perfectSweep) {
         setTimeout(() => {
           // Reveal new cards (no auto-hide) — skip if sweep reveal is coming
           if (showNewCards) revealCardsNoHide(nc);
+          // Flash the fresh elevator cards the back-effect reached (skip any showNewCards already
+          // flipped). They flash, land in Recall, then hide with the rest of the batch.
+          const beExtra = beElevReveal.filter(i => !(showNewCards && nc.includes(i)));
+          if (beExtra.length) revealCardsNoHide(beExtra);
           // Hide everything together after 2.2s
-          const allRevealed = [...revealTargets, ...(showNewCards ? nc : [])];
+          const allRevealed = [...new Set([...step1, ...(showNewCards ? nc : []), ...beElevReveal])];
           addRecall(allRevealed);
           const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
           const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!itemTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!itemTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };

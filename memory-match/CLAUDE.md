@@ -380,7 +380,11 @@ Cards are plain objects created by helpers at [board.js](board.js) (`createCard`
   **collected as part of a successful chain**, its effect fires: `getBackEffectPattern` reveals
   the pattern's cards (row/column span the whole line; cross/circle/star use offsets), merged
   into `endTurn`'s `revealTargets` so they flash face-up briefly and land in **Recall** for the
-  next turn. Placed via `backEffects: [[r,c,id]…]` in the level data (one-time; a refill card in
+  next turn. **The reveal reaches fresh cards too:** a pattern cell that refills from a **stack**
+  (reseeded) or **elevator** (batch) this same turn has its new card flashed as well — even under
+  `hiddenNewCards` — so the player learns it (via `bePatternCells` + the `beStackNew`/`beElevNew`
+  path in `endTurn`). Deck/normal refills are *not* revealed this way. Placed via
+  `backEffects: [[r,c,id]…]` in the level data (one-time; a refill card in
   the same slot is plain). Authorable via the level-editor's **Back Effect** tool.
   - **Impact glow** (`.reveal-impact`, a soft *white* cue — not the red danger ember): the impact
     area lights up while the card sits in the active chain (`updateBackEffectImpactPreview`, driven
