@@ -1211,6 +1211,21 @@ body.bomb-aiming #board { touch-action: none; }
 .overlay-btn.btn-red:hover { background:rgba(231,76,60,.25); }
 .overlay-btn.secondary { background:#2a2a4a;border:1px solid #3a3a6a; }
 
+/* Username prompt input (once-per-device welcome) */
+#username-input {
+  width:100%; padding:12px 14px; font-size:15px; font-family:inherit; font-weight:600;
+  color:#fff; background:#0f1830; border:1px solid #33406a; border-radius:8px;
+  outline:none; text-align:center;
+}
+#username-input:focus { border-color:#4fc3f7; }
+#username-input::placeholder { color:#66708f; font-weight:400; }
+.input-shake { animation: inputShake .4s; border-color:#e74c3c !important; }
+@keyframes inputShake {
+  0%,100% { transform:translateX(0); }
+  20% { transform:translateX(-6px); } 40% { transform:translateX(6px); }
+  60% { transform:translateX(-4px); } 80% { transform:translateX(4px); }
+}
+
 /* ================================================================
    SHOP — floating entry point (home screen) + purchase overlay
 ================================================================ */
@@ -1232,6 +1247,22 @@ body.bomb-aiming #board { touch-action: none; }
 .shop-fab-icon  { font-size: 22px; line-height: 1; }
 .shop-fab-label { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
 @keyframes shopFabBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* Survey FAB — mirror of the Shop FAB on the RIGHT, in grey/blue. */
+#survey-fab {
+  position: absolute; right: 12px; z-index: 4; cursor: pointer; padding: 0;
+  top: calc(58px + env(safe-area-inset-top, 0px));
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  width: 52px; height: 52px; border-radius: 15px;
+  background: linear-gradient(135deg, #6a7a9c, #33405c);
+  border: 2px solid rgba(255,255,255,.30); color: #eaf0ff;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4), 0 0 0 4px rgba(120,150,200,.15);
+  text-decoration: none;
+}
+#survey-fab:hover  { filter: brightness(1.1); }
+#survey-fab:active { transform: scale(.92); }
+.survey-fab-icon  { font-size: 20px; line-height: 1; }
+.survey-fab-label { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
 
 /* Overlay box: taller + scrollable, the shop can hold several rows. */
 .shop-box { max-width: 380px; max-height: 90%; overflow-y: auto; gap: 10px; padding: 22px 20px; }

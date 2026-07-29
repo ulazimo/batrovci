@@ -297,6 +297,7 @@ function startGame(preplacedSpecials) {
   document.body.classList.remove('on-home');   // reveal in-game HUD chrome
   if (typeof flashBoardArtWin === 'function') flashBoardArtWin(false);  // clear any win highlight
   score = 0; turns = MAX_TURNS; _scoreDisplayed = 0;
+  if (typeof resetMatchStats === 'function') resetMatchStats(); // analytics: fresh power-up counters + turn budget
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = []; lastSelectedIdx = -1;
   turnActive = false; inputLocked = false;
   shieldCharges = 0; echoCharges = 0; spotlightMode = false; activeBooster = null;

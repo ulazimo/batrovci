@@ -97,6 +97,13 @@
     <span class="shop-fab-label">Shop</span>
   </button>
 
+  <!-- Floating Survey entry point — mirrors the Shop FAB on the right. Opens the
+       external Alchemer survey in a new tab. -->
+  <a id="survey-fab" href="https://survey.alchemer.com/s3/8937088/Memory-Match" target="_blank" rel="noopener" title="Take the survey" aria-label="Take the survey">
+    <span class="survey-fab-icon">📝</span>
+    <span class="survey-fab-label">Survey</span>
+  </a>
+
   <!-- The room scene: backdrop (image OR the procedural CSS scenery below) +
        item spots, both built by JS. A hall with `backdrop` set in collections.js
        shows #room-backdrop and hides #room-bg entirely. -->
@@ -298,6 +305,18 @@
   </div>
 </div>
 
+<!-- Username prompt — shown once per device on first launch (see analytics-sheet.js). -->
+<div id="username-prompt" class="overlay-screen">
+  <div class="overlay-box">
+    <h2>👋 Welcome!</h2>
+    <p class="sub">What should we call you?</p>
+    <input id="username-input" type="text" maxlength="24" autocomplete="off" autocapitalize="off"
+           spellcheck="false" placeholder="Enter a username"
+           onkeydown="if(event.key==='Enter'){event.preventDefault();submitUsername();}">
+    <button class="overlay-btn btn-green" onclick="submitUsername()">Let's Play →</button>
+  </div>
+</div>
+
 </div><!-- /#device-frame -->
 
 <script src="config.js"></script>
@@ -314,6 +333,8 @@
 <script src="collections.js"></script>
 <script src="difficulty.js"></script>
 <script src="settings.js"></script>
+<!-- Username prompt + Google-Sheet match analytics (no load-time deps; callers run later). -->
+<script src="analytics-sheet.js"></script>
 <!-- Former gameplay.js, split by concern. state.js MUST be first, boot.js MUST be last.
      All files share one global namespace (classic scripts). See CLAUDE.md §3/§12. -->
 <script src="state.js"></script>

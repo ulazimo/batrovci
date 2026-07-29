@@ -34,6 +34,7 @@ function recallCards() {
   if (!targets.length) return;
   if ((progress.coins || 0) < RECALL_COST) { updateRecallButton(); return; }
   progress.coins -= RECALL_COST; saveProgress(); updateCoinDisplay();
+  if (typeof recordPowerUpUse === 'function') recordPowerUpUse('recall'); // analytics: recall used this match
   // Show the spend: RECALL_COST coins drop out of the header and scatter away.
   if (typeof burstCoinsDown === 'function') {
     burstCoinsDown(RECALL_COST, document.querySelector('#level-banner .coin-pill'));
@@ -136,6 +137,9 @@ function levelWon() {
   saveProgress();
   updateBanner();
 
+  // Analytics: report the completion (stars/score are finalized above).
+  if (typeof logLevelResult === 'function') logLevelResult('complete');
+
   SFX.win();
   launchConfetti();
 
@@ -221,6 +225,9 @@ function levelFailed(reason) {
   saveProgress();
   updateBanner();
 
+  // Analytics: report the failure.
+  if (typeof logLevelResult === 'function') logLevelResult('fail');
+
   // Show fail banner over the board with goal status
   let failBannerSub = `Score: ${score} / ${TARGET}`;
   if (levelGoals && levelGoals.definitions.length > 0) {
@@ -296,6 +303,7 @@ function continueLevelWithCoins() {
   // Close fail overlay and resume the game with 5 extra turns
   document.getElementById('overlay-fail').classList.remove('active');
   turns += 5;
+  if (typeof matchStartTurns === 'number') matchStartTurns += 5; // analytics: keep turnsUsed accurate after a coin-continue
   inputLocked = false;
   turnsEl.textContent = turns;
   updateBanner();

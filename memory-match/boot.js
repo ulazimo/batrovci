@@ -26,4 +26,7 @@
 
   buildLevelJumper();
   showHome();
+
+  // First launch on this device → ask for a username (once). Sits over the hall.
+  if (typeof maybeAskUsername === 'function') maybeAskUsername();
 })();

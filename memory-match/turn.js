@@ -65,6 +65,7 @@ function onCardClick(index) {
     // Mark special as used and register in turn
     function markUsed() {
       SFX.special();
+      if (typeof recordPowerUpUse === 'function') recordPowerUpUse('card:' + card.special); // analytics: deployed special played
       getCardEl(index).classList.add('used');
       if (!turnActive) { turnActive = true; chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [index]; lastSelectedIdx = index; SFX.shepard(0); }
       else if (!specialsUsed.includes(index)) { specialsUsed.push(index); lastSelectedIdx = index; SFX.shepard(chainCards.length + specialsUsed.length - 1); }

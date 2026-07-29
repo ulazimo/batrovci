@@ -114,6 +114,7 @@ function hasBooster(id) {
 function consumeBooster(id) {
   if (!getRule('unlimitedPowerUps')) boosterCounts[id]--;
   saveBoosterCounts();
+  if (typeof recordPowerUpUse === 'function') recordPowerUpUse(id); // analytics: power-up used this match
 }
 
 function updateBoosterUI() {
