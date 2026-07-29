@@ -1063,6 +1063,84 @@ COLLECTIONS = {
         "cy": 0.5,
         "h": 0.82,
         "item": "bookstack"
+      },
+      "31": {
+        "item": "inkwell",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "32": {
+        "item": "hourglass",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "33": {
+        "item": "telescope",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "34": {
+        "item": "palette",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "35": {
+        "item": "paintpots",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "36": {
+        "item": "brushjar",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "37": {
+        "item": "claybust",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "38": {
+        "item": "easel",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "39": {
+        "item": "yarnbasket",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "40": {
+        "item": "sewingmachine",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "41": {
+        "item": "pincushion",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "42": {
+        "item": "threadspools",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "43": {
+        "item": "quiltstack",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
       }
     }
   }
