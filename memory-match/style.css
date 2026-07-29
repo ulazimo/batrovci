@@ -463,7 +463,10 @@ body {
 /* Win highlight (see flashBoardArtWin in board-bg.js): on level complete, lift
    the revealed art above the grid, un-blur it and give it a warm glow + pop for
    1s before the win overlay opens. */
-#board.board-win-reveal #board-bg { z-index: 5; }
+/* Lift the overflow clip during the win reveal so the warm glow extends evenly on
+   all sides — otherwise a tall piece's glow is cut flat top/bottom by #board-bg's
+   inset:0 box while left/right (where the board has slack) stay soft. */
+#board.board-win-reveal #board-bg { z-index: 5; overflow: visible; }
 #board.board-win-reveal #board-bg .board-bg-img {
   filter: drop-shadow(0 0 22px rgba(255,214,120,.9)) saturate(1.08) !important;
   animation: boardArtWinPop 1s ease-out both;
