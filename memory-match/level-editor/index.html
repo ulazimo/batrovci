@@ -248,20 +248,22 @@
       <input type="checkbox" id="wt-simulate">
       Simulate slots whose level doesn't exist yet
     </label>
+    <label class="wt-check">
+      <input type="checkbox" id="wt-show-jumper">
+      Show the game's dev level jumper
+    </label>
 
     <div class="wt-row">
       <button id="wt-reload" class="wt-btn">⟳ Reload game</button>
       <button id="wt-reset-all" class="wt-btn warn">Clear all halls</button>
-      <button id="wt-restore" class="wt-btn warn">↩ Restore save</button>
     </div>
 
     <h3 class="panel-title">Items in this hall</h3>
     <div id="wt-slots"></div>
 
     <div class="wt-note">
-      Revealing writes the real save (<code>mm_progress</code>), because that is the
-      path being tested. The first write snapshots it — <b>↩ Restore save</b> puts
-      your playthrough back.<br>
+      Revealing writes to a sandbox save, kept separate from any real playthrough —
+      it doesn't matter how many levels are actually cleared.<br>
       <b>x … / top …</b> is the art's own extent, measured from its alpha, checked
       against the crop the selected device actually applies. A ⚠ there means the
       object is cut off on that device and only regenerating the art fixes it.

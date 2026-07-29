@@ -17,20 +17,20 @@
 // the frame; nothing here re-implements game behaviour, it only pokes it.
 //
 // WHAT IT WRITES
-// Revealing an item means writing `progress.stars` — the real save, the real
-// `mm_progress` localStorage key. That is the point (we are testing the real
-// unlock path), but it also means this tool can clobber a playthrough. So the
-// first time it mutates anything it snapshots the save, and "↩ Restore save"
-// puts it back. Do not remove that: the save was destroyed once already by a
-// console session doing this by hand.
+// Revealing an item means writing `progress.stars`. The frame is loaded with
+// `?mmSandbox=1`, which `mmProgressKey()` in settings.js reads to store under
+// `mm_progress_sandbox` instead of the player's real `mm_progress` — so this tool
+// can reveal/hide/reset any hall freely and it never touches (or needs to back up)
+// a real playthrough. It doesn't matter how many levels the real player has
+// cleared; the sandbox starts and stays independent of that.
 // ============================================================
+
+const WT_FRAME_SRC = '../index.html?mmSandbox=1';
 
 let wtHallIdx = 0;
 let wtSimulate = false;          // treat slots whose level does not exist as revealable
+let wtShowJumper = false;        // the game's own dev level-jumper is off by default here
 const wtArtCache = new Map();    // art src -> measured {x0,x1,top} in % of the picture
-
-const WT_BACKUP_KEY = 'mm_progress_walkthrough_backup';
-const WT_SAVE_KEY = 'mm_progress';
 
 // The pop-in is delayed by REVEAL_APPEAR_DELAY (300ms) and then animates; wait
 // past both before re-reading state, or the list still shows the pre-reveal flags.
@@ -56,45 +56,6 @@ function wtWin() {
 function wtProg(win) {
   if (!win.__wt) win.eval('window.__wt = { get progress() { return progress; } };');
   return win.__wt.progress;
-}
-
-// ------------------------------------------------------------
-// SAVE SAFETY
-// ------------------------------------------------------------
-function wtBackupSave() {
-  try {
-    if (localStorage.getItem(WT_BACKUP_KEY) != null) return;   // keep the FIRST snapshot
-    localStorage.setItem(WT_BACKUP_KEY, localStorage.getItem(WT_SAVE_KEY) ?? '');
-    wtStatus('save snapshotted — "↩ Restore save" undoes everything this tab writes');
-  } catch (e) { /* private mode: nothing we can do, and nothing to lose */ }
-}
-
-// ORDER MATTERS HERE. The running game holds `progress` in memory and calls
-// saveProgress() from timers it scheduled earlier (renderHall's reveal scheduler is
-// one), so writing the snapshot to localStorage while the frame is still alive gets
-// it overwritten a beat later by the state we are trying to discard — measured:
-// restoring a 41-star snapshot left 55 stars on disk. So tear the frame down to
-// about:blank first, write only once nothing can run, then load the game again.
-function wtRestoreSave() {
-  let snap = null;
-  try { snap = localStorage.getItem(WT_BACKUP_KEY); } catch (e) {}
-  if (snap == null) { wtStatus('no snapshot to restore — this tab has not written anything yet', true); return; }
-
-  const f = wtFrame();
-
-  const write = () => {
-    try {
-      if (snap === '') localStorage.removeItem(WT_SAVE_KEY);
-      else localStorage.setItem(WT_SAVE_KEY, snap);
-      localStorage.removeItem(WT_BACKUP_KEY);
-    } catch (e) { wtStatus('restore failed: ' + e.message, true); return; }
-    wtStatus('save restored — reloading the game');
-    if (f) f.src = '../index.html';
-  };
-
-  if (!f) { write(); return; }
-  f.addEventListener('load', function once() { f.removeEventListener('load', once); write(); });
-  f.src = 'about:blank';
 }
 
 function wtStatus(msg, bad) {
@@ -166,6 +127,17 @@ function wtApplySimulation(win) {
   win.slotLevelIndex = wtSimulate
     ? function (slot) { const i = orig(slot); return i >= 0 ? i : wtSyntheticIndex(win, slot); }
     : orig;
+}
+
+// The game's own dev level-jumper (`#level-jumper`, built by buildLevelJumper() in
+// home-room.js) is desktop-only chrome next to the phone frame — not part of what
+// this tab is for, so it is hidden by default. `buildLevelJumper()` reuses the same
+// node on every render rather than recreating it, so setting its inline style once
+// per frame load is durable across hall changes; only a frame reload needs it
+// re-applied, which the load handler does.
+function wtSetJumperVisible(win, show) {
+  const panel = win.document.getElementById('level-jumper');
+  if (panel) panel.style.display = show ? '' : 'none';
 }
 
 // ------------------------------------------------------------
@@ -392,7 +364,6 @@ function wtRevealNext() {
       : 'this hall is fully revealed');
     return;
   }
-  wtBackupSave();
   const st = wtSlotState(win, hall.slots[next]);
   if (!Array.isArray(wtProg(win).stars)) wtProg(win).stars = [];
   wtProg(win).stars[st.idx] = 3;
@@ -408,7 +379,6 @@ function wtRevealAll() {
   if (!win) return;
   const hall = win.COLLECTIONS.halls[wtHallIdx];
   if (!hall) return;
-  wtBackupSave();
   if (!Array.isArray(wtProg(win).stars)) wtProg(win).stars = [];
   const idxs = (hall.slots || []).map(s => wtSlotState(win, s)).filter(s => s.idx >= 0).map(s => s.idx);
   idxs.forEach(i => { wtProg(win).stars[i] = 3; });
@@ -424,7 +394,6 @@ function wtHideHall() {
   if (!win) return;
   const hall = win.COLLECTIONS.halls[wtHallIdx];
   if (!hall) return;
-  wtBackupSave();
   const idxs = (hall.slots || []).map(s => wtSlotState(win, s)).filter(s => s.idx >= 0).map(s => s.idx);
   idxs.forEach(i => { if (Array.isArray(wtProg(win).stars)) wtProg(win).stars[i] = 0; });
   wtProg(win).seenInstruments = (wtProg(win).seenInstruments || []).filter(i => !idxs.includes(i));
@@ -447,7 +416,6 @@ function wtToggleSlot(si) {
     wtStatus(`${slot.item}: level ${slot.levelId} does not exist in this journey — turn on “simulate” to force it`, true);
     return;
   }
-  wtBackupSave();
   if (!Array.isArray(wtProg(win).stars)) wtProg(win).stars = [];
   if (st.revealed) {
     wtProg(win).stars[st.idx] = 0;
@@ -473,7 +441,6 @@ function wtReplay() {
   if (!win) return;
   const hall = win.COLLECTIONS.halls[wtHallIdx];
   if (!hall) return;
-  wtBackupSave();
   const idxs = (hall.slots || []).map(s => wtSlotState(win, s)).filter(s => s.revealed).map(s => s.idx);
   if (!idxs.length) { wtStatus('nothing revealed to replay'); return; }
   wtProg(win).seenInstruments = (wtProg(win).seenInstruments || []).filter(i => !idxs.includes(i));
@@ -495,8 +462,7 @@ function wtCelebrate() {
 function wtResetAll() {
   const win = wtWin();
   if (!win) return;
-  if (!confirm('Clear stars, seen-flags and hall progress for EVERY hall?\n\n"↩ Restore save" still puts your real save back.')) return;
-  wtBackupSave();
+  if (!confirm('Clear stars, seen-flags and hall progress for EVERY hall in the sandbox?')) return;
   wtProg(win).stars = [];
   wtProg(win).seenInstruments = [];
   wtProg(win).seenHall = null;
@@ -598,9 +564,6 @@ function wtInit() {
   if (!f) return;
 
   f.addEventListener('load', () => {
-    // wtRestoreSave() parks the frame on about:blank on purpose; that load is not
-    // the game arriving, and polling it would just time out with a scary message.
-    try { if (f.contentWindow.location.href === 'about:blank') return; } catch (e) { return; }
     // boot.js runs on DOMContentLoaded inside the frame; poll briefly for the
     // globals rather than guessing a delay.
     let tries = 0;
@@ -608,6 +571,7 @@ function wtInit() {
       if (wtWin()) {
         const win = wtWin();
         wtApplySimulation(win);
+        wtSetJumperVisible(win, wtShowJumper);
         let boot = null;
         try { boot = win.localStorage.getItem('mm_device'); } catch (e) {}
         wtFitFrameTo(WT_DEVICE_H[boot] ? boot : 'ip15pro');
@@ -627,10 +591,9 @@ function wtInit() {
   wtEl('wt-replay').addEventListener('click', wtReplay);
   wtEl('wt-celebrate').addEventListener('click', wtCelebrate);
   wtEl('wt-reset-all').addEventListener('click', wtResetAll);
-  wtEl('wt-restore').addEventListener('click', wtRestoreSave);
   wtEl('wt-reload').addEventListener('click', () => {
     wtStatus('reloading the game frame…');
-    const fr = wtFrame(); if (fr) fr.src = fr.src.split('#')[0];
+    const fr = wtFrame(); if (fr) fr.src = WT_FRAME_SRC;
   });
   wtEl('wt-simulate').addEventListener('change', e => {
     wtSimulate = e.target.checked;
@@ -640,6 +603,11 @@ function wtInit() {
       ? 'simulating slots whose level does not exist — these are NOT playable levels, art only'
       : 'showing real unlock state only');
     wtRender();
+  });
+  wtEl('wt-show-jumper').addEventListener('change', e => {
+    wtShowJumper = e.target.checked;
+    const win = wtWin();
+    if (win) wtSetJumperVisible(win, wtShowJumper);
   });
   document.querySelectorAll('#wt-devices .wt-dev').forEach(b =>
     b.addEventListener('click', () => wtSetDevice(b.dataset.device)));
@@ -652,7 +620,7 @@ function wtInit() {
     // Those buttons load/save LEVEL json and would be a footgun here.
     if (bar) bar.style.visibility = mine ? 'hidden' : '';
     if (!mine) return;
-    if (!f.getAttribute('src')) f.src = '../index.html';
+    if (!f.getAttribute('src')) f.src = WT_FRAME_SRC;
     else if (wtWin()) wtRender();
   }));
 }

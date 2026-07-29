@@ -17,8 +17,12 @@ renderer and knows nothing about stars or reveal animations.
 - Slots whose `levelId` is past the end of the journey say **no such level** and
   cannot reveal — that is correct game behaviour for art authored ahead of the
   levels. Tick **Simulate** to force them for a look; they are still not playable.
-- Revealing writes the real `mm_progress` save. The first write snapshots it and
-  **↩ Restore save** puts your playthrough back.
+- The frame loads `../index.html?mmSandbox=1`, which stores progress under
+  `mm_progress_sandbox` instead of the real `mm_progress` (see `mmProgressKey()` in
+  `../settings.js`). Revealing/hiding/resetting here never touches a real
+  playthrough, so it doesn't matter how many levels are actually cleared.
+- The game's own dev level-jumper is hidden by default (it's not what this tab is
+  for); tick **Show the game's dev level jumper** to bring it back.
 
 # Adding a hall (Collections tab)
 

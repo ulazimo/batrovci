@@ -424,12 +424,19 @@ function setWinStreak(n) {
 // ============================================================
 // PERSISTENCE
 // ============================================================
+// level-editor/hall-walkthrough.js loads this page with ?mmSandbox=1 so it can
+// freely reveal/hide hall items to check how unlocking looks without ever
+// touching (or needing to back up/restore) the player's real save.
+function mmProgressKey() {
+  try { return new URLSearchParams(location.search).has('mmSandbox') ? 'mm_progress_sandbox' : 'mm_progress'; }
+  catch (e) { return 'mm_progress'; }
+}
 function loadProgress() {
-  try { return JSON.parse(localStorage.getItem('mm_progress') || '{}'); }
+  try { return JSON.parse(localStorage.getItem(mmProgressKey()) || '{}'); }
   catch(e) { return {}; }
 }
 function saveProgress() {
-  try { localStorage.setItem('mm_progress', JSON.stringify(progress)); } catch(e) {}
+  try { localStorage.setItem(mmProgressKey(), JSON.stringify(progress)); } catch(e) {}
 }
 
 let progress = loadProgress();
