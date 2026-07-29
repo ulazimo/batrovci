@@ -383,9 +383,11 @@ Cards are plain objects created by helpers at [board.js](board.js) (`createCard`
   next turn. **The reveal reaches fresh cards too:** a pattern cell that refills from a **stack**
   (reseeded) or **elevator** (batch) this same turn has its new card flashed as well — even under
   `hiddenNewCards` — so the player learns it (via `bePatternCells` + the `beStackNew`/`beElevNew`
-  path in `endTurn`). Deck/normal refills are *not* revealed this way. Placed via
-  `backEffects: [[r,c,id]…]` in the level data (one-time; a refill card in
-  the same slot is plain). Authorable via the level-editor's **Back Effect** tool.
+  path in `endTurn`). **Timing:** stack reseeds already sit on the board (reseeded during the fly),
+  so they flash in the SAME Step-1 beat as the rest of the pattern; elevator batch cells only
+  emerge in Step 2 (`placeNewCards`), so they flash there, as they arrive. Deck/normal refills are
+  *not* revealed this way. Placed via `backEffects: [[r,c,id]…]` in the level data (one-time; a
+  refill card in the same slot is plain). Authorable via the level-editor's **Back Effect** tool.
   - **Impact glow** (`.reveal-impact`, a soft *white* cue — not the red danger ember): the impact
     area lights up while the card sits in the active chain (`updateBackEffectImpactPreview`, driven
     by `updateChainIndicator`) and **stays lit** through the resolve, held a beat
