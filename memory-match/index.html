@@ -91,6 +91,12 @@
     </div>
   </div>
 
+  <!-- Floating Shop entry point — sits just below the top HUD on the left. -->
+  <button id="shop-fab" onclick="openShop()" title="Shop" aria-label="Open shop">
+    <span class="shop-fab-icon">🛒</span>
+    <span class="shop-fab-label">Shop</span>
+  </button>
+
   <!-- The room scene: backdrop (image OR the procedural CSS scenery below) +
        item spots, both built by JS. A hall with `backdrop` set in collections.js
        shows #room-backdrop and hides #room-bg entirely. -->
@@ -141,6 +147,19 @@
     </div>
     <!-- Hall page-dots -->
     <div id="room-dots"></div>
+  </div>
+</div>
+
+<!-- Shop — buy power-ups (in batches) and bombs (may exceed capacity) for coins.
+     Content is built by renderShop() in shop.js. -->
+<div id="shop-screen" class="overlay-screen">
+  <div class="overlay-box shop-box">
+    <div class="shop-header">
+      <h2>🛒 Shop</h2>
+      <div class="coin-pill shop-coins"><img src="icons/coin_icon.png" class="coin-icon" alt="coins"><span id="shop-coin-count">0</span></div>
+    </div>
+    <div class="shop-list" id="shop-list"></div>
+    <button class="overlay-btn primary" onclick="closeShop()">Done</button>
   </div>
 </div>
 
@@ -316,6 +335,7 @@
 <script src="turn.js"></script>
 <script src="endgame.js"></script>
 <script src="home-room.js"></script>
+<script src="shop.js"></script>
 <script src="boot.js"></script>
 
 <!-- Device frame switcher: pick which phone bezel to render the game inside -->

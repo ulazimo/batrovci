@@ -86,7 +86,7 @@ function startNudgeIdleTimer() {
 // OVERLAY HELPERS
 // ============================================================
 function closeAllOverlays() {
-  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay','progression-picker','special-tutorial']
+  ['home-screen','level-select','overlay-fail','overlay-win','pre-level','color-picker','settings-panel','tutorial-overlay','progression-picker','special-tutorial','shop-screen']
     .forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   const _nlb = document.getElementById('next-level-btn');
   if (_nlb) _nlb.style.display = '';

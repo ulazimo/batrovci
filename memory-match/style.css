@@ -1015,8 +1015,9 @@ body {
 .booster-btn.active   { border-color:#f0c040;background:#3a3a5a;box-shadow:0 0 10px rgba(240,192,64,.4); }
 .booster-btn.disabled { opacity:.3;pointer-events:none; }
 .booster-btn .badge   { position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;padding:0 3px;box-sizing:border-box;border-radius:8px;display:flex;align-items:center;justify-content:center; }
-/* At capacity (bombs only) — green badge so "full" reads at a glance. */
-.booster-btn.full .badge { background:#2ecc71;color:#fff; }
+/* At capacity (bombs only) — RED badge: hitting the cap is a limit to push past
+   (the Shop sells bombs OVER capacity), not a satisfied "full" state. */
+.booster-btn.full .badge { background:#e74c3c;color:#fff;box-shadow:0 0 6px rgba(231,76,60,.9); }
 .booster-tooltip { display:none;position:fixed;background:#222;color:#ddd;padding:10px 14px;border-radius:8px;font-size:13px;max-width:220px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.6);border:1px solid #444;line-height:1.4;text-align:center; }
 .booster-tooltip.visible { display:block; }
 .status-badge { position:absolute;top:95px;right:10px;z-index:90;display:flex;flex-direction:column;gap:4px;align-items:flex-end; }
@@ -1206,6 +1207,81 @@ body.bomb-aiming #board { touch-action: none; }
 .overlay-btn.btn-red   { background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c; }
 .overlay-btn.btn-red:hover { background:rgba(231,76,60,.25); }
 .overlay-btn.secondary { background:#2a2a4a;border:1px solid #3a3a6a; }
+
+/* ================================================================
+   SHOP — floating entry point (home screen) + purchase overlay
+================================================================ */
+/* Floating icon, just under the home top HUD, top-left. Only visible on home
+   because it lives inside #home-screen (an overlay only active on the home). */
+#shop-fab {
+  position: absolute; left: 12px; z-index: 4; cursor: pointer; padding: 0;
+  top: calc(58px + env(safe-area-inset-top, 0px));
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  width: 52px; height: 52px; border-radius: 15px;
+  background: linear-gradient(135deg, #f0c040, #e6900f);
+  border: 2px solid rgba(255,255,255,.35); color: #3a2400;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4), 0 0 0 4px rgba(240,192,64,.18);
+  /* Bob a few times to draw the eye, then settle (no infinite loop). */
+  animation: shopFabBob 2.4s ease-in-out 3;
+}
+#shop-fab:hover  { filter: brightness(1.08); }
+#shop-fab:active { transform: scale(.92); }
+.shop-fab-icon  { font-size: 22px; line-height: 1; }
+.shop-fab-label { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+@keyframes shopFabBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* Overlay box: taller + scrollable, the shop can hold several rows. */
+.shop-box { max-width: 380px; max-height: 90%; overflow-y: auto; gap: 10px; padding: 22px 20px; }
+.shop-header { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; }
+.shop-header h2 { margin: 0; }
+.shop-coins { font-size: 16px; }
+.shop-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+.shop-section-title {
+  font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  color: #8fa0c8; text-align: left; margin: 4px 0 -2px; width: 100%;
+}
+.shop-section-note { font-size: 11px; color: #f0c040; text-align: left; width: 100%; margin: -4px 0 2px; }
+
+.shop-item {
+  display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center;
+  background: #1c2748; border: 1px solid #2c3a63; border-radius: 12px; padding: 10px;
+}
+.shop-item.bomb { border-color: #6a3ad0; background: linear-gradient(135deg,#221a44,#1c2748); }
+.shop-item-icon {
+  width: 44px; height: 44px; border-radius: 10px; background: #2a2a4a; border: 2px solid #3a3a6a;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+.shop-item[data-booster="pluscolor"] .shop-item-icon { font-size: 15px; letter-spacing: -1px; }
+.shop-item-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.shop-item-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.shop-item-name { font-size: 14px; font-weight: 700; color: #e7dcff; text-align: left; }
+
+/* Owned / capacity pill. Uncapped power-ups: neutral "Owned N". Bombs: a
+   capacity pill (count/max) — GREEN under the cap, RED once reached/exceeded. */
+.shop-owned {
+  font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+  background: rgba(255,255,255,.08); color: #cdd6ee; border: 1px solid rgba(255,255,255,.12);
+}
+.shop-owned.cap        { background: rgba(46,204,113,.16); color: #2ecc71; border-color: rgba(46,204,113,.4); }
+.shop-owned.cap.maxed  { background: rgba(231,76,60,.18); color: #ff6b5c; border-color: rgba(231,76,60,.5); }
+
+.shop-batches { display: flex; gap: 6px; }
+.shop-buy {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 4px; border-radius: 9px; cursor: pointer; transition: transform .12s, filter .12s;
+  background: #2a2a4a; border: 1px solid #3a3a6a; color: #fff;
+}
+.shop-buy:hover  { filter: brightness(1.12); }
+.shop-buy:active { transform: scale(.93); }
+.shop-item.bomb .shop-buy { background: linear-gradient(135deg,#4a2da0,#6a3ad0); border-color:#7d4ee0; }
+.shop-buy-qty  { font-size: 13px; font-weight: 800; }
+.shop-buy-cost { font-size: 11px; font-weight: 700; color: #f0c040; display: flex; align-items: center; gap: 3px; }
+.shop-buy-cost .coin-icon { width: 11px; height: 11px; }
+.shop-buy-save { font-size: 8px; font-weight: 800; letter-spacing: .3px; color: #2ecc71; text-transform: uppercase; }
+.shop-buy.disabled { opacity: .38; pointer-events: none; }
+.shop-buy.bought   { animation: shopBought .4s ease-out; }
+@keyframes shopBought { 0% { transform: scale(1); } 40% { transform: scale(1.12); box-shadow: 0 0 12px rgba(240,192,64,.7); } 100% { transform: scale(1); } }
 
 /* Progression picker buttons */
 .prog-pick-btn {
@@ -1403,8 +1479,9 @@ body.bomb-aiming #board { touch-action: none; }
 .theme-purple .card-back::after { color: #2a2440; }
 /* White count badges with black text */
 .theme-purple .booster-btn .badge { background: #ffffff; color: #1a1a2a; }
-/* …but a bomb at max capacity stays green so "full" reads in the purple theme too */
-.theme-purple .booster-btn.full .badge { background: #2ecc71; color: #fff; }
+/* …and a bomb at/over capacity turns RED in the purple theme too — hitting the cap
+   is a limit to push past (the Shop sells bombs over it), not a satisfied "full". */
+.theme-purple .booster-btn.full .badge { background: #e74c3c; color: #fff; box-shadow: 0 0 6px rgba(231,76,60,.9); }
 /* Top-bar text + pills */
 .theme-purple #level-banner .level-label { color: #c9b3f0; }
 .theme-purple #turns-value { color: #ffffff; }

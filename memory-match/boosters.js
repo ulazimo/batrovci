@@ -48,9 +48,12 @@ function initBoosters() {
   BOOSTERS.forEach(b => {
     const s = getBoosterSetting(b.id);
     if (!s.enabled) { boosterCounts[b.id] = 0; return; }
-    boosterCounts[b.id] = (progress.boosterCounts[b.id] !== undefined) ? progress.boosterCounts[b.id] : s.qty;
-    // Enforce per-booster inventory cap (bombs are capped low)
-    boosterCounts[b.id] = Math.min(boosterCounts[b.id], getBoosterMax(b.id));
+    // A stored count is trusted verbatim — it may exceed the cap because the Shop
+    // lets you buy bombs OVER capacity (that's the selling point). Only the coded
+    // default falls back through the cap.
+    boosterCounts[b.id] = (progress.boosterCounts[b.id] !== undefined)
+      ? progress.boosterCounts[b.id]
+      : Math.min(s.qty, getBoosterMax(b.id));
   });
   // Recall tile — first in the tray, only on levels where recall is unlocked.
   // No data-booster, so updateBoosterUI() skips it (see the guard there); its
