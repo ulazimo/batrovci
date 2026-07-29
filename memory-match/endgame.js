@@ -34,6 +34,10 @@ function recallCards() {
   if (!targets.length) return;
   if ((progress.coins || 0) < RECALL_COST) { updateRecallButton(); return; }
   progress.coins -= RECALL_COST; saveProgress(); updateCoinDisplay();
+  // Show the spend: RECALL_COST coins drop out of the header and scatter away.
+  if (typeof burstCoinsDown === 'function') {
+    burstCoinsDown(RECALL_COST, document.querySelector('#level-banner .coin-pill'));
+  }
   SFX.booster();
   inputLocked = true;
   targets.forEach(idx => {
@@ -124,6 +128,9 @@ function levelWon() {
   if (isWinStreakActive()) progress.winStreak++;
   const coinsEarned = Math.floor(Math.random() * 5) + 8; // 8-12
   progress.coins = (progress.coins || 0) + coinsEarned;
+  // Hand the reward to the home screen, which shows the pre-win total and flies
+  // these coins into the header (incrementing the count as they land).
+  pendingHomeCoinReward = coinsEarned;
   updateCoinDisplay();
   saveJourneySnapshot();
   saveProgress();

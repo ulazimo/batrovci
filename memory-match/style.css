@@ -855,6 +855,14 @@ body {
 }
 .fly-to-goal img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
 
+/* Coin chips (reward fly-in + spent-coin burst) — above overlays and confetti. */
+.coin-fly {
+  position: fixed; pointer-events: none; z-index: 520;
+  will-change: transform, left, top, opacity;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.5));
+}
+.coin-fly img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
 /* Goal pill pop when card arrives */
 @keyframes goalPillPop {
   0%   { transform: scale(1); }
@@ -1704,6 +1712,14 @@ body.on-home #chain-indicator { display: none !important; }
 .room-play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c07f10, 0 5px 12px rgba(0,0,0,.4); }
 .room-play-label { font-size: 22px; font-weight: 900; letter-spacing: 2px; }
 .room-play-level { font-size: 12px; font-weight: 800; letter-spacing: 3px; opacity: .8; }
+/* Hard / Too Hard levels: a purple button that warns before you tap in. */
+.room-play-btn.hard {
+  color: #fff;
+  background: linear-gradient(180deg, #b06bff 0%, #7c3aed 100%);
+  box-shadow: 0 6px 0 #5b21b6, 0 10px 20px rgba(88,28,135,.45);
+}
+.room-play-btn.hard:active { box-shadow: 0 2px 0 #5b21b6, 0 5px 12px rgba(88,28,135,.4); }
+.room-play-btn.hard .room-play-level { opacity: .95; letter-spacing: 1.5px; white-space: nowrap; }
 
 /* ---- Hall slide transition (music → pasture, and swipe navigation) --------- */
 #room-scene.slide-in #room-backdrop,

@@ -343,6 +343,96 @@ function launchConfetti() {
   }
 }
 
+// ============================================================
+// COIN ANIMATIONS — coins flying into the header on a win, and spent coins
+// scattering out of it. Both build small coin chips (the header's coin icon)
+// positioned with position:fixed against the viewport, like flyCardsToGoal.
+// ============================================================
+function _makeCoinChip(cx, cy, size) {
+  const chip = document.createElement('div');
+  chip.className = 'coin-fly';
+  chip.style.width = chip.style.height = size + 'px';
+  chip.style.left = (cx - size / 2) + 'px';
+  chip.style.top  = (cy - size / 2) + 'px';
+  chip.innerHTML = '<img src="icons/coin_icon.png" alt="" draggable="false">';
+  document.body.appendChild(chip);
+  return chip;
+}
+
+// Fly `amount` coins from `fromEl` to the header coin counter `toEl`, counting
+// the displayed number up from `startCount` as each chip lands. If the endpoints
+// are missing, just snap the counter to the final total.
+function flyCoinsToHeader(amount, fromEl, toEl, startCount) {
+  amount = Math.max(0, Math.floor(amount || 0));
+  const start = startCount || 0;
+  const finalCount = start + amount;
+  if (!fromEl || !toEl || amount <= 0) { if (toEl) toEl.textContent = finalCount; return; }
+
+  const s = fromEl.getBoundingClientRect();
+  const t = toEl.getBoundingClientRect();
+  const sx = s.left + s.width / 2, sy = s.top + s.height / 2;
+  const tx = t.left + t.width / 2, ty = t.top + t.height / 2;
+  const pop = toEl.closest('.coin-pill') || toEl;   // inline spans ignore transform — pop the pill
+
+  const chips = Math.min(amount, 12);
+  const base = Math.floor(amount / chips), extra = amount % chips;
+  const size = 20;
+  const stagger = Math.min(90, 480 / chips);
+  const flyMs = 520;
+  let shown = start;
+
+  for (let i = 0; i < chips; i++) {
+    const inc = base + (i < extra ? 1 : 0);
+    // Small scatter around the source so the coins don't stack perfectly.
+    const jx = (Math.random() - 0.5) * s.width * 0.5;
+    const jy = (Math.random() - 0.5) * 14;
+    const chip = _makeCoinChip(sx + jx, sy + jy, size);
+    void chip.offsetWidth;   // commit the start position before transitioning (no rAF — see flyCardsToGoal)
+
+    setTimeout(() => {
+      // A slight negative bezier on `top` gives the coin an arc up-and-over.
+      chip.style.transition = `left ${flyMs}ms cubic-bezier(.5,0,.3,1), top ${flyMs}ms cubic-bezier(.5,-0.4,.3,1), transform ${flyMs}ms ease-in`;
+      chip.style.left = (tx - size / 2) + 'px';
+      chip.style.top  = (ty - size / 2) + 'px';
+      chip.style.transform = 'scale(.5)';
+      setTimeout(() => {
+        chip.remove();
+        shown += inc;
+        toEl.textContent = (i === chips - 1) ? finalCount : shown;
+        pop.style.transition = 'transform .14s ease-out';
+        pop.style.transform = 'scale(1.28)';
+        setTimeout(() => { pop.style.transform = 'scale(1)'; }, 140);
+        if (typeof SFX !== 'undefined' && SFX.ding) SFX.ding(i);
+      }, flyMs);
+    }, i * stagger);
+  }
+}
+
+// Spent coins: drop `amount` chips out of `fromEl` (the coin header) — they fall,
+// scatter horizontally, spin and fade, so the payment reads as coins dispersing.
+function burstCoinsDown(amount, fromEl) {
+  amount = Math.max(0, Math.floor(amount || 0));
+  if (!fromEl || amount <= 0) return;
+  const r = fromEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const size = 18;
+  for (let i = 0; i < amount; i++) {
+    const chip = _makeCoinChip(cx + (Math.random() - 0.5) * Math.max(24, r.width), cy, size);
+    const dx = (Math.random() - 0.5) * 170;
+    const dy = 110 + Math.random() * 170;
+    const rot = (Math.random() - 0.5) * 720;
+    const dur = 680 + Math.random() * 360;
+    void chip.offsetWidth;   // commit the start position before transitioning (no rAF — see flyCardsToGoal)
+    setTimeout(() => {
+      chip.style.transition = `transform ${dur}ms cubic-bezier(.35,.15,.7,1), opacity ${dur}ms ease-in`;
+      chip.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(.55)`;
+      chip.style.opacity = '0';
+      setTimeout(() => chip.remove(), dur + 60);
+    }, i * 30);
+  }
+  if (typeof SFX !== 'undefined' && SFX.pop) SFX.pop();
+}
+
 let _scoreDisplayed = 0;
 function animateScore(to) {
   const from = _scoreDisplayed;

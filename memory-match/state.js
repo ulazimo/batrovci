@@ -24,6 +24,7 @@ let bombColorClearOverride = null; // colours a bomb exhausted (all interactable
 let bombColorFullyCleared = null;  // subset of the above with NO card of the colour left at all (incl. frozen) — those earn the banner + turn refund
 let remnantHintShown = false; // one-time per-level hint for Cleaning remnant collection
 let deck = []; // Cleaning journey: finite refill pool (colors) drawn into cleared slots
+let pendingHomeCoinReward = 0; // coins won this level, awaiting the home-screen fly-in (see levelWon → showHome)
 
 // Elevator: one or more designer-placed AREAS that batch-refill independently. An area's
 // cells never refill per-card — they stay empty until that WHOLE area is cleared, then a

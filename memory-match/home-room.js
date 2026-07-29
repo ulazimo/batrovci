@@ -138,9 +138,23 @@ function showHome() {
   const livesEl = document.getElementById('room-lives');
   const coinsEl = document.getElementById('room-coins');
   if (livesEl) livesEl.textContent = progress.lives ?? 5;
-  if (coinsEl) coinsEl.textContent = progress.coins || 0;
+  // If we just won coins, show the PRE-win total here and let the fly-in below
+  // count it up to the real total; otherwise show the live total directly.
+  const total = progress.coins || 0;
+  const reward = pendingHomeCoinReward || 0;
+  if (coinsEl) coinsEl.textContent = reward > 0 ? Math.max(0, total - reward) : total;
   const lvlEl = document.getElementById('room-play-level');
-  if (lvlEl) lvlEl.textContent = 'LEVEL ' + (LEVELS[currentLevelIndex]?.id ?? (currentLevelIndex + 1));
+  const lvlId = LEVELS[currentLevelIndex]?.id ?? (currentLevelIndex + 1);
+
+  // Hard levels get a purple Play button. The main label always stays "PLAY";
+  // only the sub-line gains a difficulty prefix ("HARD LEVEL X" / "TOO HARD
+  // LEVEL X"). The tier comes from the same model as the level-editor's Turns
+  // Advisor (difficulty.js).
+  const playBtn = document.querySelector('.room-play-btn');
+  const diff = (typeof levelDifficulty === 'function') ? levelDifficulty(LEVELS[currentLevelIndex]) : null;
+  const hard = !!(diff && diff.hard);
+  if (playBtn) playBtn.classList.toggle('hard', hard);
+  if (lvlEl)   lvlEl.textContent = (hard ? diff.tier.toUpperCase() + ' ' : '') + 'LEVEL ' + lvlId;
 
   renderHomeStreak();
   renderHomeReward();
@@ -174,6 +188,21 @@ function showHome() {
     renderHall(nextHall, { reveal: true, slideDir: (firstTimeHall && nextHall > 0) ? 1 : 0 });
   }
   updateHallNav();
+
+  // Coins won this level fly from the Play button into the header, counting the
+  // displayed total up as they land. Let the screen settle first (layout + any
+  // slide-in), so both endpoints are in their final positions.
+  if (reward > 0 && typeof flyCoinsToHeader === 'function') {
+    pendingHomeCoinReward = 0;
+    const startAt = Math.max(0, total - reward);
+    setTimeout(() => {
+      const from = document.querySelector('#home-play-row .room-play-btn');
+      const to   = document.getElementById('room-coins');
+      flyCoinsToHeader(reward, from, to, startAt);
+    }, 650);
+  } else {
+    pendingHomeCoinReward = 0;
+  }
 }
 
 // The "collected" contents of a spot: glow, (music) notes, and the art image.

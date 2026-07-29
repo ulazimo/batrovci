@@ -85,6 +85,7 @@ loaded in this order after `settings.js` (see [index.html](index.html)):
 | `home-room.js` | The **home screen** "halls": `showHome`/`renderHall`, `slotLevelIndex`, the win-streak meter + next-level reward pills, `playFromHome`, and the dev level-jumper. Halls/slots read from `COLLECTIONS.halls`; `HALLS`/`HALL_ITEMS` are just aliases onto it. Owns `MAIN_JOURNEY`. |
 | `boot.js` | **Loads last.** `boot()` IIFE — restores progression, shows home. |
 | `config.js` | ~16 | `ALL_COLORS` (the 6 colors) + `COLOR_HEX` (each color's CSS hex). |
+| `difficulty.js` | ~130 | Level tier classifier (Easy/Normal/Hard/Too Hard). **`TURN_MODEL` + `computeTurnsModel` are a faithful PORT of the level-editor's Turns Advisor** (`level-editor/editor.js`) — the editor is the authoring source of truth and is NOT loaded by the game, so this duplicate exists to classify the level in-game; **keep the two in sync**. `levelDifficulty(lvl)` → `{tier, tierClass, margin, hard}`; used by the home Play button. Loads after `collections.js`, before `settings.js` (no load-time deps). See §10 / the mm-turns-difficulty-model memo. |
 | `style.css` | ~1758 | All styling + CSS animations (flips, particles, banners, nudges). |
 | `levels/levels_default.js` / `_short.js` / `_cleaning.js` / `_cleaningxl.js` / `_long.js` | — | Level definitions per **journey** (16 / 40 / 40 / 35 / 253 levels). `.json` twins exist for the editor. **`cleaningxl` is the live journey** — see §10. |
 | `levels/progression_*.js` (5 twins) | — | Per-journey unlock thresholds + level rewards. |
@@ -738,7 +739,7 @@ untouched.
 
 - **Global namespace.** All functions/vars are global; scripts load via ordered
   `<script>` tags. `config.js` → level data → progression data → `collections.js` →
-  `settings.js` → engine files (`state.js` … `boot.js`). Because these are **classic** scripts,
+  `difficulty.js` → `settings.js` → engine files (`state.js` … `boot.js`). Because these are **classic** scripts,
   top-level `function`/`let`/`const` share one global lexical scope across files, so
   any engine file can call any other and read the shared state in `state.js`.
   **Load-order rules when adding/reordering engine files:**
@@ -822,6 +823,8 @@ untouched.
 | Win/fail | `endgame.js` | `levelWon`, `levelFailed`, `continueLevelWithCoins` |
 | Board render / UI | `board.js` | `renderBoard`, `buildCardHTML`, `updateChainIndicator`, `breakLockLayer` |
 | VFX / animation | `vfx.js` | `flyCardsToGoal`, `spawnParticles`, `animateScore`, `sweepRevealBoard`, `revealEntireBoard` |
+| Coin animations | `vfx.js` | `flyCoinsToHeader` (win reward flies Play→coin header, counts the total up as chips land — driven from `showHome` via `pendingHomeCoinReward`), `burstCoinsDown` (spent coins scatter down out of a header pill — Recall spend, from `recallCards`). Both use the `void el.offsetWidth` reflow pattern, **not rAF** (rAF is throttled in backgrounded tabs). |
+| Level difficulty tier | `difficulty.js` | `levelDifficulty`, `computeTurnsModel`, `TURN_MODEL` (ported from the editor — keep in sync) |
 | Skippable reveals | `reveal-skip.js` | `runSkippableReveal`, `skipReveal`, `isRevealing`, `discardActiveReveal` |
 | Tutorials | `tutorials.js` | `advanceTutorial`, `showNextItemTutorial`, `buildLevelGrid` |
 | Shared state / DOM refs | `state.js` | `board`, `score`, `turns`, `chainCards`, `inputLocked`, `boardEl`, … |
