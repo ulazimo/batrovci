@@ -843,20 +843,6 @@ LEVELS_CLEANINGXL = [
     "goals": [
       {
         "type": "clearAll"
-      },
-      {
-        "type": "orderedCards",
-        "count": 2,
-        "positions": [
-          [
-            5,
-            1
-          ],
-          [
-            5,
-            4
-          ]
-        ]
       }
     ]
   },
@@ -1323,52 +1309,146 @@ LEVELS_CLEANINGXL = [
   },
   {
     "id": 21,
-    "cols": 5,
-    "rows": 8,
-    "colorCount": 4,
-    "turns": 36,
+    "cols": 6,
+    "rows": 6,
+    "colorCount": 5,
+    "turns": 30,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "backEffects": [
+      [
+        1,
+        1,
+        "cross"
+      ],
+      [
+        4,
+        4,
+        "cross"
+      ]
     ]
   },
   {
     "id": 22,
-    "cols": 6,
-    "rows": 9,
-    "colorCount": 4,
-    "turns": 49,
+    "cols": 5,
+    "rows": 7,
+    "colorCount": 5,
+    "turns": 25,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "disabled": [
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        5,
+        2
+      ]
+    ],
+    "colorCounts": {
+      "orange": 9
+    },
+    "backEffects": [
+      [
+        3,
+        2,
+        "cross"
+      ]
     ]
   },
   {
     "id": 23,
-    "cols": 5,
-    "rows": 8,
+    "cols": 6,
+    "rows": 6,
     "colorCount": 4,
-    "turns": 36,
+    "turns": 15,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "disabled": [
+      [
+        2,
+        0
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        5,
+        2
+      ]
+    ],
+    "backEffects": [
+      [
+        4,
+        1,
+        "column"
+      ],
+      [
+        1,
+        4,
+        "row"
+      ]
     ]
   },
   {
     "id": 24,
-    "cols": 6,
-    "rows": 9,
-    "colorCount": 4,
-    "turns": 49,
+    "cols": 5,
+    "rows": 5,
+    "colorCount": 6,
+    "turns": 25,
     "clearBoard": true,
     "deck": 0,
     "goals": [
@@ -1379,16 +1459,52 @@ LEVELS_CLEANINGXL = [
   },
   {
     "id": 25,
-    "cols": 6,
-    "rows": 9,
+    "cols": 5,
+    "rows": 5,
     "colorCount": 4,
-    "turns": 49,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [
       {
         "type": "clearAll"
       }
+    ],
+    "locked": [
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        2
+      ]
+    ],
+    "colors": [
+      [
+        2,
+        2,
+        "red"
+      ],
+      [
+        2,
+        1,
+        "red"
+      ],
+      [
+        1,
+        2,
+        "yellow"
+      ],
+      [
+        3,
+        2,
+        "blue"
+      ]
     ]
   },
   {
