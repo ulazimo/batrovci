@@ -65,10 +65,14 @@ function buildLevelGrid() {
 let tutRunning = false;         // a level tutorial script is currently running
 let tutScript = null;           // the active step array
 let tutIndex = -1;              // current step index
+let tutCurrentId = null;        // seen-flag id of the running tutorial
 let tutAllowedCard = null;      // the only board index tappable right now (null = none)
+let tutAllowedBooster = null;   // the only power-up usable right now (null = none)
+let tutBombTarget = null;       // a guided bomb may only drop on this index (null = any)
 let tutAwaitingResolve = false; // waiting for finishTurn before advancing
 let tutForcedDangerTargets = null; // indices applyChainColorHint must mark (tutorial override)
-let ftueLevelPending = false;   // Play was tapped for the FTUE → start the script once the board is ready
+let tutForcedReveal = null;     // indices random3 / +1-color must reveal (tutorial override)
+let tutPending = null;          // {id, steps} to start once the opening board reveal finishes
 let homeSpotlightActive = false;
 let _spot = null;               // current spotlight params, kept for re-layout on resize
 
@@ -79,14 +83,35 @@ function hasSeenTutorial(id) { return !!(progress.tutorialsSeen && progress.tuto
 function markTutorialSeen(id) { (progress.tutorialsSeen || (progress.tutorialsSeen = {}))[id] = true; saveProgress(); }
 function resetTutorialFlags() { progress.tutorialsSeen = {}; }
 
+// ---- Registry: one entry per level INDEX → {id, steps}. tutorialForLevel returns the
+// entry when that level has a tutorial the player hasn't seen. (LEVEL_TUTORIALS is
+// declared with the scripts near the bottom of this file.) ----
+function tutorialForLevel(idx) {
+  const e = (typeof LEVEL_TUTORIALS !== 'undefined') ? LEVEL_TUTORIALS[idx] : null;
+  return (e && !hasSeenTutorial(e.id)) ? e : null;
+}
+function currentTutStep() { return tutScript ? tutScript[tutIndex] : null; }
+
 // ---- Gates / predicates read by the engine files ----
-function shouldRunFtue() { return !hasSeenTutorial('ftue') && currentLevelIndex === 0; }
 function isTutorialActive() { return tutRunning; }
 function tutorialAllowsCard(index) { return !tutRunning || tutAllowedCard === index; }
+function tutorialAllowsBooster(id) { return !tutRunning || tutAllowedBooster === id; }
+function tutorialAllowsBombDrop(idx) { return !tutRunning || tutBombTarget == null || tutBombTarget === idx; }
+function tutorialAllowsLongPress(i) { const s = currentTutStep(); return !tutRunning || !!(s && s.type === 'longPressPeek' && s.card === i); }
 function tutorialForcedDanger() { return tutRunning ? tutForcedDangerTargets : null; }
 function setForcedDanger(indices) { tutForcedDangerTargets = indices ? [...indices] : null; }
+function tutorialForcedReveal() { return tutRunning ? tutForcedReveal : null; }
+function setForcedReveal(indices) { tutForcedReveal = indices ? [...indices] : null; }
+// Gift power-up charge(s) into the tray mid-level (uncapped — also used to teach over-cap).
+function tutorialGift(id, n) {
+  boosterCounts[id] = (boosterCounts[id] || 0) + (n || 1);
+  if (typeof saveBoosterCounts === 'function') saveBoosterCounts();
+  if (typeof updateBoosterUI === 'function') updateBoosterUI();
+}
+function boosterButtonEl(id) { return boosterBar ? boosterBar.querySelector(`.booster-btn[data-booster="${id}"]`) : null; }
 
-// ---- HOME: spotlight the Play button ----
+// ---- HOME: spotlight the Play button (first-launch FTUE only) ----
+function shouldRunFtue() { return currentLevelIndex === 0 && !!tutorialForLevel(0); }
 function maybeStartHomeFTUE() {
   if (!shouldRunFtue()) return;
   const up = document.getElementById('username-prompt');
@@ -112,26 +137,26 @@ function endHomeSpotlight() {
 }
 
 // Play → skip the pre-level prep screen and drop straight into the guided board.
-function beginFtueLevel() {
-  ftueLevelPending = true;
+function beginTutorialLevel(entry) {
+  tutPending = entry;
   initLevelConfig();
   startGame();
 }
 
 // ---- LEVEL: the guided script starts once the opening board reveal finishes ----
 function tutorialOnBoardReady() {
-  if (!ftueLevelPending) return;
-  ftueLevelPending = false;
-  startLevelTutorial(LEVEL1_FTUE_STEPS);
+  if (!tutPending) return;
+  const e = tutPending; tutPending = null;
+  startLevelTutorial(e);
 }
 
-function startLevelTutorial(steps) {
+function startLevelTutorial(entry) {
   tutRunning = true;
-  tutScript = steps;
+  tutScript = entry.steps;
+  tutCurrentId = entry.id;
   tutIndex = -1;
-  tutAllowedCard = null;
-  tutAwaitingResolve = false;
-  tutForcedDangerTargets = null;
+  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
+  tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
   advanceTutorial();
 }
 
@@ -143,17 +168,22 @@ function advanceTutorial() {
 function renderTutorialStep() {
   const step = tutScript && tutScript[tutIndex];
   if (!step) { endTutorial(); return; }
+  // Clear all per-step allowances; the step re-arms exactly what it needs.
+  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   if (step.onEnter) step.onEnter();
   if (step.type === 'info') {
-    tutAllowedCard = null;
     const target = step.highlight ? resolveHighlight(step.highlight) : null;
     showSpotlight({ target, text: step.text, hand: false, showNext: true });
-  } else if (step.type === 'tapCard') {
-    tutAllowedCard = step.card;
-    const el = (typeof getCardEl === 'function') ? getCardEl(step.card) : null;
+  } else if (step.type === 'tapCard' || step.type === 'longPressPeek') {
     // Cut the hole around the WHOLE board so the other cards stay lit (only the
-    // surrounding UI dims); the ring + hand pick out the one card to tap.
-    showSpotlight({ target: el, holeTarget: boardEl, text: step.text || '', hand: step.hand !== false });
+    // surrounding UI dims); the ring + hand pick out the one card to tap/hold.
+    tutAllowedCard = step.card;
+    showSpotlight({ target: getCardEl(step.card), holeTarget: boardEl, text: step.text || '', hand: step.hand !== false });
+  } else if (step.type === 'useBooster' || step.type === 'useBomb') {
+    // Spotlight the power-up button; gate the tray to just this one.
+    tutAllowedBooster = step.booster;
+    if (step.type === 'useBomb') tutBombTarget = step.target;
+    showSpotlight({ target: boosterButtonEl(step.booster), text: step.text || '', hand: true });
   }
 }
 
@@ -177,6 +207,68 @@ function tutorialOnCardTap(index) {
   }
 }
 
+// ---- Power-up step hooks (called from boosters.js / bomb-aim.js / board.js) ----
+
+// A booster button was activated. For a needsTap booster (peek) with a target card,
+// move the spotlight onto that card; for an immediate booster (random3/+1-color), the
+// reveal plays and we advance after a beat.
+function tutorialOnBoosterActivated(id) {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'useBooster' || step.booster !== id) return;
+  if (step.card != null) {
+    tutAllowedCard = step.card;
+    showSpotlight({ target: getCardEl(step.card), holeTarget: boardEl, text: step.cardText || '', hand: true });
+  } else {
+    setTimeout(advanceTutorial, step.nextDelay || 900);
+  }
+}
+
+// A needsTap booster finished on its target card (executeBoosterTap → executePeek…).
+function tutorialOnBoosterUsed(id, index) {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'useBooster' || step.booster !== id) return;
+  hideSpotCue();
+  setTimeout(advanceTutorial, step.nextDelay || 800);
+}
+
+// Long-press peek fired on a card.
+function tutorialOnLongPressPeek(index) {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'longPressPeek' || step.card !== index) return;
+  tutAllowedCard = null;
+  hideSpotCue();
+  setTimeout(advanceTutorial, step.nextDelay || 800);
+}
+
+// A bomb drag started → switch a useBomb step's spotlight from the button to the target tile.
+function tutorialOnBombAimStart() {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'useBomb') return;
+  showSpotlight({ target: getCardEl(step.target), holeTarget: boardEl, text: step.dropText || '', hand: true });
+}
+
+// The bomb was dropped (on the gated target).
+function tutorialOnBombPlaced(idx) {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'useBomb') return;
+  tutBombTarget = null; tutAllowedBooster = null;
+  hideSpotlight();
+  setTimeout(advanceTutorial, step.nextDelay || 900);
+}
+
+// The bomb drag was cancelled (released off-target) → re-arm the button spotlight to retry.
+function tutorialOnBombAimCancel() {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'useBomb') return;
+  showSpotlight({ target: boosterButtonEl(step.booster), text: step.text || '', hand: true });
+}
+
 // Called at the end of finishTurn (every resolved turn) and from levelWon.
 function tutorialOnTurnResolved() {
   if (!tutRunning || !tutAwaitingResolve) return;
@@ -188,11 +280,11 @@ function endTutorial() {
   tutRunning = false;
   tutScript = null;
   tutIndex = -1;
-  tutAllowedCard = null;
-  tutAwaitingResolve = false;
-  tutForcedDangerTargets = null;
+  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
+  tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
   hideSpotlight();
-  if (!hasSeenTutorial('ftue')) markTutorialSeen('ftue');
+  if (tutCurrentId && !hasSeenTutorial(tutCurrentId)) markTutorialSeen(tutCurrentId);
+  tutCurrentId = null;
 }
 
 // Dev helper: replay every tutorial from scratch (call from console, then reload).
@@ -342,7 +434,7 @@ const LEVEL1_FTUE_STEPS = [
   { type: 'tapCard', card: 0 },
   { type: 'tapCard', card: 1 },
   { type: 'info',    text: 'There are more than 2 of each color! 🎨 Let\'s find 2 more.' },
-  { type: 'tapCard', card: 6, onEnter: () => setForcedDanger([4, 5, 8]) },
+  { type: 'tapCard', card: 6, onEnter: () => setForcedDanger([5, 8, 9]) },
   { type: 'info',    text: 'By creating longer combos, you\'ll get more rewards 🎁 that help you beat the levels.', highlight: '#chain-indicator' },
   { type: 'info',    text: '⚠️ The Danger cards don\'t contain your color. Let\'s try to guess where the next and final Red card is.', highlight: '#board' },
   { type: 'tapCard', card: 7, advanceOnResolve: true },
@@ -368,3 +460,46 @@ const LEVEL1_FTUE_STEPS = [
   { type: 'tapCard', card: 3 },
   { type: 'tapCard', card: 15, advanceOnResolve: true },
 ];
+
+// ============================================================
+// LEVEL 2 — teaches Peek + Baby Bomb.
+// Authored board (index:color):
+//   B G R R / G R G R / G G B B / G G B R
+//   red=2,3,5,7,15  green=1,4,6,8,9,12,13  blue=0,10,11,14
+// Peek came from the level-1 reward (peek×3); step 1 tops it up if short.
+// ============================================================
+const LEVEL2_STEPS = [
+  { type: 'info', text: "🎁 Let's use the Power-Up you just received — Peek!", highlight: '.booster-btn[data-booster="peek"]',
+    onEnter: () => { const have = boosterCounts.peek || 0; if (have < 2) tutorialGift('peek', 2 - have); } },
+  { type: 'tapCard', card: 15 },
+  { type: 'tapCard', card: 5 },   // red chain: 15, 5
+  { type: 'info', text: '👀 Now let\'s use Peek to check the next card, but keep our Chain safe.' },
+  { type: 'useBooster', booster: 'peek', card: 1, cardText: 'Tap this card to peek it.' },
+  { type: 'info', text: 'It was Green, but we kept our Red chain — it didn\'t fail!' },
+  { type: 'info', text: '🤏 Let\'s try once more — you can quickly use Peek by holding on a card!' },
+  { type: 'longPressPeek', card: 7, text: 'Press and hold this card.', onEnter: () => setForcedDanger([4, 8, 12]) },
+  { type: 'info', text: 'Red was added to our chain! ⚠️', highlight: '#board' },
+  { type: 'tapCard', card: 13, advanceOnResolve: true },   // mismatch banks red 15,5,7
+  // Green chain of 5 → Baby Bomb reward
+  { type: 'tapCard', card: 1 },
+  { type: 'tapCard', card: 4 },
+  { type: 'tapCard', card: 8 , onEnter: () => setForcedDanger([0, 10, 11]) },
+  { type: 'tapCard', card: 12 },
+  { type: 'tapCard', card: 13 },
+  { type: 'tapCard', card: 0, advanceOnResolve: true },    // mismatch banks 5 greens → 💣
+  { type: 'info', text: '💣 We got a Small Bomb!' },
+  { type: 'useBomb', booster: 'babybomb', target: 10,
+    text: 'Let\'s drop it on the remaining cards to collect them! Press and drag the 💣.',
+    dropText: 'Drop it right here!' },
+  { type: 'info', text: 'If you make a bigger chain, you can get a bigger BOMB! 💥' },
+  { type: 'tapCard', card: 2 },
+  { type: 'tapCard', card: 3, advanceOnResolve: true },    // last reds → colour clear
+  { type: 'info', text: '✨ When only one card of a color remains, you can just collect it — no match needed!' },
+  { type: 'tapCard', card: 0, advanceOnResolve: true },    // last blue → lone collect → win
+];
+
+// ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
+const LEVEL_TUTORIALS = {
+  0: { id: 'ftue',   steps: LEVEL1_FTUE_STEPS },
+  1: { id: 'level2', steps: LEVEL2_STEPS },
+};

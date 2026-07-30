@@ -565,8 +565,10 @@ function playFromHome() {
     if (typeof restoreJourneySnapshot === 'function') restoreJourneySnapshot(MAIN_JOURNEY);
   }
   currentLevelIndex = nextPlayableIndex();
-  // FTUE: skip the pre-level prep screen and drop straight into the guided board.
-  if (typeof shouldRunFtue === 'function' && shouldRunFtue()) { beginFtueLevel(); return; }
+  // If this level has an unseen tutorial, skip the pre-level prep screen and drop
+  // straight into the guided board.
+  const _tut = (typeof tutorialForLevel === 'function') ? tutorialForLevel(currentLevelIndex) : null;
+  if (_tut) { beginTutorialLevel(_tut); return; }
   showPreLevel();
 }
 
@@ -597,5 +599,8 @@ function jumpToLevel(i) {
   const n = (typeof LEVELS !== 'undefined') ? LEVELS.length : 0;
   currentLevelIndex = Math.max(0, Math.min(i, n - 1));
   if ((progress.highestUnlocked || 0) < currentLevelIndex) progress.highestUnlocked = currentLevelIndex;
+  // Unseen tutorial for this level? Run it (skip pre-level), same as the Play flow.
+  const _tut = (typeof tutorialForLevel === 'function') ? tutorialForLevel(currentLevelIndex) : null;
+  if (_tut) { beginTutorialLevel(_tut); return; }
   if (typeof showPreLevel === 'function') showPreLevel();
 }

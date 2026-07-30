@@ -817,6 +817,8 @@ boardEl.addEventListener('pointerdown', e => {
   if (!el) return;
   const i = parseInt(el.dataset.index, 10);
   if (isNaN(i)) return;
+  // In a tutorial, long-press peek is only allowed on the scripted card.
+  if (isTutorialActive() && !tutorialAllowsLongPress(i)) return;
   // Only show progress if the peek would be valid
   if (!inputLocked && board[i] && !board[i].flipped && !board[i].special && !board[i].locked
       && boosterCounts['peek'] && boosterCounts['peek'] > 0) {
@@ -830,6 +832,7 @@ boardEl.addEventListener('pointerdown', e => {
     consumeBooster('peek');
     executePeek(i);
     updateBoosterUI();
+    if (typeof tutorialOnLongPressPeek === 'function') tutorialOnLongPressPeek(i);
   }, 700);
 });
 

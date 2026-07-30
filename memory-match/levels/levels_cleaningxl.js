@@ -506,20 +506,6 @@ LEVELS_CLEANINGXL = [
     "id": 7,
     "cols": 5,
     "rows": 5,
-    "colorCount": 3,
-    "turns": 25,
-    "clearBoard": true,
-    "deck": 0,
-    "goals": [
-      {
-        "type": "clearAll"
-      }
-    ]
-  },
-  {
-    "id": 8,
-    "cols": 5,
-    "rows": 5,
     "colorCount": 4,
     "turns": 25,
     "clearBoard": true,
@@ -574,6 +560,20 @@ LEVELS_CLEANINGXL = [
     "colorCounts": {
       "red": 8
     }
+  },
+  {
+    "id": 8,
+    "cols": 5,
+    "rows": 5,
+    "colorCount": 4,
+    "turns": 25,
+    "clearBoard": true,
+    "deck": 0,
+    "goals": [
+      {
+        "type": "clearAll"
+      }
+    ]
   },
   {
     "id": 9,
@@ -663,7 +663,7 @@ LEVELS_CLEANINGXL = [
     "cols": 5,
     "rows": 7,
     "colorCount": 4,
-    "turns": 15,
+    "turns": 20,
     "clearBoard": true,
     "deck": 0,
     "goals": [

@@ -34,7 +34,10 @@ function markBombClickSwallow() {
 function isValidBombCenter(idx) {
   // Locked tiles are valid drop targets now — the bomb breaks one lock layer instead
   // of destroying them. Special cards are still off-limits.
-  return idx >= 0 && board[idx] && !board[idx].special;
+  if (idx < 0 || !board[idx] || board[idx].special) return false;
+  // During a guided tutorial bomb, only the scripted target tile is a valid drop.
+  if (typeof tutorialAllowsBombDrop === 'function' && !tutorialAllowsBombDrop(idx)) return false;
+  return true;
 }
 
 // ---- entry points -------------------------------------------------
@@ -43,6 +46,7 @@ function isValidBombCenter(idx) {
 function startBombBoosterDrag(b, e) {
   if (e) e.preventDefault();
   if (inputLocked || turns <= 0) return;
+  if (isTutorialActive() && !tutorialAllowsBooster(b.id)) return; // tutorial gates the tray
   if (isBombAiming()) endBombAim(); // clear any stray session
   if (!hasBooster(b.id)) return;
   startBombAim({ type: b.bomb, source: { kind: 'booster', id: b.id }, name: b.name, startEvent: e });
@@ -71,6 +75,7 @@ function startBombAim({ type, source, name, startEvent }) {
   document.addEventListener('pointercancel', onBombAimPointerUp,   true);
 
   if (startEvent) { moveGhost(startEvent.clientX, startEvent.clientY); }
+  if (typeof tutorialOnBombAimStart === 'function') tutorialOnBombAimStart(); // guide the drop tile
 }
 
 function endBombAim() {
@@ -85,7 +90,7 @@ function endBombAim() {
   boardEl.classList.remove('bomb-aim-active', 'bomb-aim-big');
   bombAim = null;
 }
-function cancelBombAim() { endBombAim(); }
+function cancelBombAim() { endBombAim(); if (typeof tutorialOnBombAimCancel === 'function') tutorialOnBombAimCancel(); }
 
 // ---- pointer handling --------------------------------------------
 
@@ -122,12 +127,14 @@ function commitBombAim(idx) {
     endBombAim();
     updateBoosterUI();
     detonateBombAt(idx, b.bomb);
+    if (typeof tutorialOnBombPlaced === 'function') tutorialOnBombPlaced(idx);
   } else if (source.kind === 'bank') {
     bankProgress = 0;
     bankBombPlacement = false;
     endBombAim();
     updateBankProgress();
     detonateBombAt(idx, 'cross');
+    if (typeof tutorialOnBombPlaced === 'function') tutorialOnBombPlaced(idx);
   } else {
     endBombAim();
   }

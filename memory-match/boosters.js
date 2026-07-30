@@ -124,6 +124,7 @@ function updateBoosterUI() {
 
 function activateBooster(id) {
   if (inputLocked || !hasBooster(id)) return;
+  if (isTutorialActive() && !tutorialAllowsBooster(id)) return; // tutorial gates the tray to one power-up
   const b = BOOSTERS.find(x => x.id === id);
   // Toggle off (also clears any bomb-placement glow)
   if (activeBooster === id) {
@@ -135,13 +136,18 @@ function activateBooster(id) {
   // (pointerdown → startBombBoosterDrag). Ignore plain clicks here.
   if (b.bomb) return;
   SFX.booster();
-  if (b.needsTap) { activeBooster = id; updateBoosterUI(); updateChainIndicator(); return; }
+  if (b.needsTap) {
+    activeBooster = id; updateBoosterUI(); updateChainIndicator();
+    if (typeof tutorialOnBoosterActivated === 'function') tutorialOnBoosterActivated(id);
+    return;
+  }
   consumeBooster(id);
   if (id === 'random3')   executeRandom3();
   else if (id === 'pluscolor') executePlusColor();
   else if (id === 'neighbor')  executeNeighbor();
   else if (id === 'colorpick') executeColorPick();
   else if (id === 'shield') { shieldCharges += 2; updateStatusBadge(); updateChainIndicator(); updateBoosterUI(); }
+  if (typeof tutorialOnBoosterActivated === 'function') tutorialOnBoosterActivated(id);
 }
 
 // ============================================================
@@ -376,6 +382,7 @@ function executePeek(index) {
 
 function executeBoosterTap(id, index) {
   consumeBooster(id); activeBooster = null;
+  if (typeof tutorialOnBoosterUsed === 'function') tutorialOnBoosterUsed(id, index); // advance a useBooster step
   const { r, c } = toRC(index);
   if (id === 'peek') { executePeek(index); return; }
   else if (id === 'joker') { executeJoker(index); return; }
@@ -462,7 +469,10 @@ function boosterReveal(indices) {
 
 function executeRandom3() {
   const fd = board.filter(c=>c&&!c.flipped&&!c.special&&!c.locked).map(c=>c.index).sort(()=>Math.random()-.5);
-  const picks = fd.slice(0,3);
+  // Tutorial can force which 3 cards open (see tutorialForcedReveal); consumed once.
+  const forced = (typeof tutorialForcedReveal === 'function') ? tutorialForcedReveal() : null;
+  const picks = (forced && forced.length) ? forced.slice(0, 3) : fd.slice(0, 3);
+  if (forced && forced.length && typeof setForcedReveal === 'function') setForcedReveal(null);
   if (!picks.length) { inputLocked = false; updateBoosterUI(); return; }
 
   const matches = idx => turnActive && (board[idx].color === chainColor || (getRule('coloredBombs') && chainColors.has(board[idx].color)));
@@ -538,7 +548,13 @@ function executePlusColor() {
   // One random face-down, normal, unlocked card of that color.
   const candidates = board.filter(c => c && !c.flipped && !c.special && !c.locked && c.color === color)
                           .map(c => c.index).sort(() => Math.random() - .5);
-  const pick = candidates[0];
+  // Tutorial can force which card +1-Color reveals (next forced index that is still valid).
+  const forced = (typeof tutorialForcedReveal === 'function') ? tutorialForcedReveal() : null;
+  let pick = candidates[0];
+  if (forced && forced.length) {
+    const f = forced.find(i => candidates.includes(i));
+    if (f !== undefined) { pick = f; if (typeof setForcedReveal === 'function') setForcedReveal(forced.filter(i => i !== f)); }
+  }
   if (pick === undefined) { refundPlusColor(`No hidden ${color} cards found`); return; }
 
   const matchesChain = turnActive && (color === chainColor || (getRule('coloredBombs') && chainColors.has(color)));
