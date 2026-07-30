@@ -1425,6 +1425,50 @@ body.bomb-aiming #board { touch-action: none; }
 .settings-gear:hover { color:#fff;background:rgba(255,255,255,.1); }
 
 /* ================================================================
+   TUTORIAL / FTUE spotlight overlay (see tutorial.js)
+================================================================ */
+#ftue-layer { position:fixed; inset:0; z-index:99990; pointer-events:none; }
+/* One dark backdrop; a clip-path notch cuts a hole over the target. The dark area
+   captures clicks (blocks input); the hole passes them through to the target. */
+#ftue-backdrop {
+  position:fixed; inset:0; background:rgba(6,8,24,.6); pointer-events:auto;
+  transition:clip-path .3s ease, background .3s ease;
+}
+#ftue-ring {
+  position:fixed; border-radius:14px; pointer-events:none; box-sizing:border-box;
+  border:3px solid #ffd23f;
+  box-shadow:0 0 0 3px rgba(255,210,63,.3), 0 0 22px 6px rgba(255,210,63,.5);
+  transition:left .3s ease, top .3s ease, width .3s ease, height .3s ease;
+  animation:ftueRing 1.4s ease-in-out infinite;
+}
+@keyframes ftueRing {
+  0%,100% { box-shadow:0 0 0 3px rgba(255,210,63,.3), 0 0 18px 4px rgba(255,210,63,.45); }
+  50%     { box-shadow:0 0 0 5px rgba(255,210,63,.45), 0 0 30px 10px rgba(255,210,63,.7); }
+}
+#ftue-hand {
+  position:fixed; font-size:38px; line-height:1; pointer-events:none;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.55));
+  animation:ftueHand 1s ease-in-out infinite;
+}
+@keyframes ftueHand { 0%,100% { transform:translateY(0); } 50% { transform:translateY(10px); } }
+#ftue-bubble {
+  position:fixed; max-width:290px; pointer-events:auto; box-sizing:border-box;
+  background:linear-gradient(135deg,rgba(36,59,107,.98),rgba(58,43,99,.98));
+  color:#fff; padding:14px 16px; border-radius:16px;
+  border:2px solid rgba(130,170,255,.55); box-shadow:0 12px 34px rgba(0,0,0,.55);
+  font-size:14px; font-weight:600; line-height:1.5; text-align:center;
+}
+#ftue-bubble.ftue-pop { animation:ftuePop .4s ease-out; }
+@keyframes ftuePop { 0% { opacity:0; transform:scale(.6) translateY(12px); } 60% { opacity:1; transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
+#ftue-bubble b { color:#ffd23f; }
+#ftue-next {
+  margin-top:12px; padding:8px 20px; border:none; border-radius:20px; cursor:pointer;
+  background:linear-gradient(135deg,#4caf50,#3d9c40); color:#fff; font-size:14px; font-weight:800;
+  box-shadow:0 4px 12px rgba(60,150,60,.4);
+}
+#ftue-next:active { transform:scale(.95); }
+
+/* ================================================================
    SCROLLBAR (chain indicator overflow)
 ================================================================ */
 ::-webkit-scrollbar { width: 0; height: 0; }

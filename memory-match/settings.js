@@ -449,6 +449,9 @@ if (!progress.gameplayRules) progress.gameplayRules = {};
 if (!progress.boosterCounts) progress.boosterCounts = {};
 if (progress.tutorialComplete === undefined) progress.tutorialComplete = false;
 if (progress.boosterTutorialDone === undefined) progress.boosterTutorialDone = false;
+// All guided-tutorial "seen" flags live here, keyed by id (see tutorials.js). Migrate
+// the old single seenFTUE bool if present.
+if (!progress.tutorialsSeen) progress.tutorialsSeen = progress.seenFTUE ? { ftue: true } : {};
 if (!Array.isArray(progress.seenHints)) progress.seenHints = []; // tip-banner messages already shown (once each)
 if (!progress.specialInventory) {
   progress.specialInventory = {};

@@ -267,9 +267,12 @@ function checkChainColorClear() {
 // active chain color with an ✕, so the player knows which cards to avoid.
 // ============================================================
 function applyChainColorHint() {
+  if (boardEl.querySelector('.card.wrong-color-hint')) return; // already shown this chain
+  // FTUE: force the danger tiles onto the scripted cards instead of random ones.
+  const forced = (typeof tutorialForcedDanger === 'function') ? tutorialForcedDanger() : null;
+  if (forced && forced.length) { forced.forEach(markWrongColorHint); return; }
   const count = getChainHintCount();
   if (count <= 0) return;
-  if (boardEl.querySelector('.card.wrong-color-hint')) return; // already shown this chain
   // Active chain color(s): with colored bombs a chain can track several colors.
   const colors = getRule('coloredBombs') ? [...chainColors] : (chainColor ? [chainColor] : []);
   if (colors.length === 0) return; // pure-wild chain with no color yet — nothing to compare

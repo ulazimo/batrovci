@@ -66,6 +66,7 @@ function submitUsername() {
   setUsername(name);
   const el = document.getElementById('username-prompt');
   if (el) el.classList.remove('active');
+  if (typeof maybeStartHomeFTUE === 'function') maybeStartHomeFTUE(); // kick off the FTUE now the prompt is gone
 }
 
 // ------------------------------------------------------------

@@ -29,4 +29,8 @@
 
   // First launch on this device → ask for a username (once). Sits over the hall.
   if (typeof maybeAskUsername === 'function') maybeAskUsername();
+
+  // FTUE: spotlight Play on the home screen (no-op if the username prompt is up —
+  // submitUsername re-triggers it once the prompt closes).
+  if (typeof maybeStartHomeFTUE === 'function') maybeStartHomeFTUE();
 })();

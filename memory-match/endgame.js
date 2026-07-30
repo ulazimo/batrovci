@@ -80,6 +80,7 @@ function finishTurn() {
   else if (turns <= 0) levelFailed();
   else if (isBoardStuck()) levelFailed('stuck'); // only locked/iced/color-locked tiles left, no bomb
   else revealChainDangerCards();
+  if (typeof tutorialOnTurnResolved === 'function') tutorialOnTurnResolved(); // FTUE: advance the script
 }
 
 // Called after a card joins the current chain. If every remaining INTERACTABLE card of the
@@ -119,6 +120,7 @@ function isBoardStuck() {
 }
 
 function levelWon() {
+  if (typeof isTutorialActive === 'function' && isTutorialActive()) endTutorial(); // FTUE done → clear overlay, mark seen
   const remaining = turns / MAX_TURNS;
   const newStars = remaining >= 2/3 ? 3 : remaining >= 1/3 ? 2 : 1;
   if (newStars > (progress.stars[currentLevelIndex]||0)) progress.stars[currentLevelIndex] = newStars;

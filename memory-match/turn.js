@@ -15,6 +15,11 @@ function onCardClick(index) {
   if (!card || turns <= 0) return;
   if (card.iced || card.colorLocked) return; // frozen under ice / color-lock — inert until it clears
 
+  if (isTutorialActive()) {                   // FTUE: only the highlighted card is tappable
+    if (!tutorialAllowsCard(index)) return;
+    tutorialOnCardTap(index);                 // arm how this step advances (runs before the flip)
+  }
+
   if (activeBooster) {
     const ab = BOOSTERS.find(x => x.id === activeBooster);
     if (ab && ab.bomb) { detonateBoosterBomb(index); return; }

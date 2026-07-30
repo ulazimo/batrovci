@@ -556,6 +556,7 @@ function initHallSwipe() {
 // PLAY — from the hall, jump straight into the next level.
 // ============================================================
 function playFromHome() {
+  if (typeof endHomeSpotlight === 'function') endHomeSpotlight(); // clear the FTUE Play spotlight if active
   document.body.classList.remove('on-home');
   document.getElementById('home-screen').classList.remove('active');
   if (!progress.progressionStyle) {
@@ -564,6 +565,8 @@ function playFromHome() {
     if (typeof restoreJourneySnapshot === 'function') restoreJourneySnapshot(MAIN_JOURNEY);
   }
   currentLevelIndex = nextPlayableIndex();
+  // FTUE: skip the pre-level prep screen and drop straight into the guided board.
+  if (typeof shouldRunFtue === 'function' && shouldRunFtue()) { beginFtueLevel(); return; }
   showPreLevel();
 }
 

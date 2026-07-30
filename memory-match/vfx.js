@@ -654,4 +654,5 @@ function revealEntireBoard(onComplete) {
 function finishBoardReveal(onComplete) {
   inputLocked = false; updateBoosterUI(); updateRecallButton();
   if (onComplete) onComplete();
+  if (typeof tutorialOnBoardReady === 'function') tutorialOnBoardReady(); // FTUE: begin guided steps
 }

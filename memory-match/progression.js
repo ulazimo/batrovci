@@ -120,6 +120,7 @@ function resetJourneyProgress() {
   progress.seenSpecials = [];
   progress.seenBoosters = [];
   progress.seenFeatures = [];
+  progress.tutorialsSeen = {}; // clear ALL guided-tutorial flags → every tutorial (this + future) replays
   // Clear saved snapshot too
   if (progress.journeys?.[progress.progressionStyle]) {
     delete progress.journeys[progress.progressionStyle];
@@ -129,7 +130,9 @@ function resetJourneyProgress() {
   updateCoinDisplay();
   updateLivesDisplay();
   currentLevelIndex = 0;
-  showLevelSelect();
+  // Land on home (not the level-select grid) so the just-re-armed FTUE replays.
+  showHome();
+  if (typeof maybeStartHomeFTUE === 'function') maybeStartHomeFTUE();
 }
 
 // playFromHome() now lives in home-room.js — it starts the next level directly
