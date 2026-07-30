@@ -859,6 +859,141 @@
         "h": 512
       },
       "layer": "art/curiosityshop/scene/antiquekey.png"
+    },
+    "chessset": {
+      "name": "Chess Set",
+      "file": "art/gameroom/chessset.png",
+      "view": {
+        "w": 512,
+        "h": 317
+      },
+      "layer": "art/gameroom/scene/chessset.png"
+    },
+    "dicetower": {
+      "name": "Dice Tower",
+      "file": "art/gameroom/dicetower.png",
+      "view": {
+        "w": 442,
+        "h": 512
+      },
+      "layer": "art/gameroom/scene/dicetower.png"
+    },
+    "cardsdeck": {
+      "name": "Deck of Cards",
+      "file": "art/gameroom/cardsdeck.png",
+      "view": {
+        "w": 512,
+        "h": 423
+      },
+      "layer": "art/gameroom/scene/cardsdeck.png"
+    },
+    "jigsawbox": {
+      "name": "Jigsaw Puzzle",
+      "file": "art/gameroom/jigsawbox.png",
+      "view": {
+        "w": 512,
+        "h": 423
+      },
+      "layer": "art/gameroom/scene/jigsawbox.png"
+    },
+    "dominoes": {
+      "name": "Tin of Dominoes",
+      "file": "art/gameroom/dominoes.png",
+      "view": {
+        "w": 512,
+        "h": 498
+      },
+      "layer": "art/gameroom/scene/dominoes.png"
+    },
+    "marbleset": {
+      "name": "Jar of Marbles",
+      "file": "art/gameroom/marbleset.png",
+      "view": {
+        "w": 512,
+        "h": 487
+      },
+      "layer": "art/gameroom/scene/marbleset.png"
+    },
+    "yoyo": {
+      "name": "Wooden Yo-Yo",
+      "file": "art/gameroom/yoyo.png",
+      "view": {
+        "w": 512,
+        "h": 409
+      },
+      "layer": "art/gameroom/scene/yoyo.png"
+    },
+    "rubikscube": {
+      "name": "Puzzle Cube",
+      "file": "art/gameroom/rubikscube.png",
+      "view": {
+        "w": 468,
+        "h": 512
+      },
+      "layer": "art/gameroom/scene/rubikscube.png"
+    },
+    "icecreamsundae": {
+      "name": "Ice Cream Sundae",
+      "file": "art/sweetshop/icecreamsundae.png",
+      "view": {
+        "w": 304,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/icecreamsundae.png"
+    },
+    "cupcakestand": {
+      "name": "Cupcake Stand",
+      "file": "art/sweetshop/cupcakestand.png",
+      "view": {
+        "w": 506,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/cupcakestand.png"
+    },
+    "milkshake": {
+      "name": "Milkshake",
+      "file": "art/sweetshop/milkshake.png",
+      "view": {
+        "w": 199,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/milkshake.png"
+    },
+    "candyjar": {
+      "name": "Jar of Candy",
+      "file": "art/sweetshop/candyjar.png",
+      "view": {
+        "w": 404,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/candyjar.png"
+    },
+    "popcornbox": {
+      "name": "Popcorn Box",
+      "file": "art/sweetshop/popcornbox.png",
+      "view": {
+        "w": 446,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/popcornbox.png"
+    },
+    "lollipopjar": {
+      "name": "Jar of Lollipops",
+      "file": "art/sweetshop/lollipopjar.png",
+      "view": {
+        "w": 406,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/lollipopjar.png"
+    },
+    "cottoncandy": {
+      "name": "Cotton Candy",
+      "file": "art/sweetshop/cottoncandy.png",
+      "view": {
+        "w": 354,
+        "h": 512
+      },
+      "layer": "art/sweetshop/scene/cottoncandy.png"
     }
   },
   "halls": [
@@ -1388,6 +1523,101 @@
           "kind": "layer"
         }
       ]
+    },
+    {
+      "id": "gameroom",
+      "name": "Game Room",
+      "backdrop": "art/backdrops/gameroom.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "chessset",
+          "levelId": 44,
+          "kind": "layer"
+        },
+        {
+          "item": "dicetower",
+          "levelId": 45,
+          "kind": "layer"
+        },
+        {
+          "item": "cardsdeck",
+          "levelId": 46,
+          "kind": "layer"
+        },
+        {
+          "item": "jigsawbox",
+          "levelId": 47,
+          "kind": "layer"
+        },
+        {
+          "item": "dominoes",
+          "levelId": 48,
+          "kind": "layer"
+        },
+        {
+          "item": "marbleset",
+          "levelId": 49,
+          "kind": "layer"
+        },
+        {
+          "item": "yoyo",
+          "levelId": 50,
+          "kind": "layer"
+        },
+        {
+          "item": "rubikscube",
+          "levelId": 51,
+          "kind": "layer"
+        }
+      ]
+    },
+    {
+      "id": "sweetshop",
+      "name": "Sweet Shop",
+      "backdrop": "art/backdrops/sweetshop.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "icecreamsundae",
+          "levelId": 88,
+          "kind": "layer"
+        },
+        {
+          "item": "cupcakestand",
+          "levelId": 89,
+          "kind": "layer"
+        },
+        {
+          "item": "milkshake",
+          "levelId": 90,
+          "kind": "layer"
+        },
+        {
+          "item": "candyjar",
+          "levelId": 91,
+          "kind": "layer"
+        },
+        {
+          "item": "popcornbox",
+          "levelId": 92,
+          "kind": "layer"
+        },
+        {
+          "item": "lollipopjar",
+          "levelId": 93,
+          "kind": "layer"
+        },
+        {
+          "item": "cottoncandy",
+          "levelId": 94,
+          "kind": "layer"
+        }
+      ]
     }
   ],
   "boardArt": {
@@ -1739,6 +1969,96 @@
         "cy": 0.5,
         "h": 0.82,
         "item": "decanter"
+      },
+      "44": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "chessset"
+      },
+      "45": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "dicetower"
+      },
+      "46": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cardsdeck"
+      },
+      "47": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "jigsawbox"
+      },
+      "48": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "dominoes"
+      },
+      "49": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "marbleset"
+      },
+      "50": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "yoyo"
+      },
+      "51": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "rubikscube"
+      },
+      "88": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "icecreamsundae"
+      },
+      "89": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cupcakestand"
+      },
+      "90": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "milkshake"
+      },
+      "91": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "candyjar"
+      },
+      "92": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "popcornbox"
+      },
+      "93": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "lollipopjar"
+      },
+      "94": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cottoncandy"
       }
     }
   }
