@@ -72,12 +72,16 @@ function submitUsername() {
 // PER-MATCH TRACKING — reset at the start of every match (startGame), then
 // accumulated as the player spends power-ups, and read once at win/fail.
 // ------------------------------------------------------------
-let matchPowerUps = {};   // power-up id → times used this match
-let matchStartTurns = 0;  // the turn budget the match began with (+5 per coin-continue)
+let matchPowerUps = {};     // power-up id → times used this match
+let matchStartTurns = 0;    // the turn budget the match began with (+5 per coin-continue)
+let matchTurnsTaken = 0;    // ACTUAL turns/chains the player resolved (every endTurn)
+let matchTurnsRefunded = 0; // of those, how many a colour clear gave back (the "+1 Turn")
 
 function resetMatchStats() {
   matchPowerUps = {};
   matchStartTurns = (typeof MAX_TURNS === 'number') ? MAX_TURNS : 0;
+  matchTurnsTaken = 0;
+  matchTurnsRefunded = 0;
 }
 
 // One choke-point for "a power-up was used". `id` is a booster id, 'recall',
@@ -85,6 +89,14 @@ function resetMatchStats() {
 function recordPowerUpUse(id) {
   if (!id) return;
   matchPowerUps[id] = (matchPowerUps[id] || 0) + 1;
+}
+
+// Called once per resolved turn (from endTurn). Counts the turn the player
+// actually TOOK — independent of the budget, which a colour clear refunds. So
+// `turnsTaken` stays accurate even when `turnsStart − turnsEnd` doesn't move.
+function recordTurnResolved(colorCleared) {
+  matchTurnsTaken++;
+  if (colorCleared) matchTurnsRefunded++;
 }
 
 // Human-readable label for a tracked power-up id.
@@ -151,7 +163,11 @@ function logLevelResult(outcome) {
     levelIndex:    currentLevelIndex,
     turnsStart:    start,
     turnsEnd:      turnsEnd,
-    turnsUsed:     Math.max(0, start - turnsEnd),
+    // Actual turns the player took. NOT start−end: a colour clear refunds its turn
+    // (the green "+1"), so the budget can barely move while many turns are played.
+    // Reconciles as: turnsTaken = (turnsStart − turnsEnd) + turnsRefunded.
+    turnsTaken:    matchTurnsTaken,
+    turnsRefunded: matchTurnsRefunded,
     score:         (typeof score === 'number') ? score : 0,
     stars:         (outcome === 'complete' && typeof progress !== 'undefined' && progress.stars) ? (progress.stars[currentLevelIndex] || 0) : 0,
     powerUps:      formatPowerUps(),

@@ -38,7 +38,10 @@
  *  new field added to the game later is appended as a new column on the fly —
  *  you never have to edit the sheet by hand. Current fields:
  *    timestamp · username · outcome · journey · level · levelIndex ·
- *    turnsStart · turnsEnd · turnsUsed · score · stars · powerUps · powerUpsTotal
+ *    turnsStart · turnsEnd · turnsTaken · turnsRefunded · score · stars ·
+ *    powerUps · powerUpsTotal
+ *  (turnsTaken = actual turns played; NOT turnsStart - turnsEnd, because a colour
+ *   clear refunds its turn. turnsTaken = (turnsStart - turnsEnd) + turnsRefunded.)
  */
 
 function doPost(e) {

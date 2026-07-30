@@ -317,6 +317,7 @@ function endTurn(manual, perfectSweep) {
   // "exhausted" collect gets NO refund.
   turns--;
   if (colorCleared) turns++;
+  if (typeof recordTurnResolved === 'function') recordTurnResolved(colorCleared); // analytics: count actual turns taken (refunds don't hide them)
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
   // Low turns warning — go red at ≤3 (including 0), callout exactly at 3
