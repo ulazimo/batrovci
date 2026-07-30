@@ -55,7 +55,6 @@
 <div id="sweep-countdown"></div>
 <div class="status-badge" id="status-badge"></div>
 <div id="board-container">
-  <div id="tutorial-hint"></div>
   <div id="col-indicators"></div>
   <div id="board-row-wrap">
     <div id="row-indicators"></div>
@@ -283,27 +282,6 @@
   </div>
 </div>
 
-<div class="booster-tooltip" id="tooltip"></div>
-
-<!-- Special Card Tutorial Popup -->
-<div id="special-tutorial" class="overlay-screen" onclick="dismissSpecialTutorial()">
-  <div class="overlay-box special-tutorial-box" onclick="event.stopPropagation()">
-    <div id="special-tut-icon" class="special-tut-icon"></div>
-    <h2 id="special-tut-name"></h2>
-    <p id="special-tut-desc" class="sub"></p>
-    <button class="overlay-btn primary" style="margin-top:8px;" onclick="dismissSpecialTutorial()">Got it!</button>
-  </div>
-</div>
-
-<div id="tutorial-overlay" class="overlay-screen">
-  <div class="overlay-box">
-    <h2>🎴 How to Play</h2>
-    <p>Tap cards to reveal their colors.<br>Match same colors to build <b>combo chains</b>!</p>
-    <p>Reach the <b>target score</b> before you run out of turns.</p>
-    <p style="font-size:12px;color:#888;margin-top:4px;">Longer combos = more points + special cards!</p>
-    <button class="overlay-btn primary" onclick="closeTutorialOverlay()">Got it — Let's go! →</button>
-  </div>
-</div>
 
 <!-- Username prompt — shown once per device on first launch (see analytics-sheet.js). -->
 <div id="username-prompt" class="overlay-screen">

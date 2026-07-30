@@ -59,14 +59,12 @@ function startBankBombDrag(e) {
 function startBombAim({ type, source, name, startEvent }) {
   if (bombAim) endBombAim();
   bombAim = { type, source, name, index: -1, pressing: true };
-  dismissNudge(); clearNudgeTimer(); hideTooltip();
   document.body.classList.add('bomb-aiming');
   boardEl.classList.add('bomb-aim-active');
   boardEl.classList.toggle('bomb-aim-big', type === 'ring');
   markAimButton(source, true);
   createBombGhost(type);
   if (SFX && SFX.booster) SFX.booster();
-  showTutorialHint(`Drag onto the board — release to drop the ${name}`, 'bombDrag');
 
   document.addEventListener('pointermove',   onBombAimPointerMove, true);
   document.addEventListener('pointerup',     onBombAimPointerUp,   true);

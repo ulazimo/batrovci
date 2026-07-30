@@ -59,46 +59,10 @@ function updateBankButton() {
   // Button stays enabled when bomb is ready (3 charges), even without an active chain
   const bombReady = bankProgress >= 3 && !bankBombPlacement;
   const enabled = canBank || bombReady;
-  const wasDisabled = btn.classList.contains('disabled');
   btn.classList.toggle('disabled', !enabled);
   if (!enabled) {
     btn.classList.remove('holding');
     if (_bankHoldTimer) { clearTimeout(_bankHoldTimer); _bankHoldTimer = null; }
-  }
-  // Show tutorial the first time the button becomes enabled — but only if the
-  // Bank bar is actually visible (it's hidden in this build).
-  const bankVisible = btn.offsetParent !== null;
-  if (canBank && wasDisabled && bankVisible) {
-    if (!progress.seenFeatures) progress.seenFeatures = [];
-    if (!progress.seenFeatures.includes('bankButton')) {
-      itemTutorialQueue.push({
-        id: 'feature_bankButton', icon: '💰', name: 'Bank It',
-        accentColor: '#9b59b6',
-        descHTML: ''
-          + '<div style="display:flex;gap:10px;margin:6px 0;text-align:left">'
-          +   '<div style="flex:1;padding:8px;border-radius:10px;background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.25)">'
-          +     '<div style="font-weight:800;color:#f0c040;font-size:13px;margin-bottom:3px">💰 Bank It</div>'
-          +     '<div style="color:#bbb;font-size:11px;line-height:1.4">Hold to <b style="color:#ddd">secure your combo</b> safely. No risk, guaranteed points.</div>'
-          +   '</div>'
-          +   '<div style="flex:1;padding:8px;border-radius:10px;background:rgba(155,89,182,.08);border:1px solid rgba(155,89,182,.25)">'
-          +     '<div style="font-weight:800;color:#c39bd3;font-size:13px;margin-bottom:3px">🎰 Keep Going</div>'
-          +     '<div style="color:#bbb;font-size:11px;line-height:1.4">Risk the chain for <b style="color:#ddd">bigger combos</b> and powerful Special cards!</div>'
-          +   '</div>'
-          + '</div>'
-          + '<div style="text-align:center;margin-top:4px">'
-          +   '<span style="display:inline-flex;gap:4px;margin-bottom:4px">'
-          +     '<span style="display:inline-block;width:16px;height:5px;border-radius:3px;background:#9b59b6"></span>'
-          +     '<span style="display:inline-block;width:16px;height:5px;border-radius:3px;background:#9b59b6"></span>'
-          +     '<span style="display:inline-block;width:16px;height:5px;border-radius:3px;background:#9b59b6"></span>'
-          +   '</span><br>'
-          +   '<span style="color:#c39bd3;font-weight:700;font-size:13px">3 banks</span> '
-          +   '<span style="color:#888;font-size:12px">earns a free</span> '
-          +   '<span style="color:#c39bd3;font-weight:700;font-size:13px">💣 Baby Bomb</span>'
-          + '</div>',
-        markAs: 'bankButton'
-      });
-      if (!itemTutorialShowing) showNextItemTutorial();
-    }
   }
 }
 
@@ -127,7 +91,6 @@ function clearBombPlacement() {
 function activateBombPlacement() {
   if (bankProgress < 3 || bankBombPlacement) return;
   bankBombPlacement = true;
-  showTutorialHint('💣 Tap a card to drop a Baby Bomb — it destroys the cards around it!');
   // Highlight placeable cells (Bank bomb is a Baby Bomb — orange)
   clearBombPlacement();
   boardEl.classList.add('bomb-placement');

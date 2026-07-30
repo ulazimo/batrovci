@@ -28,7 +28,6 @@ function removeRecall(indices) {
 
 const RECALL_COST = 10; // coins per use
 function recallCards() {
-  dismissNudge(); clearNudgeTimer();
   if (inputLocked || !lastRevealedCards.length) return;
   const targets = lastRevealedCards.filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
   if (!targets.length) return;
@@ -68,7 +67,6 @@ function finishTurn() {
   flushLockHide(); // catch-all: flip any still-held just-unlocked reveal cards face-down
   stackReseededSlots.clear(); // drop any leftover markers (e.g. from a goal-met collect)
   turnActive=false; inputLocked=false; activeBooster=null;
-  clearNudgeTimer();
   updateChainIndicator(); updateBoosterUI(); updateRecallButton(); updateGoalHUD();
   // Clear any leftover danger marks on cards that WON'T be revealed. The pendingDangerReveal
   // set keeps its mark until revealChainDangerCards flips it up (removed on flip); everything

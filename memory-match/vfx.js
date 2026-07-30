@@ -653,6 +653,5 @@ function revealEntireBoard(onComplete) {
 
 function finishBoardReveal(onComplete) {
   inputLocked = false; updateBoosterUI(); updateRecallButton();
-  advanceTutorial('boardRevealed');
   if (onComplete) onComplete();
 }

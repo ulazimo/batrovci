@@ -85,16 +85,6 @@ let preLevelSelections = [];
 
 function showPreLevel() {
   initLevelConfig();
-
-  // Deploy Specials tutorial shows before pre-level screen (user needs to understand the UI)
-  if (!progress.seenFeatures) progress.seenFeatures = [];
-  const deployFeature = FEATURE_TUTORIALS.find(f => f.id === 'deploySpecials' && f.check() && !progress.seenFeatures.includes(f.id));
-  if (deployFeature) {
-    itemTutorialQueue.push({ id: 'feature_' + deployFeature.id, icon: deployFeature.icon, name: deployFeature.name, desc: deployFeature.desc, markAs: deployFeature.id });
-    featureTutorialCallback = () => showPreLevelUI();
-    showNextItemTutorial();
-    return;
-  }
   showPreLevelUI();
 }
 
@@ -304,7 +294,6 @@ function startGame(preplacedSpecials) {
   resetRecall();
   remnantHintShown = false;
   bankProgress = 0; bankBombPlacement = false; clearBombPlacement();
-  consecutiveFailedCombos = 0; clearNudgeTimer(); dismissNudge();
   stopChainTimer();
   // Drop (don't finish) any reveal still in flight — the board below is about to be
   // rebuilt, so the old reveal's hide/unlock callback would touch stale cards.
@@ -448,44 +437,15 @@ function startGame(preplacedSpecials) {
   renderBoard(); renderCoverageIndicators(); initBoosters(); initBankButton(); updateBankProgress(); initCollection(); scoreEl.textContent = 0; turnsEl.textContent = turns; turnsEl.classList.remove('danger','danger-pulse'); updateChainIndicator(); updateStatusBadge(); updateRecallButton(); updateGoalHUD();
   fitBoard(); // re-fit now that goal HUD / coverage indicators are in place (renderBoard's own call ran before them)
 
-  // Booster hint flag — will be shown after all popups are done
-  const pendingBoosterHint = !progress.boosterTutorialDone && BOOSTERS.some(b => boosterCounts[b.id] > 0);
-  if (pendingBoosterHint) {
-    progress.boosterTutorialDone = true;
-    saveProgress();
-  }
-
   // Apply winstreak effect (only if enabled for this level)
   if (isWinStreakActive()) {
     const streakShields = getStreakShields();
     if (streakShields > 0) { shieldCharges = streakShields; updateStatusBadge(); updateChainIndicator(); }
   }
 
-  // Show goal intro banner, then proceed with tutorials and board reveal
-  const showTutorialsAfterReveal = () => {
-    setTimeout(() => {
-      checkFeatureTutorialsAtStart(); checkBoosterTutorials(); checkSpecialTutorials();
-      // Show booster bar hint after all popups close
-      if (pendingBoosterHint) {
-        const waitAndShow = () => {
-          if (itemTutorialShowing) { setTimeout(waitAndShow, 300); return; }
-          setTimeout(() => {
-            boosterBar.classList.add('highlight');
-            showTutorialHint('You have Power-Ups! Tap one below to use it 👇');
-            setTimeout(() => boosterBar.classList.remove('highlight'), 4600);
-          }, 400);
-        };
-        waitAndShow();
-      }
-    }, 500);
-  };
+  // Show goal intro banner, then reveal the board
   showGoalIntroBanner(() => {
-    if (isTutorialLevel()) {
-      showTutorialOverlay();
-      showTutorialsAfterReveal();
-    } else {
-      revealEntireBoard(showTutorialsAfterReveal);
-    }
+    revealEntireBoard();
   });
 }
 
@@ -500,7 +460,6 @@ function devFinishLevel() {
   if (!board.length || !LEVELS[currentLevelIndex]) return;
   if (typeof discardActiveReveal === 'function') discardActiveReveal();
   stopChainTimer();
-  clearNudgeTimer();
   chainColor = null; chainColors = new Set(); chainCards = []; specialsUsed = [];
   turnActive = false; inputLocked = false; activeBooster = null;
 

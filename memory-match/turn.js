@@ -15,10 +15,6 @@ function onCardClick(index) {
   if (!card || turns <= 0) return;
   if (card.iced || card.colorLocked) return; // frozen under ice / color-lock — inert until it clears
 
-  // Nudge: dismiss on any action, restart idle timer
-  dismissNudge();
-  clearNudgeTimer();
-
   if (activeBooster) {
     const ab = BOOSTERS.find(x => x.id === activeBooster);
     if (ab && ab.bomb) { detonateBoosterBomb(index); return; }
@@ -176,8 +172,8 @@ function onCardClick(index) {
   if (el.classList.contains('tinted')) { el.classList.remove('tinted'); el.style.removeProperty('--tint-color'); }
   SFX.flip();
 
-  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); advanceTutorial('firstFlip'); startNudgeIdleTimer(); tryAutoResolveColor(); return; }
-  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); startNudgeIdleTimer(); tryAutoResolveColor(); return; }
+  if (!turnActive) { turnActive=true; chainColor=card.color; chainColors=new Set([card.color]); chainCards=[index]; specialsUsed=[]; lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); tryAutoResolveColor(); return; }
+  if (chainColor === null) { chainColor=card.color; chainColors=new Set([card.color]); chainCards.push(index); lastSelectedIdx=index; SFX.shepard(chainCards.length + specialsUsed.length - 1); updateChainIndicator(); tryAutoResolveColor(); return; }
   // Match: primary chain color OR any parallel chain color (colored bombs)
   const colorMatch = card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color));
   if (colorMatch) {
@@ -185,8 +181,7 @@ function onCardClick(index) {
     // If this is a parallel color and no primary was set yet, adopt it
     if (chainColor === null) { chainColor = card.color; chainColors.add(card.color); }
     const chainLen = chainCards.length + specialsUsed.length;
-    if (chainLen === 2) advanceTutorial('firstMatch');
-    if (chainLen === 3) { startChainTimer(); advanceTutorial('chainOf3'); applyChainColorHint(); }
+    if (chainLen === 3) { startChainTimer(); applyChainColorHint(); }
     else if (chainLen > 3) resetChainTimer();
     updateChainIndicator();
     // All cards of the chain colour opened? Resolve the sweep. (Cleaning waives the
@@ -196,7 +191,6 @@ function onCardClick(index) {
     if (getRule('coloredBombs') && chainColors.size >= ACTIVE_COLORS.length) {
       checkAllColorsBonus();
     }
-    startNudgeIdleTimer();
     return;
   }
 
@@ -232,7 +226,6 @@ function onCardClick(index) {
   // A completed collect that ends on a wrong flip (e.g. Match-2's 2-chain + wrong 3rd)
   // is a success and must feel like one — no negative feedback.
   if (comboLen < getMinCombo()) { SFX.mismatch(); shakeBoard(); }
-  advanceTutorial('mismatch');
   chainCards.push(index); inputLocked = true;
   updateChainFaces(index);
   setTimeout(() => endTurn(false), 500);
@@ -324,7 +317,6 @@ function endTurn(manual, perfectSweep) {
   if (turns <= 3) {
     turnsEl.classList.add('danger');
     if (turns === 3) {
-      showTutorialHint('⚠️ Only 3 turns remaining!');
       turnsEl.classList.add('danger-pulse');
       turnsEl.addEventListener('animationend', () => turnsEl.classList.remove('danger-pulse'), { once: true });
     }
@@ -334,10 +326,6 @@ function endTurn(manual, perfectSweep) {
 
   let specialActivated = matched.length>=2 && specialsUsed.length>0;
   let pts=0, toRemove=[], newST=null, newSP=-1;
-
-  // Track failed combos for nudge system (a colour clear is a successful collect)
-  if (willCollect) { consecutiveFailedCombos = 0; }
-  else { consecutiveFailedCombos++; if (consecutiveFailedCombos >= 3) setTimeout(() => { if (consecutiveFailedCombos >= 3 && !activeNudge && hasAnyBoosters()) showNudge('booster'); }, 2000); }
 
   if (willCollect) {
     updateGoalProgress(matched, combo);
@@ -500,7 +488,6 @@ function endTurn(manual, perfectSweep) {
           const allRevealed = [...new Set([...step1, ...(showNewCards ? nc : []), ...beElevReveal])];
           addRecall(allRevealed);
           const doFinish = () => willSweepReveal ? setTimeout(() => hideSweepBanner(() => sweepRevealBoard(finishTurn)), 1200) : finishTurn();
-          const doFinishWithTutorial = () => { checkSpecialTutorials(); if (!itemTutorialShowing) doFinish(); else { const wait = setInterval(() => { if (!itemTutorialShowing) { clearInterval(wait); doFinish(); } }, 200); } };
           if (allRevealed.length > 0) {
             // The cards are already face-up (revealCardsNoHide above), so there's no stagger
             // left — just the memorisation hold, which a tap can cut short. This is the beat
@@ -508,9 +495,9 @@ function endTurn(manual, perfectSweep) {
             runSkippableReveal([], 2200, () => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
               flushLockHide(); // just-unlocked locked/iced/color-locked cards flip face-down in sync with this reveal-hide
-              doFinishWithTutorial();
+              doFinish();
             });
-          } else { flushLockHide(); doFinishWithTutorial(); }
+          } else { flushLockHide(); doFinish(); }
         }, dropDelay);
       }, bombRevealTime);
         };

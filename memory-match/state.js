@@ -72,6 +72,5 @@ const turnsEl          = document.getElementById('turns-value');
 const targetEl         = document.getElementById('target-value');
 const chainEl          = document.getElementById('chain-indicator');
 const boosterBar       = document.getElementById('booster-bar');
-const tooltipEl        = document.getElementById('tooltip');
 const statusBadge      = document.getElementById('status-badge');
 const colorPickerEl    = document.getElementById('color-picker');

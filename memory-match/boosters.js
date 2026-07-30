@@ -82,12 +82,6 @@ function initBoosters() {
     if (b.bomb) {
       btn.style.touchAction = 'none';
       btn.addEventListener('pointerdown', (e) => startBombBoosterDrag(b, e));
-    } else {
-      // Hold-to-preview tooltip — skipped for bombs (drag would fight the tooltip).
-      let pt = null;
-      btn.addEventListener('pointerdown', () => { pt = setTimeout(() => { showTooltip(b, btn); pt='shown'; }, 400); });
-      btn.addEventListener('pointerup',    () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
-      btn.addEventListener('pointerleave', () => { if(pt!=='shown') clearTimeout(pt); hideTooltip(); });
     }
     boosterBar.appendChild(btn);
   });
@@ -128,17 +122,8 @@ function updateBoosterUI() {
   });
 }
 
-function showTooltip(b, btn) {
-  tooltipEl.textContent = b.desc; tooltipEl.classList.add('visible');
-  const r = btn.getBoundingClientRect();
-  tooltipEl.style.left = Math.max(8, Math.min(window.innerWidth-230, r.left+r.width/2-110))+'px';
-  tooltipEl.style.top  = (r.top - 60) + 'px';
-}
-function hideTooltip() { tooltipEl.classList.remove('visible'); }
-
 function activateBooster(id) {
   if (inputLocked || !hasBooster(id)) return;
-  dismissNudge(); clearNudgeTimer();
   const b = BOOSTERS.find(x => x.id === id);
   // Toggle off (also clears any bomb-placement glow)
   if (activeBooster === id) {
