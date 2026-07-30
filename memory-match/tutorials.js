@@ -73,6 +73,8 @@ let tutAwaitingResolve = false; // waiting for finishTurn before advancing
 let tutForcedDangerTargets = null; // indices applyChainColorHint must mark (tutorial override)
 let tutForcedReveal = null;     // indices random3 / +1-color must reveal (tutorial override)
 let tutPending = null;          // {id, steps} to start once the opening board reveal finishes
+let tutHoldForWin = false;      // a useBomb step wants to hold the level-win until its closing box
+let tutDeferredWin = null;      // levelWon's finish callback, run after the closing box is dismissed
 let homeSpotlightActive = false;
 let _spot = null;               // current spotlight params, kept for re-layout on resize
 
@@ -102,6 +104,15 @@ function tutorialForcedDanger() { return tutRunning ? tutForcedDangerTargets : n
 function setForcedDanger(indices) { tutForcedDangerTargets = indices ? [...indices] : null; }
 function tutorialForcedReveal() { return tutRunning ? tutForcedReveal : null; }
 function setForcedReveal(indices) { tutForcedReveal = indices ? [...indices] : null; }
+// Level-win hold: a useBomb step with holdForWin lets levelWon pause its finish so the
+// player sees the reward, then the tutorial's closing box shows before returning home.
+function tutorialHoldForWin() { return tutRunning && tutHoldForWin; }
+function tutorialDeferWin(finishCb) {
+  tutDeferredWin = finishCb;
+  tutHoldForWin = false; // consumed
+  // The reward is flying into the tray right now — let it land, THEN show the closing box.
+  setTimeout(() => { if (tutRunning) advanceTutorial(); }, 1100);
+}
 // Gift power-up charge(s) into the tray mid-level (uncapped — also used to teach over-cap).
 function tutorialGift(id, n) {
   boosterCounts[id] = (boosterCounts[id] || 0) + (n || 1);
@@ -157,6 +168,7 @@ function startLevelTutorial(entry) {
   tutIndex = -1;
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
+  tutHoldForWin = false; tutDeferredWin = null;
   advanceTutorial();
 }
 
@@ -260,6 +272,9 @@ function tutorialOnBombPlaced(idx) {
   if (!step || step.type !== 'useBomb') return;
   tutBombTarget = null; tutAllowedBooster = null;
   hideSpotlight();
+  // If this bomb wins the level, don't advance on a timer — let levelWon() hold the win
+  // and drive the closing box (via tutorialDeferWin) once the reward has flown in.
+  if (step.holdForWin) { tutHoldForWin = true; return; }
   setTimeout(advanceTutorial, step.nextDelay || 900);
 }
 
@@ -284,9 +299,13 @@ function endTutorial() {
   tutIndex = -1;
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
+  tutHoldForWin = false;
   hideSpotlight();
   if (tutCurrentId && !hasSeenTutorial(tutCurrentId)) markTutorialSeen(tutCurrentId);
   tutCurrentId = null;
+  // If a win was held for a closing box, run its finish now (SFX/confetti → home).
+  const finish = tutDeferredWin; tutDeferredWin = null;
+  if (finish) finish();
 }
 
 // Dev helper: replay every tutorial from scratch (call from console, then reload).
@@ -524,9 +543,39 @@ const LEVEL4_STEPS = [
   { type: 'info', text: '💣 You will now get a small Bomb! Go try your luck!' },
 ];
 
+// ============================================================
+// LEVEL 6 — teaches using a Bomb to EXTEND a chain (bombChainStay).
+// Board (5×10, rest disabled): top Green cross 2,6,7,8,12 (center 7); Red row 20-24;
+// Green row 25-29; bottom Red cross 37,41,42,43,47 (center 42). colorCount 2 (red/green).
+// A Baby Bomb's cross blast lands exactly on each cross.
+// Flow: chain the green row → tap 42 (red) to bank → Baby Bomb → bomb the green cross
+// (no chain, just collects) → gift a bomb → chain the red row → bomb the red cross WITH
+// the chain active → the red cross joins the chain (10 reds) → colour-clear → Big Bomb + win.
+// ============================================================
+const LEVEL6_STEPS = [
+  { type: 'tapCard', card: 25 },
+  { type: 'tapCard', card: 26 },
+  { type: 'tapCard', card: 27, onEnter: () => setForcedDanger([37, 41, 43]) },
+  { type: 'tapCard', card: 28 },
+  { type: 'tapCard', card: 29 },
+  { type: 'tapCard', card: 42, advanceOnResolve: true },   // red mismatch → banks 5 greens → Baby Bomb
+  { type: 'useBomb', booster: 'babybomb', target: 7, text: 'Drop your 💣 on the green cross!', dropText: 'Right here!' },
+  { type: 'info', text: 'Good job! But you can use your Bomb to extend your chain and reap bigger Rewards! 💥',
+    onEnter: () => tutorialGift('babybomb', 1) },
+  { type: 'tapCard', card: 20 },
+  { type: 'tapCard', card: 21 },
+  { type: 'tapCard', card: 22 },
+  { type: 'tapCard', card: 23 },
+  { type: 'tapCard', card: 24 },
+  { type: 'info', text: "Now, let's extend your chain! 🔗" },
+  { type: 'useBomb', booster: 'babybomb', target: 42, dropText: 'Drop it on the red cross!', holdForWin: true },
+  { type: 'info', text: 'And now you are rewarded with the Big Bomb! 💥💣' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0: { id: 'ftue',   steps: LEVEL1_FTUE_STEPS },
   1: { id: 'level2', steps: LEVEL2_STEPS },
   3: { id: 'level4', steps: LEVEL4_STEPS },
+  5: { id: 'level6', steps: LEVEL6_STEPS },
 };

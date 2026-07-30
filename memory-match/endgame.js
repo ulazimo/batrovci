@@ -120,7 +120,6 @@ function isBoardStuck() {
 }
 
 function levelWon() {
-  if (typeof isTutorialActive === 'function' && isTutorialActive()) endTutorial(); // FTUE done → clear overlay, mark seen
   const remaining = turns / MAX_TURNS;
   const newStars = remaining >= 2/3 ? 3 : remaining >= 1/3 ? 2 : 1;
   if (newStars > (progress.stars[currentLevelIndex]||0)) progress.stars[currentLevelIndex] = newStars;
@@ -132,6 +131,7 @@ function levelWon() {
   // Hand the reward to the home screen, which shows the pre-win total and flies
   // these coins into the header (incrementing the count as they land).
   pendingHomeCoinReward = coinsEarned;
+  _winCoinsEarned = coinsEarned;
   updateCoinDisplay();
   saveJourneySnapshot();
   saveProgress();
@@ -140,6 +140,21 @@ function levelWon() {
   // Analytics: report the completion (stars/score are finalized above).
   if (typeof logLevelResult === 'function') logLevelResult('complete');
 
+  // A tutorial can ask to HOLD the win here (e.g. Level 6's bomb-reward finale): the
+  // reward has just flown into the tray, so we pause, let the tutorial show its closing
+  // box, and only run the win flow once that box is dismissed (via endTutorial → the
+  // deferred callback). Everything above (stars/coins/save) already happened.
+  if (typeof tutorialHoldForWin === 'function' && tutorialHoldForWin()) {
+    tutorialDeferWin(winVisualFinish);
+    return;
+  }
+  if (typeof isTutorialActive === 'function' && isTutorialActive()) endTutorial(); // clear overlay, mark seen
+  winVisualFinish();
+}
+
+// The celebratory finish (SFX/confetti → board-art flash or banner → home). Split out so a
+// tutorial can defer it until after its closing reward box.
+function winVisualFinish() {
   SFX.win();
   launchConfetti();
 
@@ -161,10 +176,11 @@ function levelWon() {
   // Cleaning journeys hide Score, so skip the score/coins subtitle under the banner.
   const winSub = LEVELS[currentLevelIndex]?.clearBoard
     ? ''
-    : `Score: ${score} · +${coinsEarned} <img src="icons/coin_icon.png" class="coin-icon" alt="coins">`;
+    : `Score: ${score} · +${_winCoinsEarned} <img src="icons/coin_icon.png" class="coin-icon" alt="coins">`;
   showBoardBanner('win', '🎉 LEVEL COMPLETE!', winSub);
   setTimeout(() => hideBoardBanner(() => finishLevelToHome()), 1800);
 }
+let _winCoinsEarned = 0;
 
 // A win no longer opens the "Level Complete" overlay. We still GRANT the level's
 // rewards (silently — the home screen shows the next reward, and inventories
