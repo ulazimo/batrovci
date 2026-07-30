@@ -89,6 +89,11 @@ function resetTutorialFlags() { progress.tutorialsSeen = {}; }
 // entry when that level has a tutorial the player hasn't seen. (LEVEL_TUTORIALS is
 // declared with the scripts near the bottom of this file.) ----
 function tutorialForLevel(idx) {
+  // Hall Walkthrough drives this page in an iframe with ?mmSandbox=1 to step
+  // through halls; scripted tutorials (incl. the home FTUE spotlight, which
+  // is derived from this) would only get in the way there. Real play never
+  // sets mmSandbox, so this never affects the actual game.
+  if (typeof isMmSandbox === 'function' && isMmSandbox()) return null;
   const e = (typeof LEVEL_TUTORIALS !== 'undefined') ? LEVEL_TUTORIALS[idx] : null;
   return (e && !hasSeenTutorial(e.id)) ? e : null;
 }

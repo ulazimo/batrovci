@@ -431,6 +431,12 @@ function mmProgressKey() {
   try { return new URLSearchParams(location.search).has('mmSandbox') ? 'mm_progress_sandbox' : 'mm_progress'; }
   catch (e) { return 'mm_progress'; }
 }
+// Same flag, exposed for anything that needs to behave differently in the
+// walkthrough sandbox without touching the real game (e.g. tutorials.js).
+function isMmSandbox() {
+  try { return new URLSearchParams(location.search).has('mmSandbox'); }
+  catch (e) { return false; }
+}
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(mmProgressKey()) || '{}'); }
   catch(e) { return {}; }
