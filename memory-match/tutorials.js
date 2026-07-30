@@ -169,7 +169,7 @@ function renderTutorialStep() {
   const step = tutScript && tutScript[tutIndex];
   if (!step) { endTutorial(); return; }
   // Clear all per-step allowances; the step re-arms exactly what it needs.
-  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
+  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null; tutForcedReveal = null;
   if (step.onEnter) step.onEnter();
   if (step.type === 'info') {
     const target = step.highlight ? resolveHighlight(step.highlight) : null;
@@ -220,6 +220,8 @@ function tutorialOnBoosterActivated(id) {
     tutAllowedCard = step.card;
     showSpotlight({ target: getCardEl(step.card), holeTarget: boardEl, text: step.cardText || '', hand: true });
   } else {
+    // immediate booster (random3 / +1-color): light the whole board so the reveal is visible.
+    showSpotlight({ target: null, holeTarget: boardEl, text: '', hand: false });
     setTimeout(advanceTutorial, step.nextDelay || 900);
   }
 }
@@ -498,8 +500,33 @@ const LEVEL2_STEPS = [
   { type: 'tapCard', card: 0, advanceOnResolve: true },    // last blue → lone collect → win
 ];
 
+// ============================================================
+// LEVEL 4 — teaches Random3.
+// Authored board (4×5): green pinned at 6,8,14,16,17 (colorCount 3, colorCounts green:7 → 2
+// more greens auto-placed elsewhere). The chain uses 5 greens: 6 + (8,14) + (16,17) = Chain 5
+// → Baby Bomb. Cards 15 & 2 must stay NON-green so they flash without joining — step 1
+// re-colors them if the auto-fill made them green (safety). Random3s are forced onto the
+// exact scripted cards. Tutorial ENDS mid-level ("Go try your luck") with the chain active.
+// ============================================================
+const LEVEL4_STEPS = [
+  { type: 'useBooster', booster: 'random3', text: '🎲 Tap Random3 to reveal a few cards!',
+    onEnter: () => {
+      const r = boosterCounts.random3 || 0; if (r < 3) tutorialGift('random3', 3 - r);
+      [15, 2].forEach(i => { if (board[i] && board[i].color === 'green') board[i].color = 'blue'; });
+    } },
+  { type: 'info', text: 'See — you can reveal a few random Cards! But there\'s more… 🔎' },
+  { type: 'tapCard', card: 6 },
+  { type: 'info', text: '🍀 Now, let\'s try our luck at finding more Green Cards!' },
+  { type: 'useBooster', booster: 'random3', nextDelay: 1600, onEnter: () => setForcedReveal([8, 14, 15]) },
+  { type: 'info', text: 'See — we got to Chain 3! 🔗', highlight: '#chain-indicator' },
+  { type: 'info', text: 'Once more! 🎲' },
+  { type: 'useBooster', booster: 'random3', nextDelay: 1600, onEnter: () => setForcedReveal([2, 16, 17]) },
+  { type: 'info', text: '💣 You will now get a small Bomb! Go try your luck!' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0: { id: 'ftue',   steps: LEVEL1_FTUE_STEPS },
   1: { id: 'level2', steps: LEVEL2_STEPS },
+  3: { id: 'level4', steps: LEVEL4_STEPS },
 };

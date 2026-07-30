@@ -29,6 +29,11 @@ PROGRESSION_CLEANING_XL = {
       "afterLevel": 4,
       "boosterId": "random3",
       "qty": 1
+    },
+    {
+      "afterLevel": 9,
+      "boosterId": "pluscolor",
+      "qty": 10
     }
   ]
 };
