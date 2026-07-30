@@ -10,7 +10,7 @@
 const SHOP_PRICES = {
   peek: 10,
   random3: 20,
-  pluscolor: 15,
+  pluscolor: 30,
   babybomb: 40,
   bigbomb: 80,
 };
