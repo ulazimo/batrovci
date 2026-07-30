@@ -601,11 +601,37 @@ const LEVEL7_STEPS = [
   { type: 'info', text: 'It will collect even more cards than the Small Bomb! 💥' },
 ];
 
+// ============================================================
+// LEVEL 10 — teaches +1 Color.
+// Board 5×5: 10 blues pinned (1,3,5,9,15,19,20,21,23,24), colorCounts blue:10. Tap card 20
+// (blue) to start a blue chain, then press +1 Color 9× — each reveals one hidden blue that
+// joins the chain (→ chain of 10). The 9th press opens the last blue → colour-clear (climax
+// + a bonus Big Bomb from the 10-chain). +1 Color naturally reveals the chain color, so no
+// forcing is needed. Step 1 gifts a batch of +1 Color ("a bunch of Power-Ups"). Ends
+// mid-level (blues cleared, other colors remain — player continues).
+// ============================================================
+const LEVEL10_STEPS = [
+  { type: 'info', text: "Hey, I gave you a bunch of Power-Ups — let's see how to use them! 🎁",
+    onEnter: () => { const have = boosterCounts.pluscolor || 0; if (have < 10) tutorialGift('pluscolor', 10 - have); } },
+  { type: 'tapCard', card: 20 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Now, to find more Blue colors! Tap +1 Color! 🔵', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Again! ⚡', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Nice — keep going! 😎', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Whoa, look at that chain grow! 🤩', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Amazing! 🔥', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Unstoppable! 💙', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Incredible! 🌟', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'Almost there! ✨', nextDelay: 850 },
+  { type: 'useBooster', booster: 'pluscolor', text: 'One more! 🎉', nextDelay: 2800 },
+  { type: 'info', text: 'See how easy it can be! 🙌' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
-  0: { id: 'ftue',   steps: LEVEL1_FTUE_STEPS },
-  1: { id: 'level2', steps: LEVEL2_STEPS },
-  3: { id: 'level4', steps: LEVEL4_STEPS },
-  5: { id: 'level6', steps: LEVEL6_STEPS },
-  6: { id: 'level7', steps: LEVEL7_STEPS },
+  0: { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
+  1: { id: 'level2',  steps: LEVEL2_STEPS },
+  3: { id: 'level4',  steps: LEVEL4_STEPS },
+  5: { id: 'level6',  steps: LEVEL6_STEPS },
+  6: { id: 'level7',  steps: LEVEL7_STEPS },
+  9: { id: 'level10', steps: LEVEL10_STEPS },
 };
