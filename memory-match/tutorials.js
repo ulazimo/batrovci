@@ -577,10 +577,35 @@ const LEVEL6_STEPS = [
   { type: 'info', text: 'And now you are rewarded with the Big Bomb! 💥💣' },
 ];
 
+// ============================================================
+// LEVEL 7 — teaches the Big Bomb (incl. exceeding its 1-slot cap).
+// Board 5×5: reds pinned 0,1,2,3,4,5,9 (the 7-chain) + 12 (the Big Bomb target);
+// colorCounts red:8. Card 7 is unauthored → a non-red mismatch. The player already
+// holds a Big Bomb (from Level 6; step 1 tops up to 1 as a safety). The 7-chain earns
+// another Big Bomb but it's capped at 1 — so the tutorial GIFTS the over-cap one (→ 2/1,
+// "this one's on me"). Then the Big Bomb's 3×3 blast on card 12 collects 9 cards. Ends
+// mid-level (like Level 4) — the player finishes the remaining cards.
+// ============================================================
+const LEVEL7_STEPS = [
+  { type: 'tapCard', card: 5, onEnter: () => { if ((boosterCounts.bigbomb || 0) < 1) tutorialGift('bigbomb', 1); } },
+  { type: 'tapCard', card: 0 },
+  { type: 'tapCard', card: 1 },
+  { type: 'tapCard', card: 2 },
+  { type: 'tapCard', card: 3 },
+  { type: 'tapCard', card: 4 },
+  { type: 'tapCard', card: 9 },
+  { type: 'tapCard', card: 7, advanceOnResolve: true },   // non-red mismatch → banks the 7-chain → Big Bomb (capped)
+  { type: 'info', text: "Whoops, seems you already have a Big Bomb! You can only hold one. This one's on me. 😉",
+    onEnter: () => tutorialGift('bigbomb', 1) },           // exceed the cap → 2/1
+  { type: 'useBomb', booster: 'bigbomb', target: 12, text: "Now, let's drop it on the board!", dropText: 'Drop it here!' },
+  { type: 'info', text: 'It will collect even more cards than the Small Bomb! 💥' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0: { id: 'ftue',   steps: LEVEL1_FTUE_STEPS },
   1: { id: 'level2', steps: LEVEL2_STEPS },
   3: { id: 'level4', steps: LEVEL4_STEPS },
   5: { id: 'level6', steps: LEVEL6_STEPS },
+  6: { id: 'level7', steps: LEVEL7_STEPS },
 };
