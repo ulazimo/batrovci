@@ -910,6 +910,17 @@ const LEVEL43_STEPS = [
   { type: 'info', highlight: [5, 6, 9, 10], text: "You need to collect them from the stack to clear the Level." },
 ];
 
+// ============================================================
+// LEVEL 51 — introduces the ELEVATOR. Authored 5×5 with a center 3×3 elevator area
+// (idx 6,7,8,11,12,13,16,17,18; refills:1). Elevator cells don't refill per-card — the
+// whole area stays empty until fully cleared, then one fresh batch emerges. Single
+// heads-up popup ringing the whole 3×3 area (multi-tile highlight). Ends immediately.
+// ============================================================
+const LEVEL51_STEPS = [
+  { type: 'info', highlight: [6, 7, 8, 11, 12, 13, 16, 17, 18],
+    text: "You need to clear all of the Cards from the Elevator area for it to bring you new ones! ⬆️" },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -925,4 +936,5 @@ const LEVEL_TUTORIALS = {
   27: { id: 'level28', steps: LEVEL28_STEPS },
   35: { id: 'level36', steps: LEVEL36_STEPS },
   42: { id: 'level43', steps: LEVEL43_STEPS },
+  50: { id: 'level51', steps: LEVEL51_STEPS },
 };
