@@ -933,6 +933,24 @@ const LEVEL60_STEPS = [
     text: "You need to Collect cards to break the Ice! ❄️" },
 ];
 
+// ============================================================
+// LEVEL 70 — introduces COLOR-LOCKED cards. Authored 5×6 with a 3×3 color-lock area
+// (idx 6,7,8,11,12,13,16,17,18 — blue under a RED-tinted lock; color:red, count:3) and
+// exactly 3 authored RED cards at the bottom (idx 26,27,28). A color-lock opens when
+// cardsCollectedByColor[red] ≥ count — its OWN colour, not adjacency/bombs. Flow: info
+// (ring the 3×3 lock area) → collect the 3 reds (they're the only non-locked cards, so the
+// 3rd tap auto colour-clears → red count hits 3 → the whole area unlocks) → closing. The
+// reds are already authored, so NO colour-force and NO suppress (we WANT the auto-clear).
+// ============================================================
+const LEVEL70_STEPS = [
+  { type: 'info', highlight: [6, 7, 8, 11, 12, 13, 16, 17, 18],
+    text: "You need to Collect cards of a certain Color to break the Lock!" },
+  { type: 'tapCard', card: 26, text: 'Collect the Red cards! 🔴' },
+  { type: 'tapCard', card: 27 },
+  { type: 'tapCard', card: 28, advanceOnResolve: true },
+  { type: 'info', text: 'The lock is broken — now you can collect those cards! 🔓' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -950,4 +968,5 @@ const LEVEL_TUTORIALS = {
   42: { id: 'level43', steps: LEVEL43_STEPS },
   50: { id: 'level51', steps: LEVEL51_STEPS },
   59: { id: 'level60', steps: LEVEL60_STEPS },
+  69: { id: 'level70', steps: LEVEL70_STEPS },
 };
