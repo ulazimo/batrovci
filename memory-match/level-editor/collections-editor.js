@@ -318,7 +318,7 @@ function collValidate() {
 // ------------------------------------------------------------
 function collPushPreview() {
   const f = collEl('preview-frame');
-  if (!f || !previewReady || !f.contentWindow || !f.contentWindow.PREVIEW) return;
+  if (!f || !previewReady || !f.contentWindow || !f.contentWindow.PREVIEW || !COLL) return;
   f.contentWindow.PREVIEW.render({
     hall: COLL.halls[collHallIdx], items: COLL.items,
     themes: COLL.themes, sel: collSlotIdx,
