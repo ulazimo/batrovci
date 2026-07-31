@@ -1467,6 +1467,12 @@ body.bomb-aiming #board { touch-action: none; }
   background:linear-gradient(135deg,#4caf50,#3d9c40); color:#fff; font-size:14px; font-weight:800;
   box-shadow:0 4px 12px rgba(60,150,60,.4);
 }
+/* Held back ~0.5s by showSpotlight() so the text reads first, then scales in. */
+#ftue-next.ftue-next-in { animation:ftueNextIn .32s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes ftueNextIn {
+  0%   { opacity:0; transform:scale(.4); }
+  100% { opacity:1; transform:scale(1); }
+}
 #ftue-next:active { transform:scale(.95); }
 
 /* ================================================================

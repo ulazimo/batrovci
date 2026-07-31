@@ -79,6 +79,8 @@ let tutHoldForWin = false;      // a useBomb step wants to hold the level-win un
 let tutDeferredWin = null;      // levelWon's finish callback, run after the closing box is dismissed
 let homeSpotlightActive = false;
 let _spot = null;               // current spotlight params, kept for re-layout on resize
+const GOT_IT_DELAY_MS = 500;    // info bubbles hold the "Got it" button back this long, then scale it in
+let _gotItTimer = null;         // pending "Got it" reveal (cleared when a spotlight is replaced/hidden)
 
 // ---- "Seen" flags: ALL tutorials record completion under progress.tutorialsSeen,
 // keyed by id, so "Reset Progress" clears the whole object and every guided tutorial
@@ -438,6 +440,7 @@ function ensureFtueLayer() {
   });
   layer.querySelector('#ftue-next').addEventListener('click', (e) => {
     e.stopPropagation();
+    if (e.currentTarget.style.visibility === 'hidden') return;  // still in its 0.5s hold
     const step = tutScript && tutScript[tutIndex];
     if (step && step.type === 'info') advanceTutorial();
   });
@@ -452,7 +455,24 @@ function showSpotlight(params) {
   const hasText = !!(params.text && params.text.trim());
   bubble.style.display = hasText ? 'block' : 'none'; // plain tap steps show only the ring + hand
   layer.querySelector('#ftue-bubble-text').innerHTML = params.text || '';
-  layer.querySelector('#ftue-next').style.display = params.showNext ? 'inline-block' : 'none';
+  // "Got it" holds back for GOT_IT_DELAY_MS so the player reads the text before the
+  // button draws the eye, then scales in. Kept in the layout from the start
+  // (visibility, not display) so the bubble never resizes when it appears.
+  const next = layer.querySelector('#ftue-next');
+  clearTimeout(_gotItTimer);
+  next.classList.remove('ftue-next-in');
+  if (params.showNext) {
+    next.style.display = 'inline-block';
+    next.style.visibility = 'hidden';
+    _gotItTimer = setTimeout(() => {
+      if (_spot !== params) return;
+      next.style.visibility = 'visible';
+      next.classList.add('ftue-next-in');
+    }, GOT_IT_DELAY_MS);
+  } else {
+    next.style.display = 'none';
+    next.style.visibility = '';
+  }
   layoutSpotlight();
   if (hasText) { bubble.classList.remove('ftue-pop'); void bubble.offsetWidth; bubble.classList.add('ftue-pop'); }
   // The board can still be settling when a step first renders — fitBoard rescaling a tall
@@ -469,12 +489,14 @@ function showSpotlight(params) {
 function hideSpotCue() {
   const layer = document.getElementById('ftue-layer');
   if (!layer) return;
+  clearTimeout(_gotItTimer);
   layer.querySelector('#ftue-hand').style.display = 'none';
   layer.querySelector('#ftue-bubble').style.display = 'none';
 }
 
 function hideSpotlight() {
   _spot = null;
+  clearTimeout(_gotItTimer);
   const layer = document.getElementById('ftue-layer');
   if (layer) layer.style.display = 'none';
 }
@@ -500,26 +522,48 @@ function unionTileRect(indices) {
   return any ? { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t } : null;
 }
 
+// Fixed-position elements are laid out against the VISUAL viewport, but
+// getBoundingClientRect() reports against the LAYOUT viewport. On Android/iOS these
+// two disagree whenever the page is scaled or the browser chrome is collapsed for a
+// full-screen app: visualViewport.offsetTop/Left is the gap between them. Without this
+// correction every fixed spotlight piece (hole, ring, hand, bubble) lands vertically
+// offset from its target — most visibly on the home screen, where the Play button and
+// the win-streak meter are pinned to the very bottom.
+// Returns the offset to ADD to a client rect, plus the size of the box the fixed layer
+// actually spans, so the clamps below stay inside the visible area.
+function spotViewportMetrics() {
+  const vv = window.visualViewport;
+  if (!vv) return { dx: 0, dy: 0, vw: window.innerWidth, vh: window.innerHeight };
+  return {
+    dx: -vv.offsetLeft, dy: -vv.offsetTop,
+    vw: vv.width, vh: vv.height,
+  };
+}
+
 function layoutSpotlight() {
   const layer = document.getElementById('ftue-layer');
   if (!layer || !_spot) return;
-  const vw = window.innerWidth, vh = window.innerHeight;
+  const { dx, dy, vw, vh } = spotViewportMetrics();
   const backdrop = layer.querySelector('#ftue-backdrop');
   const ring = layer.querySelector('#ftue-ring');
   const hand = layer.querySelector('#ftue-hand');
   const bubble = layer.querySelector('#ftue-bubble');
   const hasText = bubble.style.display !== 'none';
 
+  // Client rect → the fixed layer's coordinate space (see spotViewportMetrics).
+  const toLayer = (r) => r && { left: r.left + dx, top: r.top + dy, right: r.right + dx,
+                               bottom: r.bottom + dy, width: r.width, height: r.height };
+
   // The HOLE (dims + blocks everything outside it) can be a different element than
   // the FOCUS (ring/hand/bubble). For a card tap the hole is the whole board — so the
   // board stays lit — while the ring picks out the single card.
   const holeEl = _spot.holeTarget || _spot.target;
-  const holeRect = (holeEl && holeEl.getBoundingClientRect) ? holeEl.getBoundingClientRect() : null;
+  const holeRect = toLayer((holeEl && holeEl.getBoundingClientRect) ? holeEl.getBoundingClientRect() : null);
   // FOCUS can be a single element (_spot.target) OR a set of board tiles (_spot.focusTiles):
   // several tiles get ONE ring around their combined bounding box (e.g. the 2×2 stack block).
   const focus = _spot.target;
-  const focusRect = _spot.focusTiles ? unionTileRect(_spot.focusTiles)
-    : (focus && focus.getBoundingClientRect) ? focus.getBoundingClientRect() : null;
+  const focusRect = toLayer(_spot.focusTiles ? unionTileRect(_spot.focusTiles)
+    : (focus && focus.getBoundingClientRect) ? focus.getBoundingClientRect() : null);
 
   if (holeRect && holeRect.width > 0) {
     const hp = 8;
@@ -568,6 +612,13 @@ function layoutSpotlight() {
 }
 
 window.addEventListener('resize', () => { if (_spot) layoutSpotlight(); });
+// Collapsing/expanding browser chrome (the "full screen" case on Android/iOS) and
+// pinch-zoom move the visual viewport WITHOUT firing a window resize, which would leave
+// every fixed spotlight piece offset from its target. These fire in exactly those cases.
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => { if (_spot) layoutSpotlight(); });
+  window.visualViewport.addEventListener('scroll', () => { if (_spot) layoutSpotlight(); });
+}
 // fitBoard() sizes #board to fit the viewport AFTER a step can already be on screen (a tall
 // board animates to its fitted size), which fires no window resize — so a ring on a board tile
 // would sit at the tile's pre-settle position. Re-layout the active spotlight whenever the
