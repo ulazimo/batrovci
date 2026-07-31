@@ -140,6 +140,43 @@ function wtSetJumperVisible(win, show) {
   if (panel) panel.style.display = show ? '' : 'none';
 }
 
+// Three more bits of the real game's own chrome that don't belong in this tab,
+// hidden the same way as the jumper above (poke the loaded frame's DOM, never
+// touch the game's source itself — none of this should change the real game).
+// All three are put up by `boot()`, which has finished by the time the iframe's
+// `load` event fires, so doing this once per frame load is enough: nothing in
+// this tab re-runs `boot()` or `showHome()`, and `renderHall()` touches none of
+// them.
+//   • `#test-mode-panel` — drawn on desktop widths whatever the test-mode state
+//     is (it IS the master switch), so it sits next to the phone frame in here
+//     for no reason; this tab has its own controls.
+//   • the Play button's "JOURNEY IS COMPLETED!" state — `showHome()` sets it at
+//     boot from whatever the sandbox save already holds, and revealing items in
+//     here writes `progress.stars`, so once you have walked the last hall every
+//     later load renders the finished-journey button. Nothing to do with hall
+//     art, so it is put back to the plain PLAY look.
+//   • `#username-prompt` — `maybeAskUsername()` covers the hall on any device
+//     that has never set `mm_username`, which is exactly the reviewer's browser.
+//     Dismissed WITHOUT `submitUsername()` on purpose: that key is NOT sandboxed
+//     (only `progress` is, via `?mmSandbox=1`), so answering it in here would
+//     name the real player. Skipping it also leaves the home FTUE stopped —
+//     `boot()` already declined to start it while the prompt was up, and only
+//     `submitUsername()` would kick it off — so the hall stays unobstructed.
+function wtHideGameChrome(win) {
+  const panel = win.document.getElementById('test-mode-panel');
+  if (panel) panel.style.display = 'none';
+
+  const playBtn = win.document.querySelector('.room-play-btn');
+  const labelEl = win.document.querySelector('.room-play-label');
+  const lvlEl = win.document.getElementById('room-play-level');
+  if (playBtn) playBtn.classList.remove('done');
+  if (labelEl) labelEl.textContent = 'PLAY';
+  if (lvlEl) lvlEl.style.display = '';
+
+  const nameEl = win.document.getElementById('username-prompt');
+  if (nameEl) nameEl.classList.remove('active');
+}
+
 // ------------------------------------------------------------
 // ART MEASUREMENT — the defect you cannot see by eye.
 // ------------------------------------------------------------
@@ -597,6 +634,7 @@ function wtInit() {
         const win = wtWin();
         wtApplySimulation(win);
         wtSetJumperVisible(win, wtShowJumper);
+        wtHideGameChrome(win);
         let boot = null;
         try { boot = win.localStorage.getItem('mm_device'); } catch (e) {}
         wtFitFrameTo(WT_DEVICE_H[boot] ? boot : 'ip15pro');
