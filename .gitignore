@@ -33,6 +33,10 @@ firebase-debug.log
 *.bak
 *.backup
 
+# Python bytecode (art/tools/*.py)
+__pycache__/
+*.pyc
+
 # Optional: If you add a build process later
 dist/
 build/
@@ -41,3 +45,10 @@ node_modules/
 # Capacitor native wrapper for memory-match (local-only, shared by zip)
 memory-match-app/
 memory-match-ios/
+
+# memory-match backdrop-extension scratch (art/tools/extend_backdrops.py).
+# art/extend/ is ~43MB of regenerable generation inputs — `prep` rebuilds it.
+# _orig/ are that tool's pre-edit backups, which git history already is; they
+# exist only so `apply --redo` works without a checkout.
+memory-match/art/extend/
+memory-match/art/**/_orig/
