@@ -7,13 +7,8 @@ PROGRESSION_CLEANING_XL = {
   "levelRewards": [
     {
       "afterLevel": 1,
-      "qty": 3,
-      "boosterId": "peek"
-    },
-    {
-      "afterLevel": 2,
       "boosterId": "peek",
-      "qty": 1
+      "qty": 3
     },
     {
       "afterLevel": 3,
@@ -21,19 +16,84 @@ PROGRESSION_CLEANING_XL = {
       "qty": 3
     },
     {
-      "afterLevel": 4,
+      "afterLevel": 6,
       "boosterId": "peek",
-      "qty": 1
-    },
-    {
-      "afterLevel": 4,
-      "boosterId": "random3",
       "qty": 1
     },
     {
       "afterLevel": 9,
       "boosterId": "pluscolor",
       "qty": 10
+    },
+    {
+      "afterLevel": 11,
+      "boosterId": "peek",
+      "qty": 2
+    },
+    {
+      "afterLevel": 20,
+      "boosterId": "pluscolor",
+      "qty": 1
+    },
+    {
+      "afterLevel": 25,
+      "boosterId": "random3",
+      "qty": 1
+    },
+    {
+      "afterLevel": 28,
+      "boosterId": "random3",
+      "qty": 1
+    },
+    {
+      "afterLevel": 34,
+      "boosterId": "pluscolor",
+      "qty": 1
+    },
+    {
+      "afterLevel": 41,
+      "boosterId": "pluscolor",
+      "qty": 1
+    },
+    {
+      "afterLevel": 46,
+      "boosterId": "peek",
+      "qty": 2
+    },
+    {
+      "afterLevel": 50,
+      "boosterId": "pluscolor",
+      "qty": 1
+    },
+    {
+      "afterLevel": 59,
+      "boosterId": "random3",
+      "qty": 1
+    },
+    {
+      "afterLevel": 69,
+      "boosterId": "pluscolor",
+      "qty": 1
+    },
+    {
+      "afterLevel": 75,
+      "boosterId": "pluscolor",
+      "qty": 1
+    },
+    {
+      "afterLevel": 84,
+      "boosterId": "random3",
+      "qty": 1
+    },
+    {
+      "afterLevel": 95,
+      "boosterId": "peek",
+      "qty": 2
+    },
+    {
+      "afterLevel": 99,
+      "boosterId": "pluscolor",
+      "qty": 1
     }
   ]
 };
