@@ -450,6 +450,13 @@ function showSpotlight(params) {
   layer.querySelector('#ftue-next').style.display = params.showNext ? 'inline-block' : 'none';
   layoutSpotlight();
   if (hasText) { bubble.classList.remove('ftue-pop'); void bubble.offsetWidth; bubble.classList.add('ftue-pop'); }
+  // The board can still be settling when a step first renders — fitBoard rescaling a tall
+  // board, a booster-tray reflow from an onEnter gift, or late-loading badge art all move a
+  // highlighted tile AFTER this initial layout. layoutSpotlight only re-runs on window resize,
+  // which none of those fire, so re-run it a couple of beats later. Guarded so a superseded
+  // spotlight never fights the current one.
+  setTimeout(() => { if (_spot === params) layoutSpotlight(); }, 80);
+  setTimeout(() => { if (_spot === params) layoutSpotlight(); }, 260);
 }
 
 // Retire just the "tap here" cue (hand + bubble + ring) but keep the backdrop hole
@@ -537,6 +544,13 @@ function layoutSpotlight() {
 }
 
 window.addEventListener('resize', () => { if (_spot) layoutSpotlight(); });
+// fitBoard() sizes #board to fit the viewport AFTER a step can already be on screen (a tall
+// board animates to its fitted size), which fires no window resize — so a ring on a board tile
+// would sit at the tile's pre-settle position. Re-layout the active spotlight whenever the
+// board's box changes, so it tracks the tile to rest. (Cheap; only acts while a spotlight is up.)
+if (typeof ResizeObserver !== 'undefined' && typeof boardEl !== 'undefined' && boardEl) {
+  new ResizeObserver(() => { if (_spot) layoutSpotlight(); }).observe(boardEl);
+}
 
 // ============================================================
 // LEVEL 1 — First-Time User Experience script.
@@ -827,6 +841,26 @@ const LEVEL25_STEPS = [
   { type: 'info', text: 'Whenever you collect a card next to a Locked tile, it breaks a lock! 🔓' },
 ];
 
+// ============================================================
+// LEVEL 28 — teaches using a BOMB to destroy locks you can't reach. The authored
+// 5×9 board isolates a locked RED CROSS at the bottom (center idx32 (6,2); arms 27,
+// 31, 33, 37) surrounded entirely by disabled cells — so no adjacent card can ever be
+// collected to break them (unlike Level 25). A Baby Bomb's cross blast dropped on the
+// center hits all 5 cross tiles at once → breakAdjacentLocks…no, detonateBombAt's
+// `blastLocks` breaks one layer on every locked tile in the blast → all 5 unlock.
+// Step 1 gifts a Baby Bomb if the player has none. useBomb targets idx32 (locked tiles
+// are valid bomb drops). It's a "lock-only" blast (holds the unlocked reds face-up ~2s),
+// so the closing step's nextDelay waits for that. Ends mid-level.
+// ============================================================
+const LEVEL28_STEPS = [
+  { type: 'info', highlight: 32,
+    text: "You can't get to these locked tiles, but you can use a bomb to destroy the Locks! 💣",
+    onEnter: () => { if ((boosterCounts.babybomb || 0) < 1) tutorialGift('babybomb', 1); } },
+  { type: 'useBomb', booster: 'babybomb', target: 32, nextDelay: 2400,
+    text: 'Drag your Bomb onto the center of the cross! 💣', dropText: 'Drop it here!' },
+  { type: 'info', text: 'The locks are destroyed — now you can collect those cards! 💥' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -839,4 +873,5 @@ const LEVEL_TUTORIALS = {
   14: { id: 'level15', steps: LEVEL15_STEPS },
   15: { id: 'level16', steps: LEVEL16_STEPS, forceStreakReveal: 6 },
   24: { id: 'level25', steps: LEVEL25_STEPS },
+  27: { id: 'level28', steps: LEVEL28_STEPS },
 };
