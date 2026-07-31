@@ -2,6 +2,19 @@
    RESET & BASE
 ================================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* Game-wide: no text selection, no long-press callout/magnifier, no image drag */
+html, body, body * {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* Re-enable for real text entry */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  user-select: text;
+  }
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: #1a1a2e; color: #eee;
