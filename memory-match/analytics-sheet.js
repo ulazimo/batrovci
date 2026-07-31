@@ -8,9 +8,11 @@
 // functions/consts and reads no shared engine state at load time, so its
 // position is convention, not a hard dependency. Callers all run later:
 //   • boot.js            → maybeAskUsername()  (once-per-device prompt)
-//   • level.js startGame → resetMatchStats()   (new match: clear counters)
+//   • level.js startGame → resetMatchStats()   (new match: clear counters + start clock)
 //   • boosters.js        → recordPowerUpUse()   (each power-up consumed)
 //   • endgame.js         → logLevelResult()     (win / fail → send a row)
+//   • shop.js            → logShopPurchase()    (each shop buy → a Purchases row)
+//   • endgame/home       → setPlayerState()     (tracks where the player came from)
 // ============================================================
 
 // ------------------------------------------------------------
@@ -77,12 +79,22 @@ let matchPowerUps = {};     // power-up id → times used this match
 let matchStartTurns = 0;    // the turn budget the match began with (+5 per coin-continue)
 let matchTurnsTaken = 0;    // ACTUAL turns/chains the player resolved (every endTurn)
 let matchTurnsRefunded = 0; // of those, how many a colour clear gave back (the "+1 Turn")
+let matchStartedAt = 0;     // ms timestamp of the moment Play was pressed (startGame)
 
 function resetMatchStats() {
   matchPowerUps = {};
   matchStartTurns = (typeof MAX_TURNS === 'number') ? MAX_TURNS : 0;
   matchTurnsTaken = 0;
   matchTurnsRefunded = 0;
+  matchStartedAt = Date.now();
+}
+
+// Wall-clock seconds from pressing Play until the win/fail is declared. A
+// coin-continue (+5 Turns) resumes the SAME match, so the clock keeps running —
+// the duration covers the whole attempt, matching turnsStart's +5 behaviour.
+function matchDurationSeconds() {
+  if (!matchStartedAt) return 0;
+  return Math.round((Date.now() - matchStartedAt) / 1000);
 }
 
 // One choke-point for "a power-up was used". `id` is a booster id, 'recall',
@@ -173,6 +185,44 @@ function logLevelResult(outcome) {
     stars:         (outcome === 'complete' && typeof progress !== 'undefined' && progress.stars) ? (progress.stars[currentLevelIndex] || 0) : 0,
     powerUps:      formatPowerUps(),
     powerUpsTotal: totalPowerUps(),
+    // Seconds from pressing Play to this win/fail (includes any coin-continue).
+    durationSec:   matchDurationSeconds(),
   };
   sendAnalytics(payload);
+}
+
+// ------------------------------------------------------------
+// SHOP PURCHASES — logged to their OWN sheet tab ('Purchases'), so match results
+// and purchases don't fight over one column layout. The Apps Script routes on
+// payload.sheet (see analytics-apps-script.gs).
+//
+// `playerState` answers "what was the player doing right before they bought?" —
+// set at each screen transition by setPlayerState(), read here.
+// ------------------------------------------------------------
+let playerState = 'boot';   // boot | home | prelevel | in-level | level-complete | level-failed
+
+function setPlayerState(state) {
+  if (state) playerState = state;
+}
+
+// One row per confirmed purchase. Called from buyBooster() AFTER the affordability
+// check but BEFORE coins are deducted, so `coinsBefore` is the pre-buy balance.
+function logShopPurchase(id, qty, cost, coinsBefore) {
+  const lvl = (typeof LEVELS !== 'undefined' && LEVELS[currentLevelIndex]) ? LEVELS[currentLevelIndex] : null;
+  sendAnalytics({
+    sheet:        'Purchases',
+    timestamp:    new Date().toISOString(),
+    username:     getUsername() || 'anonymous',
+    journey:      (typeof progress !== 'undefined' && progress.progressionStyle) || '',
+    // The level the player is ON (the next one they'd play), not one they finished.
+    level:        lvl ? lvl.id : (currentLevelIndex + 1),
+    levelIndex:   currentLevelIndex,
+    previousState: playerState,
+    item:         id,
+    itemName:     powerUpLabel(id),
+    quantity:     qty,
+    cost:         cost,
+    coinsBefore:  coinsBefore,
+    coinsAfter:   coinsBefore - cost,
+  });
 }

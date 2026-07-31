@@ -144,6 +144,7 @@ function levelWon() {
 
   // Analytics: report the completion (stars/score are finalized above).
   if (typeof logLevelResult === 'function') logLevelResult('complete');
+  if (typeof setPlayerState === 'function') setPlayerState('level-complete');
 
   // A tutorial can ask to HOLD the win here (e.g. Level 6's bomb-reward finale): the
   // reward has just flown into the tray, so we pause, let the tutorial show its closing
@@ -250,6 +251,7 @@ function levelFailed(reason) {
 
   // Analytics: report the failure.
   if (typeof logLevelResult === 'function') logLevelResult('fail');
+  if (typeof setPlayerState === 'function') setPlayerState('level-failed');
 
   // Show fail banner over the board with goal status
   let failBannerSub = `Score: ${score} / ${TARGET}`;

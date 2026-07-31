@@ -36,12 +36,27 @@
  *  ── COLUMNS ────────────────────────────────────────────────
  *  Headers are created automatically from the first result received, and any
  *  new field added to the game later is appended as a new column on the fly —
- *  you never have to edit the sheet by hand. Current fields:
+ *  you never have to edit the sheet by hand.
+ *
+ *  TABS: each payload may carry a `sheet` field naming the tab it belongs in.
+ *  Missing/blank → 'Results'. The tab is CREATED automatically if absent, so you
+ *  never add one by hand. `sheet` itself is not written as a column.
+ *
+ *  'Results' (one row per finished match):
  *    timestamp · username · outcome · journey · level · levelIndex ·
  *    turnsStart · turnsEnd · turnsTaken · turnsRefunded · score · stars ·
- *    powerUps · powerUpsTotal
+ *    powerUps · powerUpsTotal · durationSec
  *  (turnsTaken = actual turns played; NOT turnsStart - turnsEnd, because a colour
- *   clear refunds its turn. turnsTaken = (turnsStart - turnsEnd) + turnsRefunded.)
+ *   clear refunds its turn. turnsTaken = (turnsStart - turnsEnd) + turnsRefunded.
+ *   durationSec = wall-clock seconds from pressing Play to the win/fail, and it
+ *   keeps running through a coin-continue, so it covers the whole attempt.)
+ *
+ *  'Purchases' (one row per shop buy):
+ *    timestamp · username · journey · level · levelIndex · previousState ·
+ *    item · itemName · quantity · cost · coinsBefore · coinsAfter
+ *  (previousState = what the player was doing before buying: boot, prelevel,
+ *   in-level, level-complete or level-failed. coinsBefore is the balance BEFORE
+ *   the purchase; coinsAfter = coinsBefore - cost.)
  */
 
 function doPost(e) {
@@ -55,10 +70,23 @@ function doPost(e) {
     }
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Results');
+
+    // Which tab? The payload's `sheet` field, defaulting to 'Results'. It's routing
+    // metadata, not data — strip it so it never becomes a column.
+    var tabName = (data.sheet ? String(data.sheet) : 'Results');
+    delete data.sheet;
+
+    var sheet = ss.getSheetByName(tabName);
     if (!sheet) {
-      sheet = ss.getSheets()[0];
-      sheet.setName('Results');
+      // 'Results' adopts the very first (default) tab so an untouched, empty
+      // spreadsheet doesn't end up with a stray blank "Sheet1". Any other tab
+      // (e.g. 'Purchases') is simply created.
+      if (tabName === 'Results' && ss.getSheets().length === 1 && ss.getSheets()[0].getLastRow() === 0) {
+        sheet = ss.getSheets()[0];
+        sheet.setName(tabName);
+      } else {
+        sheet = ss.insertSheet(tabName);
+      }
     }
 
     // Read existing header row (if any).

@@ -112,7 +112,11 @@ function renderShop() {
 
 function buyBooster(id, qty) {
   const cost = batchCost(id, qty);
-  if ((progress.coins || 0) < cost) return;   // can't afford (buttons are disabled too)
+  const coinsBefore = progress.coins || 0;
+  if (coinsBefore < cost) return;   // can't afford (buttons are disabled too)
+
+  // Analytics: log the purchase with the PRE-buy balance, before we deduct below.
+  if (typeof logShopPurchase === 'function') logShopPurchase(id, qty, cost, coinsBefore);
 
   // Materialize every booster's effective count first. saveBoosterCounts() writes
   // boosterCounts[b.id]||0 for ALL boosters, so an undefined entry (common on the
@@ -122,7 +126,7 @@ function buyBooster(id, qty) {
     BOOSTERS.forEach(b => { if (boosterCounts[b.id] === undefined) boosterCounts[b.id] = shopOwned(b.id); });
   }
 
-  progress.coins = (progress.coins || 0) - cost;
+  progress.coins = coinsBefore - cost;
   boosterCounts[id] = (boosterCounts[id] || 0) + qty;   // bombs may now exceed their cap — intended
 
   // Persist through every read path: progress.boosterCounts (initBoosters reads it),
