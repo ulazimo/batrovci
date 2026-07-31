@@ -203,6 +203,10 @@ function showHome() {
   } else {
     pendingHomeCoinReward = 0;
   }
+
+  // Once the arrival animations settle, offer any home-screen tutorial (e.g. the
+  // Win Streak explainer that unlocks at Level 11). No-op if none applies.
+  if (typeof scheduleHomeTutorialCheck === 'function') scheduleHomeTutorialCheck();
 }
 
 // The "collected" contents of a spot: glow, (music) notes, and the art image.

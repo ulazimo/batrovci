@@ -152,6 +152,32 @@ function endHomeSpotlight() {
   hideSpotlight();
 }
 
+// ---- HOME: step-driven tutorials that run on the home screen (not tied to a
+// level board). These reuse the same step engine as level tutorials — an `info`
+// step only needs its `highlight` selector, no board. showHome() schedules a
+// check after its arrival animations (coin fly / item reveal) settle. ----
+let _homeTutTimer = null;
+function scheduleHomeTutorialCheck() {
+  clearTimeout(_homeTutTimer);
+  _homeTutTimer = setTimeout(maybeStartHomeWinstreakTutorial, 1700);
+}
+
+// First time the player lands on home with the Win Streak just unlocked (next
+// level's id === the journey's winStreakStartLevel), explain the meter. Gated by
+// its own seen-flag so it shows exactly once.
+function maybeStartHomeWinstreakTutorial() {
+  if (typeof isMmSandbox === 'function' && isMmSandbox()) return;
+  if (tutRunning || homeSpotlightActive) return;
+  if (hasSeenTutorial('winstreakHome')) return;
+  if (typeof isWinStreakActive !== 'function' || !isWinStreakActive()) return;
+  if (LEVELS[currentLevelIndex]?.id !== getWinStreakStartLevel()) return;
+  const hs = document.getElementById('home-screen');
+  if (!hs || !hs.classList.contains('active')) return;
+  const bar = document.getElementById('home-streak');
+  if (!bar || bar.style.visibility === 'hidden') return;
+  startLevelTutorial({ id: 'winstreakHome', steps: WINSTREAK_HOME_STEPS });
+}
+
 // Play → skip the pre-level prep screen and drop straight into the guided board.
 function beginTutorialLevel(entry) {
   tutPending = entry;
@@ -201,7 +227,36 @@ function renderTutorialStep() {
     tutAllowedBooster = step.booster;
     if (step.type === 'useBomb') tutBombTarget = step.target;
     showSpotlight({ target: boosterButtonEl(step.booster), text: step.text || '', hand: true });
+  } else if (step.type === 'revealBoard') {
+    // Demo the Win Streak effect: drop the overlay so the board is fully lit, flash
+    // EVERY eligible card face-up, hold, hide, then advance. (Skippable via a tap.)
+    hideSpotlight();
+    tutorialFlashWholeBoard(step.holdMs, () => { if (tutRunning) advanceTutorial(); });
   }
+}
+
+// Flash every flippable card face-up together, hold, then hide — the same flash-and-hide
+// the win-streak pre-reveal uses (vfx.js revealEntireBoard), but for the WHOLE board.
+// Used by the Level 11 tutorial to show "what a Level 10 Win Streak can do".
+function tutorialFlashWholeBoard(holdMs, cb) {
+  const list = board.map((_, i) => i).filter(i => board[i] && !board[i].locked && !board[i].special);
+  if (!list.length) { if (cb) cb(); return; }
+  inputLocked = true;
+  const staggerMs = 45;
+  const steps = list.map((idx, i) => ({ delay: i * staggerMs, fn: () => {
+    const c = board[idx]; if (!c) return;
+    c.flipped = true;
+    const el = getCardEl(idx); if (el) el.classList.add('flipped');
+  } }));
+  runSkippableReveal(steps, holdMs || 2600, () => {
+    list.forEach(idx => {
+      const c = board[idx]; if (!c) return;
+      c.flipped = false;
+      const el = getCardEl(idx); if (el) el.classList.remove('flipped');
+    });
+    inputLocked = false;
+    if (cb) cb();
+  });
 }
 
 // Called from onCardClick the moment a *permitted* scripted card is tapped
@@ -626,12 +681,38 @@ const LEVEL10_STEPS = [
   { type: 'info', text: 'See how easy it can be! 🙌' },
 ];
 
+// ============================================================
+// WIN STREAK — a HOME-screen tutorial (id `winstreakHome`), shown the first time
+// the player returns home after clearing Level 10 (Win Streak unlocks at Level 11).
+// It highlights the win-streak meter and explains the level-start reveal. Then,
+// entering Level 11, LEVEL11_STEPS demos the effect on the board.
+// ============================================================
+const WINSTREAK_HOME_STEPS = [
+  { type: 'info', highlight: '#home-streak',
+    text: "🔥 You unlocked the Win Streak! At the start of every Match, cards get revealed based on your Win Streak." },
+  { type: 'info', highlight: '#home-streak',
+    text: 'The higher your streak, the more cards you\'ll see — so do your best to keep it! 🏆' },
+];
+
+// ============================================================
+// LEVEL 11 — demo the Win Streak reveal. Even though the streak is still at 0,
+// the tutorial flashes the WHOLE board face-up once ("what a Level 10 streak can
+// do"), then hands the level back to the player. Winning it naturally ticks the
+// streak to 1 (isWinStreakActive() is true from Level 11 → endgame.js increments).
+// ============================================================
+const LEVEL11_STEPS = [
+  { type: 'info', text: "You are at Streak 0, let me show you what a Level 10 Win Streak can do! 👀" },
+  { type: 'revealBoard', holdMs: 3200 },
+  { type: 'info', text: 'Memorize what you can — now clear the board! 💪' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
-  0: { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
-  1: { id: 'level2',  steps: LEVEL2_STEPS },
-  3: { id: 'level4',  steps: LEVEL4_STEPS },
-  5: { id: 'level6',  steps: LEVEL6_STEPS },
-  6: { id: 'level7',  steps: LEVEL7_STEPS },
-  9: { id: 'level10', steps: LEVEL10_STEPS },
+  0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
+  1:  { id: 'level2',  steps: LEVEL2_STEPS },
+  3:  { id: 'level4',  steps: LEVEL4_STEPS },
+  5:  { id: 'level6',  steps: LEVEL6_STEPS },
+  6:  { id: 'level7',  steps: LEVEL7_STEPS },
+  9:  { id: 'level10', steps: LEVEL10_STEPS },
+  10: { id: 'level11', steps: LEVEL11_STEPS },
 };
