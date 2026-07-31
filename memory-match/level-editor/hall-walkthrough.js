@@ -209,6 +209,23 @@ function wtCrop() {
 }
 
 // ------------------------------------------------------------
+// HALL ORDER — display/step through halls by the levels they cover, not by
+// their position in COLLECTIONS.halls. Halls are appended to that array as
+// they're authored (new halls go on the end), so a hall backfilled into an
+// earlier gap — e.g. Game Room, added later to cover levels 44-51 — sits
+// AFTER halls covering levels into the 80s. Walking the raw array made the
+// tab jump backwards in level order for no visible reason. This only
+// reorders how the list is walked/displayed; `data-hall`/`wtHallIdx` still
+// index the real `COLLECTIONS.halls` array everywhere else.
+function wtHallOrderIndices(win) {
+  const halls = win.COLLECTIONS.halls || [];
+  return halls
+    .map((h, i) => ({ i, min: Math.min(...(h.slots || []).map(s => s.levelId), Infinity) }))
+    .sort((a, b) => a.min - b.min)
+    .map(x => x.i);
+}
+
+// ------------------------------------------------------------
 // RENDER — hall list + slot list
 // ------------------------------------------------------------
 function wtRender() {
@@ -238,13 +255,17 @@ function wtRender() {
       + ` · ${slots - dead}/${slots} hall slots have a level`;
   }
 
-  hallsEl.innerHTML = halls.map((h, i) => {
+  const order = wtHallOrderIndices(win);
+  hallsEl.innerHTML = order.map((i, pos) => {
+    const h = halls[i];
     const states = (h.slots || []).map(s => wtSlotState(win, s));
     const shown = states.filter(s => s.revealed).length;
     const dead = states.filter(s => s.missing).length;
     const noArt = states.filter(s => s.noBoardArt).length;
+    const levels = (h.slots || []).map(s => s.levelId);
+    const range = levels.length ? `${Math.min(...levels)}–${Math.max(...levels)}` : '—';
     return `<button class="wt-hall${i === wtHallIdx ? ' active' : ''}" data-hall="${i}">
-      <span class="wt-hall-name">${i + 1}. ${h.name}</span>
+      <span class="wt-hall-name">${pos + 1}. ${h.name} <span class="wt-muted">(lvl ${range})</span></span>
       <span class="wt-hall-meta">${shown}/${states.length}${dead ? ` · ${dead} no level` : ''}${noArt ? ` · ${noArt} no board art` : ''}</span>
     </button>`;
   }).join('');
@@ -345,7 +366,11 @@ function wtGoHall(i, dir) {
 function wtStep(delta) {
   const win = wtWin();
   if (!win) return;
-  wtGoHall(wtHallIdx + delta, delta > 0 ? 1 : -1);
+  const order = wtHallOrderIndices(win);
+  const pos = order.indexOf(wtHallIdx);
+  const next = order[(pos < 0 ? 0 : pos) + delta];
+  if (next === undefined) return;
+  wtGoHall(next, delta > 0 ? 1 : -1);
 }
 
 // Reveal ONE item, the way the game does it after a win: set the star, make sure
