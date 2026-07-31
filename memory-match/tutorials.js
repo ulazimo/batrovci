@@ -72,6 +72,7 @@ let tutBombTarget = null;       // a guided bomb may only drop on this index (nu
 let tutAwaitingResolve = false; // waiting for finishTurn before advancing
 let tutForcedDangerTargets = null; // indices applyChainColorHint must mark (tutorial override)
 let tutForcedReveal = null;     // indices random3 / +1-color must reveal (tutorial override)
+let tutSuppressAutoResolve = false; // block colour-clear auto-resolve so a scripted chain waits for the guided bank
 let tutPending = null;          // {id, steps} to start once the opening board reveal finishes
 let tutHoldForWin = false;      // a useBomb step wants to hold the level-win until its closing box
 let tutDeferredWin = null;      // levelWon's finish callback, run after the closing box is dismissed
@@ -109,6 +110,11 @@ function tutorialForcedDanger() { return tutRunning ? tutForcedDangerTargets : n
 function setForcedDanger(indices) { tutForcedDangerTargets = indices ? [...indices] : null; }
 function tutorialForcedReveal() { return tutRunning ? tutForcedReveal : null; }
 function setForcedReveal(indices) { tutForcedReveal = indices ? [...indices] : null; }
+// Colour-clear auto-resolve (tryAutoResolveColor) fires the instant every card of the chain
+// colour is open — which would collect a scripted 2-chain before the guided "tap a mismatch to
+// bank" step. A tutorial can suppress it so the player performs the bank themselves.
+function tutorialSuppressAutoResolve() { return tutRunning && tutSuppressAutoResolve; }
+function setSuppressAutoResolve(v) { tutSuppressAutoResolve = !!v; }
 // Level-win hold: a useBomb step with holdForWin lets levelWon pause its finish so the
 // player sees the reward, then the tutorial's closing box shows before returning home.
 function tutorialHoldForWin() { return tutRunning && tutHoldForWin; }
@@ -199,7 +205,7 @@ function startLevelTutorial(entry) {
   tutIndex = -1;
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
-  tutHoldForWin = false; tutDeferredWin = null;
+  tutHoldForWin = false; tutDeferredWin = null; tutSuppressAutoResolve = false;
   advanceTutorial();
 }
 
@@ -359,7 +365,7 @@ function endTutorial() {
   tutIndex = -1;
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
-  tutHoldForWin = false;
+  tutHoldForWin = false; tutSuppressAutoResolve = false;
   hideSpotlight();
   if (tutCurrentId && !hasSeenTutorial(tutCurrentId)) markTutorialSeen(tutCurrentId);
   tutCurrentId = null;
@@ -706,6 +712,27 @@ const LEVEL11_STEPS = [
   { type: 'info', text: 'Memorize what you can — now clear the board! 💪' },
 ];
 
+// ============================================================
+// LEVEL 15 — teaches Back-of-card effects. The authored 5×7 board pins two GREEN
+// cards carrying a `column` back-effect at (3,0)=15 and (3,4)=19, each sitting in a
+// full RED column (col 0 = 0,5,10,15,20,25,30; col 4 = 4,9,14,19,24,29,34).
+// Flow: explain → tap green 15 (its whole column lights white = the impact preview)
+// → explain the white highlight → tap green 19 → tap a Red card to BANK the 2-green
+// chain, which collects both greens and fires BOTH column reveals. Auto colour-clear
+// is suppressed (only 2 greens exist, so it would otherwise snap shut on green 19)
+// so the player performs the bank. Ends mid-level; the rest plays out normally.
+// ============================================================
+const LEVEL15_STEPS = [
+  { type: 'info', highlight: 15,
+    text: "Cards with Effects on their Back reveal a pattern of cards on the Board when you collect them! 🎴",
+    onEnter: () => setSuppressAutoResolve(true) },
+  { type: 'tapCard', card: 15 },
+  { type: 'info', highlight: '#board',
+    text: 'The white highlight shows which cards will be revealed when this chain is collected! ✨' },
+  { type: 'tapCard', card: 19 },
+  { type: 'tapCard', card: 20},
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -715,4 +742,5 @@ const LEVEL_TUTORIALS = {
   6:  { id: 'level7',  steps: LEVEL7_STEPS },
   9:  { id: 'level10', steps: LEVEL10_STEPS },
   10: { id: 'level11', steps: LEVEL11_STEPS },
+  14: { id: 'level15', steps: LEVEL15_STEPS },
 };

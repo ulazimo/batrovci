@@ -92,6 +92,9 @@ function finishTurn() {
 // ones are dealt with when their lock breaks). Returns true if it resolved the turn.
 function tryAutoResolveColor() {
   if (chainColor === null) return false;
+  // A tutorial may need a scripted chain to WAIT for a guided bank instead of snapping shut
+  // the instant the colour is fully open (e.g. Level 15's 2-green back-effect chain).
+  if (typeof tutorialSuppressAutoResolve === 'function' && tutorialSuppressAutoResolve()) return false;
   const activeColors = getRule('coloredBombs') ? [...chainColors] : [chainColor];
   const stillClosed = board.some(c => c && !c.special && !c.flipped && !c.locked && activeColors.includes(c.color));
   if (stillClosed) return false; // not every interactable card of the colour is open yet
