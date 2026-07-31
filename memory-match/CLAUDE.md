@@ -168,19 +168,23 @@ COLLECTIONS = {
   five interior-room halls all do.
   This only lines up because the layers and the backdrop share an aspect ratio and
   the same cover geometry; `syncBackdropBox()` is what guarantees the second part.
-- Today: **16 halls** — Bedroom plus fifteen `kind: 'layer'` interior-room halls:
+- Today: **17 halls** — Bedroom plus sixteen `kind: 'layer'` interior-room halls:
   Cozy Attic, Grandma's Kitchen, Victorian Greenhouse, Music Room, Toy Workshop,
   Cosy Library, Artist's Studio, Sewing Room, Writer's Study, Nursery, Wine
-  Cellar, Sunroom, Curiosity Shop, and (added 2026-07-30) **Game Room** (8 items)
-  and **Sweet Shop** (7 items) — the first two halls sized off the default
-  `hallSize: 5` — plus `boardArt` per level. **Don't trust hall→level numbers
-  written down anywhere, including here** — the map has been renumbered
-  repeatedly (Sunny Shore and Snow Day were removed and Bedroom rebuilt the same
-  week five of these were added) and churns independently of this file. Read
-  `collections.json`; Game Room/Sweet Shop were appended by
-  `art/tools/add_halls_17_18.py` in the journey's two remaining gaps — levels
-  44–51 and 88–94 — chosen to best fit an 8-item and a 7-item hall into the two
-  open ranges without claiming a `levelId` any other hall already had.
+  Cellar, Sunroom, Curiosity Shop, Game Room (8 items), Sweet Shop (7 items),
+  and (added 2026-07-31) **Wedding Chapel** (9 items) — the first two of those
+  three sized off the default `hallSize: 5` — plus `boardArt` per level. **Don't
+  trust hall→level numbers written down anywhere, including here** — the map
+  has been renumbered repeatedly (Sunny Shore and Snow Day were removed and
+  Bedroom rebuilt the same week five of these were added; Writer's Study
+  through Sweet Shop were later shifted down by 3 to close a mid-journey gap)
+  and churns independently of this file. Read `collections.json`; Game
+  Room/Sweet Shop were appended by `art/tools/add_halls_17_18.py`, chosen to
+  best fit an 8-item and a 7-item hall into the journey's two mid-range gaps
+  without claiming a `levelId` any other hall already had. **Wedding Chapel
+  closes the trailing gap**: appended by `art/tools/add_halls_19.py` at
+  levels 92–100, the last 9 levels of the 100-level `cleaningxl` journey — every
+  level now has a hall slot and matching `boardArt`, zero gaps.
   All interior-room halls' items are painted into the room by a Layer image-edit
   and detached by pixel-diff, so each carries a real contact shadow and correct
   light. They therefore have `shadow: false`, no `floatPx`, and no pedestals:
@@ -188,14 +192,19 @@ COLLECTIONS = {
   `art/SCENE-LAYERS-PLAN.md`, `art/tools/RUNLOG.md` (halls 4–8),
   `art/tools/RUNLOG-HALLS-9-11.md` (Library / Studio / Sewing Room),
   `art/tools/RUNLOG-{study,nursery,winecellar,sunroom,curiosityshop}.md` (halls
-  12–16), and `art/tools/RUNLOG-{gameroom,sweetshop}.md` (halls 17–18). **Wine
-  Cellar has one known unresolved order-dependence defect**: `winebottles` and
-  `decanter` share the oak barrel top and don't fully composite
-  order-independently (see its run log) — `winebottles` is wired to the earlier
-  level on purpose, don't reorder them. **Sweet Shop has three items marginally
-  over the 60% height ceiling** (≤1.4pt, same class as Curiosity Shop's
-  `mantelclock` overage, accepted) and `cottoncandy` ships lying on the floor
-  rather than upright after 5 placement attempts — see its run log.
+  12–16), `art/tools/RUNLOG-{gameroom,sweetshop}.md` (halls 17–18), and
+  `art/tools/RUNLOG-weddingchapel.md` (hall 19). **Wine Cellar has one known
+  unresolved order-dependence defect**: `winebottles` and `decanter` share the
+  oak barrel top and don't fully composite order-independently (see its run
+  log) — `winebottles` is wired to the earlier level on purpose, don't reorder
+  them. **Sweet Shop has three items marginally over the 60% height ceiling**
+  (≤1.4pt, same class as Curiosity Shop's `mantelclock` overage, accepted) and
+  `cottoncandy` ships lying on the floor rather than upright after 5 placement
+  attempts — see its run log. **Wedding Chapel's bright rose window forced a
+  higher `extract_layer.py --thresh`** (20–30 vs. the usual 14 default) on
+  every item near it, exactly like Writer's Study and Game Room before it —
+  see its run log for the per-item thresholds and two placement collisions
+  that needed a re-fired edit (not just a threshold bump) to resolve.
 - **A `levelId` may appear in only one hall.** `slotLevelIndex` maps id → index and
   `boardArt` holds one item per level, so two halls claiming a level means it
   reveals twice and its board art is ambiguous. The interior-room halls were

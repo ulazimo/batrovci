@@ -998,6 +998,87 @@ COLLECTIONS = {
         "h": 512
       },
       "layer": "art/sweetshop/scene/cottoncandy.png"
+    },
+    "weddingrings": {
+      "name": "Wedding Rings",
+      "file": "art/weddingchapel/weddingrings.png",
+      "view": {
+        "w": 155,
+        "h": 128
+      },
+      "layer": "art/weddingchapel/scene/weddingrings.png"
+    },
+    "bridalbouquet": {
+      "name": "Bridal Bouquet",
+      "file": "art/weddingchapel/bridalbouquet.png",
+      "view": {
+        "w": 135,
+        "h": 125
+      },
+      "layer": "art/weddingchapel/scene/bridalbouquet.png"
+    },
+    "veiltiara": {
+      "name": "Veil & Tiara",
+      "file": "art/weddingchapel/veiltiara.png",
+      "view": {
+        "w": 112,
+        "h": 115
+      },
+      "layer": "art/weddingchapel/scene/veiltiara.png"
+    },
+    "unitycandle": {
+      "name": "Unity Candle",
+      "file": "art/weddingchapel/unitycandle.png",
+      "view": {
+        "w": 101,
+        "h": 95
+      },
+      "layer": "art/weddingchapel/scene/unitycandle.png"
+    },
+    "guestbook": {
+      "name": "Guest Book",
+      "file": "art/weddingchapel/guestbook.png",
+      "view": {
+        "w": 162,
+        "h": 113
+      },
+      "layer": "art/weddingchapel/scene/guestbook.png"
+    },
+    "champagneflutes": {
+      "name": "Champagne Flutes",
+      "file": "art/weddingchapel/champagneflutes.png",
+      "view": {
+        "w": 146,
+        "h": 173
+      },
+      "layer": "art/weddingchapel/scene/champagneflutes.png"
+    },
+    "weddingcake": {
+      "name": "Wedding Cake",
+      "file": "art/weddingchapel/weddingcake.png",
+      "view": {
+        "w": 122,
+        "h": 87
+      },
+      "layer": "art/weddingchapel/scene/weddingcake.png"
+    },
+    "confettibasket": {
+      "name": "Petal Confetti Basket",
+      "file": "art/weddingchapel/confettibasket.png",
+      "view": {
+        "w": 175,
+        "h": 184
+      },
+      "layer": "art/weddingchapel/scene/confettibasket.png"
+    },
+    "weddingbells": {
+      "name": "Wedding Bells",
+      "file": "art/weddingchapel/weddingbells.png",
+      "view": {
+        "w": 87,
+        "h": 96
+      },
+      "layer": "art/weddingchapel/scene/weddingbells.png"
     }
   },
   "halls": [
@@ -1622,6 +1703,61 @@ COLLECTIONS = {
           "kind": "layer"
         }
       ]
+    },
+    {
+      "id": "weddingchapel",
+      "name": "Wedding Chapel",
+      "backdrop": "art/backdrops/weddingchapel.jpeg",
+      "shadow": false,
+      "glow": false,
+      "notes": false,
+      "slots": [
+        {
+          "item": "weddingrings",
+          "levelId": 92,
+          "kind": "layer"
+        },
+        {
+          "item": "bridalbouquet",
+          "levelId": 93,
+          "kind": "layer"
+        },
+        {
+          "item": "veiltiara",
+          "levelId": 94,
+          "kind": "layer"
+        },
+        {
+          "item": "unitycandle",
+          "levelId": 95,
+          "kind": "layer"
+        },
+        {
+          "item": "guestbook",
+          "levelId": 96,
+          "kind": "layer"
+        },
+        {
+          "item": "champagneflutes",
+          "levelId": 97,
+          "kind": "layer"
+        },
+        {
+          "item": "weddingcake",
+          "levelId": 98,
+          "kind": "layer"
+        },
+        {
+          "item": "confettibasket",
+          "levelId": 99,
+          "kind": "layer"
+        },
+        {
+          "item": "weddingbells",
+          "levelId": 100,
+          "kind": "layer"
+        }
+      ]
     }
   ],
   "boardArt": {
@@ -2171,6 +2307,60 @@ COLLECTIONS = {
         "cy": 0.5,
         "h": 0.82,
         "item": "cottoncandy"
+      },
+      "92": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "weddingrings"
+      },
+      "93": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "bridalbouquet"
+      },
+      "94": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "veiltiara"
+      },
+      "95": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "unitycandle"
+      },
+      "96": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "guestbook"
+      },
+      "97": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "champagneflutes"
+      },
+      "98": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "weddingcake"
+      },
+      "99": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "confettibasket"
+      },
+      "100": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "weddingbells"
       }
     }
   }
