@@ -42,6 +42,7 @@ function saveJourneySnapshot() {
     winStreak: progress.winStreak,
     coins: progress.coins || 0,
     lives: progress.lives ?? 5,
+    livesRefillAt: progress.livesRefillAt || null,   // per-journey, so a refill wait doesn't leak between journeys
     boosterCounts: { ...boosterCounts },
     specialInventory: progress.specialInventory ? { ...progress.specialInventory } : {},
     seenSpecials: progress.seenSpecials ? [...progress.seenSpecials] : [],
@@ -59,6 +60,8 @@ function restoreJourneySnapshot(style) {
     progress.winStreak = snap.winStreak || 0;
     progress.coins = snap.coins || 0;
     progress.lives = snap.lives ?? 5;
+    if (snap.livesRefillAt) progress.livesRefillAt = snap.livesRefillAt;
+    else delete progress.livesRefillAt;
     Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);
     if (snap.boosterCounts) Object.assign(boosterCounts, snap.boosterCounts);
     if (snap.specialInventory) progress.specialInventory = { ...snap.specialInventory };
@@ -72,6 +75,7 @@ function restoreJourneySnapshot(style) {
     progress.winStreak = 0;
     progress.coins = 0;
     progress.lives = 5;
+    delete progress.livesRefillAt;
     progress.seenSpecials = [];
     progress.seenBoosters = [];
     progress.seenFeatures = [];
@@ -109,6 +113,7 @@ function resetJourneyProgress() {
   progress.winStreak = 0;
   progress.coins = 0;
   progress.lives = 5;
+  delete progress.livesRefillAt;
   delete progress.levelRewards;
   delete progress.comboMapping;
   Object.keys(boosterCounts).forEach(k => boosterCounts[k] = 0);

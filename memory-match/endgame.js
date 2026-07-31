@@ -242,6 +242,8 @@ function levelFailed(reason) {
   _failSavedStreak = hadStreak;   // stash so keepStreak() can restore it
   progress.winStreak = 0;
   progress.lives = Math.max(0, (progress.lives ?? 5) - 1);
+  // Out of lives → kick off the 5-minute refill countdown (see lives.js).
+  if (progress.lives <= 0) startLivesRefillTimer();
   saveJourneySnapshot();
   saveProgress();
   updateBanner();
@@ -304,6 +306,12 @@ function showFailOverlay(hadStreak, reason) {
     continueBtn.style.cursor = canAfford ? 'pointer' : 'not-allowed';
   }
 
+  // Try Again needs a life to spend. Out of lives → hide it entirely and leave
+  // "+5 Turns" (which restores the lost life) and Music Hall as the only exits.
+  // The overlay is reused across levels, so always restore display otherwise.
+  const retryBtn = document.getElementById('fail-retry-btn');
+  if (retryBtn) retryBtn.style.display = (progress.lives ?? MAX_LIVES) <= 0 ? 'none' : '';
+
   document.getElementById('overlay-fail').classList.add('active');
 }
 
@@ -312,6 +320,8 @@ function continueLevelWithCoins() {
   progress.coins = (progress.coins || 0) - KEEP_STREAK_COST;
   // Restore life that was lost on fail
   progress.lives = Math.min(5, (progress.lives ?? 0) + 1);
+  // Buying back in cancels the refill wait — the player isn't out any more.
+  delete progress.livesRefillAt;
   updateCoinDisplay();
   updateLivesDisplay();
   saveJourneySnapshot();

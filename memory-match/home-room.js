@@ -135,9 +135,9 @@ function showHome() {
   currentLevelIndex = nextPlayableIndex();
 
   // HUD + Play label
-  const livesEl = document.getElementById('room-lives');
   const coinsEl = document.getElementById('room-coins');
-  if (livesEl) livesEl.textContent = progress.lives ?? 5;
+  // Lives (and, when the player is out, the refill countdown + Play lock).
+  renderLives();
   // If we just won coins, show the PRE-win total here and let the fly-in below
   // count it up to the real total; otherwise show the live total directly.
   const total = progress.coins || 0;
@@ -560,6 +560,10 @@ function initHallSwipe() {
 // PLAY — from the hall, jump straight into the next level.
 // ============================================================
 function playFromHome() {
+  // Out of lives → the button is disabled, but guard the call too so a
+  // programmatic/FTUE trigger can't slip past the refill wait.
+  syncLivesRefill();
+  if ((progress.lives ?? MAX_LIVES) <= 0) { renderLives(); return; }
   if (typeof endHomeSpotlight === 'function') endHomeSpotlight(); // clear the FTUE Play spotlight if active
   document.body.classList.remove('on-home');
   document.getElementById('home-screen').classList.remove('active');

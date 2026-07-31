@@ -273,9 +273,10 @@ function updateCoinDisplay() {
   if (el) el.textContent = progress.coins || 0;
 }
 
+// Lives readout — delegates to lives.js, which also swaps the pill for the
+// refill countdown and locks Play when the player is out.
 function updateLivesDisplay() {
-  const el = document.getElementById('lives-count');
-  if (el) el.textContent = progress.lives ?? 5;
+  renderLives();
 }
 
 

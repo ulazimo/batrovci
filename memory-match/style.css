@@ -74,6 +74,13 @@ body {
   font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
 }
 .lives-icon { width:14px;height:14px;object-fit:contain; }
+/* Out of lives: the pill becomes the refill countdown (see lives.js) — white
+   text and a neutral border so it doesn't read as "you have lives". The heart
+   stays, so the countdown is still legible as a LIVES timer. */
+.lives-pill.refilling {
+  color:#fff;border-color:rgba(255,255,255,.28);
+  font-variant-numeric:tabular-nums;
+}
 .coin-pill {
   display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:14px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,215,0,.3);
@@ -1823,6 +1830,12 @@ body.on-home #chain-indicator { display: none !important; }
 }
 .room-play-btn.hard:active { box-shadow: 0 2px 0 #5b21b6, 0 5px 12px rgba(88,28,135,.4); }
 .room-play-btn.hard .room-play-level { opacity: .95; letter-spacing: 1.5px; white-space: nowrap; }
+/* Out of lives: Play is dead until the refill countdown finishes. */
+.room-play-btn:disabled {
+  cursor: default; filter: grayscale(.85); opacity: .5;
+  box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 10px 20px rgba(0,0,0,.3);
+}
+.room-play-btn:disabled:active { transform: none; box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 10px 20px rgba(0,0,0,.3); }
 
 /* ---- Hall slide transition (music → pasture, and swipe navigation) --------- */
 #room-scene.slide-in #room-backdrop,

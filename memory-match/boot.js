@@ -25,7 +25,7 @@
   currentLevelIndex = Math.max(0, currentLevelIndex);
 
   buildLevelJumper();
-  showHome();
+  showHome();   // renders the lives pill (and its refill countdown) via renderLives()
 
   // First launch on this device → ask for a username (once). Sits over the hall.
   if (typeof maybeAskUsername === 'function') maybeAskUsername();
