@@ -861,6 +861,18 @@ const LEVEL28_STEPS = [
   { type: 'info', text: 'The locks are destroyed — now you can collect those cards! 💥' },
 ];
 
+// ============================================================
+// LEVEL 36 — introduces MULTI-LOCKS. Authored 5×5 with four multi-locks on the edges:
+// idx2 (0,2) & idx22 (4,2) need 2 breaks; idx10 (2,0) & idx14 (2,4) need 3. Each shows a
+// counter badge under the 🔒. Per the spec this is a single heads-up popup (the player
+// already learned lock-breaking at L25 and breaking-by-bomb at L28); it just points out a
+// multi-lock (idx2, counter "2") and that it takes more than one break. Ends immediately.
+// ============================================================
+const LEVEL36_STEPS = [
+  { type: 'info', highlight: 2,
+    text: "These are just like the normal Locks, but you have to break them more than once! 🔒" },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -874,4 +886,5 @@ const LEVEL_TUTORIALS = {
   15: { id: 'level16', steps: LEVEL16_STEPS, forceStreakReveal: 6 },
   24: { id: 'level25', steps: LEVEL25_STEPS },
   27: { id: 'level28', steps: LEVEL28_STEPS },
+  35: { id: 'level36', steps: LEVEL36_STEPS },
 };
