@@ -79,7 +79,7 @@ let tutHoldForWin = false;      // a useBomb step wants to hold the level-win un
 let tutDeferredWin = null;      // levelWon's finish callback, run after the closing box is dismissed
 let homeSpotlightActive = false;
 let _spot = null;               // current spotlight params, kept for re-layout on resize
-const GOT_IT_DELAY_MS = 500;    // info bubbles hold the "Got it" button back this long, then scale it in
+const GOT_IT_DELAY_MS = 1000;    // info bubbles hold the "Got it" button back this long, then scale it in
 let _gotItTimer = null;         // pending "Got it" reveal (cleared when a spotlight is replaced/hidden)
 
 // ---- "Seen" flags: ALL tutorials record completion under progress.tutorialsSeen,
