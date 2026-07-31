@@ -921,6 +921,18 @@ const LEVEL51_STEPS = [
     text: "You need to clear all of the Cards from the Elevator area for it to bring you new ones! ⬆️" },
 ];
 
+// ============================================================
+// LEVEL 60 — introduces ICED cards. Authored 5×6 (mostly disabled) with an ice CROSS
+// (idx 12,16,17,18,22, all red under frost; threshold 5) and only 5 normal cards up top.
+// Ice melts when cardsCollectedTotal ≥ threshold (any colour, level-wide) — NOT by adjacency
+// or bombs. Single heads-up popup ringing the ice cross (multi-tile highlight). Ends
+// immediately; collecting the 5 top cards melts the ice, then the red cross is collectable.
+// ============================================================
+const LEVEL60_STEPS = [
+  { type: 'info', highlight: [12, 16, 17, 18, 22],
+    text: "You need to Collect cards to break the Ice! ❄️" },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -937,4 +949,5 @@ const LEVEL_TUTORIALS = {
   35: { id: 'level36', steps: LEVEL36_STEPS },
   42: { id: 'level43', steps: LEVEL43_STEPS },
   50: { id: 'level51', steps: LEVEL51_STEPS },
+  59: { id: 'level60', steps: LEVEL60_STEPS },
 };
