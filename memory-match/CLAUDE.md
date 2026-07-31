@@ -82,7 +82,8 @@ loaded in this order after `settings.js` (see [index.html](index.html)):
 | `level.js` | Level lifecycle: `initLevelConfig`, pre-level prep UI, `startGame`, retry/test/next. |
 | `turn.js` | **Core loop:** `onCardClick`, `endTurn`, `placeNewCards`/reveal helpers. |
 | `endgame.js` | `recallCards`, `finishTurn`, `tryAutoResolveColor` (colour clear), win/fail overlays, continue-with-coins. |
-| `home-room.js` | The **home screen** "halls": `showHome`/`renderHall`, `slotLevelIndex`, the win-streak meter + next-level reward pills, `playFromHome`, and the dev level-jumper. Halls/slots read from `COLLECTIONS.halls`; `HALLS`/`HALL_ITEMS` are just aliases onto it. Owns `MAIN_JOURNEY`. |
+| `home-room.js` | The **home screen** "halls": `showHome`/`renderHall`, `slotLevelIndex`, the win-streak meter + next-level reward pills, `playFromHome`, the dev level-jumper, and the **Test Mode** panel that gates every
+in-frame dev button (§12). Halls/slots read from `COLLECTIONS.halls`; `HALLS`/`HALL_ITEMS` are just aliases onto it. Owns `MAIN_JOURNEY`. |
 | `boot.js` | **Loads last.** `boot()` IIFE — restores progression, shows home. |
 | `config.js` | ~16 | `ALL_COLORS` (the 6 colors) + `COLOR_HEX` (each color's CSS hex). |
 | `difficulty.js` | ~130 | Level tier classifier (Easy/Normal/Hard/Too Hard). **`TURN_MODEL` + `computeTurnsModel` are a faithful PORT of the level-editor's Turns Advisor** (`level-editor/editor.js`) — the editor is the authoring source of truth and is NOT loaded by the game, so this duplicate exists to classify the level in-game; **keep the two in sync**. `levelDifficulty(lvl)` → `{tier, tierClass, margin, hard}`; used by the home Play button. Loads after `collections.js`, before `settings.js` (no load-time deps). See §10 / the mm-turns-difficulty-model memo. |
@@ -810,7 +811,33 @@ untouched.
   [level.js](level.js)) — wipes the board + deck, force-satisfies every goal type, then
   calls the normal `levelWon()`, so the win overlay / rewards / streak / hall reveal /
   board art can be inspected without playing the level out. Add new goal types to its
-  switch too, or Finish silently won't satisfy them.
+  switch too, or Finish silently won't satisfy them. **Hidden unless Test Mode is on**
+  (see below).
+- **Test Mode gates every dev affordance that lives *inside* the phone frame.** The
+  build ships as prod: the Settings **⚙** (both the in-game banner one and the home
+  one), the home **🗺 level-picker**, and the banner's **Fill / Finish** all carry the
+  `test-only` class and are hidden by `body:not(.test-mode) .test-only` in
+  [style.css](style.css). The switch is the **`#test-mode-panel`** on the *left*, built
+  by `buildTestModePanel()` / `toggleTestMode()` in
+  [home-room.js](home-room.js) — the twin of the level jumper on the right, drawn
+  **outside** `#device-frame` and `display:none` under 520px, so on a real phone or in
+  the Capacitor wrapper it is unreachable and test mode can never be turned on. Notes:
+  - The flag is its own localStorage key **`mm_test_mode`**, *not* part of `progress` —
+    it describes the browser you're debugging in, not the save file, so it must not
+    ride along in a journey snapshot or need a `PROGRESS_VERSION` migration.
+  - `applyTestMode()` runs in [boot.js](boot.js) *before* `showHome()`. Default is OFF,
+    enforced by the CSS (the reveal needs a class that isn't there yet), so there's no
+    flash of dev buttons on load.
+  - The panel's `z-index` is **99999**, deliberately above `#ftue-layer` (99990) — the
+    tutorial backdrop swallows clicks everywhere, and the master switch must stay
+    reachable. (The level jumper does *not* do this and is blocked during a tutorial.)
+  - **Adding a new dev-only control? Give it `class="test-only"`.** Never hide it with
+    an inline `display`, and don't write the reveal as
+    `.test-only{display:none}` + `body.test-mode .test-only{display:revert}` — `revert`
+    also discards the element's own author `display` (it turned the stacked
+    `.dev-btns` column into a block). The negated selector is why it works.
+  - The Settings button inside the **level-select** overlay is *not* marked, because
+    that whole screen is only reachable from the 🗺 (or the dev journey picker).
 - **Colors are fixed** to the six in `ALL_COLORS` (red, green, blue, yellow,
   orange, purple); `colorCount` per level slices how many are active
   (`ACTIVE_COLORS`) — so orange/purple only appear at `colorCount` 5/6. Each
@@ -859,5 +886,6 @@ untouched.
 | Skippable reveals | `reveal-skip.js` | `runSkippableReveal`, `skipReveal`, `isRevealing`, `discardActiveReveal` |
 | Tutorials | `tutorials.js` | `advanceTutorial`, `showNextItemTutorial`, `buildLevelGrid` |
 | Shared state / DOM refs | `state.js` | `board`, `score`, `turns`, `chainCards`, `inputLocked`, `boardEl`, … |
+| Test Mode (dev-button gate) | `home-room.js` | `isTestMode`, `applyTestMode`, `toggleTestMode`, `buildTestModePanel`, `TEST_MODE_KEY` |
 | Config/rules | `settings.js` | `GAMEPLAY_RULES` + `getRule`, `showSettings` |
 | Persistence | `settings.js` | `loadProgress`/`saveProgress` |

@@ -602,6 +602,60 @@ function buildLevelJumper() {
   panel.innerHTML = html;
 }
 
+// ============================================================
+// TEST MODE — left-side panel OUTSIDE the phone frame (desktop only),
+// the twin of the level jumper on the right.
+//
+// Everything a player must never see in a prod/app build carries the
+// `test-only` class (the Settings gears, the home level-picker map, the
+// in-game Fill/Finish dev buttons). CSS hides `.test-only` unconditionally
+// and only `body.test-mode` reveals it — so OFF is the default and the
+// only way to flip it is this panel, which is drawn outside the device
+// frame and `display:none` under 520px. On a phone (or in the Capacitor
+// wrapper) it is unreachable, so test mode can never be enabled there.
+//
+// The flag lives in its own localStorage key, NOT in `progress` — it is a
+// property of the browser you are debugging in, not of the save file.
+// ============================================================
+const TEST_MODE_KEY = 'mm_test_mode';
+
+function isTestMode() {
+  try { return localStorage.getItem(TEST_MODE_KEY) === '1'; } catch (e) { return false; }
+}
+
+function applyTestMode() {
+  document.body.classList.toggle('test-mode', isTestMode());
+}
+
+function toggleTestMode() {
+  const on = !isTestMode();
+  try { localStorage.setItem(TEST_MODE_KEY, on ? '1' : '0'); } catch (e) {}
+  applyTestMode();
+  buildTestModePanel();
+  // Turning it off with a dev overlay open would leave an unreachable screen up.
+  if (!on) {
+    const sp = document.getElementById('settings-panel');
+    if (sp?.classList.contains('active') && typeof closeSettings === 'function') closeSettings();
+    const ls = document.getElementById('level-select');
+    if (ls?.classList.contains('active') && typeof showHome === 'function') showHome();
+  }
+}
+
+function buildTestModePanel() {
+  let panel = document.getElementById('test-mode-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'test-mode-panel';
+    document.body.appendChild(panel);
+  }
+  const on = isTestMode();
+  panel.innerHTML =
+    '<span class="tm-label">Test Mode<small>dev · browser only</small></span>' +
+    `<button class="tm-btn${on ? ' on' : ''}" onclick="toggleTestMode()">` +
+    `${on ? '✓ Test Mode ON' : 'Enable Test Mode'}</button>` +
+    '<span class="tm-hint">Shows Settings ⚙, the level map and the in-game Fill / Finish buttons.</span>';
+}
+
 function jumpToLevel(i) {
   document.body.classList.remove('on-home');
   const n = (typeof LEVELS !== 'undefined') ? LEVELS.length : 0;

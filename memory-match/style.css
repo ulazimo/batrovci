@@ -2015,3 +2015,44 @@ body.on-home #chain-indicator { display: none !important; }
 /* On a real phone: the dev jumper (like the other out-of-frame switchers) is hidden.
    Placed after the base rule so it wins over it at equal specificity. */
 @media (max-width: 520px) { #level-jumper { display: none !important; } }
+
+/* ================================================================
+   TEST MODE — left-side toggle panel, OUTSIDE the phone (desktop only),
+   twin of the level jumper on the right. Everything marked .test-only
+   (Settings gears, the home level-picker, the in-game Fill/Finish dev
+   buttons) exists only while body.test-mode is set. The panel itself is
+   off-screen on a real device, so a prod/app build can never enable it.
+   See toggleTestMode() in home-room.js.
+================================================================ */
+/* Hidden unless test mode is on. Written as a negation rather than
+   `.test-only { display:none } body.test-mode .test-only { display:revert }` on
+   purpose: `revert` would also discard each element's OWN author display rule,
+   so this way test mode simply stops overriding and the normal styling applies. */
+body:not(.test-mode) .test-only { display: none !important; }
+
+#test-mode-panel {
+  /* Above #ftue-layer (99990) — this is the master switch, so a running
+     tutorial's click-blocking backdrop must not be able to swallow it. */
+  position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 99999;
+  display: flex; flex-direction: column; gap: 8px; padding: 10px; width: 150px;
+  background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; backdrop-filter: blur(6px);
+}
+#test-mode-panel .tm-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: #8b93ad; text-align: center; display: flex; flex-direction: column; gap: 1px;
+}
+#test-mode-panel .tm-label small { font-size: 8px; font-weight: 500; opacity: .7; letter-spacing: .5px; }
+#test-mode-panel .tm-btn {
+  border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 800;
+  letter-spacing: .5px; text-transform: uppercase; padding: 9px 8px;
+  background: #1a1a2e; border: 1px solid #333a55; color: #9aa4c0; transition: all .12s;
+}
+#test-mode-panel .tm-btn:hover { border-color: #4fc3f7; color: #dbe7ff; }
+#test-mode-panel .tm-btn.on {
+  border-color: #2ecc71; color: #2ecc71; background: #17241c;
+  box-shadow: 0 0 8px rgba(46,204,113,.35);
+}
+#test-mode-panel .tm-hint { font-size: 8px; line-height: 1.35; color: #6b7390; text-align: center; }
+/* On a real phone: hidden, exactly like the jumper / device switcher. */
+@media (max-width: 520px) { #test-mode-panel { display: none !important; } }

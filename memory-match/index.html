@@ -33,13 +33,13 @@
 <div id="level-banner">
   <span class="level-label" id="banner-level">Level 1</span>
   <!-- Dev controls, stacked so the pair takes no more banner width than Fill alone did -->
-  <span class="dev-btns">
+  <span class="dev-btns test-only">
     <button class="fill-btn" onclick="fillBoosters()" title="Fill power-ups">Fill</button>
     <button class="fill-btn finish-btn" onclick="devFinishLevel()" title="Dev: instantly win this level">Finish</button>
   </span>
   <div class="lives-pill"><img src="icons/heart_icon.png" class="lives-icon" alt="lives"><span id="lives-count">5</span></div>
   <div class="coin-pill"><img src="icons/coin_icon.png" class="coin-icon" alt="coins"><span id="coin-count">0</span></div>
-  <button class="settings-gear" onclick="showSettings('game')" title="Power-Up Settings">⚙</button>
+  <button class="settings-gear test-only" onclick="showSettings('game')" title="Power-Up Settings">⚙</button>
 </div>
 
 <!-- Stats header -->
@@ -85,8 +85,8 @@
       <div class="coin-pill"><img src="icons/coin_icon.png" class="coin-icon" alt="coins"><span id="room-coins">0</span></div>
     </div>
     <div class="room-top-right">
-      <button class="room-icon-btn" onclick="showLevelSelect()" title="Levels">🗺</button>
-      <button class="room-icon-btn" onclick="showSettings('home')" title="Settings">⚙</button>
+      <button class="room-icon-btn test-only" onclick="showLevelSelect()" title="Levels">🗺</button>
+      <button class="room-icon-btn test-only" onclick="showSettings('home')" title="Settings">⚙</button>
     </div>
   </div>
 

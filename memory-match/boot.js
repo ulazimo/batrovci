@@ -24,6 +24,10 @@
   currentLevelIndex = Math.min(progress.highestUnlocked, LEVELS.length - 1);
   currentLevelIndex = Math.max(0, currentLevelIndex);
 
+  // Dev affordances live outside the phone frame (desktop only). Test mode gates
+  // every in-frame dev button, so apply it before the first screen renders.
+  applyTestMode();
+  buildTestModePanel();
   buildLevelJumper();
   showHome();   // renders the lives pill (and its refill countdown) via renderLives()
 
