@@ -105,6 +105,15 @@ function nextPlayableIndex() {
   return Math.max(0, Math.min(progress.highestUnlocked || 0, n - 1));
 }
 
+// The whole journey is beaten once the LAST level has been won (it has stars).
+// `highestUnlocked` can't say this on its own — it's capped at the last index,
+// so it reads the same whether that level is pending or already cleared.
+function journeyComplete() {
+  const n = (typeof LEVELS !== 'undefined') ? LEVELS.length : 0;
+  if (!n) return false;
+  return (progress.stars?.[n - 1] || 0) > 0;
+}
+
 // Hall that contains the next level to play (clamped to the last defined hall).
 function currentHallIndex() {
   return hallForLevel(nextPlayableIndex());
@@ -150,11 +159,22 @@ function showHome() {
   // only the sub-line gains a difficulty prefix ("HARD LEVEL X" / "TOO HARD
   // LEVEL X"). The tier comes from the same model as the level-editor's Turns
   // Advisor (difficulty.js).
+  // Journey finished: Play turns green, reads "Journey is completed!" and stops
+  // being pressable (there is no next level to hand out).
   const playBtn = document.querySelector('.room-play-btn');
+  const labelEl = document.querySelector('.room-play-label');
+  const done = journeyComplete();
   const diff = (typeof levelDifficulty === 'function') ? levelDifficulty(LEVELS[currentLevelIndex]) : null;
-  const hard = !!(diff && diff.hard);
-  if (playBtn) playBtn.classList.toggle('hard', hard);
-  if (lvlEl)   lvlEl.textContent = (hard ? 'HARD ' : '') + 'LEVEL ' + lvlId;
+  const hard = !done && !!(diff && diff.hard);
+  if (playBtn) {
+    playBtn.classList.toggle('hard', hard);
+    playBtn.classList.toggle('done', done);
+  }
+  if (labelEl) labelEl.textContent = done ? 'JOURNEY IS COMPLETED!' : 'PLAY';
+  if (lvlEl) {
+    lvlEl.style.display = done ? 'none' : '';
+    lvlEl.textContent = (hard ? 'HARD ' : '') + 'LEVEL ' + lvlId;
+  }
 
   renderHomeStreak();
   renderHomeReward();
@@ -445,6 +465,8 @@ function renderHomeStreak() {
 function renderHomeReward() {
   const el = document.getElementById('home-next-reward');
   if (!el) return;
+  // Journey over: there is no next level, so no upcoming reward to advertise.
+  if (journeyComplete()) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const lvl = LEVELS[currentLevelIndex];
   const rewards = (typeof getLevelRewards === 'function' && lvl)
     ? getLevelRewards().filter(r => r.afterLevel === lvl.id)
@@ -560,6 +582,9 @@ function initHallSwipe() {
 // PLAY — from the hall, jump straight into the next level.
 // ============================================================
 function playFromHome() {
+  // Journey beaten → nothing left to play; the button is disabled, but guard the
+  // call too so a programmatic trigger can't start the last level again.
+  if (journeyComplete()) return;
   // Out of lives → the button is disabled, but guard the call too so a
   // programmatic/FTUE trigger can't slip past the refill wait.
   syncLivesRefill();

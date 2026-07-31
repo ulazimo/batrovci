@@ -1836,6 +1836,21 @@ body.on-home #chain-indicator { display: none !important; }
   box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 10px 20px rgba(0,0,0,.3);
 }
 .room-play-btn:disabled:active { transform: none; box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 10px 20px rgba(0,0,0,.3); }
+/* Journey beaten: a proud green badge instead of Play. Permanently unpressable,
+   so it keeps full colour rather than the greyed-out disabled look. */
+.room-play-btn.done,
+.room-play-btn.done:disabled {
+  cursor: default; filter: none; opacity: 1;
+  color: #fff;
+  background: linear-gradient(180deg, #6ee7a0 0%, #21a75b 100%);
+  box-shadow: 0 6px 0 #14713d, 0 10px 20px rgba(20,113,61,.45);
+}
+.room-play-btn.done:active,
+.room-play-btn.done:disabled:active {
+  transform: none;
+  box-shadow: 0 6px 0 #14713d, 0 10px 20px rgba(20,113,61,.45);
+}
+.room-play-btn.done .room-play-label { font-size: 15px; letter-spacing: 1px; white-space: nowrap; }
 
 /* ---- Hall slide transition (music → pasture, and swipe navigation) --------- */
 #room-scene.slide-in #room-backdrop,

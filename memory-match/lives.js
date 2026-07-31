@@ -103,9 +103,11 @@ function renderLives() {
 }
 
 // No lives → no Play. Uses `disabled` so the CSS and the click are blocked by
-// the same flag.
+// the same flag. A finished journey keeps Play locked for good, so a refill
+// can't hand the button back.
 function updatePlayButtonLock() {
   const btn = document.querySelector('.room-play-btn');
   if (!btn) return;
-  btn.disabled = (progress.lives ?? MAX_LIVES) <= 0;
+  const done = (typeof journeyComplete === 'function') && journeyComplete();
+  btn.disabled = done || (progress.lives ?? MAX_LIVES) <= 0;
 }
