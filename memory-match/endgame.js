@@ -28,6 +28,7 @@ function removeRecall(indices) {
 
 const RECALL_COST = 10; // coins per use
 function recallCards() {
+  if (typeof tutorialAllowsRecall === 'function' && !tutorialAllowsRecall()) return; // FTUE: only during a useRecall step
   if (inputLocked || !lastRevealedCards.length) return;
   const targets = lastRevealedCards.filter(i => i >= 0 && board[i] && !board[i].special && !board[i].flipped && !board[i].locked);
   if (!targets.length) return;
@@ -45,6 +46,7 @@ function recallCards() {
     const el = getCardEl(idx);
     if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
   });
+  if (typeof tutorialOnRecallUsed === 'function') tutorialOnRecallUsed(); // FTUE: light the board + advance after the re-reveal
   runSkippableReveal([], 1800, () => {
     targets.forEach(idx => { board[idx].flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); });
     inputLocked = false; updateBoosterUI(); updateChainIndicator(); updateRecallButton();

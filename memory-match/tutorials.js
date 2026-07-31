@@ -73,6 +73,7 @@ let tutAwaitingResolve = false; // waiting for finishTurn before advancing
 let tutForcedDangerTargets = null; // indices applyChainColorHint must mark (tutorial override)
 let tutForcedReveal = null;     // indices random3 / +1-color must reveal (tutorial override)
 let tutSuppressAutoResolve = false; // block colour-clear auto-resolve so a scripted chain waits for the guided bank
+let tutAllowRecall = false;     // the Recall (🔄) button is tappable only while a useRecall step is active
 let tutPending = null;          // {id, steps} to start once the opening board reveal finishes
 let tutHoldForWin = false;      // a useBomb step wants to hold the level-win until its closing box
 let tutDeferredWin = null;      // levelWon's finish callback, run after the closing box is dismissed
@@ -115,6 +116,16 @@ function setForcedReveal(indices) { tutForcedReveal = indices ? [...indices] : n
 // bank" step. A tutorial can suppress it so the player performs the bank themselves.
 function tutorialSuppressAutoResolve() { return tutRunning && tutSuppressAutoResolve; }
 function setSuppressAutoResolve(v) { tutSuppressAutoResolve = !!v; }
+// Recall gate: while a tutorial runs, the Recall button only works during a `useRecall` step.
+function tutorialAllowsRecall() { return !tutRunning || tutAllowRecall; }
+// Force the level-start Win Streak reveal to show at least N cards for a tutorial that teaches
+// off it (Level 16's Recall). Read by revealEntireBoard from the PENDING entry (it runs before
+// the script starts); a real streak that reveals more still wins (Math.max in the caller).
+function tutorialForcedStreakRevealCount() { return (tutPending && tutPending.forceStreakReveal) || 0; }
+// Ensure the player can afford a tutorial's scripted Recall spends (top up only if short).
+function tutorialEnsureCoins(min) {
+  if ((progress.coins || 0) < min) { progress.coins = min; saveProgress(); if (typeof updateCoinDisplay === 'function') updateCoinDisplay(); }
+}
 // Level-win hold: a useBomb step with holdForWin lets levelWon pause its finish so the
 // player sees the reward, then the tutorial's closing box shows before returning home.
 function tutorialHoldForWin() { return tutRunning && tutHoldForWin; }
@@ -205,7 +216,7 @@ function startLevelTutorial(entry) {
   tutIndex = -1;
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
-  tutHoldForWin = false; tutDeferredWin = null; tutSuppressAutoResolve = false;
+  tutHoldForWin = false; tutDeferredWin = null; tutSuppressAutoResolve = false; tutAllowRecall = false;
   advanceTutorial();
 }
 
@@ -218,7 +229,7 @@ function renderTutorialStep() {
   const step = tutScript && tutScript[tutIndex];
   if (!step) { endTutorial(); return; }
   // Clear all per-step allowances; the step re-arms exactly what it needs.
-  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null; tutForcedReveal = null;
+  tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null; tutForcedReveal = null; tutAllowRecall = false;
   if (step.onEnter) step.onEnter();
   if (step.type === 'info') {
     const target = step.highlight ? resolveHighlight(step.highlight) : null;
@@ -238,6 +249,12 @@ function renderTutorialStep() {
     // EVERY eligible card face-up, hold, hide, then advance. (Skippable via a tap.)
     hideSpotlight();
     tutorialFlashWholeBoard(step.holdMs, () => { if (tutRunning) advanceTutorial(); });
+  } else if (step.type === 'useRecall') {
+    // Spotlight the Recall (🔄) button and gate input to it; advancing is driven by
+    // tutorialOnRecallUsed once the re-reveal plays.
+    tutAllowRecall = true;
+    if (typeof updateRecallButton === 'function') updateRecallButton();
+    showSpotlight({ target: document.getElementById('recall-btn'), text: step.text || '', hand: true });
   }
 }
 
@@ -304,6 +321,18 @@ function tutorialOnBoosterActivated(id) {
   }
 }
 
+// The Recall button was tapped during a useRecall step (recallCards has spent the coins and
+// flipped the remembered cards up). Light the whole board so the re-reveal is visible, then
+// advance once it has played and hidden (recall's hold is ~1800ms).
+function tutorialOnRecallUsed() {
+  if (!tutRunning) return;
+  const step = currentTutStep();
+  if (!step || step.type !== 'useRecall') return;
+  tutAllowRecall = false; // consume
+  showSpotlight({ target: null, holeTarget: boardEl, text: '', hand: false });
+  setTimeout(() => { if (tutRunning) advanceTutorial(); }, step.nextDelay || 2100);
+}
+
 // A needsTap booster finished on its target card (executeBoosterTap → executePeek…).
 function tutorialOnBoosterUsed(id, index) {
   if (!tutRunning) return;
@@ -365,7 +394,7 @@ function endTutorial() {
   tutIndex = -1;
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null;
   tutAwaitingResolve = false; tutForcedDangerTargets = null; tutForcedReveal = null;
-  tutHoldForWin = false; tutSuppressAutoResolve = false;
+  tutHoldForWin = false; tutSuppressAutoResolve = false; tutAllowRecall = false;
   hideSpotlight();
   if (tutCurrentId && !hasSeenTutorial(tutCurrentId)) markTutorialSeen(tutCurrentId);
   tutCurrentId = null;
@@ -733,6 +762,44 @@ const LEVEL15_STEPS = [
   { type: 'tapCard', card: 20},
 ];
 
+// ============================================================
+// LEVEL 16 — teaches the Recall (🔄) power-up (unlocks at Level 16 = recallStartLevel).
+// Two parts. PART 1: the level-start Win Streak reveal is force-shown (≥6 cards via the
+// entry's forceStreakReveal, so there's always something to recall even at streak 0), then
+// the player Recalls those cards. PART 2: they collect a Back-effect card (the center STAR
+// at idx 12), whose 12-cell reveal flashes+hides, then Recall re-shows that pattern.
+// Colours for the part-2 chain are forced in step 5's onEnter (card 1 & the star 12 → green,
+// mismatch 3 → red; all outside the star pattern {2,6,7,8,10,11,13,14,16,17,18,22}) and the
+// front faces re-skinned in place. Auto colour-clear is suppressed so the 2-green chain waits
+// for the guided red bank. Recall costs 10 coins each use — step 1 tops the player up if short.
+// The part-2 bank uses advanceOnResolve so PART 2 only starts AFTER the star reveal has hidden.
+// ============================================================
+const LEVEL16_STEPS = [
+  // ---- PART 1: Recall the Win Streak reveal ----
+  { type: 'info', highlight: '#recall-btn',
+    text: 'You just received a new Power-Up — Recall! It helps you remember cards that were previously opened. 🔄',
+    onEnter: () => tutorialEnsureCoins(20) },
+  { type: 'info', highlight: '#recall-btn', text: 'But at a cost — just 10 coins! 🪙' },
+  { type: 'useRecall', text: 'Tap Recall to see the Win Streak cards again!' },
+  { type: 'info', text: 'It can help you at the start of the match to Recall the cards from the Win Streak reveal! ✨' },
+  // ---- PART 2: Recall a Back-effect reveal ----
+  { type: 'info', highlight: 12, text: "Now let's collect a card with a Back Effect again! ✴️",
+    onEnter: () => {
+      setSuppressAutoResolve(true);
+      [[1, 'green'], [12, 'green'], [3, 'red']].forEach(([i, col]) => {
+        if (!board[i]) return;
+        board[i].color = col;
+        const front = getCardEl(i) && getCardEl(i).querySelector('.card-front');
+        if (front) { front.className = 'card-face card-front ' + col; front.innerHTML = `<img src="blocks/block_${col}_1.png" alt="${col}">`; }
+      });
+    } },
+  { type: 'tapCard', card: 12 },
+  { type: 'tapCard', card: 1 },
+  { type: 'tapCard', card: 3, text: 'Now tap a card to collect the chain!', advanceOnResolve: true },
+  { type: 'info', text: 'It can also reveal all of the cards that were revealed from the previous turn! 👀' },
+  { type: 'useRecall', text: 'Tap Recall to see them again!' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -743,4 +810,5 @@ const LEVEL_TUTORIALS = {
   9:  { id: 'level10', steps: LEVEL10_STEPS },
   10: { id: 'level11', steps: LEVEL11_STEPS },
   14: { id: 'level15', steps: LEVEL15_STEPS },
+  15: { id: 'level16', steps: LEVEL16_STEPS, forceStreakReveal: 6 },
 };

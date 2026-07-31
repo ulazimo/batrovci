@@ -609,7 +609,10 @@ function showScorePopup(pts, indices, extraMsg) {
 // ============================================================
 function revealEntireBoard(onComplete) {
   inputLocked = true;
-  const revealCount = isWinStreakActive() ? getStreakRevealCount() : 0;
+  let revealCount = isWinStreakActive() ? getStreakRevealCount() : 0;
+  // A tutorial teaching off the Win Streak reveal (Level 16's Recall) can force a minimum
+  // number of cards so the demo always has something to recall, even at streak 0.
+  if (typeof tutorialForcedStreakRevealCount === 'function') revealCount = Math.max(revealCount, tutorialForcedStreakRevealCount());
   const revealMs  = Math.min(1000 + progress.winStreak * 150, 2000);
   const staggerMs = 50;
 
