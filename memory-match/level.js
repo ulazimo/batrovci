@@ -83,8 +83,16 @@ function normalizeColorLocks(lvl) {
 // ============================================================
 let preLevelSelections = [];
 
+// The pre-level prep screen is DISABLED — the per-level tutorials already
+// explain everything it previewed, so every entry point (Play, retry, next
+// level, level picker) drops straight into the board. Flip this back to true
+// to restore the prep screen and with it special-card deployment;
+// showPreLevelUI() below is kept intact for that.
+const PRE_LEVEL_SCREEN = false;
+
 function showPreLevel() {
   initLevelConfig();
+  if (!PRE_LEVEL_SCREEN) { startGame([]); return; }
   showPreLevelUI();
 }
 
