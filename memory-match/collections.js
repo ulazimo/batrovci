@@ -1974,6 +1974,114 @@ COLLECTIONS = {
         "h": 0.82,
         "item": "decanter"
       },
+      "70": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cheesewheel"
+      },
+      "71": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "corkscrew"
+      },
+      "72": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "grapebasket"
+      },
+      "73": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cellarlantern"
+      },
+      "74": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "oldledger"
+      },
+      "75": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "teaset"
+      },
+      "76": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "birdcage"
+      },
+      "77": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "parasol"
+      },
+      "78": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "croquetset"
+      },
+      "79": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "sundial"
+      },
+      "80": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "gardenhat"
+      },
+      "81": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "pocketwatch"
+      },
+      "82": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "trinketbox"
+      },
+      "83": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "mantelclock"
+      },
+      "84": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "compass"
+      },
+      "85": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "mapscroll"
+      },
+      "86": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "stampalbum"
+      },
+      "87": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "antiquekey"
+      },
       "44": {
         "cx": 0.5,
         "cy": 0.5,
