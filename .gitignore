@@ -37,3 +37,6 @@ firebase-debug.log
 dist/
 build/
 node_modules/
+
+# Capacitor native wrapper for memory-match (local-only, shared by zip)
+memory-match-app/
