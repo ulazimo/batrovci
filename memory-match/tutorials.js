@@ -800,6 +800,33 @@ const LEVEL16_STEPS = [
   { type: 'useRecall', text: 'Tap Recall to see them again!' },
 ];
 
+// ============================================================
+// LEVEL 25 — teaches breaking LOCKS. The authored 5×5 has a locked center column:
+// idx 7 (1,2, yellow), idx 12 (2,2, red), idx 17 (3,2, blue), each shown face-up under
+// a 🔒 (revealLockedCards is on). idx 11 (2,1) is an authored red directly LEFT of the
+// locked red 12. Step 1 forces idx 13 (2,3, RIGHT of 12) → red too and a bank card
+// idx 10 (2,0) → green, so the two flanking reds (11, 13) chain around the lock. Banking
+// the chain collects 11 & 13; breakAdjacentLocks then chips the lock between them (idx 12
+// → unlocks). Auto colour-clear is suppressed so the player performs the bank. Only lock 12
+// breaks here (locks 7 & 17 remain for normal play). Ends mid-level.
+// ============================================================
+const LEVEL25_STEPS = [
+  { type: 'info', highlight: 12, text: "Let's break the locks of these tiles! 🔒",
+    onEnter: () => {
+      setSuppressAutoResolve(true);
+      [[11, 'red'], [13, 'red'], [10, 'green']].forEach(([i, col]) => {
+        if (!board[i]) return;
+        board[i].color = col;
+        const front = getCardEl(i) && getCardEl(i).querySelector('.card-front');
+        if (front) { front.className = 'card-face card-front ' + col; front.innerHTML = `<img src="blocks/block_${col}_1.png" alt="${col}">`; }
+      });
+    } },
+  { type: 'tapCard', card: 11 },
+  { type: 'tapCard', card: 13 },
+  { type: 'tapCard', card: 10, text: 'Now tap a card to collect the chain!', advanceOnResolve: true },
+  { type: 'info', text: 'Whenever you collect a card next to a Locked tile, it breaks a lock! 🔓' },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -811,4 +838,5 @@ const LEVEL_TUTORIALS = {
   10: { id: 'level11', steps: LEVEL11_STEPS },
   14: { id: 'level15', steps: LEVEL15_STEPS },
   15: { id: 'level16', steps: LEVEL16_STEPS, forceStreakReveal: 6 },
+  24: { id: 'level25', steps: LEVEL25_STEPS },
 };
