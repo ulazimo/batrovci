@@ -232,8 +232,13 @@ function renderTutorialStep() {
   tutAllowedCard = null; tutAllowedBooster = null; tutBombTarget = null; tutForcedReveal = null; tutAllowRecall = false;
   if (step.onEnter) step.onEnter();
   if (step.type === 'info') {
-    const target = step.highlight ? resolveHighlight(step.highlight) : null;
-    showSpotlight({ target, text: step.text, hand: false, showNext: true });
+    if (Array.isArray(step.highlight)) {
+      // Ring a CLUSTER of tiles (one box round their union); keep the whole board lit.
+      showSpotlight({ focusTiles: step.highlight, holeTarget: boardEl, text: step.text, hand: false, showNext: true });
+    } else {
+      const target = step.highlight ? resolveHighlight(step.highlight) : null;
+      showSpotlight({ target, text: step.text, hand: false, showNext: true });
+    }
   } else if (step.type === 'tapCard' || step.type === 'longPressPeek') {
     // Cut the hole around the WHOLE board so the other cards stay lit (only the
     // surrounding UI dims); the ring + hand pick out the one card to tap/hold.
@@ -479,6 +484,22 @@ function resolveHighlight(sel) {
   return document.querySelector(sel);
 }
 
+// Combined bounding box of several board tiles — one ring can then wrap a cluster (e.g. the
+// four stack tiles 5/6/9/10). Recomputed on every layout so it tracks a settling board.
+function unionTileRect(indices) {
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity, any = false;
+  indices.forEach(i => {
+    const el = getCardEl(i);
+    if (!el) return;
+    const rc = el.getBoundingClientRect();
+    if (!rc.width) return;
+    any = true;
+    l = Math.min(l, rc.left); t = Math.min(t, rc.top);
+    r = Math.max(r, rc.right); b = Math.max(b, rc.bottom);
+  });
+  return any ? { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t } : null;
+}
+
 function layoutSpotlight() {
   const layer = document.getElementById('ftue-layer');
   if (!layer || !_spot) return;
@@ -494,8 +515,11 @@ function layoutSpotlight() {
   // board stays lit — while the ring picks out the single card.
   const holeEl = _spot.holeTarget || _spot.target;
   const holeRect = (holeEl && holeEl.getBoundingClientRect) ? holeEl.getBoundingClientRect() : null;
+  // FOCUS can be a single element (_spot.target) OR a set of board tiles (_spot.focusTiles):
+  // several tiles get ONE ring around their combined bounding box (e.g. the 2×2 stack block).
   const focus = _spot.target;
-  const focusRect = (focus && focus.getBoundingClientRect) ? focus.getBoundingClientRect() : null;
+  const focusRect = _spot.focusTiles ? unionTileRect(_spot.focusTiles)
+    : (focus && focus.getBoundingClientRect) ? focus.getBoundingClientRect() : null;
 
   if (holeRect && holeRect.width > 0) {
     const hp = 8;
@@ -873,6 +897,19 @@ const LEVEL36_STEPS = [
     text: "These are just like the normal Locks, but you have to break them more than once! 🔒" },
 ];
 
+// ============================================================
+// LEVEL 36... (above)
+// LEVEL 43 — introduces STACKS. Authored 4×4 with four 2-card stacks in the center 2×2 —
+// exactly idx 5,6,9,10 (each has a red card `beneath`). Two heads-up popups; both ring the
+// whole 2×2 cluster via the multi-tile highlight (`highlight: [5,6,9,10]` → one box round
+// their union). No guided action per the spec — the stacks visibly show an offset "sheets"
+// look + a count badge, and the player collects each twice in normal play. Ends immediately.
+// ============================================================
+const LEVEL43_STEPS = [
+  { type: 'info', highlight: [5, 6, 9, 10], text: "There are more cards underneath these cards! 🃏" },
+  { type: 'info', highlight: [5, 6, 9, 10], text: "You need to collect them from the stack to clear the Level." },
+];
+
 // ---- Registry: level INDEX → tutorial. (index = level id − 1 in cleaningxl.) ----
 const LEVEL_TUTORIALS = {
   0:  { id: 'ftue',    steps: LEVEL1_FTUE_STEPS },
@@ -887,4 +924,5 @@ const LEVEL_TUTORIALS = {
   24: { id: 'level25', steps: LEVEL25_STEPS },
   27: { id: 'level28', steps: LEVEL28_STEPS },
   35: { id: 'level36', steps: LEVEL36_STEPS },
+  42: { id: 'level43', steps: LEVEL43_STEPS },
 };
