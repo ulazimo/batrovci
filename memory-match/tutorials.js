@@ -105,7 +105,14 @@ function currentTutStep() { return tutScript ? tutScript[tutIndex] : null; }
 
 // ---- Gates / predicates read by the engine files ----
 function isTutorialActive() { return tutRunning; }
-function tutorialAllowsCard(index) { return !tutRunning || tutAllowedCard === index; }
+// Card taps: gated to the one scripted card. A `longPressPeek` step is HOLD-ONLY —
+// it allows no tap-to-flip at all, so a quick press can't shortcut the hold.
+function tutorialAllowsCard(index) {
+  if (!tutRunning) return true;
+  const s = currentTutStep();
+  if (s && s.type === 'longPressPeek') return false;
+  return tutAllowedCard === index;
+}
 function tutorialAllowsBooster(id) { return !tutRunning || tutAllowedBooster === id; }
 function tutorialAllowsBombDrop(idx) { return !tutRunning || tutBombTarget == null || tutBombTarget === idx; }
 function tutorialAllowsLongPress(i) { const s = currentTutStep(); return !tutRunning || !!(s && s.type === 'longPressPeek' && s.card === i); }
@@ -241,10 +248,16 @@ function renderTutorialStep() {
       const target = step.highlight ? resolveHighlight(step.highlight) : null;
       showSpotlight({ target, text: step.text, hand: false, showNext: true });
     }
-  } else if (step.type === 'tapCard' || step.type === 'longPressPeek') {
+  } else if (step.type === 'tapCard') {
     // Cut the hole around the WHOLE board so the other cards stay lit (only the
-    // surrounding UI dims); the ring + hand pick out the one card to tap/hold.
+    // surrounding UI dims); the ring + hand pick out the one card to tap.
     tutAllowedCard = step.card;
+    showSpotlight({ target: getCardEl(step.card), holeTarget: boardEl, text: step.text || '', hand: step.hand !== false });
+  } else if (step.type === 'longPressPeek') {
+    // HOLD-ONLY step: deliberately leave tutAllowedCard null so a quick tap can't
+    // flip this card — the player must actually press-and-hold. The long-press path
+    // is gated separately by tutorialAllowsLongPress(), which keys off this step.
+    tutAllowedCard = null;
     showSpotlight({ target: getCardEl(step.card), holeTarget: boardEl, text: step.text || '', hand: step.hand !== false });
   } else if (step.type === 'useBooster' || step.type === 'useBomb') {
     // Spotlight the power-up button; gate the tray to just this one.
@@ -682,7 +695,13 @@ const LEVEL2_STEPS = [
   { type: 'useBooster', booster: 'peek', card: 1, cardText: 'Tap this card to peek it.' },
   { type: 'info', text: 'It was Green, but we kept our Red chain — it didn\'t fail!' },
   { type: 'info', text: '🤏 Let\'s try once more — you can quickly use Peek by holding on a card!' },
-  { type: 'longPressPeek', card: 7, text: 'Press and hold this card.', onEnter: () => setForcedDanger([4, 8, 12]) },
+  { type: 'longPressPeek', card: 7, text: 'Press and hold this card.',
+    onEnter: () => {
+      // Hold is now the ONLY way past this step, and the long-press peek needs a
+      // charge to fire — guarantee one so the tutorial can't dead-end here.
+      if ((boosterCounts.peek || 0) < 1) tutorialGift('peek', 1);
+      setForcedDanger([4, 8, 12]);
+    } },
   { type: 'info', text: 'Red was added to our chain! ⚠️', highlight: '#board' },
   { type: 'tapCard', card: 13, advanceOnResolve: true },   // mismatch banks red 15,5,7
   // Green chain of 5 → Baby Bomb reward
