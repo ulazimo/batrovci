@@ -1319,37 +1319,37 @@
       "slots": [
         {
           "item": "typewriter",
-          "levelId": 55,
+          "levelId": 52,
           "kind": "layer"
         },
         {
           "item": "letterbundle",
-          "levelId": 56,
+          "levelId": 53,
           "kind": "layer"
         },
         {
           "item": "fountainpen",
-          "levelId": 57,
+          "levelId": 54,
           "kind": "layer"
         },
         {
           "item": "deskclock",
-          "levelId": 58,
+          "levelId": 55,
           "kind": "layer"
         },
         {
           "item": "candlestick",
-          "levelId": 59,
+          "levelId": 56,
           "kind": "layer"
         },
         {
           "item": "paperweight",
-          "levelId": 60,
+          "levelId": 57,
           "kind": "layer"
         },
         {
           "item": "magnifyingglass",
-          "levelId": 61,
+          "levelId": 58,
           "kind": "layer"
         }
       ]
@@ -1364,32 +1364,32 @@
       "slots": [
         {
           "item": "musicbox",
-          "levelId": 62,
+          "levelId": 59,
           "kind": "layer"
         },
         {
           "item": "nightlight",
-          "levelId": 63,
+          "levelId": 60,
           "kind": "layer"
         },
         {
           "item": "blocks",
-          "levelId": 64,
+          "levelId": 61,
           "kind": "layer"
         },
         {
           "item": "plushbunny",
-          "levelId": 65,
+          "levelId": 62,
           "kind": "layer"
         },
         {
           "item": "rattle",
-          "levelId": 66,
+          "levelId": 63,
           "kind": "layer"
         },
         {
           "item": "babyshoes",
-          "levelId": 67,
+          "levelId": 64,
           "kind": "layer"
         }
       ]
@@ -1404,37 +1404,37 @@
       "slots": [
         {
           "item": "winebottles",
-          "levelId": 68,
+          "levelId": 65,
           "kind": "layer"
         },
         {
           "item": "decanter",
-          "levelId": 69,
+          "levelId": 66,
           "kind": "layer"
         },
         {
           "item": "cheesewheel",
-          "levelId": 70,
+          "levelId": 67,
           "kind": "layer"
         },
         {
           "item": "corkscrew",
-          "levelId": 71,
+          "levelId": 68,
           "kind": "layer"
         },
         {
           "item": "grapebasket",
-          "levelId": 72,
+          "levelId": 69,
           "kind": "layer"
         },
         {
           "item": "cellarlantern",
-          "levelId": 73,
+          "levelId": 70,
           "kind": "layer"
         },
         {
           "item": "oldledger",
-          "levelId": 74,
+          "levelId": 71,
           "kind": "layer"
         }
       ]
@@ -1449,32 +1449,32 @@
       "slots": [
         {
           "item": "teaset",
-          "levelId": 75,
+          "levelId": 72,
           "kind": "layer"
         },
         {
           "item": "birdcage",
-          "levelId": 76,
+          "levelId": 73,
           "kind": "layer"
         },
         {
           "item": "parasol",
-          "levelId": 77,
+          "levelId": 74,
           "kind": "layer"
         },
         {
           "item": "croquetset",
-          "levelId": 78,
+          "levelId": 75,
           "kind": "layer"
         },
         {
           "item": "sundial",
-          "levelId": 79,
+          "levelId": 76,
           "kind": "layer"
         },
         {
           "item": "gardenhat",
-          "levelId": 80,
+          "levelId": 77,
           "kind": "layer"
         }
       ]
@@ -1489,37 +1489,37 @@
       "slots": [
         {
           "item": "pocketwatch",
-          "levelId": 81,
+          "levelId": 78,
           "kind": "layer"
         },
         {
           "item": "trinketbox",
-          "levelId": 82,
+          "levelId": 79,
           "kind": "layer"
         },
         {
           "item": "mantelclock",
-          "levelId": 83,
+          "levelId": 80,
           "kind": "layer"
         },
         {
           "item": "compass",
-          "levelId": 84,
+          "levelId": 81,
           "kind": "layer"
         },
         {
           "item": "mapscroll",
-          "levelId": 85,
+          "levelId": 82,
           "kind": "layer"
         },
         {
           "item": "stampalbum",
-          "levelId": 86,
+          "levelId": 83,
           "kind": "layer"
         },
         {
           "item": "antiquekey",
-          "levelId": 87,
+          "levelId": 84,
           "kind": "layer"
         }
       ]
@@ -1584,37 +1584,37 @@
       "slots": [
         {
           "item": "icecreamsundae",
-          "levelId": 88,
+          "levelId": 85,
           "kind": "layer"
         },
         {
           "item": "cupcakestand",
-          "levelId": 89,
+          "levelId": 86,
           "kind": "layer"
         },
         {
           "item": "milkshake",
-          "levelId": 90,
+          "levelId": 87,
           "kind": "layer"
         },
         {
           "item": "candyjar",
-          "levelId": 91,
+          "levelId": 88,
           "kind": "layer"
         },
         {
           "item": "popcornbox",
-          "levelId": 92,
+          "levelId": 89,
           "kind": "layer"
         },
         {
           "item": "lollipopjar",
-          "levelId": 93,
+          "levelId": 90,
           "kind": "layer"
         },
         {
           "item": "cottoncandy",
-          "levelId": 94,
+          "levelId": 91,
           "kind": "layer"
         }
       ]
@@ -1880,199 +1880,199 @@
         "cy": 0.5,
         "h": 0.82
       },
-      "55": {
+      "52": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "typewriter"
       },
-      "56": {
+      "53": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "letterbundle"
       },
-      "57": {
+      "54": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "fountainpen"
       },
-      "58": {
+      "55": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "deskclock"
       },
-      "59": {
+      "56": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "candlestick"
       },
-      "60": {
+      "57": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "paperweight"
       },
-      "61": {
+      "58": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "magnifyingglass"
       },
-      "62": {
+      "59": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "musicbox"
       },
-      "63": {
+      "60": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "nightlight"
       },
-      "64": {
+      "61": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "blocks"
       },
-      "65": {
+      "62": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "plushbunny"
       },
-      "66": {
+      "63": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "rattle"
       },
-      "67": {
+      "64": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "babyshoes"
       },
-      "68": {
+      "65": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "winebottles"
       },
-      "69": {
+      "66": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "decanter"
       },
-      "70": {
+      "67": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "cheesewheel"
       },
-      "71": {
+      "68": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "corkscrew"
       },
-      "72": {
+      "69": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "grapebasket"
       },
-      "73": {
+      "70": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "cellarlantern"
       },
-      "74": {
+      "71": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "oldledger"
       },
-      "75": {
+      "72": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "teaset"
       },
-      "76": {
+      "73": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "birdcage"
       },
-      "77": {
+      "74": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "parasol"
       },
-      "78": {
+      "75": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "croquetset"
       },
-      "79": {
+      "76": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "sundial"
       },
-      "80": {
+      "77": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "gardenhat"
       },
-      "81": {
+      "78": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "pocketwatch"
       },
-      "82": {
+      "79": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "trinketbox"
       },
-      "83": {
+      "80": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "mantelclock"
       },
-      "84": {
+      "81": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "compass"
       },
-      "85": {
+      "82": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "mapscroll"
       },
-      "86": {
+      "83": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "stampalbum"
       },
-      "87": {
+      "84": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
@@ -2126,43 +2126,43 @@
         "h": 0.82,
         "item": "rubikscube"
       },
-      "88": {
+      "85": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "icecreamsundae"
       },
-      "89": {
+      "86": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "cupcakestand"
       },
-      "90": {
+      "87": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "milkshake"
       },
-      "91": {
+      "88": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "candyjar"
       },
-      "92": {
+      "89": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "popcornbox"
       },
-      "93": {
+      "90": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
         "item": "lollipopjar"
       },
-      "94": {
+      "91": {
         "cx": 0.5,
         "cy": 0.5,
         "h": 0.82,
