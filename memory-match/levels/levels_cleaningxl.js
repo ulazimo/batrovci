@@ -6336,6 +6336,41 @@ LEVELS_CLEANINGXL = [
         4
       ]
     ],
+    "colors": [
+      [
+        3,
+        2,
+        "red"
+      ],
+      [
+        5,
+        1,
+        "red"
+      ],
+      [
+        5,
+        2,
+        "red"
+      ],
+      [
+        5,
+        3,
+        "red"
+      ],
+      [
+        3,
+        1,
+        "red"
+      ],
+      [
+        3,
+        3,
+        "red"
+      ]
+    ],
+    "colorCounts": {
+      "red": 6
+    },
     "colorLocks": [
       {
         "cells": [
@@ -6389,7 +6424,7 @@ LEVELS_CLEANINGXL = [
           ]
         ],
         "color": "red",
-        "count": 5
+        "count": 6
       }
     ]
   },
