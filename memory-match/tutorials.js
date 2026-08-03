@@ -707,7 +707,7 @@ const LEVEL2_STEPS = [
   // Green chain of 5 → Baby Bomb reward
   { type: 'tapCard', card: 1 },
   { type: 'tapCard', card: 4 },
-  { type: 'tapCard', card: 8 , onEnter: () => setForcedDanger([0, 10, 11]) },
+  { type: 'tapCard', card: 8 , onEnter: () => setForcedDanger([10, 11, 14]) },
   { type: 'tapCard', card: 12 },
   { type: 'tapCard', card: 13 },
   { type: 'tapCard', card: 0, advanceOnResolve: true },    // mismatch banks 5 greens → 💣
