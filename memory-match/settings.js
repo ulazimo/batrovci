@@ -57,6 +57,9 @@ const GAMEPLAY_RULES = [
   { id: 'chainDangerReveal', name: 'Chain Danger Reveal', icon: '🔥',
     desc: 'When a chain ends, briefly flip up the danger-marked "don\'t go there" tiles (shown at chain 3) so you learn what colors they were. Off = they just clear silently.',
     default: true },
+  { id: 'colorClearRefundTurn', name: 'Colour Clear Refunds Turn', icon: '↩️',
+    desc: 'Clearing every remaining card of a colour refunds the turn it took (net zero). Off = a colour clear still collects at any length, but costs its turn like any other.',
+    default: false },
 ];
 
 function getRule(id) {

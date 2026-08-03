@@ -241,8 +241,9 @@ function onCardClick(index) {
 // ============================================================
 // A turn resolves on a mismatch, a manual bank, or a colour clear. If this collect takes
 // every remaining card of an active colour off the board it's a "colour clear": it
-// collects at ANY chain length (even a lone last card), refunds the spent turn (net zero),
-// and shows a small "<COLOUR> Cleared" banner. See showColorClearBanner / showTurnRefund.
+// collects at ANY chain length (even a lone last card) and shows a small "<COLOUR> Cleared"
+// banner. It also refunds the spent turn (net zero) when the colorClearRefundTurn rule is
+// on — off by default. See showColorClearBanner / showTurnRefund.
 function endTurn(manual, perfectSweep) {
   stopChainTimer();
   // Chain Danger Reveal: remember the danger-marked tiles so finishTurn can flip them
@@ -311,11 +312,13 @@ function endTurn(manual, perfectSweep) {
   // A full colour clear flashes the whole board when the Perfect Sweep Reveal rule is on.
   const willSweepReveal = (perfectSweep || colorCleared) && isSweepRevealActive();
 
-  // Every resolved turn costs one — but a full colour clear refunds it (net zero). An
-  // "exhausted" collect gets NO refund.
+  // Every resolved turn costs one — but a full colour clear refunds it (net zero) when the
+  // Colour Clear Refunds Turn rule is on (off by default; it was too generous). An
+  // "exhausted" collect never refunds.
+  const refundTurn = colorCleared && getRule('colorClearRefundTurn');
   turns--;
-  if (colorCleared) turns++;
-  if (typeof recordTurnResolved === 'function') recordTurnResolved(colorCleared); // analytics: count actual turns taken (refunds don't hide them)
+  if (refundTurn) turns++;
+  if (typeof recordTurnResolved === 'function') recordTurnResolved(refundTurn); // analytics: count actual turns taken (refunds don't hide them)
   scoreEl.textContent = _scoreDisplayed; turnsEl.textContent = turns; updateStatusBadge();
 
   // Low turns warning — go red at ≤3 (including 0), callout exactly at 3
@@ -422,8 +425,9 @@ function endTurn(manual, perfectSweep) {
       spawnParticles(matched.length>0 ? matched : specialsUsed, chainColor);
       if (willSweepReveal) { SFX.win(); launchConfetti(); }
     }
-    // Colour clear feedback: small "<COLOUR> Cleared" banner + the refunded turn.
-    if (colorCleared) { showColorClearBanner(clearedColors); showTurnRefund(); }
+    // Colour clear feedback: small "<COLOUR> Cleared" banner, plus the refunded-turn float
+    // only when the refund actually happened (colorClearRefundTurn rule).
+    if (colorCleared) { showColorClearBanner(clearedColors); if (refundTurn) showTurnRefund(); }
     // Break one lock layer per collected card adjacent to a locked tile (include newSP —
     // it's consumed too). A lock next to several cleared cards breaks several layers.
     const unlockSources = newSP >= 0 ? [...toRemove, newSP] : toRemove;
