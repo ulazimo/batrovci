@@ -139,6 +139,18 @@ function detonateBombAt(index, bombType) {
 
   // Break one lock layer on every locked tile the blast covers (see blastLocks).
   blastLocks.forEach(i => breakLockLayer(i));
+  // A collected card also chips a lock it merely sits NEXT TO — the same adjacency rule as a
+  // combo clear (breakAdjacentLocks): each collected card breaks one layer per orthogonally
+  // adjacent lock. Skip locks already covered by the blast so a single bomb doesn't
+  // double-count them.
+  const blastLockSet = new Set(blastLocks);
+  targets.forEach(idx => {
+    const { r, c } = toRC(idx);
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+      const adj = toIndex(r + dr, c + dc);
+      if (adj >= 0 && !blastLockSet.has(adj) && board[adj] && board[adj].locked) breakLockLayer(adj);
+    });
+  });
   updateGoalHUD();
 
   // Did the bomb open the last off-chain card(s) of the chain colour? Judge this NOW, before
