@@ -106,9 +106,17 @@
     <div id="home-bg"></div>
     <div id="home-logo">CURLING<span>CLASH</span></div>
 
+    <!-- The rock is body + handle as separate layers so the handle can sweep
+         around the vertical axis. A curling stone's body is rotationally
+         symmetric, so spinning the handle alone is what actually reads as the
+         rock turning in place. -->
     <div id="home-rock-stage">
-      <div id="home-rock"></div>
-      <div id="home-rock-shadow"></div>
+      <div id="home-rock-slider">
+        <div id="home-rock">
+          <div id="home-rock-handle"></div>
+        </div>
+        <div id="home-rock-shadow"></div>
+      </div>
     </div>
 
     <div id="home-length-toggle">
@@ -140,7 +148,15 @@
   <div id="coin-overlay" class="overlay">
     <div class="overlay-title">Coin Toss</div>
     <div class="overlay-sub">Winner takes the Hammer in End 1</div>
-    <div id="coin"><div id="coin-face-y"></div><div id="coin-face-r"></div></div>
+    <!-- Three nested elements on purpose: the stage owns the perspective, the
+         tosser owns the vertical arc, and the coin owns nothing but its own
+         rotation. Combining the arc and the spin in one transform made the coin
+         appear to pivot about its bottom edge instead of its centre. -->
+    <div id="coin-stage">
+      <div id="coin-tosser">
+        <div id="coin"><div id="coin-face-y"></div><div id="coin-face-r"></div></div>
+      </div>
+    </div>
     <div id="coin-result"></div>
   </div>
 

@@ -73,13 +73,33 @@ Sheet reference diagram and the shooting-perspective photo actually look like, a
 Layer AI rock shading on top it reads as the stylized 3D the art direction asks for.
 
 Two consequences worth knowing:
-- The shooting view and the House view want *opposite* framing — the shooting view crops the
-  side lines so rocks read big, the House view must show full width or a rock on the edge of
-  the twelve-foot is clipped off-screen. Both the depth span and the width scale are therefore
-  per-camera-mode, and tween together on Focus House.
+- The shooting view and the House view want *opposite* framing — the House view must show full
+  width or a rock on the edge of the twelve-foot is clipped off-screen. Both the depth span and
+  the width scale are therefore per-camera-mode, and tween together on Focus House.
 - `projSheetFill` (move the camera closer) is the right lever when rocks look small.
   `rockRadiusScale` changes how many rocks fit in the house, which is a strategy change — in
   real curling 16 rocks genuinely do not fit, and that is the whole game.
+
+**Revised again, on review.** The first build kept the whole sheet in view from the hack, which
+flattened the camera into a long lane and read poorly. The camera is now genuinely overhead: the
+default view spans 16 m of ice around the rock, matching the House view's framing, and follows
+the rock from above.
+
+That trade is not free, and the cost is worth stating plainly: **you cannot see a house 35 m away
+and have an overhead camera on a phone.** Those are mutually exclusive. So the Shot Area is
+projected onto the top edge of the view instead, labelled with what the shot would actually score
+— BUTTON, GUARD, HOGGED, THROUGH. Aiming stays informed, and Focus House gives the proper look
+before committing. Raise `projDepthSpan` toward 40 to get the whole sheet back, at the cost of
+the flat-lane look.
+
+**Speed and release point were also wrong.** Launch speed was about half the delivery-slide
+speed, so the rock visibly slowed the instant it was released — it read as floaty rather than
+thrown. Two fixes: the rock is now released at the near tee line rather than the hog line, and
+the slide's duration is *derived* from the launch speed (`t = 2d/v`) so it accelerates from rest
+and arrives at exactly that speed. The handover is seamless by construction. Traction went from
+0.47 to 1.44 m/s², putting launch speed near 10.25 m/s and a draw around 6–7 s. Recalibrated on
+the bench: perfect power lands on the button, curl matches its stat ladder to within 1%, and all
+four removal rules still pass.
 
 ### 1.4 Assumptions to flag
 

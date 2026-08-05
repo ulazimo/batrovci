@@ -6,7 +6,7 @@
 //   idle       rock waiting at the delivery end, curl handle available
 //   charging   finger down on the rock; power slider revealed. Vertical drag
 //              sets power (pull back to throw harder), horizontal drag aims.
-//   delivering rock slides from the hack to the near hog line, "from where it
+//   delivering rock slides from the hack to the near tee line, "from where it
 //              gets its initial moment"
 //   travelling physics owns it; trajectory fades, shot area shrinks
 //
@@ -73,6 +73,9 @@ function armShot(rock) {
   shot.resolved = null;
   shot.dragging = null;
   shot.enabled = true;
+  // The aim camera reads this; a value carried over from the previous shot would
+  // send it to the wrong place on the first frame of the next one.
+  shotPreview = null;
   resetCameraToShot();
   positionFocusButton();
   updateShotButtons();
@@ -132,6 +135,9 @@ function onShotPointerDown(e) {
     shot.phase = 'charging';
     shot.power = 0;
     shot.aim = 0;
+    // The camera deliberately does NOT move while aiming — see the header in
+    // camera.js. Where the shot will land is shown by drawOffscreenLanding
+    // instead, which costs nothing in camera stability.
     updateShotButtons();
   }
 }
@@ -221,12 +227,12 @@ function resolveShotVariance(rockDef, powerT, angleRad) {
 
   // Local sensitivity of the rest point to the controls, measured rather than
   // assumed, so this stays correct through any re-tuning.
-  const base = predictLaunch(rockDef, powerT, angleRad, shot.spin, 0, SHEET.NEAR_HOG_Y);
+  const base = predictLaunch(rockDef, powerT, angleRad, shot.spin, 0, SHEET.RELEASE_Y);
   const baseY = base.restY;
-  const travel = Math.max(1, base.restY - SHEET.NEAR_HOG_Y);
+  const travel = Math.max(1, base.restY - SHEET.RELEASE_Y);
 
   const dP = 0.02;
-  const bumped = predictLaunch(rockDef, Math.min(1, powerT + dP), angleRad, shot.spin, 0, SHEET.NEAR_HOG_Y);
+  const bumped = predictLaunch(rockDef, Math.min(1, powerT + dP), angleRad, shot.spin, 0, SHEET.RELEASE_Y);
   const metresPerPower = (bumped.restY - baseY) / dP;
 
   const powerAdj = metresPerPower !== 0 ? offLong / metresPerPower : 0;
@@ -252,20 +258,36 @@ function releaseShot() {
   trackShot(shot.rock, shot.resolved);
 }
 
-// The delivery slide: the rock travels from the hack to the near hog line,
-// where it picks up the launch velocity. On the fixed timestep with everything
-// else, so a slow frame rate cannot stretch it out in wall-clock time.
+// The delivery slide: the rock travels from the hack to the near tee line, where
+// it picks up the launch velocity. On the fixed timestep with everything else, so
+// a slow frame rate cannot stretch it out in wall-clock time.
+//
+// The slide is a constant-acceleration push that ARRIVES at exactly the launch
+// speed. That matters: with a fixed slide duration the delivery and the launch
+// were two unrelated speeds, and the rock visibly lurched — usually slowing down
+// — the instant it was released. Deriving the duration from the launch speed
+// (t = 2d/v for 0 → v over distance d) makes the handover seamless by
+// construction, so a hard throw also *looks* hard from the moment it leaves the
+// hack.
+function deliveryDuration() {
+  const v = launchSpeedFor(shot.rock.def, shot.resolved.power);
+  const d = SHEET.RELEASE_Y - SHOOT_Y;
+  return Math.max(0.08, (2 * d) / Math.max(0.5, v)) * TUNE.deliveryPushScale;
+}
+
 function stepDelivery(dt) {
   if (shot.phase === 'travelling' || shot.phase === 'delivering') {
     shot.trajFade = Math.max(0, shot.trajFade - dt / TUNE.trajectoryFade);
   }
   if (shot.phase !== 'delivering') return;
-  shot.deliverT += dt / Math.max(0.05, TUNE.deliverySlideTime);
+
+  shot.deliverT += dt / deliveryDuration();
   const t = Math.min(1, shot.deliverT);
-  const e = t * t * (3 - 2 * t);          // smoothstep: eases out of the hack
+  // Position under constant acceleration from rest: distance ∝ t².
+  const e = t * t;
 
   const from = SHOOT_Y;
-  const to = SHEET.NEAR_HOG_Y;
+  const to = SHEET.RELEASE_Y;
   shot.rock.y = from + (to - from) * e;
   shot.rock.x = Math.sin(shot.resolved.angle) * (shot.rock.y - from) * 0.15;
   // Handle already turned to its curl angle; it holds until release.
@@ -275,8 +297,9 @@ function stepDelivery(dt) {
     shot.rock.y = to;
     launchRock(shot.rock, shot.resolved.power, shot.resolved.angle, shot.spin);
     shot.phase = 'travelling';
+    // Seamless because shot and follow share a depth span and the rock is
+    // already inside the follow band — nothing to tween, so no jolt at release.
     setCameraMode('follow', false);
-    if (typeof onRockLaunched === 'function') onRockLaunched(shot.rock);
   }
 }
 
@@ -313,17 +336,21 @@ function drawIceAids(ctx) {
 
   let pred = null;
   let areaR = 0;
+  let areaAlpha = 1;
 
   if (shot.phase === 'charging') {
-    pred = predictLaunch(rock.def, shot.power, aimAngleRad(), shot.spin, 0, SHEET.NEAR_HOG_Y);
+    pred = predictLaunch(rock.def, shot.power, aimAngleRad(), shot.spin, 0, SHEET.RELEASE_Y);
     areaR = shotAreaRadius(rock.def);
   } else if (shot.phase === 'travelling' && rock.moving) {
     pred = predictFromRock(rock);
-    // The circle collapses as certainty arrives with the rock slowing down.
+    // The circle both tightens and fades as certainty arrives with the rock
+    // slowing down, so by the time it stops there is nothing left to contradict
+    // where the rock actually is.
     const speed = Math.hypot(rock.vx, rock.vy);
     const launch = launchSpeedFor(rock.def, shot.resolved.power);
     const frac = Math.min(1, speed / Math.max(0.01, launch));
     areaR = shotAreaRadius(rock.def) * Math.pow(frac, TUNE.shotAreaShrinkPow);
+    areaAlpha = Math.pow(frac, TUNE.shotAreaFadePow);
   }
 
   if (!pred) return;
@@ -338,7 +365,7 @@ function drawIceAids(ctx) {
     // to float unconnected halfway down the sheet.
     if (shot.phase === 'charging') {
       const a = projectPoint(rock.x, rock.y);
-      const b = projectPoint(0, SHEET.NEAR_HOG_Y);
+      const b = projectPoint(0, SHEET.RELEASE_Y);
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
@@ -369,18 +396,88 @@ function drawIceAids(ctx) {
   }
 
   // --- Shot Area: transparent fill, more opaque outline, per the doc ---
-  if (areaR > 0.01 && isVisibleY(pred.restY)) {
-    ctx.save();
-    traceIceCircle(ctx, pred.restX, pred.restY, areaR, 40);
-    ctx.fillStyle = 'rgba(255,255,255,0.13)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.62)';
-    ctx.lineWidth = 1.8;
-    ctx.stroke();
-    ctx.restore();
+  if (areaR > 0.01) {
+    const row = screenRowOf(pred.restY);
+    if (row > proj.topRow) {
+      // "A transparent circle with a bit more opaque outline", per the doc.
+      ctx.save();
+      ctx.globalAlpha = areaAlpha;
+      traceIceCircle(ctx, pred.restX, pred.restY, areaR, 40);
+      ctx.fillStyle = 'rgba(255,255,255,0.13)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      drawOffscreenLanding(ctx, pred, areaR, areaAlpha);
+    }
   }
 
   shotPreview = pred;
+}
+
+// The overhead camera cannot see the house from the delivery end — it is 35 m
+// away and the view spans ~16 m. Without something at the top edge the player
+// would be aiming completely blind, which the Shot Area exists to prevent. So
+// when the predicted landing lies beyond the top of the view, its position and
+// spread are projected onto the top edge, labelled with what it would actually
+// score. Focus House remains there for a proper look before committing.
+function drawOffscreenLanding(ctx, pred, areaR, alpha = 1) {
+  const y = proj.topRow + 20;
+
+  // Lay the marker out in the sheet's cross-axis scale at the landing depth, so
+  // the spread and the offset from centre stay honest rather than arbitrary.
+  const sx = projScaleX(pred.restY) || 1;
+  const cx = Math.max(26, Math.min(viewW - 26, viewW / 2 + pred.restX * sx));
+  const halfW = Math.max(7, areaR * sx);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // The spread, as a flattened capsule — a circle would imply we can see depth
+  // up there, and we cannot.
+  roundRect(ctx, cx - halfW, y - 6, halfW * 2, 12, 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.16)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  // Centre tick and an up-chevron: this is further up the sheet than you see.
+  ctx.beginPath();
+  ctx.moveTo(cx, y - 6); ctx.lineTo(cx, y + 6);
+  ctx.moveTo(cx - 5, y - 11); ctx.lineTo(cx, y - 16); ctx.lineTo(cx + 5, y - 11);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const [label, colour] = landingVerdict(pred);
+  ctx.font = '800 11px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.lineWidth = 3.5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+  ctx.strokeText(label, cx, y + 10);
+  ctx.fillStyle = colour;
+  ctx.fillText(label, cx, y + 10);
+  ctx.restore();
+}
+
+// What the shot would score, in the language a curler would use.
+function landingVerdict(pred) {
+  const r = shot.rock.radius;
+  if (pred.restY - r <= SHEET.FAR_HOG_Y) return ['HOGGED', '#ff9c92'];
+  if (pred.restY - r > SHEET.BACK_LINE_Y) return ['THROUGH', '#ff9c92'];
+  if (Math.abs(pred.restX) + r >= SHEET.HALF_WIDTH) return ['OUT', '#ff9c92'];
+
+  const d = Math.hypot(pred.restX, pred.restY - SHEET.TEE_Y);
+  if (d < HOUSE.R_BUTTON) return ['BUTTON', '#8dfaa8'];
+  if (d < HOUSE.R_4FT)    return ['FOUR-FOOT', '#8dfaa8'];
+  if (d < HOUSE.R_8FT)    return ['EIGHT-FOOT', '#c8f6d4'];
+  if (d < HOUSE.R_12FT + r) return ['TWELVE-FOOT', '#c8f6d4'];
+  if (pred.restY < SHEET.TEE_Y) return ['GUARD', '#f2d13d'];
+  return ['BEHIND HOUSE', '#f2d13d'];
 }
 
 function handleScreenPos() {
@@ -445,12 +542,14 @@ function drawCurlHandle(ctx) {
 }
 
 function drawPowerSlider(ctx) {
-  const rock = shot.rock;
-  const rp = projectPoint(rock.x, rock.y);
   const track = powerTrackLength();
   const w = 26;
-  const top = rp.y;
-  const x = rp.x;
+  // Anchored to where the finger went down, NOT to the rock. The aim camera runs
+  // forward while power is being set, so the rock slides toward the bottom of the
+  // screen — a rock-anchored track would follow it off the edge. Pinning it to the
+  // touch origin also just feels better: the slider stays under the thumb.
+  const top = shot.dragStart.y;
+  const x = shot.dragStart.x;
 
   // Shakiness above the perfect zone, growing with the overdraw.
   const perfectHi = TUNE.perfectPowerCenter + TUNE.perfectZoneWidth / 2;
@@ -548,16 +647,4 @@ function powerColor(t, alpha) {
   return hexToRgba(c, alpha);
 }
 
-function mixHex(a, b, t) {
-  t = Math.max(0, Math.min(1, t));
-  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
-  const r = Math.round((pa >> 16) + ((pb >> 16) - (pa >> 16)) * t);
-  const g = Math.round(((pa >> 8) & 255) + (((pb >> 8) & 255) - ((pa >> 8) & 255)) * t);
-  const bl = Math.round((pa & 255) + ((pb & 255) - (pa & 255)) * t);
-  return '#' + ((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0');
-}
 
-function hexToRgba(hex, alpha) {
-  const p = parseInt(hex.slice(1), 16);
-  return `rgba(${p >> 16},${(p >> 8) & 255},${p & 255},${alpha})`;
-}

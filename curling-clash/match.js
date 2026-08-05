@@ -271,9 +271,12 @@ function runCoinToss(done) {
   const winner = Math.random() < 0.5 ? TEAM.YELLOW : TEAM.RED;
   // Yellow is the face-up side, so land on a half turn for red.
   coin.style.setProperty('--coin-end', winner === TEAM.YELLOW ? '1440deg' : '1620deg');
+  const tosser = document.getElementById('coin-tosser');
   coin.classList.remove('flipping');
-  void coin.offsetWidth;              // restart the animation
+  tosser.classList.remove('flipping');
+  void coin.offsetWidth;              // restart both animations together
   coin.classList.add('flipping');
+  tosser.classList.add('flipping');
 
   setTimeout(() => {
     const name = match.names[winner];

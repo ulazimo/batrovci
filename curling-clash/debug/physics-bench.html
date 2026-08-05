@@ -75,7 +75,7 @@ const out = document.getElementById('out');
 const H = (s) => { out.insertAdjacentHTML('beforeend', s); };
 
 const START_Y = 1.15;             // the rock's resting spot at the delivery end
-const RELEASE_Y = SHEET.NEAR_HOG_Y; // momentum is granted at the near hog line
+const RELEASE_Y = SHEET.RELEASE_Y;  // momentum is granted at the near tee line
 const f = (n, d = 3) => n.toFixed(d);
 
 // Where did it end up, in curling terms?
@@ -96,7 +96,7 @@ function verdict(restY, restX) {
 // 1. Power sweep
 // ---------------------------------------------------------------
 H('<h2>1. POWER SWEEP — Basic Rock (Power L3), no curl</h2>');
-H(`<div class="note">Released at the near hog line (${f(RELEASE_Y)} m). The button is at
+H(`<div class="note">Released at the near tee line (${f(RELEASE_Y)} m). The button is at
    ${f(SHEET.TEE_Y)} m, the back line at ${f(SHEET.BACK_LINE_Y)} m, the far hog line at
    ${f(SHEET.FAR_HOG_Y)} m.</div>`);
 

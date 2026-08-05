@@ -50,6 +50,12 @@ const SHEET = {
   // Real sheets run 6 ft past the hack to the backboard. Ours does too, so the
   // camera at the delivery end is not staring at the edge of the world.
   BEHIND_HACK_Y: -R.TEE_TO_BACK,
+
+  // Where the delivery slide ends and the rock is released with its launch
+  // velocity. The near tee line, which is comfortably inside the hog line the
+  // rules require release before (WCF R5(e)), and close enough to the hack that
+  // the delivery reads as one quick push rather than a long trundle.
+  RELEASE_Y: R.TEE_TO_HACK,
 };
 
 // ---- The house: four concentric circles, R1(d). Named by DIAMETER in feet,
@@ -111,6 +117,24 @@ const COLORS = {
   powerHigh:   '#f2823d',
   powerOver:   '#e33d2e',
 };
+
+// ---- Colour helpers ----
+// Here rather than in a renderer, because several modules blend these and the
+// palette is what they blend. Keeps the dependency pointing at config.
+
+function mixHex(a, b, t) {
+  t = Math.max(0, Math.min(1, t));
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const r = Math.round((pa >> 16) + ((pb >> 16) - (pa >> 16)) * t);
+  const g = Math.round(((pa >> 8) & 255) + (((pb >> 8) & 255) - ((pa >> 8) & 255)) * t);
+  const bl = Math.round((pa & 255) + ((pb & 255) - (pa & 255)) * t);
+  return '#' + ((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0');
+}
+
+function hexToRgba(hex, alpha) {
+  const p = parseInt(hex.slice(1), 16);
+  return `rgba(${p >> 16},${(p >> 8) & 255},${p & 255},${alpha})`;
+}
 
 // ---- Match ----
 const MATCH_LENGTHS = { short: 3, normal: 5, long: 7 };

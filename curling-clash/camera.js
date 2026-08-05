@@ -2,14 +2,29 @@
 // CAMERA
 //
 // Three states:
-//   shot    parked at the delivery end, rock in the lower third
-//   follow  tracking the delivered rock, keeping it inside the follow band
+//   shot    parked at the delivery end, rock in the lower third, overhead
+//   follow  tracking the delivered rock forward down the sheet
 //   house   locked on the house, tee centred — the Focus House view
 //
-// The doc's two rules: keep the rock inside a band the designer controls, and
-// once the rock nears the house put the tee in the middle of the screen and
-// stop following. The clamp and the house view are therefore the same number,
-// which is why the transition into the house never jumps.
+// ONE PERSPECTIVE THROUGHOUT PLAY. `projFollowDepth` defaults to the same value
+// as `projDepthSpan`, so aiming and travelling share an identical camera and
+// nothing tilts or zooms as the shot goes out — the camera only ever translates.
+//
+// This is deliberate and was arrived at the hard way. Two earlier attempts gave
+// the aiming and travelling views their own depth spans (one even derived the
+// span from the power, so it changed as the slider moved). Both read as the sheet
+// warping underfoot, and the switch at release was a visible jolt. Any span
+// difference between modes is a jump, however well it is tweened. If you want a
+// tilt on travel, raise projFollowDepth — but know that is the trade you are
+// making.
+//
+// Seeing where the shot will land is handled by drawOffscreenLanding instead,
+// which projects the Shot Area onto the top edge of the view. That solves the
+// problem without touching the camera at all.
+//
+// The doc's rule still holds at the end: once the rock nears the house the tee
+// finishes in the middle of the screen and the camera stops following. The clamp
+// and the house view are the same number, so that transition never jumps.
 // ============================================================
 
 // Where the rock waits before delivery, just in front of the hack so the hack
@@ -18,16 +33,13 @@ const SHOOT_Y = 1.15;
 
 const camState = {
   mode: 'shot',          // shot | follow | house
-  tween: null,           // { fromY, fromSpan, t, dur } while easing between views
+  tween: null,           // { fromY, fromSpan, fromFill, t, dur } while easing
 };
 
-// Focusing the house tightens the depth span, which is what actually magnifies
-// it — see the projection header on why depth is nearly even. It also widens the
-// frame, because the two views want opposite things: the shooting view crops the
-// side lines so rocks read big, while the house view has to show the full sheet
-// width or a rock on the edge of the twelve-foot falls off-screen.
 function spanForMode(mode) {
-  return mode === 'house' ? TUNE.projHouseDepth : TUNE.projDepthSpan;
+  if (mode === 'house') return TUNE.projHouseDepth;
+  if (mode === 'follow') return TUNE.projFollowDepth;
+  return TUNE.projDepthSpan;
 }
 
 function fillForMode(mode) {
@@ -49,29 +61,33 @@ function targetForMode(mode) {
   camera.span = spanForMode(mode);
   camera.fill = fillForMode(mode);
   updateProjection();
-  const y = mode === 'house' ? houseViewY() : mode === 'shot' ? shotViewY() : camera.y;
+  const y = mode === 'house' ? houseViewY()
+          : mode === 'shot' ? shotViewY()
+          : mode === 'follow' ? followTargetY()
+          : camera.y;
   camera.span = prevSpan;
   camera.fill = prevFill;
   updateProjection();
   return y;
 }
 
-function setCameraMode(mode, animate = true) {
+function setCameraMode(mode, animate = true, dur) {
   if (camState.mode === mode) return;
   const fromY = camera.y;
   const fromSpan = camera.span;
   const fromFill = camera.fill;
   camState.mode = mode;
+
   if (!animate) {
     camState.tween = null;
     camera.span = spanForMode(mode);
     camera.fill = fillForMode(mode);
     updateProjection();
-    camera.y = mode === 'house' ? houseViewY() : mode === 'shot' ? shotViewY() : camera.y;
+    camera.y = targetForMode(mode);
     updateProjection();
     return;
   }
-  camState.tween = { fromY, fromSpan, fromFill, t: 0, dur: TUNE.camFocusTime };
+  camState.tween = { fromY, fromSpan, fromFill, t: 0, dur: dur || TUNE.camFocusTime };
 }
 
 // Snap straight to the delivery view — used when a new rock is set up.
@@ -115,8 +131,23 @@ function stepCamera(dt) {
   if (camState.mode === 'shot')  { camera.y = shotViewY();  updateProjection(); return; }
 
   // ---- Follow ----
-  const rock = deliveredRock;
-  if (!rock) return;
+  if (!deliveredRock) return;
+  const target = followTargetY();
+  const smooth = 1 - Math.pow(1 - Math.min(0.999, TUNE.camLerp), dt * 60);
+  camera.y += (target - camera.y) * smooth;
+  updateProjection();
+}
+
+// Where the follow camera wants to be, given where the rock is. Split out so a
+// tween INTO follow mode has a real destination to ease toward — otherwise the
+// transition from the aiming view would target wherever the camera already was
+// and land nowhere near the rock.
+function followTargetY() {
+  // deliveredRock only exists from launch onward, but the camera starts easing
+  // back toward the rock during the delivery slide — so fall back to the rock
+  // being delivered.
+  const rock = deliveredRock || shot.rock;
+  if (!rock) return camera.y;
 
   const bandTop = TUNE.camBandTop * viewH;
   const bandBottom = TUNE.camBandBottom * viewH;
@@ -142,12 +173,7 @@ function stepCamera(dt) {
   target = target + (house - target) * (k * k * (3 - 2 * k));
 
   // Never drift back behind the delivery view, and never past the house.
-  target = Math.max(shotViewY(), Math.min(house, target));
-
-  // Frame-rate independent smoothing.
-  const smooth = 1 - Math.pow(1 - Math.min(0.999, TUNE.camLerp), dt * 60);
-  camera.y += (target - camera.y) * smooth;
-  updateProjection();
+  return Math.max(shotViewY(), Math.min(house, target));
 }
 
 function easeInOutCubic(t) {

@@ -366,7 +366,17 @@ body {
 #home-rock-stage {
   position: relative; flex: 1;
   display: grid; place-items: center; width: 100%;
-  perspective: 600px;
+  overflow: hidden;
+}
+/* Wrapper the slide-away animates, so it does not fight the handle's spin. */
+#home-rock-slider {
+  position: relative; display: grid; place-items: center;
+  will-change: transform, opacity;
+}
+#home-rock-slider.slide-away { animation: rockSlideAway 0.62s cubic-bezier(.4,.05,.7,.4) forwards; }
+@keyframes rockSlideAway {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-58vh) scale(0.18); opacity: 0; }
 }
 /* A curling rock is a squat cylinder seen from slightly above, not a sphere:
    an elliptical top face, a striking band below it, and the handle on top. */
@@ -396,10 +406,10 @@ body {
   background: linear-gradient(180deg, #ffe27a, #f2c230 52%, #a87d14);
   box-shadow: 0 2px 0 -1px rgba(255,255,255,.55), 0 6px 11px rgba(0,0,0,.5);
 }
-/* With the Layer AI hero rock, drop the CSS granite and bevels entirely —
+/* With the Layer AI granite body, drop the CSS granite and bevels entirely —
    keeping them would double up the shading. */
 #home-rock.has-art {
-  width: 62vw; max-width: 260px; height: auto; aspect-ratio: 250/237;
+  width: 66vw; max-width: 280px; height: auto; aspect-ratio: 550/384;
   border-radius: 0; background-color: transparent;
   background-repeat: no-repeat; background-position: center; background-size: contain;
   box-shadow: none;
@@ -407,11 +417,33 @@ body {
 }
 #home-rock.has-art::before, #home-rock.has-art::after { display: none; }
 
-#home-rock.spin { animation: rockSpin 2.4s cubic-bezier(.3,0,.25,1); }
-@keyframes rockSpin {
-  0%   { transform: rotate(0deg) scale(1); }
-  55%  { transform: rotate(340deg) scale(1.04); }
-  100% { transform: rotate(720deg) scale(1); }
+/* The handle is squashed into the plane of the body's top face, so rotating it
+   sweeps around the rock's vertical axis rather than spinning as a flat image. */
+#home-rock-handle {
+  position: absolute; left: 50%; top: 35%;
+  width: 53%; aspect-ratio: 245/184;
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+  transform: translate(-50%, -50%) scaleY(0.52) rotate(0deg);
+  opacity: 0;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,.4));
+}
+#home-rock-handle.has-art { opacity: 1; animation: handleDrift 26s linear infinite; }
+@keyframes handleDrift {
+  from { transform: translate(-50%,-50%) scaleY(0.52) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) scaleY(0.52) rotate(360deg); }
+}
+#home-rock-handle.spin { animation: handleSpin 2.4s cubic-bezier(.16,.72,.24,1); }
+@keyframes handleSpin {
+  from { transform: translate(-50%,-50%) scaleY(0.52) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) scaleY(0.52) rotate(720deg); }
+}
+
+/* Fallback when the art is absent: the CSS rock spins about its vertical axis
+   in 3D rather than tumbling as a flat image. */
+#home-rock.spin { animation: rockSpinY 2.4s cubic-bezier(.16,.72,.24,1); }
+@keyframes rockSpinY {
+  from { transform: perspective(700px) rotateY(0deg); }
+  to   { transform: perspective(700px) rotateY(720deg); }
 }
 #home-rock-shadow {
   position: absolute; bottom: calc(50% - 74px); width: 190px; height: 30px; border-radius: 50%;
@@ -516,10 +548,26 @@ body {
 }
 .overlay-btn.ghost:active { transform: translateY(2px); }
 
-/* Coin toss */
+/* Coin toss.
+   Three layers so nothing has to do two jobs at once:
+     #coin-stage   holds the perspective, and never transforms
+     #coin-tosser  the vertical arc of the throw
+     #coin         nothing but rotateX about its own centre
+   Previously the arc and the spin shared one transform on #coin, and because
+   translate is applied after rotate the coin swung around its lower edge instead
+   of tumbling in place. Splitting them fixes the pivot; the perspective on a
+   non-transforming ancestor is what makes it read as 3D rather than a squash. */
+#coin-stage {
+  perspective: 900px; perspective-origin: 50% 50%;
+  /* Top margin is the toss arc's headroom — without it the coin rises into the
+     overlay title at the peak of the throw. */
+  margin: 86px 0 14px; display: grid; place-items: center;
+}
+#coin-tosser { display: grid; place-items: center; }
 #coin {
   width: 116px; height: 116px; border-radius: 50%; position: relative;
-  transform-style: preserve-3d; margin: 8px 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
 }
 #coin-face-y, #coin-face-r {
   position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden;
@@ -528,11 +576,24 @@ body {
 }
 #coin-face-y { background: radial-gradient(circle at 36% 30%, #ffe27a, #f2c230 50%, #a87d14); }
 #coin-face-r { background: radial-gradient(circle at 36% 30%, #ff8479, #d93b30 50%, #8e221a); transform: rotateX(180deg); }
-#coin.flipping { animation: coinFlip 2.1s cubic-bezier(.25,.6,.2,1) forwards; }
-@keyframes coinFlip {
-  0%   { transform: rotateX(0) translateY(0) scale(1); }
-  45%  { transform: rotateX(1260deg) translateY(-58px) scale(1.1); }
-  100% { transform: rotateX(var(--coin-end)) translateY(0) scale(1); }
+
+/* The rim, so the coin has visible thickness edge-on rather than vanishing. */
+#coin::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(180deg, #d9c07a, #8a6f24);
+  transform: translateZ(-3px);
+}
+
+#coin.flipping { animation: coinSpin 2.1s cubic-bezier(.22,.62,.2,1) forwards; }
+@keyframes coinSpin {
+  from { transform: rotateX(0deg); }
+  to   { transform: rotateX(var(--coin-end)); }
+}
+#coin-tosser.flipping { animation: coinToss 2.1s cubic-bezier(.3,.1,.5,1) forwards; }
+@keyframes coinToss {
+  0%   { transform: translateY(0) scale(1); }
+  42%  { transform: translateY(-74px) scale(1.09); }
+  100% { transform: translateY(0) scale(1); }
 }
 #coin-result { font-size: 19px; font-weight: 900; min-height: 24px; letter-spacing: .5px; }
 #coin-result.yellow { color: var(--team-y); }

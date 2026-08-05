@@ -178,10 +178,15 @@ function drawIceSurface(ctx) {
   ctx.lineTo(fr.x, fr.y); ctx.lineTo(fl.x, fl.y);
   ctx.closePath();
 
+  // Shaded by absolute position on the sheet rather than by the visible window,
+  // so the far ice is consistently cooler however far the camera has travelled.
+  // A window-relative ramp made the ice re-shade as the camera moved, which
+  // flattened the whole surface into one even wash.
   const g = ctx.createLinearGradient(0, fl.y, 0, nl.y);
-  g.addColorStop(0, COLORS.iceDeep);
-  g.addColorStop(0.35, COLORS.iceShadow);
-  g.addColorStop(1, COLORS.ice);
+  const depthOf = (y) => Math.max(0, Math.min(1, (y - SHEET.BEHIND_HACK_Y) / (SHEET.RUNOUT_Y - SHEET.BEHIND_HACK_Y)));
+  g.addColorStop(0, mixHex(COLORS.ice, COLORS.iceDeep, depthOf(farY)));
+  g.addColorStop(0.45, mixHex(COLORS.ice, COLORS.iceShadow, depthOf((farY + nearY) / 2)));
+  g.addColorStop(1, mixHex(COLORS.ice, COLORS.iceShadow, depthOf(nearY) * 0.5));
   ctx.fillStyle = g;
   ctx.fill();
 

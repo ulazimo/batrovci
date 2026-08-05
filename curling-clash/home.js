@@ -9,6 +9,7 @@
 
 let homeSpinTimer = null;
 let selectedEnds = MATCH_LENGTHS.normal;
+let homeLaunching = false;   // guards against a double-tap on Play
 
 function initHome() {
   const rock = document.getElementById('home-rock');
@@ -21,9 +22,24 @@ function initHome() {
     el.classList.add('has-art');
     el.style.backgroundImage = `url("${url}")`;
   });
-  useArtIfPresent('art/hero-rock.png', (url) => {
-    rock.classList.add('has-art');
-    rock.style.backgroundImage = `url("${url}")`;
+  // Body and handle as separate images, handle sweeping about the vertical axis.
+  // A rendered 8-frame turntable was tried and looked worse — the generated
+  // frames were not consistent enough with each other, and the body render was
+  // noisier than this one. The strip is kept in art/raw/ if it is ever worth
+  // revisiting with better frames; art/prepare.py still has the `turntable`
+  // command that builds it.
+  //
+  // Both images must land for the composed look, so the body only swaps in once
+  // the handle is confirmed too — otherwise a missing handle would leave a bare,
+  // handle-less stone on the hero shot.
+  useArtIfPresent('art/handle-yellow.png', (handleUrl) => {
+    useArtIfPresent('art/rock-body.png', (bodyUrl) => {
+      rock.classList.add('has-art');
+      rock.style.backgroundImage = `url("${bodyUrl}")`;
+      const h = document.getElementById('home-rock-handle');
+      h.classList.add('has-art');
+      h.style.backgroundImage = `url("${handleUrl}")`;
+    });
   });
   swapNavIcons();
 
@@ -51,10 +67,22 @@ function initHome() {
   document.querySelectorAll('.len-btn').forEach(b =>
     b.classList.toggle('active', parseInt(b.dataset.ends, 10) === selectedEnds));
 
-  // Play launches the curl, then the match.
+  // "Pressing the Play button launches the Curl and Starts the match" — so the
+  // rock spins up and slides away down the sheet before the match opens.
   document.getElementById('btn-play').addEventListener('click', () => {
+    if (homeLaunching) return;
+    homeLaunching = true;
     spinHomeRock();
-    setTimeout(() => startMatch(selectedEnds), 620);
+    const slider = document.getElementById('home-rock-slider');
+    slider.classList.remove('slide-away');
+    void slider.offsetWidth;
+    slider.classList.add('slide-away');
+    setTimeout(() => {
+      startMatch(selectedEnds);
+      // Reset for the next visit home, after the screen has switched away.
+      slider.classList.remove('slide-away');
+      homeLaunching = false;
+    }, 640);
   });
 }
 
@@ -73,16 +101,31 @@ function swapNavIcons() {
   }
 }
 
-// Probe an art file and only apply it if it actually decodes.
-function useArtIfPresent(url, apply) {
+// Probe an art file and only apply it if it actually decodes. onMissing lets
+// callers chain to a lesser asset rather than silently showing nothing.
+function useArtIfPresent(url, apply, onMissing) {
   const probe = new Image();
-  probe.onload = () => { if (probe.naturalWidth > 0) apply(url); };
+  probe.onload = () => {
+    if (probe.naturalWidth > 0) apply(url);
+    else if (onMissing) onMissing();
+  };
+  probe.onerror = () => { if (onMissing) onMissing(); };
   probe.src = url;
 }
 
+// Flourish spin: the handle when the composed art loaded, otherwise the whole
+// CSS-drawn stone about its vertical axis.
 function spinHomeRock() {
-  const rock = document.getElementById('home-rock');
-  rock.classList.remove('spin');
-  void rock.offsetWidth;        // restart the CSS animation
-  rock.classList.add('spin');
+  const handle = document.getElementById('home-rock-handle');
+  const target = handle.classList.contains('has-art')
+    ? handle
+    : document.getElementById('home-rock');
+  target.classList.remove('spin');
+  void target.offsetWidth;      // restart the CSS animation
+  target.classList.add('spin');
+  // Hand back to the idle drift once the flourish finishes, so the handle does
+  // not snap to zero when the .spin animation is removed.
+  if (target === handle) {
+    setTimeout(() => handle.classList.remove('spin'), 2400);
+  }
 }

@@ -25,6 +25,7 @@ real phone (≤520 px) the bezel drops away and it fills the screen.
 | **Aim and throw** | Touch the rock and drag *down* — pull back to throw harder. Drag sideways to aim off the centre line. |
 | **Curl** | Drag the handle that orbits to the right of the rock. Clockwise curves the path left, counter-clockwise curves it right, same as the real sport. |
 | **Perfect power** | The green band on the slider lands the rock on the button. Above it the slider goes orange, then red, and starts to shake. |
+| **Where it lands** | The house is too far off to see while you aim, so the marker at the top edge is your Shot Area — its position and width are the real line and spread, labelled with what the shot would score (BUTTON, GUARD, HOGGED). Once the rock is away the circle appears on the ice, tightening and fading out as the rock slows. |
 | **Sweep** | Once the rock is away, the thumbstick appears. Hold it to sweep. Push up for harder sweeping (the rock runs further), down for lighter, sideways to bend the line a few degrees. |
 | **Steal a sweep** | After the opponent's rock crosses the tee line and while it is still moving, you get a brief window to sweep it — try to carry it out the back of the house. |
 | **Look at the house** | The button beside the rock. Red *Back* returns you to the shooting position; you cannot throw from the house view. |
