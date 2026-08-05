@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "curling-clash",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "python3 -u .claude/devserver.py ${PORT:-8098}"],
+      "port": 8098,
+      "autoPort": true
+    }
+  ]
+}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1X91H99N2G"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1X91H99N2G');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Curling Clash</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a href="../index.html" id="back-link">← All Games</a>
+
+<!-- Device frame switcher (desktop only; hidden on real phones) -->
+<div id="device-switcher">
+  <button class="device-btn" data-device="ip15pro"    onclick="setDevice('ip15pro')">iPhone 15 Pro</button>
+  <button class="device-btn" data-device="galaxys24p" onclick="setDevice('galaxys24p')">Galaxy S24+</button>
+  <button class="device-btn" data-device="pixel8"     onclick="setDevice('pixel8')">Pixel 8</button>
+  <button class="device-btn" data-device="ipad"       onclick="setDevice('ipad')">iPad</button>
+</div>
+
+<!-- Phone frame — wraps the whole game so it renders inside a device bezel -->
+<div id="device-frame">
+
+  <!-- ============================================================
+       GAMEPLAY SCREEN
+  ============================================================ -->
+  <div id="game-screen" class="screen">
+
+    <!-- The ice. Everything in sheet-space is drawn here. -->
+    <canvas id="sheet-canvas"></canvas>
+
+    <!-- Header: Yellow | VS | Red, per the Gameplay Screen chapter -->
+    <div id="hud-header">
+      <div class="hud-team" id="hud-yellow" data-team="yellow">
+        <div class="hud-team-main">
+          <div class="hud-avatar"></div>
+          <div class="hud-meta">
+            <div class="hud-name">You</div>
+            <div class="hud-sub"><span class="hud-hammer" title="Hammer">🔨</span></div>
+          </div>
+          <div class="hud-score">0</div>
+        </div>
+        <div class="hud-pips" id="pips-yellow"></div>
+      </div>
+
+      <div id="hud-vs">
+        <div id="hud-vs-label">VS</div>
+        <div id="hud-end-label">End 1/3</div>
+      </div>
+
+      <div class="hud-team" id="hud-red" data-team="red">
+        <div class="hud-team-main">
+          <div class="hud-score">0</div>
+          <div class="hud-meta">
+            <div class="hud-name">Opponent</div>
+            <div class="hud-sub"><span class="hud-hammer" title="Hammer">🔨</span></div>
+          </div>
+          <div class="hud-avatar"></div>
+        </div>
+        <div class="hud-pips" id="pips-red"></div>
+      </div>
+    </div>
+
+    <!-- Live "who is scoring right now" readout -->
+    <div id="hud-leader"><span id="hud-leader-text"></span></div>
+
+    <!-- Turn banner: whose shot it is (hot-seat handoff) -->
+    <div id="turn-banner"></div>
+
+    <!-- Focus House button: right side, in line with the rock's start -->
+    <button id="btn-focus-house" title="Look at the House">
+      <span class="fh-rings"></span>
+    </button>
+
+    <!-- Red Back button, only while the House is focused -->
+    <button id="btn-back-to-shot">Back</button>
+
+    <!-- Brushing thumbstick, bottom centre -->
+    <div id="brush-stick">
+      <div id="brush-stick-base"></div>
+      <div id="brush-stick-knob">
+        <span class="brush-icon"></span>
+      </div>
+      <div id="brush-hint">BRUSH</div>
+    </div>
+
+    <!-- Dev buttons -->
+    <div id="dev-bar">
+      <button class="dev-btn" onclick="toggleTuningPanel()" title="Tuning sliders (`)">⚙</button>
+      <button class="dev-btn" id="btn-topdown" title="Top-down debug view">▦</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       HOME SCREEN
+  ============================================================ -->
+  <div id="home-screen" class="screen active">
+    <div id="home-bg"></div>
+    <div id="home-logo">CURLING<span>CLASH</span></div>
+
+    <div id="home-rock-stage">
+      <div id="home-rock"></div>
+      <div id="home-rock-shadow"></div>
+    </div>
+
+    <div id="home-length-toggle">
+      <button class="len-btn" data-ends="3">Short<span>3 Ends</span></button>
+      <button class="len-btn active" data-ends="5">Normal<span>5 Ends</span></button>
+      <button class="len-btn" data-ends="7">Long<span>7 Ends</span></button>
+    </div>
+
+    <button id="btn-play">PLAY</button>
+
+    <nav id="home-nav">
+      <button class="nav-btn locked" disabled>
+        <span class="nav-ico" data-ico="inv">🧊</span><span class="nav-label">Inventory</span><span class="nav-lock">🔒</span>
+      </button>
+      <button class="nav-btn active">
+        <span class="nav-ico" data-ico="home">🏠</span><span class="nav-label">Home</span>
+      </button>
+      <button class="nav-btn locked" disabled>
+        <span class="nav-ico" data-ico="shop">🛒</span><span class="nav-label">Shop</span><span class="nav-lock">🔒</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============================================================
+       OVERLAYS
+  ============================================================ -->
+
+  <!-- Coin toss for End 1's Hammer -->
+  <div id="coin-overlay" class="overlay">
+    <div class="overlay-title">Coin Toss</div>
+    <div class="overlay-sub">Winner takes the Hammer in End 1</div>
+    <div id="coin"><div id="coin-face-y"></div><div id="coin-face-r"></div></div>
+    <div id="coin-result"></div>
+  </div>
+
+  <!-- End-of-End score summary -->
+  <div id="end-overlay" class="overlay">
+    <div class="overlay-title" id="end-title">End 1</div>
+    <div id="end-scoreline"></div>
+    <div id="end-detail"></div>
+    <button class="overlay-btn" id="btn-next-end">Next End</button>
+  </div>
+
+  <!-- Match result -->
+  <div id="match-overlay" class="overlay">
+    <div class="overlay-title" id="match-title">You Win!</div>
+    <div id="match-scoreline"></div>
+    <div id="match-linescore"></div>
+    <button class="overlay-btn" id="btn-rematch">Rematch</button>
+    <button class="overlay-btn ghost" id="btn-home">Home</button>
+  </div>
+
+</div><!-- /device-frame -->
+
+<!-- ============================================================
+     SCRIPTS — plain scripts, load order matters (lab convention)
+============================================================ -->
+<script src="config.js"></script>
+<script src="rock-stats.js"></script>
+<script src="tuning.js"></script>
+<script src="tuning-panel.js"></script>
+
+<script src="sprites.js"></script>
+<script src="projection.js"></script>
+<script src="sheet.js"></script>
+<script src="rock.js"></script>
+<script src="physics.js"></script>
+<script src="predict.js"></script>
+
+<script src="camera.js"></script>
+<script src="shot.js"></script>
+<script src="brushing.js"></script>
+<script src="brushes.js"></script>
+
+<script src="state.js"></script>
+<script src="scoring.js"></script>
+<script src="match.js"></script>
+
+<script src="vfx.js"></script>
+<script src="analytics.js"></script>
+<script src="hud.js"></script>
+<script src="home.js"></script>
+<script src="boot.js"></script>
+
+<!-- Device frame switcher: pick which phone bezel to render the game inside -->
+<script>
+  const DEVICE_PRESETS = {
+    ip15pro:    { h: 852,  aspect: '393/852',  radius: 55 },
+    galaxys24p: { h: 832,  aspect: '384/832',  radius: 30 },
+    pixel8:     { h: 915,  aspect: '412/915',  radius: 34 },
+    ipad:       { h: 1180, aspect: '820/1180', radius: 20 },
+  };
+  function setDevice(id) {
+    const d = DEVICE_PRESETS[id] || DEVICE_PRESETS.ip15pro;
+    const f = document.getElementById('device-frame');
+    if (f) {
+      f.style.setProperty('--device-h', d.h + 'px');
+      f.style.setProperty('--device-aspect', d.aspect);
+      f.style.setProperty('--device-radius', d.radius + 'px');
+    }
+    document.querySelectorAll('#device-switcher .device-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.device === id));
+    try { localStorage.setItem('cc_device', id); } catch (e) {}
+    if (typeof resizeCanvas === 'function') requestAnimationFrame(resizeCanvas);
+  }
+  setDevice((() => {
+    try { const s = localStorage.getItem('cc_device'); return DEVICE_PRESETS[s] ? s : 'ip15pro'; }
+    catch (e) { return 'ip15pro'; }
+  })());
+</script>
+
+<!-- FIREBASE TRACKING -->
+<script type="module">
+    import { initTracking } from '../firebase-tracker.js';
+    initTracking('curling-clash');
+</script>
+
+<!-- Analytics: GA4 events with auto game_id -->
+<script type="module">
+    import { initAnalytics } from '../analytics.js';
+    initAnalytics('curling-clash');
+</script>
+
+</body>
+</html>

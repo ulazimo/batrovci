@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Curling Clash — Physics Bench</title>
+<style>
+  body {
+    background: #0a121c; color: #d8e8f4; margin: 0; padding: 18px 20px 60px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  }
+  h1 { font-size: 15px; margin: 0 0 4px; color: #58c8f0; letter-spacing: 1px; }
+  .lead { color: #8ba6bd; margin-bottom: 18px; max-width: 760px; line-height: 1.5; font-size: 11px; }
+  h2 {
+    font-size: 12px; margin: 22px 0 7px; color: #8fe3ff; letter-spacing: 1px;
+    border-bottom: 1px solid rgba(88,200,240,.25); padding-bottom: 4px;
+  }
+  table { border-collapse: collapse; margin-bottom: 6px; }
+  th, td { padding: 2px 9px 2px 0; text-align: right; white-space: nowrap; }
+  th { color: #6d8ba4; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.12); }
+  td.l, th.l { text-align: left; }
+  .ok   { color: #6fe08a; }
+  .warn { color: #f2d13d; }
+  .bad  { color: #ff8479; }
+  .dim  { color: #6d8ba4; }
+  .note { color: #8ba6bd; margin: 6px 0 2px; line-height: 1.5; max-width: 760px; }
+  .verdict { padding: 7px 11px; border-radius: 6px; margin: 10px 0; display: inline-block; }
+  .verdict.ok  { background: rgba(111,224,138,.13); border: 1px solid rgba(111,224,138,.4); }
+  .verdict.bad { background: rgba(255,132,121,.13); border: 1px solid rgba(255,132,121,.4); }
+  button {
+    background: rgba(88,200,240,.15); border: 1px solid rgba(88,200,240,.45);
+    color: #8fe3ff; padding: 6px 13px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 11px; font-weight: 700; margin-right: 6px;
+  }
+  a { color: #58c8f0; }
+</style>
+</head>
+<body>
+
+<h1>PHYSICS BENCH</h1>
+<div class="lead">
+  Headless calibration for the friction, curl and collision model. Numbers, not vibes —
+  this is how "Power L3 at perfect release reaches the back of the House" stays true as
+  the tuning changes. Reads the same <code>localStorage</code> tuning the game does, so
+  adjust sliders in the game, reload here, and re-read the tables.
+</div>
+
+<div>
+  <button onclick="location.reload()">Re-run</button>
+  <button onclick="clearTuning()">Reset tuning to defaults</button>
+  <a href="../index.html">← back to game</a>
+</div>
+
+<div id="out"></div>
+
+<script src="../config.js"></script>
+<script src="../rock-stats.js"></script>
+<script src="../tuning.js"></script>
+<script src="../sheet.js"></script>
+<script src="../rock.js"></script>
+<script src="../brushing.js"></script>
+<script src="../physics.js"></script>
+<script src="../predict.js"></script>
+
+<script>
+// The bench never draws, but sheet.js and rock.js reference these.
+let viewW = 400, viewH = 800;
+const camera = { y: 0, topDown: false };
+
+function clearTuning() {
+  localStorage.removeItem('cc_tuning_v1');
+  location.reload();
+}
+
+const out = document.getElementById('out');
+const H = (s) => { out.insertAdjacentHTML('beforeend', s); };
+
+const START_Y = 1.15;             // the rock's resting spot at the delivery end
+const RELEASE_Y = SHEET.NEAR_HOG_Y; // momentum is granted at the near hog line
+const f = (n, d = 3) => n.toFixed(d);
+
+// Where did it end up, in curling terms?
+function verdict(restY, restX) {
+  if (Math.abs(restX) + ROCK.RADIUS >= SHEET.HALF_WIDTH) return ['bad', 'OUT — side line'];
+  if (restY - ROCK.RADIUS <= SHEET.FAR_HOG_Y) return ['bad', 'OUT — hogged'];
+  if (restY - ROCK.RADIUS > SHEET.BACK_LINE_Y) return ['bad', 'OUT — through the back'];
+  const d = Math.hypot(restX, restY - SHEET.TEE_Y);
+  if (d < HOUSE.R_BUTTON) return ['ok', 'BUTTON'];
+  if (d < HOUSE.R_4FT)    return ['ok', 'four-foot'];
+  if (d < HOUSE.R_8FT)    return ['ok', 'eight-foot'];
+  if (d < HOUSE.R_12FT + ROCK.RADIUS) return ['ok', 'twelve-foot'];
+  if (restY < SHEET.TEE_Y) return ['warn', 'guard (short of house)'];
+  return ['warn', 'in play, behind house'];
+}
+
+// ---------------------------------------------------------------
+// 1. Power sweep
+// ---------------------------------------------------------------
+H('<h2>1. POWER SWEEP — Basic Rock (Power L3), no curl</h2>');
+H(`<div class="note">Released at the near hog line (${f(RELEASE_Y)} m). The button is at
+   ${f(SHEET.TEE_Y)} m, the back line at ${f(SHEET.BACK_LINE_Y)} m, the far hog line at
+   ${f(SHEET.FAR_HOG_Y)} m.</div>`);
+
+let rows = '<table><tr><th class="l">power</th><th>speed m/s</th><th>rest Y</th>' +
+           '<th>travel m</th><th>vs tee</th><th class="l">result</th></tr>';
+for (let t = 0; t <= 1.0001; t += 0.05) {
+  const r = predictLaunch(BASIC_ROCK, t, 0, 0, 0, RELEASE_Y);
+  const sp = launchSpeedFor(BASIC_ROCK, t);
+  const [cls, label] = verdict(r.restY, r.restX);
+  const dTee = r.restY - SHEET.TEE_Y;
+  rows += `<tr><td class="l">${t.toFixed(2)}</td><td>${f(sp)}</td><td>${f(r.restY)}</td>` +
+          `<td>${f(r.distance, 2)}</td><td>${dTee >= 0 ? '+' : ''}${f(dTee, 2)}</td>` +
+          `<td class="l ${cls}">${label}</td></tr>`;
+}
+H(rows + '</table>');
+
+// ---------------------------------------------------------------
+// 2. Is the perfect zone honest?
+// ---------------------------------------------------------------
+H('<h2>2. PERFECT POWER — does the green zone land on the button?</h2>');
+const solved = solvePerfectPower(BASIC_ROCK, 0, RELEASE_Y);
+const configured = TUNE.perfectPowerCenter;
+const drift = Math.abs(solved - configured);
+H(`<div class="note">Solved by binary search: <b>${f(solved, 4)}</b> &nbsp;·&nbsp;
+   configured <code>perfectPowerCenter</code>: <b>${f(configured, 4)}</b> &nbsp;·&nbsp;
+   drift ${f(drift, 4)}</div>`);
+if (drift < 0.004) {
+  H('<div class="verdict ok">✓ The green zone lands on the button.</div>');
+} else {
+  H(`<div class="verdict bad">✗ Out of sync. Set <code>perfectPowerCenter</code> to
+     <b>${f(solved, 4)}</b> in tuning.js (or drag the slider there).</div>`);
+}
+
+// How much of the slider covers the house? This is the real playability number.
+const houseFront = SHEET.TEE_Y - HOUSE.R_12FT;
+const tLo = solvePerfectPower(BASIC_ROCK, 0, RELEASE_Y, houseFront);
+const tHi = solvePerfectPower(BASIC_ROCK, 0, RELEASE_Y, SHEET.BACK_LINE_Y);
+const pct = (tHi - tLo) * 100;
+H(`<div class="note">Slider band that lands anywhere in the house:
+   ${f(tLo, 3)} → ${f(tHi, 3)} = <b>${f(pct, 1)}%</b> of the power range.</div>`);
+if (pct >= 15) {
+  H('<div class="verdict ok">✓ Comfortable for a thumb on a phone.</div>');
+} else {
+  H('<div class="verdict bad">✗ Too tight. Narrow the launch speed range (raise ' +
+    'launchSpeedMin, lower launchSpeedMax) to widen the usable band.</div>');
+}
+
+// The doc's own requirements, checked directly.
+H('<h2>3. THE DOC\'S REQUIREMENTS</h2>');
+const atFull = predictLaunch(BASIC_ROCK, 1, 0, 0, 0, RELEASE_Y);
+const atZero = predictLaunch(BASIC_ROCK, 0, 0, 0, 0, RELEASE_Y);
+const checks = [
+  ['Full power overshoots the house',
+   atFull.restY - ROCK.RADIUS > SHEET.BACK_LINE_Y,
+   `rest Y ${f(atFull.restY)} vs back line ${f(SHEET.BACK_LINE_Y)}`],
+  ['Perfect power reaches the button',
+   Math.abs(predictLaunch(BASIC_ROCK, solved, 0, 0, 0, RELEASE_Y).restY - SHEET.TEE_Y) < 0.05,
+   `rest Y ${f(predictLaunch(BASIC_ROCK, solved, 0, 0, 0, RELEASE_Y).restY)}`],
+  ['Power L3 reaches the back of the house',
+   predictLaunch(BASIC_ROCK, 0.92, 0, 0, 0, RELEASE_Y).restY >= SHEET.TEE_Y + HOUSE.R_12FT,
+   `at 92% power, rest Y ${f(predictLaunch(BASIC_ROCK, 0.92, 0, 0, 0, RELEASE_Y).restY)}`],
+  ['Minimum power is a real miss (hogged)',
+   atZero.restY - ROCK.RADIUS <= SHEET.FAR_HOG_Y,
+   `rest Y ${f(atZero.restY)} vs far hog ${f(SHEET.FAR_HOG_Y)}`],
+];
+let cr = '<table><tr><th class="l">requirement</th><th class="l"></th><th class="l">measured</th></tr>';
+for (const [label, pass, detail] of checks) {
+  cr += `<tr><td class="l">${label}</td><td class="l ${pass ? 'ok' : 'bad'}">${pass ? '✓' : '✗'}</td>` +
+        `<td class="l dim">${detail}</td></tr>`;
+}
+H(cr + '</table>');
+
+// ---------------------------------------------------------------
+// 4. Curl
+// ---------------------------------------------------------------
+H('<h2>4. CURL — lateral deflection at perfect power</h2>');
+H('<div class="note">Clockwise handle (spin &gt; 0) must curve <b>left</b> (−x); ' +
+  'counter-clockwise must curve <b>right</b> (+x). Curl stat sets the ceiling.</div>');
+
+let curlRows = '<table><tr><th class="l">handle</th><th>spin</th><th>drift x (m)</th>' +
+               '<th>rest Y</th><th class="l">direction</th></tr>';
+for (const spin of [1, 0.75, 0.5, 0.25, 0, -0.25, -0.5, -0.75, -1]) {
+  const r = predictLaunch(BASIC_ROCK, solved, 0, spin, 0, RELEASE_Y);
+  const dir = Math.abs(r.restX) < 0.01 ? '<span class="dim">straight</span>'
+            : r.restX < 0 ? 'left' : 'right';
+  const expected = spin > 0 ? 'left' : spin < 0 ? 'right' : 'straight';
+  const good = (spin === 0 && Math.abs(r.restX) < 0.01) ||
+               (spin > 0 && r.restX < 0) || (spin < 0 && r.restX > 0);
+  const name = spin > 0 ? 'CW' : spin < 0 ? 'CCW' : '—';
+  curlRows += `<tr><td class="l">${name}</td><td>${spin.toFixed(2)}</td>` +
+              `<td>${f(r.restX)}</td><td>${f(r.restY)}</td>` +
+              `<td class="l ${good ? 'ok' : 'bad'}">${dir} ${good ? '' : '(expected ' + expected + ')'}</td></tr>`;
+}
+H(curlRows + '</table>');
+
+// Does full curl match the Curl stat's stated maximum deflection?
+let statRows = '<table><tr><th class="l">Curl level</th><th>stat max (m)</th>' +
+               '<th>measured (m)</th><th class="l"></th></tr>';
+for (let lvl = 1; lvl <= 5; lvl++) {
+  const def = Object.assign({}, BASIC_ROCK, { curl: lvl });
+  const t = solvePerfectPower(def, 0, RELEASE_Y);
+  const r = predictLaunch(def, t, 0, 1, 0, RELEASE_Y);
+  const stated = STAT_LEVELS.curl[lvl - 1];
+  const measured = Math.abs(r.restX);
+  const ratio = measured / stated;
+  const cls = ratio > 0.75 && ratio < 1.35 ? 'ok' : 'warn';
+  statRows += `<tr><td class="l">L${lvl}${lvl === 3 ? ' (Basic)' : ''}</td><td>${f(stated, 2)}</td>` +
+              `<td>${f(measured, 3)}</td><td class="l ${cls}">×${f(ratio, 2)}</td></tr>`;
+}
+H(statRows + '</table>');
+H('<div class="note">Ratios near 1.00 mean <code>curlCoefficient</code> is calibrated. ' +
+  'If they are uniformly off, scale that one slider — the ladder shape is correct by construction.</div>');
+
+// ---------------------------------------------------------------
+// 5. Collisions — needs the real integrator, not the preview
+// ---------------------------------------------------------------
+H('<h2>5. COLLISIONS — takeout on a rock sitting on the button</h2>');
+
+function runFullShot(powerT, spin, targets) {
+  resetRocks();
+  for (const t of targets) {
+    const r = createRock(TEAM.RED, BASIC_ROCK, t.x, t.y);
+    rocks.push(r);
+  }
+  const shooter = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+  rocks.push(shooter);
+  launchRock(shooter, powerT, 0, spin);
+
+  let steps = 0;
+  while (anyRockMoving() && steps++ < 20000) stepPhysics(1 / 120);
+  // Let the removal animations finish so the survivor list is accurate.
+  for (let i = 0; i < 200; i++) stepPhysics(1 / 120);
+  return { shooter, steps };
+}
+
+let colRows = '<table><tr><th class="l">shot power</th><th>shooter rest</th>' +
+              '<th>target rest Y</th><th>target drift x</th><th class="l">outcome</th></tr>';
+for (const t of [0.55, 0.65, 0.75, 0.85, 1.0]) {
+  const { shooter } = runFullShot(t, 0, [{ x: 0, y: SHEET.TEE_Y }]);
+  const target = rocks.find(r => r.team === TEAM.RED);
+  const shooterAlive = rocks.includes(shooter);
+  let outcome;
+  if (!target) outcome = '<span class="ok">target removed — takeout</span>';
+  else if (!isInHouse(target)) outcome = '<span class="ok">target knocked out of house</span>';
+  else outcome = '<span class="warn">target still in house</span>';
+  colRows += `<tr><td class="l">${t.toFixed(2)}</td>` +
+             `<td>${shooterAlive ? f(shooter.y) : '<span class="dim">removed</span>'}</td>` +
+             `<td>${target ? f(target.y) : '—'}</td>` +
+             `<td>${target ? f(target.x) : '—'}</td>` +
+             `<td class="l">${outcome}</td></tr>`;
+}
+H(colRows + '</table>');
+
+// Chained collision through a cluster — the doc asks for multi-rock hits.
+H('<h2>6. MULTI-ROCK CHAIN</h2>');
+// Spaced so each rock is inside a diameter (0.291 m) of its neighbour — the
+// point is to test that the impulse chains, not to test near-misses.
+const cluster = [
+  { x: 0.00, y: SHEET.TEE_Y - 0.45 },
+  { x: 0.17, y: SHEET.TEE_Y - 0.10 },
+  { x: -0.15, y: SHEET.TEE_Y + 0.18 },
+];
+runFullShot(0.95, 0, cluster);
+let chain = '<table><tr><th class="l">rock</th><th>x</th><th>y</th><th class="l">state</th></tr>';
+const survivors = rocks.slice().sort((a, b) => a.y - b.y);
+for (const r of survivors) {
+  chain += `<tr><td class="l">${r.team}</td><td>${f(r.x)}</td><td>${f(r.y)}</td>` +
+           `<td class="l ${isInHouse(r) ? 'ok' : 'dim'}">${isInHouse(r) ? 'in house' : 'out of house'}</td></tr>`;
+}
+H(chain + '</table>');
+H(`<div class="note">Started with 3 stationary rocks + 1 shooter; ${rocks.length} remain on the sheet.
+   Every rock should have been displaced — if the far ones never moved, raise
+   <code>collisionIterations</code>.</div>`);
+
+// ---------------------------------------------------------------
+// 7. Removal rules
+// ---------------------------------------------------------------
+H('<h2>7. REMOVAL RULES — WCF R2 (f)(g)(h)</h2>');
+
+function removalCase(label, setup) {
+  resetRocks();
+  const res = setup();
+  let steps = 0;
+  while (anyRockMoving() && steps++ < 20000) stepPhysics(1 / 120);
+  for (let i = 0; i < 200; i++) stepPhysics(1 / 120);
+  return { label, alive: rocks.includes(res.rock), reason: res.rock.removeReason, expect: res.expect };
+}
+
+const cases = [
+  removalCase('Hogged: light shot, hit nothing', () => {
+    const r = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+    rocks.push(r); launchRock(r, 0.0, 0, 0);
+    return { rock: r, expect: 'removed (hogline)' };
+  }),
+  removalCase('Short but struck a rock — stays in play (R2f exemption)', () => {
+    // Place the target where a weak shot will actually reach it, derived from
+    // the model rather than hard-coded, so this test survives re-tuning.
+    const weak = 0.10;
+    const solo = predictLaunch(BASIC_ROCK, weak, 0, 0, 0, RELEASE_Y);
+    rocks.push(createRock(TEAM.RED, BASIC_ROCK, 0, solo.restY - 2.0));
+    const r = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+    rocks.push(r); launchRock(r, weak, 0, 0);
+    return { rock: r, expect: 'stays' };
+  }),
+  removalCase('Through the back line', () => {
+    const r = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+    rocks.push(r); launchRock(r, 1.0, 0, 0);
+    return { rock: r, expect: 'removed (backline)' };
+  }),
+  removalCase('Touches a side line', () => {
+    const r = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+    rocks.push(r); launchRock(r, 0.7, 0.55, 0);   // aimed hard at the boards
+    return { rock: r, expect: 'removed (sideline)' };
+  }),
+];
+
+let rr = '<table><tr><th class="l">case</th><th class="l">expected</th><th class="l">actual</th><th></th></tr>';
+for (const c of cases) {
+  const actual = c.alive ? 'stays' : `removed (${c.reason})`;
+  const pass = c.expect === 'stays' ? c.alive : (!c.alive && c.expect.includes(c.reason || 'x'));
+  rr += `<tr><td class="l">${c.label}</td><td class="l dim">${c.expect}</td>` +
+        `<td class="l">${actual}</td><td class="${pass ? 'ok' : 'bad'}">${pass ? '✓' : '✗'}</td></tr>`;
+}
+H(rr + '</table>');
+
+// ---------------------------------------------------------------
+// 8. Timing — a shot should not feel like watching paint dry
+// ---------------------------------------------------------------
+H('<h2>8. SHOT DURATION</h2>');
+let tr = '<table><tr><th class="l">power</th><th>seconds to rest</th><th class="l"></th></tr>';
+for (const t of [0.3, 0.506, 0.7, 1.0]) {
+  resetRocks();
+  const r = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+  rocks.push(r);
+  launchRock(r, t, 0, 0);
+  let steps = 0;
+  while (anyRockMoving() && steps++ < 40000) stepPhysics(1 / 120);
+  const secs = steps / 120;
+  const cls = secs < 4 ? 'warn' : secs > 16 ? 'warn' : 'ok';
+  const hint = secs < 4 ? 'brisk' : secs > 16 ? 'slow — consider raising traction' : 'good';
+  tr += `<tr><td class="l">${t.toFixed(3)}</td><td>${f(secs, 2)}</td><td class="l ${cls}">${hint}</td></tr>`;
+}
+H(tr + '</table>');
+H('<div class="note">Real curling draws take 20+ seconds. For a mobile game 6–12 s reads ' +
+  'as authentic without testing patience — that is what <code>iceFrictionA</code> and the ' +
+  'launch speed range trade off against each other.</div>');
+</script>
+</body>
+</html>
