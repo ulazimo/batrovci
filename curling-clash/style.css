@@ -32,6 +32,11 @@ input, textarea, [contenteditable="true"] {
   --team-r-dk:  #8e221a;
   --text:       #e8f2fa;
   --text-dim:   #90a8be;
+
+  /* The bottom nav floats over the meta screens rather than sitting in their
+     flow, so every scroller inside one has to pad itself past this or its last
+     row is unreachable. Measured, not guessed — see #home-nav. */
+  --nav-h:      68px;
 }
 
 body {
@@ -300,12 +305,106 @@ body {
 #brush-stick.active #brush-hint { opacity: 0; }
 
 /* ================================================================
+   DECK BUTTON + PICKER
+   The doc puts the Deck button in the bottom right corner. It carries the
+   loaded rock's type colour and effect glyph, so what is about to be thrown is
+   readable without opening anything.
+================================================================ */
+#btn-deck {
+  --rock-type: #8c8f96;
+  position: absolute; right: 12px; bottom: 26px; z-index: 6;
+  width: 54px; height: 54px; border-radius: 14px;
+  background: linear-gradient(180deg, #21374f, #101f31);
+  border: 2px solid var(--rock-type);
+  box-shadow: 0 4px 12px rgba(0,0,0,.5), inset 0 1px 2px rgba(255,255,255,.18);
+  cursor: pointer; display: grid; place-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .12s;
+}
+#btn-deck.ready { opacity: 1; pointer-events: auto; }
+#btn-deck:active { transform: scale(.93); }
+.deck-btn-glyph {
+  font-size: 22px; line-height: 1; color: var(--rock-type);
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+
+/* Effect badge, shared by every surface that shows a rock: the deck button, the
+   in-game picker, the inventory slots and collection, the shop.
+   `effectBadge()` adds .has-icon only when the generated sheet actually loaded,
+   so the same span is either an icon or the fallback character — and sizing it
+   in `em` means each surface keeps the scale its own font-size already set.
+   The image, its scale and its cell all arrive as an inline style from
+   `effectIconStyle()`, so the sheet's grid is described in exactly one place. */
+.has-icon {
+  display: inline-block; width: 1.6em; height: 1.6em;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.5));
+}
+.coll-card.unowned .has-icon { filter: grayscale(1) brightness(.8); }
+.deck-btn-count {
+  position: absolute; right: -5px; top: -5px;
+  min-width: 19px; height: 19px; padding: 0 4px; border-radius: 10px;
+  background: var(--rock-type); color: #08131f;
+  font-size: 11px; font-weight: 900; line-height: 19px; text-align: center;
+  border: 2px solid #0d1b2e;
+}
+
+#deck-picker {
+  position: absolute; inset: 0; z-index: 32;
+  display: none; align-items: flex-end;
+  background: rgba(4,10,18,.7); backdrop-filter: blur(4px);
+}
+#deck-picker.show { display: flex; }
+.deck-picker-panel {
+  width: 100%;
+  background: linear-gradient(180deg, #16293d, #0c1a29);
+  border-top: 2px solid rgba(143,227,255,.3);
+  border-radius: 16px 16px 0 0;
+  padding: 10px 10px calc(14px + env(safe-area-inset-bottom));
+  animation: deckUp .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes deckUp { from { transform: translateY(100%); } to { transform: none; } }
+.deck-picker-head {
+  display: flex; align-items: center; gap: 8px; padding: 2px 4px 10px;
+}
+.deck-picker-team { font-size: 12px; font-weight: 900; letter-spacing: .4px; }
+.deck-picker-team.yellow { color: var(--team-y); }
+.deck-picker-team.red { color: var(--team-r); }
+.deck-picker-title { flex: 1; font-size: 12px; font-weight: 700; color: var(--text-dim); }
+.deck-picker-x {
+  width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  color: var(--text); font-size: 18px; line-height: 1; font-family: inherit;
+}
+#deck-picker-list {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;
+}
+.deck-card {
+  --rock-type: #8c8f96;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 3px 6px; border-radius: 11px; cursor: pointer;
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+  border: 1.5px solid var(--rock-type);
+  color: var(--text); font-family: inherit; text-align: center;
+  min-height: 76px;
+}
+.deck-card.current { box-shadow: 0 0 0 2px rgba(255,255,255,.75); }
+.deck-card.used { opacity: .3; cursor: not-allowed; filter: grayscale(1); }
+.deck-card-glyph { font-size: 21px; line-height: 1; color: var(--rock-type); }
+.deck-card-name {
+  font-size: 8.5px; font-weight: 800; line-height: 1.15;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.deck-card-type { font-size: 7.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .3px; }
+
+/* ================================================================
    DEV BAR
 ================================================================ */
 #dev-bar {
   position: absolute; top: 50%; right: 6px; z-index: 20;
   display: flex; flex-direction: column; gap: 5px;
 }
+#dev-bar.corner { top: auto; bottom: calc(var(--nav-h) + 8px); }
 .dev-btn {
   width: 26px; height: 26px; border-radius: 7px;
   background: rgba(8,16,28,.7); border: 1px solid rgba(255,255,255,.16);
@@ -480,8 +579,29 @@ body {
 }
 #btn-play:active { transform: translateY(4px); box-shadow: 0 2px 0 #2a6b1b, 0 5px 12px rgba(0,0,0,.4); }
 
+#home-deck-pick {
+  position: relative; width: calc(100% - 56px); max-width: 320px;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.home-deck-label { font-size: 11px; font-weight: 800; color: var(--text-dim); letter-spacing: .5px; }
+.home-deck-btns { display: flex; gap: 4px; }
+.home-deck-btn {
+  width: 26px; height: 24px; border-radius: 7px; cursor: pointer;
+  background: rgba(10,28,44,.65); border: 1.5px solid rgba(255,255,255,.16);
+  color: var(--text-dim); font-family: inherit; font-size: 11px; font-weight: 900;
+}
+.home-deck-btn.active {
+  background: linear-gradient(180deg, #2b7fae, #16506f);
+  border-color: var(--cyan); color: #fff;
+}
+#home-type-bar {
+  flex: 1; height: 5px; border-radius: 3px; overflow: hidden;
+  background: rgba(0,0,0,.35); display: flex;
+}
+
 #home-nav {
-  position: relative; width: 100%;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 8;
+  width: 100%;
   display: flex; align-items: flex-end; justify-content: space-around;
   padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, #14344c, #0a1f30);
@@ -502,6 +622,18 @@ body {
 }
 .nav-btn.locked { cursor: not-allowed; opacity: .45; }
 .nav-lock { position: absolute; top: 2px; right: 22%; font-size: 10px; filter: none; }
+#home-nav.hidden { display: none; }
+
+/* Home has no inner scroller, so it clears the nav with plain padding. The meta
+   screens cannot — their scrollers must extend under the nav or the scrollbar
+   stops short of it — so they pad the scrollers instead, below. */
+#home-screen { padding-bottom: calc(var(--nav-h) + 6px); }
+
+/* Scrollers driven by enableDragScroll. Text selection has to go or a swipe
+   across the card labels highlights them instead of scrolling, and the drag
+   cursor is the only affordance a mouse user gets that the list is swipeable. */
+.collection-grid, .shop-grid { cursor: grab; user-select: none; -webkit-user-select: none; }
+.collection-grid.is-dragging, .shop-grid.is-dragging { cursor: grabbing; }
 
 /* Layer AI icons replace the emoji when present — see swapNavIcons in home.js.
    The emoji text is hidden rather than removed so the markup stays the fallback. */
@@ -518,6 +650,201 @@ body {
   width: 13px; height: 13px; color: transparent; font-size: 0;
   background-repeat: no-repeat; background-position: center; background-size: contain;
 }
+
+/* ================================================================
+   META SCREENS — Inventory and Shop
+================================================================ */
+.meta-screen {
+  background: radial-gradient(ellipse 130% 60% at 50% 0%, #1d4763 0%, #10293e 45%, #0a1a28 100%);
+  padding-top: calc(env(safe-area-inset-top) + 10px);
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.meta-head {
+  display: flex; align-items: center; gap: 10px; padding: 0 12px 8px;
+}
+.meta-title { flex: 1; font-size: 19px; font-weight: 900; letter-spacing: .5px; }
+.coin-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 999px;
+  background: rgba(8,16,28,.7); border: 1.5px solid rgba(242,194,48,.5);
+  font-size: 13px; font-weight: 900; color: #ffe27a;
+}
+.coin-ico { color: #f2c230; font-size: 13px; }
+
+.meta-tabs { display: flex; gap: 5px; padding: 0 10px 8px; }
+.meta-tab {
+  flex: 1; padding: 8px 4px; border-radius: 9px 9px 0 0; cursor: pointer;
+  background: rgba(10,28,44,.6); border: 1.5px solid rgba(255,255,255,.12); border-bottom: 0;
+  color: var(--text-dim); font-family: inherit; font-size: 11px; font-weight: 800;
+}
+.meta-tab.active {
+  background: linear-gradient(180deg, #1d5c80, #123f59);
+  border-color: var(--cyan); color: #fff;
+}
+.meta-tab.locked { opacity: .4; cursor: not-allowed; }
+
+/* ---- Deck area ---- */
+.deck-area {
+  margin: 0 10px; padding: 9px 10px 10px;
+  background: rgba(8,22,36,.66); border: 1.5px solid rgba(143,227,255,.22);
+  border-radius: 12px;
+}
+.deck-area-head { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.deck-area-title { flex: 1; font-size: 12px; font-weight: 900; letter-spacing: .5px; }
+/* The doc puts the deck switcher in the top right corner of this area. */
+.deck-switch { display: flex; gap: 4px; }
+.deck-switch-btn {
+  width: 26px; height: 24px; border-radius: 7px; cursor: pointer;
+  background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.18);
+  color: var(--text-dim); font-family: inherit; font-size: 11px; font-weight: 900;
+}
+.deck-switch-btn.active {
+  background: linear-gradient(180deg, #2b7fae, #16506f);
+  border-color: var(--cyan); color: #fff;
+}
+
+/* Fixed Red-Blue-Orange-Grey order, widths proportional to the deck. */
+.type-bar {
+  display: flex; height: 5px; border-radius: 3px; overflow: hidden;
+  background: rgba(0,0,0,.35); margin-bottom: 8px;
+}
+.type-seg { display: block; }
+
+.deck-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.deck-slot {
+  --rock-type: #8c8f96;
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 2px 4px; border-radius: 9px; cursor: pointer; min-height: 58px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border: 1.5px solid var(--rock-type);
+  color: var(--text); font-family: inherit;
+}
+.deck-slot.selected { box-shadow: 0 0 0 2px var(--cyan); }
+.deck-slot.worn { opacity: .5; }
+.deck-slot.worn::after {
+  content: 'POLISH'; position: absolute; inset: auto 0 -1px 0;
+  font-size: 6.5px; font-weight: 900; color: #ff9c92; letter-spacing: .5px;
+}
+.slot-glyph { font-size: 17px; line-height: 1; color: var(--rock-type); }
+.slot-name { font-size: 8px; font-weight: 800; line-height: 1.1; text-align: center; }
+.slot-dur { font-size: 7px; font-weight: 700; color: var(--text-dim); }
+.deck-hint {
+  margin-top: 7px; font-size: 9.5px; font-weight: 700; color: var(--text-dim); text-align: center;
+}
+
+/* ---- Collection ---- */
+.collection-area {
+  flex: 1; min-height: 0; margin: 9px 0 0;
+  display: flex; flex-direction: column;
+}
+.collection-head { display: flex; align-items: baseline; gap: 8px; padding: 0 12px 6px; }
+.collection-title { flex: 1; font-size: 12px; font-weight: 900; letter-spacing: .5px; }
+.collection-count { font-size: 10px; font-weight: 700; color: var(--text-dim); }
+
+/* A wrapping grid, not the doc's single horizontal strip. Nineteen specials in
+   one row read as a queue you page through; in rows they read as a set you own
+   part of, which is what a collection screen is for. The doc's "first rock is
+   focused" went with the strip — focus is now whichever card you tapped. */
+.collection-grid {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  align-content: start; gap: 6px;
+  padding: 2px 12px calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.collection-grid::-webkit-scrollbar { width: 0; }
+.coll-card {
+  --rock-type: #8c8f96;
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 2px 5px; border-radius: 10px; cursor: pointer;
+  background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03));
+  border: 1.5px solid var(--rock-type);
+  color: var(--text); font-family: inherit;
+}
+.coll-card.focused { box-shadow: 0 0 0 2px var(--cyan); }
+.coll-card.unowned { opacity: .45; filter: grayscale(.7); }
+.coll-glyph { font-size: 17px; line-height: 1; color: var(--rock-type); }
+.coll-name { font-size: 8px; font-weight: 800; line-height: 1.1; text-align: center; }
+.coll-type { font-size: 7px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+.coll-lock { position: absolute; top: 3px; right: 4px; font-size: 9px; }
+
+/* ---- Detail panel ---- */
+.rock-detail {
+  flex: 0 0 auto;
+  margin: 0 10px 8px;
+  padding: 9px 11px 10px;
+  background: rgba(8,22,36,.75); border: 1.5px solid rgba(143,227,255,.22);
+  border-radius: 12px;
+}
+.detail-head { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+.detail-glyph { font-size: 24px; line-height: 1; color: var(--rock-type); }
+.detail-title { flex: 1; min-width: 0; }
+.detail-name { font-size: 13px; font-weight: 900; }
+.detail-type { font-size: 9px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+.detail-dur { font-size: 12px; font-weight: 900; color: #8dfaa8; }
+.detail-dur.out { color: #ff9c92; }
+.detail-price { font-size: 12px; font-weight: 900; color: #ffe27a; }
+.detail-blurb { font-size: 10px; line-height: 1.4; color: #b9cfe0; margin-bottom: 7px; }
+.detail-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; }
+.stat-row { display: flex; align-items: center; gap: 6px; }
+.stat-label { flex: 1; font-size: 9px; font-weight: 700; color: var(--text-dim); }
+.stat-pips { display: flex; gap: 2px; }
+.stat-pips .pip {
+  width: 7px; height: 7px; border-radius: 2px;
+  background: rgba(255,255,255,.14); border: 0;
+}
+.stat-pips .pip.on { background: var(--cyan); }
+.polish-btn {
+  width: 100%; margin-top: 8px; padding: 8px; border-radius: 9px; cursor: pointer;
+  background: linear-gradient(180deg, #7ddc5e, #43a52c);
+  border: 2px solid #b6f29e; color: #fff;
+  font-family: inherit; font-size: 12px; font-weight: 900;
+}
+.polish-btn:disabled { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.16); color: var(--text-dim); cursor: not-allowed; }
+.detail-locked { margin-top: 7px; font-size: 10px; font-weight: 700; color: #ffe27a; text-align: center; }
+
+/* ---- Shop ---- */
+.shop-blurb { padding: 0 12px 8px; font-size: 10.5px; color: var(--text-dim); }
+.shop-grid {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
+  align-content: start;
+  padding: 0 10px calc(var(--nav-h) + 14px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.shop-grid::-webkit-scrollbar { width: 0; }
+.shop-card {
+  --rock-type: #8c8f96;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 9px 9px 9px; border-radius: 11px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border: 1.5px solid var(--rock-type);
+}
+.shop-card.owned { opacity: .6; }
+.shop-card-top { display: flex; align-items: center; gap: 6px; }
+.shop-glyph { font-size: 20px; line-height: 1; color: var(--rock-type); }
+.shop-type { font-size: 8px; font-weight: 800; color: var(--rock-type); text-transform: uppercase; letter-spacing: .5px; }
+.shop-name { font-size: 11px; font-weight: 900; }
+.shop-blurb-sm { flex: 1; font-size: 8.5px; line-height: 1.35; color: #a9c2d6; }
+.shop-buy {
+  margin-top: 4px; padding: 7px; border-radius: 8px; cursor: pointer;
+  background: linear-gradient(180deg, #7ddc5e, #43a52c);
+  border: 1.5px solid #b6f29e; color: #fff;
+  font-family: inherit; font-size: 11px; font-weight: 900;
+}
+.shop-buy:disabled { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.16); color: var(--text-dim); cursor: not-allowed; }
+.shop-buy.is-owned { background: rgba(88,200,240,.14); border-color: rgba(88,200,240,.4); color: var(--cyan); }
+#shop-msg {
+  position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
+  padding: 7px 16px; border-radius: 999px; white-space: nowrap;
+  background: rgba(8,16,28,.92); border: 1px solid rgba(143,227,255,.4);
+  font-size: 11px; font-weight: 800; color: var(--cyan-glow);
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+#shop-msg.show { opacity: 1; }
 
 /* ================================================================
    OVERLAYS
@@ -619,6 +946,13 @@ body {
 }
 #match-linescore .ls-row.y .ls-cell.scored { background: rgba(242,194,48,.35); color: #fff; }
 #match-linescore .ls-row.r .ls-cell.scored { background: rgba(217,59,48,.35); color: #fff; }
+
+#match-purse {
+  display: flex; align-items: center; gap: 12px; margin-top: 4px;
+  font-size: 13px; font-weight: 900;
+}
+.purse-coins { color: #ffe27a; }
+.purse-worn { font-size: 10px; font-weight: 700; color: var(--text-dim); }
 
 /* The measurement drama dims and draws entirely on the canvas — see
    drawMeasurement in scoring.js. A DOM layer here would sit above the canvas

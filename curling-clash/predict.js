@@ -23,10 +23,15 @@ const PREDICT_DT = 1 / 60;
 const PREDICT_MAX_STEPS = 3600;      // 60 s of travel — far more than any shot
 
 // Scratch state, reused every frame so a per-frame prediction allocates nothing.
+// previewMode tells advanceRockState to skip the board-effect queries. The
+// preview is a clear-ice forecast — the same reason it ignores collisions — and
+// consulting zones would make the trajectory line jitter as the player drags,
+// for a prediction that a single rock collision invalidates anyway.
 const _predictState = {
   x: 0, y: 0, vx: 0, vy: 0,
   spin: 0, spinMag: 0, handleAngle: 0,
   def: null, distance: 0, sideBend: 0, tractionBias: 1,
+  previewMode: true,
 };
 
 const _predictPath = [];

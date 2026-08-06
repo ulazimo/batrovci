@@ -30,8 +30,11 @@ function createRock(team, rockDef, x, y) {
     spinMag: 0,            // 0..1, how much rotation was applied
     handleAngle: 0,        // rendered rotation of the handle, radians
     radius: rockRadius(),
-    mass: TUNE.rockMass,
+    mass: typeof massFor === 'function' ? massFor(rockDef) : TUNE.rockMass,
     moving: false,
+    frozen: false,          // Freeze Rock shield: ignores the next collision
+    effectFired: false,     // on-stop effects deploy once per throw
+    lastTrailAt: 0,         // metres travelled when the last water patch was laid
     hasStruck: false,      // exempts the delivered rock from the hog-line rule
     removing: 0,           // >0 while the swipe-away animation plays
     removeReason: null,
@@ -170,7 +173,9 @@ function drawRock(ctx, rock) {
 // separate top-down sprite, squashed to the footprint's aspect and rotated, so
 // the spin still reads.
 function drawRockSprite(ctx, rock, base, rx, ry, h) {
-  const body = sprite('rock_body');
+  // Body carries the rock TYPE as a coloured accent band; the handle carries the
+  // TEAM. Two separate readings on two separate parts, so they never compete.
+  const body = rockBodySprite(rock.def);
   if (!body) return false;
 
   const w = rx * 2 * 1.06;

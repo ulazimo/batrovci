@@ -34,6 +34,7 @@ const shot = {
   resolved: null,           // { power, angle } after variance, applied at release
   trajFade: 1,              // 1 = fully visible, 0 = gone
   shakePhase: 0,
+  perfectPower: 0.547,      // solved per rock in armShot — see the note there
 
   enabled: false,           // false during the opponent's turn or an overlay
 };
@@ -76,6 +77,11 @@ function armShot(rock) {
   // The aim camera reads this; a value carried over from the previous shot would
   // send it to the wrong place on the first frame of the next one.
   shotPreview = null;
+  // The green zone has to be solved PER ROCK. A Heavy Rock cannot be thrown as
+  // far and a high-Power rock goes further, so a single global perfect-power
+  // position would put the green band in the wrong place for most of the
+  // collection — telling the player a shot is perfect when it lands 11 m short.
+  shot.perfectPower = solvePerfectPower(rock.def, 0, SHEET.RELEASE_Y);
   resetCameraToShot();
   positionFocusButton();
   updateShotButtons();
@@ -175,7 +181,7 @@ function onShotPointerMove(e) {
   // power. Both pull harder the closer you already are, so they assist rather
   // than fight the finger.
   shot.aim = softSnap(aim, 0, 0.22, TUNE.snapStraight);
-  shot.power = softSnap(power, TUNE.perfectPowerCenter, TUNE.perfectZoneWidth, TUNE.snapPerfect);
+  shot.power = softSnap(power, shot.perfectPower, TUNE.perfectZoneWidth, TUNE.snapPerfect);
 }
 
 function onShotPointerUp(e) {
@@ -552,7 +558,7 @@ function drawPowerSlider(ctx) {
   const x = shot.dragStart.x;
 
   // Shakiness above the perfect zone, growing with the overdraw.
-  const perfectHi = TUNE.perfectPowerCenter + TUNE.perfectZoneWidth / 2;
+  const perfectHi = shot.perfectPower + TUNE.perfectZoneWidth / 2;
   let shakeX = 0;
   if (shot.power > perfectHi) {
     const over = (shot.power - perfectHi) / Math.max(0.01, 1 - perfectHi);
@@ -571,8 +577,8 @@ function drawPowerSlider(ctx) {
   ctx.lineWidth = 1.4;
   ctx.stroke();
 
-  const zLo = top + (TUNE.perfectPowerCenter - TUNE.perfectZoneWidth / 2) * track;
-  const zHi = top + (TUNE.perfectPowerCenter + TUNE.perfectZoneWidth / 2) * track;
+  const zLo = top + (shot.perfectPower - TUNE.perfectZoneWidth / 2) * track;
+  const zHi = top + (shot.perfectPower + TUNE.perfectZoneWidth / 2) * track;
 
   // Fill up to the current power, semi-transparent and colour-ramped.
   const fillH = shot.power * track;
@@ -628,8 +634,8 @@ function drawPowerSlider(ctx) {
 // snapping at the zone edge, so the colour reads as a gradient you are steering
 // through rather than a switch that flips.
 function powerColor(t, alpha) {
-  const lo = TUNE.perfectPowerCenter - TUNE.perfectZoneWidth / 2;
-  const hi = TUNE.perfectPowerCenter + TUNE.perfectZoneWidth / 2;
+  const lo = shot.perfectPower - TUNE.perfectZoneWidth / 2;
+  const hi = shot.perfectPower + TUNE.perfectZoneWidth / 2;
   let c;
   if (t < lo) {
     const u = lo > 0 ? t / lo : 0;

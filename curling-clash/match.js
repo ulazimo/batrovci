@@ -63,6 +63,7 @@ function startMatch(ends) {
   resetMatchState(ends);
   resetRocks();
   clearVfx();
+  beginMatchDurability();
   showScreen('game-screen');
   refreshHud();
   match.phase = 'coin';
@@ -76,6 +77,9 @@ function startMatch(ends) {
 function beginEnd() {
   resetRocks();
   clearVfx();
+  // Zones, walls and water are swept away with the rocks — an end starts on
+  // clean ice, the same as it starts with an empty house.
+  clearBoardEffects();
   resetEndState();
   highlightRocks = [];
   match.phase = 'playing';
@@ -90,11 +94,17 @@ function nextThrow() {
   match.turn = whoseTurn();
   refreshHud();
 
-  const deck = match.decks[match.turn];
-  const def = deck[match.thrown[match.turn]] || BASIC_ROCK;
+  // "the next Rock in the Deck will be automatically selected, but the User can
+  // click on the Deck button ... to use another from the Deck".
+  const slotIndex = pendingSlot(match.turn);
+  const slot = match.decks[match.turn][slotIndex];
+  const def = slot ? slot.def : BASIC_ROCK;
+  match.pending[match.turn] = slotIndex;
+
   const rock = createRock(match.turn, def, 0, SHOOT_Y);
   rocks.push(rock);
   armShot(rock);
+  refreshDeckHud();
 
   showTurnBanner(match.turn);
 }
@@ -104,7 +114,15 @@ function onShotSettled() {
   if (match.phase !== 'playing') return;
 
   if (deliveredRock) trackShotResult(deliveredRock, deliveredRock.removeReason);
+  // Retire the slot that was actually thrown, not the next one in order.
+  const usedSlot = match.decks[match.turn][match.pending[match.turn]];
+  if (usedSlot) {
+    usedSlot.used = true;
+    noteRockUsed(usedSlot.def.id);
+  }
   match.thrown[match.turn]++;
+  // Zone lifetimes are counted in turns, so they age here rather than per-frame.
+  tickEffectTurns();
   refreshHud();
   updateLiveScoring();
 
@@ -232,6 +250,17 @@ function finishMatch() {
   match.phase = 'over';
   trackMatchEnd();
   const yellowWon = match.score.yellow > match.score.red;
+
+  // "You pay with Soft currency (Coins) earned from the Match victory." A loss
+  // still pays something, or a bad run leaves the player unable to Polish the
+  // rocks they just wore out — a dead end with no way back.
+  const endsWon = match.lineScore.filter(e => e.yellow > 0).length;
+  const purse = (yellowWon ? TUNE.coinsPerWin : TUNE.coinsPerLoss)
+              + endsWon * TUNE.coinsPerEndWon;
+  awardCoins(purse);
+
+  // Durability is spent per rock USED in the match, not per throw.
+  const worn = settleMatchDurability();
   document.getElementById('match-title').textContent =
     yellowWon ? `${match.names.yellow} win!` : `${match.names.red} win!`;
   document.getElementById('match-scoreline').innerHTML =
@@ -239,6 +268,9 @@ function finishMatch() {
     `<span class="sc-dash">–</span>` +
     `<span class="sc-r">${match.score.red}</span>`;
   document.getElementById('match-linescore').innerHTML = buildLineScore();
+  document.getElementById('match-purse').innerHTML =
+    `<span class="purse-coins">◉ +${purse.toLocaleString()}</span>` +
+    (worn ? `<span class="purse-worn">${worn} rock${worn > 1 ? 's' : ''} worn</span>` : '');
   showOverlay('match-overlay');
 }
 

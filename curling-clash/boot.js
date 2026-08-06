@@ -7,7 +7,9 @@ let viewW = 0, viewH = 0;   // CSS pixels of the canvas
 let dpr = 1;
 
 // Screens are plain divs; only one carries .active at a time.
-const SCREENS = ['home-screen', 'game-screen'];
+const SCREENS = ['home-screen', 'game-screen', 'inventory-screen', 'shop-screen'];
+// The bottom nav belongs to the meta screens, not to a match.
+const NAV_SCREENS = { 'home-screen': 'home', 'inventory-screen': 'inventory', 'shop-screen': 'shop' };
 let currentScreen = 'home-screen';
 
 function showScreen(id) {
@@ -16,6 +18,24 @@ function showScreen(id) {
     const el = document.getElementById(s);
     if (el) el.classList.toggle('active', s === id);
   }
+
+  const nav = document.getElementById('home-nav');
+  if (nav) {
+    const which = NAV_SCREENS[id];
+    nav.classList.toggle('hidden', !which);
+    for (const b of nav.querySelectorAll('.nav-btn')) {
+      b.classList.toggle('active', b.dataset.nav === which);
+    }
+  }
+  // The dev bar lives outside the screens so ⚙ reaches the tuning panel from
+  // anywhere; the top-down toggle only means something on the ice. Off the ice
+  // it also drops to the bottom corner — mid-right is empty ice during a match
+  // but the Rock Collection header on the meta screens.
+  const tdBtn = document.getElementById('btn-topdown');
+  if (tdBtn) tdBtn.style.display = id === 'game-screen' ? '' : 'none';
+  const devBar = document.getElementById('dev-bar');
+  if (devBar) devBar.classList.toggle('corner', id !== 'game-screen');
+
   // The canvas has no size while its screen is display:none, so re-measure on
   // the way in. Synchronously first — layout is already valid once the class is
   // set, and anything that reads viewH (the Focus House button, the camera)
@@ -89,6 +109,8 @@ function renderFrame(dt) {
   if (typeof updateProjection === 'function') updateProjection();
 
   if (typeof drawSheet   === 'function') drawSheet(ctx);
+  // Board effects sit on the ice, under the rocks.
+  if (typeof drawBoardEffects === 'function') drawBoardEffects(ctx);
   if (typeof drawRocks   === 'function') drawRocks(ctx);
   if (typeof drawShotUI  === 'function') drawShotUI(ctx);
   if (typeof drawBrushes === 'function') drawBrushes(ctx);
@@ -106,6 +128,9 @@ function init() {
 
   if (typeof initHome     === 'function') initHome();
   if (typeof initHud      === 'function') initHud();
+  if (typeof initDeckHud  === 'function') initDeckHud();
+  if (typeof initInventoryScreen === 'function') initInventoryScreen();
+  if (typeof initShopScreen === 'function') initShopScreen();
   if (typeof initShot     === 'function') initShot();
   if (typeof initBrushing === 'function') initBrushing();
   if (typeof initMatch    === 'function') initMatch();

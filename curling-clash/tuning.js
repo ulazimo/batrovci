@@ -26,6 +26,8 @@ const TUNE_GROUPS = [
   { id: 'camera',     label: 'Camera' },
   { id: 'projection', label: 'Projection' },
   { id: 'scoring',    label: 'Scoring' },
+  { id: 'effects',    label: 'Special Rocks' },
+  { id: 'economy',    label: 'Economy' },
 ];
 
 // def: [group, label, default, min, max, step, help]
@@ -89,8 +91,8 @@ const TUNE_DEFS = {
     'How long the opponent may brush your rock once it has crossed the tee line and is still moving.'],
 
   // ---------- Shot UI ----------
-  perfectPowerCenter: ['shot', 'Perfect power position', 0.547, 0.20, 0.90, 0.001,
-    'Slider position that stops the rock on the button. Solved by the physics bench — re-run it after touching traction or the launch speeds, and paste the value it reports back here.'],
+  perfectPowerCenter: ['shot', 'Perfect power (Basic Rock)', 0.547, 0.20, 0.90, 0.001,
+    'Reference only: the slider position that stops a BASIC rock on the button. In play the green zone is solved per rock at arm time (see armShot), because a Heavy Rock cannot be thrown as far and a high-Power rock goes further. Kept here as the bench\'s calibration target.'],
   perfectZoneWidth:   ['shot', 'Perfect zone width', 0.060, 0.01, 0.30, 0.001,
     'Width of the green band. Sized to roughly the 4-foot ring — the button alone would be a 1% sliver.'],
   snapStraight:       ['shot', 'Snap to straight line', 0.35, 0, 1.00, 0.01,
@@ -157,6 +159,55 @@ const TUNE_DEFS = {
     'Pause between each rock as the end score counts up.'],
   leaderHighlight:   ['scoring', 'Highlight ring width (px)', 3.0, 1.0, 8.0, 0.1,
     'Thickness of the ring drawn around currently-scoring rocks.'],
+
+  // ---------- Special Rocks ----------
+  // Global scales on top of the per-rock numbers in rock-effects.js. The
+  // catalogue says what a rock IS; these say how strongly that lands, so the
+  // whole set can be balanced together without editing 19 entries.
+  fxZoneStrength:    ['effects', 'Zone strength ×', 1.00, 0.00, 2.50, 0.01,
+    'Scales how far speed-up and slow-down zones move traction from normal. 0 disables zones entirely.'],
+  fxZoneEdgeSoft:    ['effects', 'Zone edge softness', 0.35, 0.00, 1.00, 0.01,
+    'Fraction of the radius over which a zone fades out. 0 is a hard rim, which reads as a bug when a rock clips it.'],
+  fxMagnetStrength:  ['effects', 'Magnet pull ×', 1.00, 0.00, 3.00, 0.01,
+    'Scales magnet pull acceleration in m/s².'],
+  fxMagnetFalloff:   ['effects', 'Magnet falloff', 1.40, 0.00, 3.00, 0.01,
+    'How quickly pull weakens toward the edge of the radius. Higher concentrates the effect near the magnet.'],
+  fxPulseStrength:   ['effects', 'Pulse push ×', 1.00, 0.00, 3.00, 0.01,
+    'Scales the one-shot shove a Pulse Rock gives when it settles, in m/s.'],
+  fxWallHealth:      ['effects', 'Wall health ×', 1.00, 0.10, 3.00, 0.01,
+    'Scales how much punishment a wall takes before breaking.'],
+  fxWallDamage:      ['effects', 'Wall damage ×', 1.00, 0.10, 3.00, 0.01,
+    'Scales damage dealt to walls per impact, before the Power Rock bonus.'],
+  fxWallBounce:      ['effects', 'Wall bounce', 0.22, 0.00, 1.00, 0.01,
+    'How much speed a rock keeps when a wall HOLDS. Kept low: granite into a barrier should mostly stop dead, and a lively rebound sent rocks metres back down the sheet.'],
+  fxWallBreakKeep:   ['effects', 'Wall break-through keep', 0.55, 0.00, 1.00, 0.01,
+    'How much speed a rock keeps when it BREAKS a wall and carries on through.'],
+  fxRicochetGain:    ['effects', 'Ricochet gain ×', 1.00, 0.00, 3.00, 0.01,
+    'Scales the speed a Ricochet Rock picks up from each hit.'],
+  fxCurveMul:        ['effects', 'Curve Rock ×', 1.00, 0.20, 2.50, 0.01,
+    'Scales the Curve Rock\'s extra curl and side-brush response.'],
+  fxHeavyMul:        ['effects', 'Heavy Rock ×', 1.00, 0.20, 2.50, 0.01,
+    'Scales how much heavier a Heavy Rock is, and how much range it gives up.'],
+  fxPowerMul:        ['effects', 'Power Rock ×', 1.00, 0.20, 2.50, 0.01,
+    'Scales the Power Rock\'s extra momentum through a collision.'],
+  fxFireTrailWidth:  ['effects', 'Fire trail width ×', 1.00, 0.20, 3.00, 0.01,
+    'Scales the width of the water a Fire Rock melts behind it.'],
+  fxFireSpacing:     ['effects', 'Fire trail spacing (m)', 0.55, 0.15, 2.00, 0.05,
+    'Distance between water patches. Tighter is a smoother trail but more objects to test against.'],
+  fxFreezeRadius:    ['effects', 'Freeze radius ×', 1.00, 0.20, 2.50, 0.01,
+    'Scales the area a Freeze Rock protects.'],
+  fxEffectAlpha:     ['effects', 'Effect visibility', 0.85, 0.10, 1.00, 0.01,
+    'Opacity of zones, walls and water on the ice. Lower if the board reads as too busy.'],
+
+  // ---------- Economy ----------
+  coinsPerWin:       ['economy', 'Coins for a win', 320, 0, 2000, 10,
+    'Soft currency awarded for winning a match — the doc\'s stated source of Coins.'],
+  coinsPerLoss:      ['economy', 'Coins for a loss', 90, 0, 1000, 10,
+    'A consolation payout, so a losing streak cannot strand the player with no way to repair rocks.'],
+  coinsPerEndWon:    ['economy', 'Coins per end won', 25, 0, 200, 5,
+    'Paid per end scored, so a close loss still earns something.'],
+  polishCostFrac:    ['economy', 'Polish cost fraction', 0.35, 0.05, 1.00, 0.01,
+    'Cost to fully Polish a dead rock, as a fraction of its purchase price. Scaled by how worn it actually is.'],
 };
 
 // ---- Live values ----

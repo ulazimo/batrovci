@@ -92,11 +92,24 @@
       <div id="brush-hint">BRUSH</div>
     </div>
 
-    <!-- Dev buttons -->
-    <div id="dev-bar">
-      <button class="dev-btn" onclick="toggleTuningPanel()" title="Tuning sliders (`)">⚙</button>
-      <button class="dev-btn" id="btn-topdown" title="Top-down debug view">▦</button>
+    <!-- Deck button, bottom right, per the Choosing the Rock chapter -->
+    <button id="btn-deck" title="Deck">
+      <span class="deck-btn-glyph">○</span>
+      <span class="deck-btn-count">8</span>
+    </button>
+
+    <!-- Rock picker: any rock not yet thrown this end -->
+    <div id="deck-picker">
+      <div class="deck-picker-panel">
+        <div class="deck-picker-head">
+          <span class="deck-picker-team" id="deck-picker-team">You</span>
+          <span class="deck-picker-title">Choose a Rock</span>
+          <button class="deck-picker-x" id="deck-picker-close">×</button>
+        </div>
+        <div id="deck-picker-list"></div>
+      </div>
     </div>
+
   </div>
 
   <!-- ============================================================
@@ -125,20 +138,83 @@
       <button class="len-btn" data-ends="7">Long<span>7 Ends</span></button>
     </div>
 
-    <button id="btn-play">PLAY</button>
+    <!-- Which deck goes into the match, chosen before Play. -->
+    <div id="home-deck-pick">
+      <span class="home-deck-label">Deck</span>
+      <div class="home-deck-btns" id="home-deck-btns"></div>
+      <div class="type-bar" id="home-type-bar"></div>
+    </div>
 
-    <nav id="home-nav">
-      <button class="nav-btn locked" disabled>
-        <span class="nav-ico" data-ico="inv">🧊</span><span class="nav-label">Inventory</span><span class="nav-lock">🔒</span>
-      </button>
-      <button class="nav-btn active">
-        <span class="nav-ico" data-ico="home">🏠</span><span class="nav-label">Home</span>
-      </button>
-      <button class="nav-btn locked" disabled>
-        <span class="nav-ico" data-ico="shop">🛒</span><span class="nav-label">Shop</span><span class="nav-lock">🔒</span>
-      </button>
-    </nav>
+    <button id="btn-play">PLAY</button>
   </div>
+
+  <!-- ============================================================
+       INVENTORY SCREEN — the doc's Rocks tab
+  ============================================================ -->
+  <div id="inventory-screen" class="screen meta-screen">
+    <div class="meta-head">
+      <span class="meta-title">Inventory</span>
+      <span class="coin-pill"><span class="coin-ico">◉</span><span id="inv-coins">0</span></span>
+    </div>
+
+    <!-- Brushes / Shoes / Team are "TBD" in the doc, so they are visibly
+         present but locked rather than absent. -->
+    <div class="meta-tabs">
+      <button class="meta-tab active" data-tab="rocks">Rocks</button>
+      <button class="meta-tab locked" disabled>Brushes 🔒</button>
+      <button class="meta-tab locked" disabled>Shoes 🔒</button>
+      <button class="meta-tab locked" disabled>Team 🔒</button>
+    </div>
+
+    <div class="deck-area">
+      <div class="deck-area-head">
+        <span class="deck-area-title">Rock Deck</span>
+        <div class="deck-switch" id="deck-switch"></div>
+      </div>
+      <div class="type-bar" id="type-bar"></div>
+      <div class="deck-slots" id="deck-slots"></div>
+      <div class="deck-hint" id="deck-hint">Tap a slot, then pick a rock below</div>
+    </div>
+
+    <div class="collection-area">
+      <div class="collection-head">
+        <span class="collection-title">Rock Collection</span>
+        <span class="collection-count" id="collection-count"></span>
+      </div>
+      <!-- Detail above the grid, not below it. Below, it was a fixed 137 px
+           block between the grid and the nav and the grid got whatever was
+           left — one and a half rows, which is a list. Above, the grid is the
+           last child and runs to the bottom of the screen. -->
+      <div class="rock-detail" id="rock-detail"></div>
+      <div class="collection-grid" id="collection-grid"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SHOP SCREEN
+  ============================================================ -->
+  <div id="shop-screen" class="screen meta-screen">
+    <div class="meta-head">
+      <span class="meta-title">Shop</span>
+      <span class="coin-pill"><span class="coin-ico">◉</span><span id="shop-coins">0</span></span>
+    </div>
+    <div class="shop-blurb">Special Rocks, bought with Coins earned from matches.</div>
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+
+  <!-- Shared bottom navigation, outside the screens so it persists across
+       Home / Inventory / Shop and is simply hidden during a match. -->
+  <nav id="home-nav">
+    <button class="nav-btn" data-nav="inventory">
+      <span class="nav-ico" data-ico="inv">🧊</span><span class="nav-label">Inventory</span>
+    </button>
+    <button class="nav-btn active" data-nav="home">
+      <span class="nav-ico" data-ico="home">🏠</span><span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" data-nav="shop">
+      <span class="nav-ico" data-ico="shop">🛒</span><span class="nav-label">Shop</span>
+    </button>
+  </nav>
 
   <!-- ============================================================
        OVERLAYS
@@ -173,8 +249,17 @@
     <div class="overlay-title" id="match-title">You Win!</div>
     <div id="match-scoreline"></div>
     <div id="match-linescore"></div>
+    <div id="match-purse"></div>
     <button class="overlay-btn" id="btn-rematch">Rematch</button>
     <button class="overlay-btn ghost" id="btn-home">Home</button>
+  </div>
+
+  <!-- Dev buttons. Outside the screens so ⚙ is reachable from the Shop and the
+       Inventory too — the coin cheats in the panel are wanted exactly there, and
+       ` is not a key a phone has. ▦ is gameplay-only and hides itself. -->
+  <div id="dev-bar">
+    <button class="dev-btn" onclick="toggleTuningPanel()" title="Tuning sliders (`)">⚙</button>
+    <button class="dev-btn" id="btn-topdown" title="Top-down debug view">▦</button>
   </div>
 
 </div><!-- /device-frame -->
@@ -183,14 +268,19 @@
      SCRIPTS — plain scripts, load order matters (lab convention)
 ============================================================ -->
 <script src="config.js"></script>
+<!-- rock-effects before rock-stats: the Basic Rock is the catalogue's own entry,
+     so the catalogue has to exist first. -->
+<script src="rock-effects.js"></script>
 <script src="rock-stats.js"></script>
 <script src="tuning.js"></script>
 <script src="tuning-panel.js"></script>
+<script src="inventory.js"></script>
 
 <script src="sprites.js"></script>
 <script src="projection.js"></script>
 <script src="sheet.js"></script>
 <script src="rock.js"></script>
+<script src="effects.js"></script>
 <script src="physics.js"></script>
 <script src="predict.js"></script>
 
@@ -205,6 +295,10 @@
 
 <script src="vfx.js"></script>
 <script src="analytics.js"></script>
+<script src="deck-hud.js"></script>
+<script src="drag-scroll.js"></script>
+<script src="inventory-screen.js"></script>
+<script src="shop-screen.js"></script>
 <script src="hud.js"></script>
 <script src="home.js"></script>
 <script src="boot.js"></script>

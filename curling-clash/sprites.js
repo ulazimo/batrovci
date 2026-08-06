@@ -22,6 +22,24 @@ const SPRITE_FILES = {
   // Only the impact flash is a sprite. The spark chips are 2 px dots — a bitmap
   // buys nothing there and the procedural ones blend additively for free.
   flash:         'art/flash.png',
+
+  // Special-rock art. Bodies carry a type-coloured accent band; the HANDLE still
+  // carries the team colour, so the two channels never fight: handle = who threw
+  // it, band = what it does.
+  rock_offense:  'art/rock-offense.png',
+  rock_defense:  'art/rock-defense.png',
+  rock_control:  'art/rock-control.png',
+};
+
+// The 12-cell effect icon sheet, addressed by grid position. One image keeps it
+// to a single request and guarantees the icons share a style.
+const EFFECT_ICON_SHEET = 'art/effect-icons.png';
+const EFFECT_ICON_COLS = 4;
+const EFFECT_ICON_ROWS = 3;
+const EFFECT_ICON_INDEX = {
+  wall: 0, ricochet: 1, curve: 2, power: 3,
+  heavy: 4, speedZone: 5, slowZone: 6, magnet: 7,
+  pulse: 8, freeze: 9, fire: 10, basic: 11,
 };
 
 const spriteCache = {};
@@ -52,6 +70,62 @@ function loadSprites() {
 function sprite(name) {
   const s = spriteCache[name];
   return s && s.complete && s.naturalWidth > 0 ? s : null;
+}
+
+// ---------------------------------------------------------------
+// Effect icons
+//
+// The badges are DOM, not canvas, so the sheet is addressed the CSS way: one
+// background-image shared by every badge (the browser fetches and decodes the
+// file once) and a per-badge background-position picking the cell.
+//
+// The obvious alternative — slice each cell into a canvas and hand CSS a data
+// URL — was tried and is a trap. A 256 px cell encodes to ~80 KB of base64, and
+// the collection strip alone renders twenty badges, so the markup for one screen
+// carries well over a megabyte of string. Positions are a few dozen bytes.
+//
+// The grid stays defined here rather than in the stylesheet because it has to
+// match what `art/prepare.py iconsheet` laid out; one source of truth for it.
+// ---------------------------------------------------------------
+
+let effectIconSheet = null;
+let effectIconSheetTried = false;
+
+function loadEffectIconSheet(onReady) {
+  if (effectIconSheetTried) { if (onReady) onReady(effectIconSheet); return; }
+  effectIconSheetTried = true;
+  const img = new Image();
+  img.onload = () => {
+    if (img.naturalWidth > 0) effectIconSheet = img;
+    if (onReady) onReady(effectIconSheet);
+  };
+  img.onerror = () => { if (onReady) onReady(null); };
+  img.src = EFFECT_ICON_SHEET;
+}
+
+// Inline style that puts one effect's cell in the badge, or null when the sheet
+// is missing — callers then fall back to the text glyph.
+function effectIconStyle(effectName) {
+  if (!effectIconSheet) return null;
+  const idx = EFFECT_ICON_INDEX[effectName || 'basic'];
+  if (idx === undefined) return null;
+
+  // Percentage background-position is a proportion of the leftover space, not an
+  // offset, so the last column is 100% and a 1-column sheet would be 0%.
+  const fx = EFFECT_ICON_COLS > 1 ? (idx % EFFECT_ICON_COLS) * 100 / (EFFECT_ICON_COLS - 1) : 0;
+  const fy = EFFECT_ICON_ROWS > 1 ? Math.floor(idx / EFFECT_ICON_COLS) * 100 / (EFFECT_ICON_ROWS - 1) : 0;
+  return `background-image:url('${EFFECT_ICON_SHEET}');` +
+         `background-size:${EFFECT_ICON_COLS * 100}% ${EFFECT_ICON_ROWS * 100}%;` +
+         `background-position:${fx.toFixed(3)}% ${fy.toFixed(3)}%`;
+}
+
+// The body sprite for a rock, by type. Falls back to the plain body so a
+// missing variant degrades to "no accent" rather than to nothing.
+function rockBodySprite(def) {
+  if (def && def.type === ROCK_TYPE.OFFENSE) return sprite('rock_offense') || sprite('rock_body');
+  if (def && def.type === ROCK_TYPE.DEFENSE) return sprite('rock_defense') || sprite('rock_body');
+  if (def && def.type === ROCK_TYPE.CONTROL) return sprite('rock_control') || sprite('rock_body');
+  return sprite('rock_body');
 }
 
 // ---------------------------------------------------------------
@@ -98,3 +172,12 @@ function drawSpriteCentred(ctx, name, cx, cy, targetW, alpha, rotation) {
 }
 
 loadSprites();
+// Kick the icon sheet off too, and refresh any meta screen already showing
+// text glyphs once it lands.
+loadEffectIconSheet((img) => {
+  if (!img) return;
+  if (typeof currentScreen === 'undefined') return;
+  if (currentScreen === 'inventory-screen' && typeof refreshInventoryScreen === 'function') refreshInventoryScreen();
+  if (currentScreen === 'shop-screen' && typeof refreshShopScreen === 'function') refreshShopScreen();
+  if (typeof refreshDeckHud === 'function') refreshDeckHud();
+});

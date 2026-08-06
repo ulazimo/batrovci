@@ -149,6 +149,19 @@ function stepBrushing(dt) {
   }
   rampBrush(dt, targetIntensity, targetSide);
 
+  // "...and stops if it is ongoing" — hitting water cuts the sweep short rather
+  // than just having no effect, so the player sees why it stopped working.
+  if (brush.active && isOnWater(rock.x, rock.y)) {
+    brush.active = false;
+    brush.vec.x = 0; brush.vec.y = 0;
+    stickEl.classList.remove('active');
+    knobEl.style.transform = '';
+    if (typeof spawnIceLabel === 'function' && !rock.doused) {
+      rock.doused = true;
+      spawnIceLabel(rock.x, rock.y, 'WATER', '#7ac6ff');
+    }
+  }
+
   if (brush.effect > 0.05) {
     spawnIceSpray(rock.x, rock.y + TUNE.brushReach * 0.35, brush.effect);
     brushUsedThisShot = true;
@@ -186,6 +199,8 @@ function opponentOf(team) {
 // only while brushing is actually happening.
 function brushTractionAt(rock) {
   if (brush.effect <= 0.001 || rock !== brush.target) return 1;
+  // Fire Rock: "Brushing will not work on water". You cannot sweep a puddle.
+  if (isOnWater(rock.x, rock.y)) return 1;
   // Brushing removes up to (1 − brushTractionMult) of the traction, scaled by
   // how hard the player is sweeping.
   return 1 - (1 - TUNE.brushTractionMult) * brush.effect;

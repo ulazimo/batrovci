@@ -53,18 +53,22 @@
 <div id="out"></div>
 
 <script src="../config.js"></script>
+<script src="../rock-effects.js"></script>
 <script src="../rock-stats.js"></script>
 <script src="../tuning.js"></script>
+<script src="../inventory.js"></script>
 <script src="../sheet.js"></script>
 <script src="../rock.js"></script>
+<script src="../effects.js"></script>
 <script src="../brushing.js"></script>
 <script src="../physics.js"></script>
 <script src="../predict.js"></script>
 
 <script>
-// The bench never draws, but sheet.js and rock.js reference these.
+// The bench never draws, but sheet.js, rock.js and effects.js reference these.
 let viewW = 400, viewH = 800;
 const camera = { y: 0, topDown: false };
+function isVisibleY() { return false; }   // keeps effect rendering inert here
 
 function clearTuning() {
   localStorage.removeItem('cc_tuning_v1');
@@ -343,6 +347,183 @@ H(tr + '</table>');
 H('<div class="note">Real curling draws take 20+ seconds. For a mobile game 6–12 s reads ' +
   'as authentic without testing patience — that is what <code>iceFrictionA</code> and the ' +
   'launch speed range trade off against each other.</div>');
+
+// ---------------------------------------------------------------
+// 9. Special rocks
+//
+// Every effect measured against the same Basic-Rock shot, so the numbers say
+// how far each one actually shifts the game rather than how it feels.
+// ---------------------------------------------------------------
+H('<h2>9. SPECIAL ROCKS — measured against an identical Basic shot</h2>');
+
+const PERFECT = solvePerfectPower(BASIC_ROCK, 0, RELEASE_Y);
+
+// Run one shot with a given rock, optional pre-placed rocks, optional pre-laid
+// board effects. Returns where the shooter finished and what it did.
+function runEffectShot(def, opts) {
+  opts = opts || {};
+  resetRocks(); clearBoardEffects();
+  const targets = (opts.targets || []).map(t => {
+    const r = createRock(TEAM.RED, t.def || BASIC_ROCK, t.x, t.y);
+    rocks.push(r); return r;
+  });
+  if (opts.preEffects) opts.preEffects();
+  const shooter = createRock(TEAM.YELLOW, def, 0, RELEASE_Y);
+  rocks.push(shooter);
+  launchRock(shooter, opts.power !== undefined ? opts.power : PERFECT, 0, opts.spin || 0);
+  let steps = 0;
+  while (anyRockMoving() && steps++ < 40000) stepPhysics(1 / 120);
+  for (let i = 0; i < 200; i++) stepPhysics(1 / 120);
+  return { shooter, targets, alive: rocks.includes(shooter), steps,
+           effects: boardEffects.slice() };
+}
+
+const baseShot = runEffectShot(BASIC_ROCK);
+const baseY = baseShot.shooter.y;
+H(`<div class="note">Baseline: Basic Rock at perfect power stops at
+   <b>${f(baseY)} m</b> (the button is ${f(SHEET.TEE_Y)}).</div>`);
+
+// Curve needs a like-for-like comparison, so measure a Basic rock with the same
+// spin first — computed up here because the row callbacks run immediately.
+const curveBase = runEffectShot(BASIC_ROCK, { spin: 1 }).shooter.x;
+
+let fxRows = '<table><tr><th class="l">rock</th><th class="l">type</th><th>rest Y</th>' +
+             '<th>Δ vs basic</th><th class="l">what it did</th></tr>';
+
+function fxRow(id, note, run) {
+  const def = rockById(id);
+  const res = run(def);
+  const dy = res.shooter.y - baseY;
+  fxRows += `<tr><td class="l">${def.name}</td><td class="l dim">${def.type}</td>` +
+            `<td>${f(res.shooter.y)}</td>` +
+            `<td class="${Math.abs(dy) > 0.05 ? 'ok' : 'warn'}">${dy >= 0 ? '+' : ''}${f(dy, 2)}</td>` +
+            `<td class="l">${note(res, def)}</td></tr>`;
+}
+
+// Passive modifiers — measured on a clean shot.
+fxRow('heavy', (r) => `travels ${f(baseY - r.shooter.y, 2)} m shorter, mass ${f(r.shooter.mass,1)} kg`,
+  (d) => runEffectShot(d));
+fxRow('curve', (r) => `curl drift ${f(r.shooter.x, 3)} m (basic with same spin: ${f(curveBase, 3)})`,
+  (d) => runEffectShot(d, { spin: 1 }));
+fxRow('power', (r) => {
+    const t = r.targets[0];
+    return t ? `target driven to y=${f(t.y)}` : 'target removed from play';
+  }, (d) => runEffectShot(d, { targets: [{ x: 0, y: SHEET.TEE_Y }] }));
+fxRow('ricochet', (r) => {
+    const t = r.targets[0];
+    return t ? `target driven to y=${f(t.y)}` : 'target removed from play';
+  }, (d) => runEffectShot(d, { targets: [{ x: 0, y: SHEET.TEE_Y }] }));
+
+// On-stop deployers — what did they leave behind?
+fxRow('wall-2', (r) => {
+    const w = r.effects.find(e => e.kind === 'wall');
+    return w ? `wall ${f(w.halfWidth*2,2)} m wide, ${f(w.health,1)} health` : '<span class="bad">no wall deployed</span>';
+  }, (d) => runEffectShot(d));
+fxRow('speedzone-2', (r) => {
+    const z = r.effects.find(e => e.kind === 'speedZone');
+    return z ? `zone r=${f(z.radius,2)} m, traction ×${f(z.traction,2)}` : '<span class="bad">no zone</span>';
+  }, (d) => runEffectShot(d));
+fxRow('slowzone', (r) => {
+    const z = r.effects.find(e => e.kind === 'slowZone');
+    return z ? `zone r=${f(z.radius,2)} m, traction ×${f(z.traction,2)}` : '<span class="bad">no zone</span>';
+  }, (d) => runEffectShot(d));
+fxRow('magnet-2', (r) => {
+    const m = r.effects.find(e => e.kind === 'magnet');
+    return m ? `magnet r=${f(m.radius,2)} m, pull ${f(m.pull,2)}` : '<span class="bad">no magnet</span>';
+  }, (d) => runEffectShot(d));
+fxRow('pulse-2', (r) => {
+    const t = r.targets[0];
+    if (!t) return 'nearby rock shoved out of play';
+    const moved = Math.hypot(t.x - 0.35, t.y - (SHEET.TEE_Y + 0.3));
+    return `nearby rock shoved ${f(moved, 2)} m`;
+  }, (d) => runEffectShot(d, { targets: [{ x: 0.35, y: SHEET.TEE_Y + 0.3 }] }));
+fxRow('freeze', (r) => {
+    const t = r.targets[0];
+    return t ? `neighbour frozen: ${t.frozen ? '<span class="ok">yes</span>' : '<span class="bad">no</span>'}` : 'neighbour gone';
+  }, (d) => runEffectShot(d, { targets: [{ x: 0.3, y: SHEET.TEE_Y + 0.3 }] }));
+fxRow('fire', (r) => {
+    const w = r.effects.filter(e => e.kind === 'water').length;
+    return w ? `laid ${w} water patches` : '<span class="bad">no trail</span>';
+  }, (d) => runEffectShot(d));
+
+H(fxRows + '</table>');
+
+// ---- Zones actually change a later shot? ----
+H('<h2>10. ZONES — do they change the NEXT shot?</h2>');
+function shotThroughZone(kind, traction, radius) {
+  resetRocks(); clearBoardEffects();
+  if (kind) {
+    addBoardEffect({ kind, x: 0, y: 24, radius, traction, turnsLeft: LASTS_ALL_MATCH });
+  }
+  const r = createRock(TEAM.YELLOW, BASIC_ROCK, 0, RELEASE_Y);
+  rocks.push(r);
+  launchRock(r, PERFECT, 0, 0);
+  let s = 0;
+  while (anyRockMoving() && s++ < 40000) stepPhysics(1 / 120);
+  return r.y;
+}
+const noZone = shotThroughZone(null);
+const thruSpeed = shotThroughZone('speedZone', 0.48, 1.6);
+const thruSlow  = shotThroughZone('slowZone', 1.9, 1.5);
+let zr = '<table><tr><th class="l">crossing</th><th>rest Y</th><th>Δ</th><th class="l"></th></tr>';
+zr += `<tr><td class="l">clean ice</td><td>${f(noZone)}</td><td>—</td><td></td></tr>`;
+zr += `<tr><td class="l">a Speed Zone II</td><td>${f(thruSpeed)}</td><td class="${thruSpeed>noZone+0.05?'ok':'bad'}">+${f(thruSpeed-noZone,2)}</td><td class="l">should run further</td></tr>`;
+zr += `<tr><td class="l">a Slow Zone</td><td>${f(thruSlow)}</td><td class="${thruSlow<noZone-0.05?'ok':'bad'}">${f(thruSlow-noZone,2)}</td><td class="l">should stop earlier</td></tr>`;
+H(zr + '</table>');
+
+// ---- Wall actually stops a rock? ----
+H('<h2>11. WALLS — do they block, and can they be broken?</h2>');
+function shotIntoWall(shooterDef, health) {
+  resetRocks(); clearBoardEffects();
+  const w = addBoardEffect({ kind: 'wall', x: 0, y: 26, halfWidth: 0.9,
+                             health, maxHealth: health, turnsLeft: LASTS_ALL_MATCH });
+  const r = createRock(TEAM.YELLOW, shooterDef, 0, RELEASE_Y);
+  rocks.push(r);
+  launchRock(r, 0.9, 0, 0);
+  let s = 0;
+  while (anyRockMoving() && s++ < 40000) stepPhysics(1 / 120);
+  return { restY: r.y, broken: !boardEffects.includes(w), left: w.health };
+}
+const tough = shotIntoWall(BASIC_ROCK, 40);
+const weak  = shotIntoWall(BASIC_ROCK, 2);
+const byPower = shotIntoWall(rockById('power'), 8);
+const byBasic = shotIntoWall(BASIC_ROCK, 8);
+let wr = '<table><tr><th class="l">case</th><th>rest Y</th><th class="l">wall</th><th></th></tr>';
+wr += `<tr><td class="l">Basic into a tough wall (health 40)</td><td>${f(tough.restY)}</td>` +
+      `<td class="l">${tough.broken ? 'broken' : 'held'}</td><td class="${!tough.broken && tough.restY < 26 ? 'ok':'bad'}">${!tough.broken && tough.restY < 26 ? '✓ blocked' : '✗'}</td></tr>`;
+wr += `<tr><td class="l">Basic into a weak wall (health 2)</td><td>${f(weak.restY)}</td>` +
+      `<td class="l">${weak.broken ? 'broken' : 'held'}</td><td class="${weak.broken ? 'ok':'bad'}">${weak.broken ? '✓ broke through' : '✗'}</td></tr>`;
+wr += `<tr><td class="l">Power Rock vs health 8</td><td>${f(byPower.restY)}</td>` +
+      `<td class="l">${byPower.broken ? 'broken' : `held (${f(byPower.left,1)} left)`}</td><td></td></tr>`;
+wr += `<tr><td class="l">Basic vs the same health 8</td><td>${f(byBasic.restY)}</td>` +
+      `<td class="l">${byBasic.broken ? 'broken' : `held (${f(byBasic.left,1)} left)`}</td>` +
+      `<td class="${byPower.left < byBasic.left || (byPower.broken && !byBasic.broken) ? 'ok':'bad'}">` +
+      `${byPower.left < byBasic.left || (byPower.broken && !byBasic.broken) ? '✓ Power hits harder' : '✗ no difference'}</td></tr>`;
+H(wr + '</table>');
+
+// ---------------------------------------------------------------
+// 12. Per-rock perfect power
+//
+// The green zone is solved per rock at arm time. Any rock whose perfect power
+// falls outside the slider is unthrowable to the button — the check that matters.
+// ---------------------------------------------------------------
+H('<h2>12. PERFECT POWER PER ROCK — is every rock able to reach the button?</h2>');
+let ppr = '<table><tr><th class="l">rock</th><th>perfect power</th><th>rest at that power</th>' +
+          '<th>rest at 100%</th><th class="l"></th></tr>';
+for (const def of ROCK_CATALOGUE) {
+  const p = solvePerfectPower(def, 0, RELEASE_Y);
+  const at = predictLaunch(def, p, 0, 0, 0, RELEASE_Y).restY;
+  const full = predictLaunch(def, 1, 0, 0, 0, RELEASE_Y).restY;
+  const reaches = full >= SHEET.TEE_Y - 0.01;
+  const comfy = p > 0.05 && p < 0.95;
+  const cls = !reaches ? 'bad' : (comfy ? 'ok' : 'warn');
+  const note = !reaches ? '✗ cannot reach the button at all'
+             : comfy ? '✓'
+             : '⚠ perfect power is at the very edge of the slider';
+  ppr += `<tr><td class="l">${def.name}</td><td>${f(p, 3)}</td><td>${f(at)}</td>` +
+         `<td>${f(full)}</td><td class="l ${cls}">${note}</td></tr>`;
+}
+H(ppr + '</table>');
 </script>
 </body>
 </html>

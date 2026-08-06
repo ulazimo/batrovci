@@ -27,4 +27,12 @@ for f in $FILES; do
 done
 
 [ $fail -eq 0 ] && echo "syntax OK — $(echo "$FILES" | wc -w | tr -d ' ') modules"
+
+# Tunables defined but read nowhere. The bench counts as a consumer — some values
+# exist purely as its calibration targets.
+for k in $(grep -oE "^  [a-zA-Z]+:" tuning.js | tr -d ' :'); do
+  n=$(grep -h "TUNE\.$k" *.js debug/*.html 2>/dev/null | wc -l)
+  [ "$n" -eq 0 ] && { echo "UNUSED tunable: $k"; fail=1; }
+done
+
 exit $fail

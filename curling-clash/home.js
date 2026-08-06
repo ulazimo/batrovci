@@ -43,6 +43,17 @@ function initHome() {
   });
   swapNavIcons();
 
+  // Bottom nav now leads somewhere: the Inventory and Shop tabs are unlocked
+  // by this milestone.
+  for (const b of document.querySelectorAll('#home-nav .nav-btn')) {
+    b.addEventListener('click', () => {
+      const to = b.dataset.nav;
+      if (to === 'inventory') openInventory();
+      else if (to === 'shop') openShop();
+      else { showScreen('home-screen'); refreshHomeDeck(); }
+    });
+  }
+
   // The idle spin: occasional, not metronomic, so it reads as a flourish
   // rather than an animation loop.
   const scheduleSpin = () => {
@@ -67,6 +78,8 @@ function initHome() {
   document.querySelectorAll('.len-btn').forEach(b =>
     b.classList.toggle('active', parseInt(b.dataset.ends, 10) === selectedEnds));
 
+  refreshHomeDeck();
+
   // "Pressing the Play button launches the Curl and Starts the match" — so the
   // rock spins up and slides away down the sheet before the match opens.
   document.getElementById('btn-play').addEventListener('click', () => {
@@ -84,6 +97,31 @@ function initHome() {
       homeLaunching = false;
     }, 640);
   });
+}
+
+// "I want to be able to choose which Deck I am going in the Match with."
+// The three decks and their type mix, right above the Play button.
+function refreshHomeDeck() {
+  const wrap = document.getElementById('home-deck-btns');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  for (let i = 0; i < DECK_COUNT; i++) {
+    const b = document.createElement('button');
+    b.className = 'home-deck-btn' + (i === inventory.activeDeck ? ' active' : '');
+    b.textContent = i + 1;
+    b.addEventListener('click', () => { setActiveDeck(i); refreshHomeDeck(); });
+    wrap.appendChild(b);
+  }
+  const bar = document.getElementById('home-type-bar');
+  bar.innerHTML = '';
+  for (const d of deckTypeDistribution(inventory.activeDeck)) {
+    if (!d.count) continue;
+    const seg = document.createElement('span');
+    seg.className = 'type-seg';
+    seg.style.flexGrow = d.count;
+    seg.style.background = d.color;
+    bar.appendChild(seg);
+  }
 }
 
 function swapNavIcons() {

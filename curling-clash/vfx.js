@@ -95,6 +95,14 @@ function drawVfx(ctx, dt) {
         ctx.fillStyle = g;
         ctx.fill();
       }
+    } else if (p.kind === 'ring') {
+      // Expands to its true radius in sheet metres, so it reads as the actual
+      // area of effect rather than a decorative flourish.
+      ctx.globalAlpha = p.life;
+      traceIceCircle(ctx, p.x, p.y, p.size * (1 - p.life * 0.85), 30);
+      ctx.strokeStyle = p.color + p.life + ')';
+      ctx.lineWidth = 3;
+      ctx.stroke();
     } else if (p.kind === 'spray') {
       ctx.globalAlpha = p.life * 0.85;
       ctx.beginPath();
@@ -114,6 +122,67 @@ function drawVfx(ctx, dt) {
     }
     ctx.restore();
   }
+}
+
+// ---- Special-rock effects ----
+
+// Pulse Rock: an expanding ring at the true effect radius, so the player can
+// see exactly how far the shove reached.
+function spawnPulseRing(x, y, radius) {
+  spawnParticle({ kind: 'ring', x, y, size: radius, life: 1, decay: 1.6,
+                  color: 'rgba(255,150,120,' });
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    spawnParticle({
+      kind: 'spark', x, y,
+      vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2,
+      life: 1, decay: 2.6, size: 0.03,
+    });
+  }
+}
+
+// Freeze Rock: a cold ring plus frost shards settling.
+function spawnFreezeBurst(x, y, radius) {
+  spawnParticle({ kind: 'ring', x, y, size: radius, life: 1, decay: 1.1,
+                  color: 'rgba(150,220,255,' });
+  for (let i = 0; i < 18; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * radius;
+    spawnParticle({
+      kind: 'spray', x: x + Math.cos(a) * r, y: y + Math.sin(a) * r,
+      vx: 0, vy: 0, life: 1, decay: 0.8, size: 0.03,
+    });
+  }
+}
+
+// A frozen rock taking its free hit.
+function spawnFreezeShatter(x, y) {
+  for (let i = 0; i < 12; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = 0.8 + Math.random() * 1.8;
+    spawnParticle({
+      kind: 'spray', x, y,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: 1, decay: 2.2, size: 0.022,
+    });
+  }
+  spawnIceLabel(x, y, 'FROZEN', '#9fd8ff');
+}
+
+// A wall losing its last health.
+function spawnWallBreak(fx) {
+  for (let i = 0; i < 22; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = 1.0 + Math.random() * 2.4;
+    spawnParticle({
+      kind: 'spark',
+      x: fx.x + (Math.random() * 2 - 1) * fx.halfWidth,
+      y: fx.y,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: 1, decay: 1.8, size: 0.035,
+    });
+  }
+  spawnIceLabel(fx.x, fx.y, 'WALL DOWN', '#9fd8ff');
 }
 
 function clearVfx() { particles.length = 0; }

@@ -33,6 +33,7 @@ function buildTuningPanel() {
   `;
 
   const body = panel.querySelector('.tune-body');
+  body.appendChild(buildDevCheats());
 
   for (const group of TUNE_GROUPS) {
     const keys = Object.keys(TUNE_DEFS).filter(k => TUNE_DEFS[k][0] === group.id);
@@ -133,6 +134,58 @@ function buildTuningPanel() {
   return panel;
 }
 
+// ---------------------------------------------------------------
+// Dev cheats
+//
+// Coins are the one thing in the meta that cannot be reached by fiddling with a
+// slider: the Shop's cheapest rock is 850 and a match pays a few hundred, so
+// checking a purchase used to mean playing five ends first. These sit above the
+// sliders because that is the reason the panel gets opened outside gameplay.
+//
+// Everything goes through `awardCoins`, so the clamp-at-zero and the save to
+// localStorage are the same ones the real economy uses — a cheated balance is
+// not a special case anywhere downstream.
+// ---------------------------------------------------------------
+
+function buildDevCheats() {
+  const sec = document.createElement('div');
+  sec.className = 'tune-group';
+  sec.innerHTML = `
+    <div class="tune-group-head">Dev</div>
+    <div class="tune-row">
+      <div class="tune-row-top">
+        <label title="Soft currency. Spent in the Shop and on Polish.">Coins</label>
+        <span class="tune-val" id="tune-coins">0</span>
+      </div>
+      <div class="tune-row-bot">
+        <button class="tune-btn" data-coins="1000">+1,000</button>
+        <button class="tune-btn" data-coins="10000">+10,000</button>
+        <button class="tune-btn tune-danger" data-coins="clear">Clear</button>
+      </div>
+    </div>
+  `;
+
+  sec.addEventListener('click', (e) => {
+    const amt = e.target.dataset && e.target.dataset.coins;
+    if (!amt) return;
+    awardCoins(amt === 'clear' ? -inventory.coins : parseInt(amt, 10));
+    refreshDevCheats();
+  });
+
+  return sec;
+}
+
+// The Shop and Inventory both print the balance in their header, so a screen
+// sitting open behind the panel has to be rebuilt or it shows a stale number —
+// and in the Shop the buy buttons' enabled state is wrong until it is.
+function refreshDevCheats() {
+  const el = document.getElementById('tune-coins');
+  if (el) el.textContent = inventory.coins.toLocaleString();
+  if (typeof currentScreen === 'undefined') return;
+  if (currentScreen === 'inventory-screen' && typeof refreshInventoryScreen === 'function') refreshInventoryScreen();
+  if (currentScreen === 'shop-screen' && typeof refreshShopScreen === 'function') refreshShopScreen();
+}
+
 function fmtTune(v, step) {
   const decimals = String(step).includes('.') ? String(step).split('.')[1].length : 0;
   return v.toFixed(decimals);
@@ -146,6 +199,7 @@ function flashTune(btn, msg) {
 
 function refreshTuningPanel() {
   if (!tunePanelEl) return;
+  refreshDevCheats();
   tunePanelEl.querySelectorAll('.tune-row').forEach(row => {
     const key = row.dataset.key;
     const [, , def, , , step] = TUNE_DEFS[key];

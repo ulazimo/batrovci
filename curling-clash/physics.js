@@ -45,9 +45,13 @@ function stepPhysics(dt) {
     applyImmediateRemovals();
   }
 
-  // Fire once on the transition from moving to settled.
+  // Fire once on the transition from moving to settled. Stop-effects run before
+  // removals and the turn callback, because a Pulse can shove a rock out of play
+  // and that has to be judged as part of this shot, not the next one.
   const nowMoving = anyRockMoving();
   if (wasAnythingMoving && !nowMoving) {
+    applyStopEffects();
+    if (anyRockMoving()) { wasAnythingMoving = true; return; }   // a Pulse restarted things
     applyRestRemovals();
     if (allStoppedCallback) allStoppedCallback();
   }
@@ -60,6 +64,8 @@ function integrate(dt) {
     // Brushing only ever touches the delivered rock (or, in the opponent's
     // window, whichever rock is being swept) — brushTractionAt decides.
     const speed = advanceRockState(rock, dt, brushTractionAt(rock), brushSideAccel(rock));
+    applyTrailEffect(rock);
+    wallCollide(rock);
     if (speed <= STOP_SPEED) stopRock(rock);
   }
 }
@@ -81,7 +87,12 @@ function advanceRockState(st, dt, traction, sideAccel) {
   const ux = st.vx / speed;
   const uy = st.vy / speed;
 
-  const decel = (TUNE.iceFrictionA + TUNE.iceFrictionB * speed) * traction * st.tractionBias;
+  // Speed-up and slow-down zones multiply traction the same way brushing does,
+  // so the two compose naturally: sweeping over a slow zone partly cancels it.
+  // Skipped for the preview sim, which passes previewMode so the trajectory
+  // line does not have to know about the board.
+  const zone = st.previewMode ? 1 : zoneTractionAt(st.x, st.y);
+  const decel = (TUNE.iceFrictionA + TUNE.iceFrictionB * speed) * traction * zone * st.tractionBias;
 
   // Curl: lateral acceleration that grows as the rock slows, which is why a
   // real stone hooks late in its travel.
@@ -92,7 +103,10 @@ function advanceRockState(st, dt, traction, sideAccel) {
       Math.pow(TUNE.curlSpeedRef / Math.max(speed, 0.05), TUNE.curlSpeedShape)
     );
     const statScale = statValue(st.def, 'curl') / STAT_LEVELS.curl[2];
-    const mag = TUNE.curlCoefficient * st.spinMag * statScale * resp;
+    // Curve Rock: "enables the rock to curve a lot more".
+    const curveMul = hasEffect(st.def, 'curve')
+      ? st.def.params.curlMul * TUNE.fxCurveMul : 1;
+    const mag = TUNE.curlCoefficient * st.spinMag * statScale * curveMul * resp;
     // Left of travel is (−uy, ux). Clockwise (spin > 0) curves left.
     const dir = Math.sign(st.spin);
     aLatX += dir * -uy * mag;
@@ -102,6 +116,14 @@ function advanceRockState(st, dt, traction, sideAccel) {
   if (sideAccel !== 0) {
     aLatX += -uy * sideAccel;
     aLatY +=  ux * sideAccel;
+  }
+
+  // Magnet pull. Unlike curl and side-brushing this is a world-space force, not
+  // one relative to the direction of travel, so it goes in directly.
+  if (!st.previewMode) {
+    const pull = zoneForceOn(st);
+    aLatX += pull.ax;
+    aLatY += pull.ay;
   }
 
   let newSpeed = speed - decel * dt;
@@ -199,14 +221,46 @@ function collidePair(a, b) {
   const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
   if (rvn >= 0) return true;   // already separating; the push-apart was enough
 
+  // Freeze Rock: "Frozen rocks ignore the first collision." The rock absorbs
+  // this impact entirely and loses the protection.
+  if (a.frozen || b.frozen) {
+    const shieldedA = a.frozen;
+    a.frozen = false;
+    b.frozen = false;
+    if (typeof spawnFreezeShatter === 'function') {
+      const s = shieldedA ? a : b;
+      spawnFreezeShatter(s.x, s.y);
+    }
+    return true;                       // separated, but no impulse exchanged
+  }
+
   const e = TUNE.collisionRestitution;
   const invA = 1 / a.mass;
   const invB = 1 / b.mass;
   let jImp = (-(1 + e) * rvn) / (invA + invB);
   jImp *= 1 - TUNE.collisionEnergyLoss;
 
+  // Power Rock: "carry more Power with them ... move Solid Rocks more easily".
+  // Applied to the impulse, so it transfers more into whatever it hits.
+  if (hasEffect(a.def, 'power') || hasEffect(b.def, 'power')) {
+    const def = hasEffect(a.def, 'power') ? a.def : b.def;
+    jImp *= 1 + (def.params.impulseMul - 1) * TUNE.fxPowerMul;
+  }
+
   a.vx -= jImp * invA * nx; a.vy -= jImp * invA * ny;
   b.vx += jImp * invB * nx; b.vy += jImp * invB * ny;
+
+  // Ricochet Rock: "it will gain more speed and have a Powerful collision".
+  for (const r of [a, b]) {
+    if (!hasEffect(r.def, 'ricochet')) continue;
+    const sp = Math.hypot(r.vx, r.vy);
+    if (sp < 0.01) continue;
+    const gain = 1 + r.def.params.speedGain * TUNE.fxRicochetGain;
+    r.vx *= gain; r.vy *= gain;
+    if (typeof spawnCollisionSpark === 'function') {
+      spawnCollisionSpark(r.x, r.y, 1);   // the doc asks for sparks specifically
+    }
+  }
 
   // Anything that took a hit is now in motion and, if it was the delivered
   // rock, is exempt from the hog-line rule (WCF R2(f)).
@@ -237,6 +291,18 @@ function applyImmediateRemovals() {
     if (rock.removing > 0) continue;
     if (touchesSideLine(rock)) { beginRemoval(rock, 'sideline'); continue; }
     if (pastBackLine(rock))    { beginRemoval(rock, 'backline'); continue; }
+  }
+}
+
+// Effects that deploy "when it stops", fired once everything has settled. Every
+// rock is checked, not just the delivered one: a Wall Rock knocked loose by a
+// later shot and coming to rest somewhere new has not re-deployed, because
+// effectFired is set for the throw, but a rock that was struck INTO position
+// still counts as having stopped there.
+function applyStopEffects() {
+  for (const rock of rocks) {
+    if (rock.removing > 0) continue;
+    applyOnStopEffect(rock);
   }
 }
 
@@ -282,7 +348,19 @@ function advanceRemovals(dt) {
 function launchSpeedFor(rockDef, powerT) {
   const t = Math.pow(Math.max(0, Math.min(1, powerT)), TUNE.powerCurve);
   const base = TUNE.launchSpeedMin + (TUNE.launchSpeedMax - TUNE.launchSpeedMin) * t;
-  return base * statValue(rockDef, 'power');
+  // Heavy Rock: "cannot be thrown as further as other Rocks". Applied to launch
+  // speed rather than traction, so it is the throw that is limited, not the ice.
+  const heavy = hasEffect(rockDef, 'heavy')
+    ? 1 - (1 - rockDef.params.rangeMul) * TUNE.fxHeavyMul : 1;
+  return base * statValue(rockDef, 'power') * heavy;
+}
+
+// A rock's mass, including the Heavy Rock's bulk. Momentum transfer is the only
+// thing mass touches — friction is mass-independent.
+function massFor(rockDef) {
+  const heavy = hasEffect(rockDef, 'heavy')
+    ? 1 + (rockDef.params.massMul - 1) * TUNE.fxHeavyMul : 1;
+  return TUNE.rockMass * heavy;
 }
 
 // Fire a rock. angle is radians from straight down the sheet, positive = right.
@@ -299,7 +377,9 @@ function launchRock(rock, powerT, angleRad, spinSigned) {
   rock.hasStruck = false;
   rock.distance = 0;
   rock.sideBend = 0;
-  rock.mass = TUNE.rockMass;
+  rock.mass = massFor(rock.def);
+  rock.effectFired = false;
+  rock.lastTrailAt = 0;
   // Per-shot ice variation, so no two draws are microscopically identical.
   rock.tractionBias = 1 + (Math.random() * 2 - 1) * TUNE.iceFrictionJitter;
   deliveredRock = rock;
