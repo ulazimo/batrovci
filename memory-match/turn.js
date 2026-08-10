@@ -296,6 +296,7 @@ function endTurn(manual, perfectSweep) {
   // Chain Danger Reveal: remember the danger-marked tiles so finishTurn can flip them
   // up once the chain resolves (off = they just clear silently).
   pendingDangerReveal = getRule('chainDangerReveal') ? getChainHintIndices() : [];
+  lastDangerReveal = [...pendingDangerReveal]; // snapshot for the free auto-collect check in finishTurn (pendingDangerReveal gets consumed by the reveal)
   // Keep the danger ✕ marks AND the back-effect impact glow lit through the resolve — each is
   // removed only when its card is actually revealed (in revealCardsNoHide / boosterReveal), so a
   // highlight never blinks back to normal and re-lights. Highlights on cards that won't be
@@ -558,8 +559,11 @@ function endTurn(manual, perfectSweep) {
           if (allRevealed.length > 0) {
             // The cards are already face-up (revealCardsNoHide above), so there's no stagger
             // left — just the memorisation hold, which a tap can cut short. This is the beat
-            // that shows the chain-danger tiles + new cards after a collect.
-            runSkippableReveal([], 2200, () => {
+            // that shows the chain-danger tiles + new cards after a collect. But when the danger
+            // reveal is the WHOLE rest of the board, finishTurn is about to auto-collect it for
+            // free — memorising is pointless — so cut the hold to a brief beat and sweep promptly.
+            const holdMs = (typeof shouldAutoCollectDangerBoard === 'function' && shouldAutoCollectDangerBoard()) ? 800 : 2200;
+            runSkippableReveal([], holdMs, () => {
               allRevealed.forEach(idx => { const c = board[idx]; if (c && !c.special && c.flipped) { c.flipped = false; const el = getCardEl(idx); if (el) el.classList.remove('flipped'); } });
               flushLockHide(); // just-unlocked locked/iced/color-locked cards flip face-down in sync with this reveal-hide
               doFinish();

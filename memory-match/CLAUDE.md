@@ -327,6 +327,10 @@ endTurn(manual, perfectSweep)            [turn.js:250]
   └─ finishTurn()                        [endgame.js:61]
         ├─ reset chain state, flushLockHide()
         ├─ checkAllGoalsMet() → levelWon()
+        ├─ else shouldAutoCollectDangerBoard() → autoCollectDangerBoard()
+        │     (clear-board only: the danger reveal showed the WHOLE rest of the board →
+        │      collect it all for free, no turn — runs before the turns/stuck checks so it
+        │      can win on the last turn; see §9)
         ├─ else turns <= 0   → levelFailed()
         └─ else revealChainDangerCards()  (only when no reveal batch ran)
 ```
@@ -654,6 +658,19 @@ met-check, an icon, a description, and a HUD display.
 `clearAll` is the one type with **no `updateGoalProgress` case** — its progress is
 derived from live board+deck state on each render rather than incremented.
 
+**Free danger-reveal finish (`clearBoard` only).** When a chain-danger reveal
+([§11](#11-configurable-gameplay-rules-gameplay_rules-settingsjs)) this turn flips up
+card(s) that turn out to be the **entire rest of the board**, `finishTurn` auto-collects
+them all **without spending a turn** (`shouldAutoCollectDangerBoard` / `autoCollectDangerBoard`
+in [endgame.js](endgame.js)) — the player has already seen everything left, so the last
+cards clean up for free. It only fires when collecting truly empties the board for good:
+`clearBoard` level, `deck` empty, no elevator batch pending, no stacked tile among them,
+and every remaining non-special tile is one of the just-revealed danger tiles (a frozen
+lock/ice/color-lock tile blocks it — those can't be collected). Runs *before* the
+`turns<=0`/`isBoardStuck` checks, so it can win on the last turn. Keyed off
+`lastDangerReveal` (snapshot of the turn's danger tiles, since `pendingDangerReveal` is
+consumed by the reveal).
+
 Levels can combine goals (e.g. `score` + `breakLocks`, or `clearAll` +
 `orderedCards`). `colorAvoid` and out-of-order `orderedCards` trigger **immediate
 fail** mid-turn.
@@ -939,6 +956,7 @@ untouched.
 | Bank It | `bank.js` | `bankChain`, `updateBankButton`, `detonateBombAt` |
 | Goals | `goals.js` | `initLevelGoals`, `updateGoalProgress`, `checkAllGoalsMet` |
 | Win/fail | `endgame.js` | `levelWon`, `levelFailed`, `continueLevelWithCoins` |
+| Free danger-reveal finish | `endgame.js` / `turn.js` | `shouldAutoCollectDangerBoard`, `autoCollectDangerBoard`, `lastDangerReveal` |
 | Board render / UI | `board.js` | `renderBoard`, `buildCardHTML`, `updateChainIndicator`, `breakLockLayer` |
 | VFX / animation | `vfx.js` | `flyCardsToGoal`, `spawnParticles`, `animateScore`, `sweepRevealBoard`, `revealEntireBoard` |
 | Coin animations | `vfx.js` | `flyCoinsToHeader` (win reward flies Play→coin header, counts the total up as chips land — driven from `showHome` via `pendingHomeCoinReward`), `burstCoinsDown` (spent coins scatter down out of a header pill — Recall spend, from `recallCards`). Both use the `void el.offsetWidth` reflow pattern, **not rAF** (rAF is throttled in backgrounded tabs). |

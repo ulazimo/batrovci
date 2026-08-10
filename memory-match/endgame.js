@@ -84,10 +84,48 @@ function finishTurn() {
     if (!keepDanger.has(parseInt(el.dataset.index, 10))) el.classList.remove('wrong-color-hint');
   });
   if (checkAllGoalsMet()) levelWon();
+  else if (shouldAutoCollectDangerBoard()) autoCollectDangerBoard(); // danger reveal showed the last cards → free finish (before the turns/stuck checks so it can save the last turn)
   else if (turns <= 0) levelFailed();
   else if (isBoardStuck()) levelFailed('stuck'); // only locked/iced/color-locked tiles left, no bomb
   else revealChainDangerCards();
   if (typeof tutorialOnTurnResolved === 'function') tutorialOnTurnResolved(); // FTUE: advance the script
+}
+
+// Free board finish: when a chain-danger reveal this turn flipped up card(s) that turn out to be
+// the ENTIRE rest of the board (clear-board levels only), the player has seen everything left and
+// there's nothing to play — collect it all automatically, WITHOUT spending a turn. Only fires when
+// collecting actually empties the board for good (no deck refill / elevator re-batch / stack reseed
+// left), so it always resolves into a win.
+function shouldAutoCollectDangerBoard() {
+  const lvl = LEVELS[currentLevelIndex];
+  if (!lvl || !lvl.clearBoard) return false;
+  if (deck.length > 0) return false; // deck still feeds new cards — not the end
+  if (typeof elevatorAreas !== 'undefined' && elevatorAreas.some(a => a.refillsLeft > 0)) return false; // more batches to come
+  // The danger tiles actually revealed this turn (none if the rule's off / no chain-3 hint fired).
+  const danger = lastDangerReveal.filter(i => board[i] && !board[i].special && !board[i].locked);
+  if (!danger.length) return false;
+  if (danger.some(i => board[i].stack > 1)) return false; // a stacked tile would re-seed → board wouldn't empty
+  const dangerSet = new Set(danger);
+  // Every card still on the board must be one of those revealed danger tiles — i.e. the reveal
+  // showed the whole remaining board (nothing else is left, frozen or otherwise).
+  return !board.some((c, i) => c && !c.special && !dangerSet.has(i));
+}
+
+function autoCollectDangerBoard() {
+  const targets = lastDangerReveal.filter(i => board[i] && !board[i].special && !board[i].locked);
+  lastDangerReveal = []; // consume so the follow-up finishTurn can't re-trigger
+  if (!targets.length) { revealChainDangerCards(); return; } // safety net — shouldn't happen
+  inputLocked = true;
+  // They were just flashed by the danger reveal (now face-down again) — flip them back up so the
+  // collect reads clearly, then fly them to the Collection. The flip-up runs in the SAME sync tick
+  // as the reveal's flip-down (finishTurn is called synchronously from it), so there's no flicker.
+  targets.forEach(i => { board[i].flipped = true; const el = getCardEl(i); if (el) el.classList.add('flipped'); });
+  if (typeof updateGoalProgress === 'function') updateGoalProgress(targets, targets.length);
+  flyCardsToGoal(targets, 0, () => {
+    targets.forEach(i => { board[i] = null; replaceCell(i); }); // clear the slots (deck 0 → permanent holes)
+    updateGoalHUD(); if (typeof updateDeckHUD === 'function') updateDeckHUD();
+    finishTurn(); // board is now empty → checkAllGoalsMet → levelWon (no turn was spent)
+  });
 }
 
 // Called after a card joins the current chain. If every remaining INTERACTABLE card of the
