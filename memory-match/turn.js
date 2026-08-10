@@ -236,6 +236,53 @@ function onCardClick(index) {
   setTimeout(() => endTurn(false), 500);
 }
 
+// Which of `matchedArr`'s colours resolve as cleared / exhausted this turn (see endTurn for the
+// meaning of each). Factored out so it can be evaluated both before locked-card absorption (to
+// decide whether the turn collects at all) and again afterwards over the enlarged match set.
+function resolveColors(matchedArr) {
+  const matchedSet = new Set(matchedArr);
+  const matchedColors = [...new Set(matchedArr.map(i => board[i]?.color).filter(Boolean))];
+  const colorLeftOnBoard = (color, countFrozen) =>
+    board.some(c => c && !c.special && (countFrozen || !c.locked) && c.color === color && !matchedSet.has(c.index));
+  const clearedColors = matchedColors.filter(color => !colorLeftOnBoard(color, true));
+  const exhaustedColors = matchedColors.filter(color => !clearedColors.includes(color) && !colorLeftOnBoard(color, false));
+  return { matchedColors, clearedColors, exhaustedColors };
+}
+
+// Locked-card chain absorption. Each collected chain card breaks one lock layer off every
+// orthogonally-adjacent lock (exactly like breakAdjacentLocks). When a lock FULLY breaks and the
+// card beneath it matches the chain colour, it is ABSORBED into the collect: it flips face-up, is
+// collected with the chain, and — now a chain card itself — becomes a new source that breaks its
+// own adjacent locks (cascade). Ice / color-locks are never touched (breakLockLayer refuses them).
+// `sources` are the originally-collected indices; returns the absorbed indices to fold into the match.
+function absorbMatchingUnlocks(sources, isMatch) {
+  const absorbed = [];
+  const queue = [...sources];
+  const processed = new Set();
+  while (queue.length) {
+    const src = queue.shift();
+    if (processed.has(src)) continue;
+    processed.add(src);
+    const { r, c } = toRC(src);
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const adj = toIndex(r + dr, c + dc);
+      if (adj < 0 || !board[adj] || !board[adj].locked) continue;
+      const matches = isMatch(board[adj].color); // colour is stable across the break — capture it now
+      const fullyUnlocked = breakLockLayer(adj);
+      if (!fullyUnlocked || !matches || absorbed.includes(adj)) continue;
+      absorbed.push(adj);
+      // It's being collected, not held face-up on the board: cancel any deferred lock-hide and
+      // show it face-up so it flies to the collection cleanly with the rest of the chain.
+      pendingLockHide.delete(adj);
+      board[adj].flipped = true;
+      const el = getCardEl(adj);
+      if (el) { el.classList.remove('reveal-locked', 'reveal-hold', 'locked'); el.classList.add('flipped'); }
+      queue.push(adj); // cascade: the newly-collected card now breaks its own adjacent locks
+    }
+  }
+  return absorbed;
+}
+
 // ============================================================
 // END TURN
 // ============================================================
@@ -276,8 +323,25 @@ function endTurn(manual, perfectSweep) {
   // updateChainIndicator), the chain bar would suddenly render the wrong-colour card as a slot.
   if (matched !== normalCards) chainCards = chainCards.filter(i => i !== mismatchIdx);
 
-  const combo = matched.length + specialsUsed.length;
   const minCombo = getMinCombo();
+
+  // Locked-card chain absorption: when this turn collects, a collected chain card sitting next to
+  // a lock of the SAME colour breaks it open and pulls it into the chain, cascading through
+  // same-colour lock clusters (absorbMatchingUnlocks). Gate on a preliminary collect check — locks
+  // only ever break on a collect — then let the scoring / colour-clear logic below run over the
+  // enlarged `matched`. This also replaces the old breakAdjacentLocks call further down.
+  {
+    const pre = resolveColors(matched);
+    const collects = (matched.length + specialsUsed.length) >= minCombo || pre.clearedColors.length > 0 || pre.exhaustedColors.length > 0;
+    if (collects) {
+      const lockSources = [...matched];
+      if (matched.length >= 2 && specialsUsed.length) lockSources.push(...specialsUsed);
+      const absorbed = absorbMatchingUnlocks(lockSources, isColorMatch);
+      if (absorbed.length) matched = matched.concat(absorbed);
+    }
+  }
+
+  const combo = matched.length + specialsUsed.length;
 
   // How a colour resolves when every card the player can still touch has been collected.
   // Measured before removal, so a lone last card counts. Two distinct outcomes:
@@ -287,12 +351,7 @@ function endTurn(manual, perfectSweep) {
   //     remain → the chain still collects at ANY length (nothing more the player can do with
   //     the colour), but with NO banner and NO refund; the frozen cards are still to come.
   // Both let the collect bypass the combo minimum; only a full clear grants the bonuses.
-  const matchedSet = new Set(matched);
-  const matchedColors = [...new Set(matched.map(i => board[i]?.color).filter(Boolean))];
-  const colorLeftOnBoard = (color, countFrozen) =>
-    board.some(c => c && !c.special && (countFrozen || !c.locked) && c.color === color && !matchedSet.has(c.index));
-  let clearedColors = matchedColors.filter(color => !colorLeftOnBoard(color, true));
-  let exhaustedColors = matchedColors.filter(color => !clearedColors.includes(color) && !colorLeftOnBoard(color, false));
+  let { matchedColors, clearedColors, exhaustedColors } = resolveColors(matched);
   // A bomb collects AND refills before this runs, so its refill may have dropped a fresh card of
   // the chain colour, masking the recompute above. The bomb judged the outcome at blast time and
   // stashed it: bombColorFullyCleared → gone entirely (banner + refund), bombColorClearOverride →
@@ -429,10 +488,8 @@ function endTurn(manual, perfectSweep) {
     // Colour clear feedback: small "<COLOUR> Cleared" banner, plus the refunded-turn float
     // only when the refund actually happened (colorClearRefundTurn rule).
     if (colorCleared) { showColorClearBanner(clearedColors); if (refundTurn) showTurnRefund(); }
-    // Break one lock layer per collected card adjacent to a locked tile (include newSP —
-    // it's consumed too). A lock next to several cleared cards breaks several layers.
-    const unlockSources = newSP >= 0 ? [...toRemove, newSP] : toRemove;
-    breakAdjacentLocks(unlockSources);
+    // Adjacent locks were already broken (and same-colour ones absorbed into `matched`) up front by
+    // absorbMatchingUnlocks — see the absorption block near the top of endTurn.
 
     // Separate normal cards (fly to goal) from bombs (explode in place after fly)
     const isBomb = idx => board[idx] && board[idx].special && isBombType(board[idx].special);

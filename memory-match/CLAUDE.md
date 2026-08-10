@@ -312,13 +312,15 @@ endTurn(manual, perfectSweep)            [turn.js:250]
   ├─ clearedColors: every card of a collected colour gone? → colour clear
   ├─ turns--   … then turns++ if colorCleared (net zero — the refund)
   ├─ willCollect = combo >= getMinCombo() || colorCleared
-  ├─ willCollect →
+  ├─ (up front, once a collect is certain) absorbMatchingUnlocks: break adjacent locks;
+  │  same-colour cards that fully unlock are absorbed into `matched` (cascades) — see §5
+  ├─ willCollect →   (combo now includes any absorbed locks)
   │     • score: combo 2=50, 3=100, 4=150, else combo*50
   │     • updateGoalProgress(matched, combo)
   │     • combo >= 3 → grantChainReward(combo): power-up into the stash (5+/7+)
   │     • collected backEffect cards merge their reveal patterns into revealTargets
   │     • flyCardsToGoal animation → cards removed, registerCollected() →
-  │       breakAdjacentLocks / checkIceBreaks / checkColorLockBreaks
+  │       checkIceBreaks / checkColorLockBreaks
   ├─ activate any used special cards' reveal patterns (danger reveal folded into
   │  the SAME batch, so both flash together)
   ├─ placeNewCards() refills cleared slots: stack re-seed → elevator → deck → new
@@ -398,6 +400,15 @@ Cards are plain objects created by helpers at [board.js](board.js) (`createCard`
   `!board[i].locked` guard), but a **bomb blast breaks one lock layer** rather than
   destroying it (see `breakLockLayer`). Unlocked when an adjacent combo clears (goal
   type `breakLocks`).
+  - **Same-colour absorption**: when a collecting chain breaks a lock's *final* layer and
+    the card underneath **matches the chain colour**, it is pulled into the chain — it
+    flips up, is collected with the combo (extending it + scoring), and — now a chain card
+    itself — breaks its own adjacent locks, **cascading** through same-colour lock clusters.
+    A non-matching card just unlocks and stays on the board (the old behaviour). This lives
+    in `absorbMatchingUnlocks` (turn.js), which runs up front in `endTurn` and **replaces**
+    the combo-path `breakAdjacentLocks` call (the bomb path in bank.js still uses plain
+    `breakAdjacentLocks` — bombs don't absorb into a chain). Ice / color-locks are never
+    touched (`breakLockLayer` refuses them), so they never absorb.
 - **Multi-lock card**: `locked=true` + `lockCount=N` — needs **N** breaks. It loses
   **one layer per collected card orthogonally adjacent to it** (so one combo/bomb that
   clears 3 of its neighbours breaks 3 layers), decrementing `lockCount`; unlocks at 0.
@@ -918,6 +929,7 @@ untouched.
 | Chain rewards | `boosters.js` | `CHAIN_REWARD_TIERS`, `getChainRewardBoosters`, `grantChainReward` |
 | Chain danger hints | `boosters.js` | `applyChainColorHint`, `getChainHintIndices`, `revealChainDangerCards` |
 | Ice / color-lock / elevator | `board.js` / `level.js` / `turn.js` | `registerCollected`, `checkIceBreaks`/`breakIceArea`, `checkColorLockBreaks`/`breakColorLockArea`, `normalizeIce`/`normalizeColorLocks`/`normalizeElevators`, `placeNewCards` (elevator batch) |
+| Locks / same-colour absorption | `board.js` / `turn.js` | `breakLockLayer`, `breakAdjacentLocks` (bomb path), `absorbMatchingUnlocks` (combo path — collect + cascade), `resolveColors` |
 | Cleaning deck | `board.js` / `turn.js` | `buildDeck`, `updateDeckHUD`, `placeNewCards` (deck draw) |
 | Specials | `specials.js` / `board.js` | `SPECIAL_TYPES`, `getRevealPattern`, `createSpecialCard` |
 | Back-of-card effects | `specials.js` / `board.js` / `turn.js` | `BACK_EFFECTS`, `getBackEffectPattern`, `decorateBackEffect`, `endTurn` (reveal-on-collect block) |
