@@ -987,3 +987,14 @@ function closeSettings() {
   else if (settingsReturnTo === 'home' && typeof showHome === 'function') showHome();
   // 'game' — just close the overlay, game continues
 }
+
+// User-facing Settings: the always-available ToS / Privacy Policy links. Distinct
+// from the dev tuning panel above (which is test-only). Opened by the home ⚙.
+function showLegal() {
+  const el = document.getElementById('legal-panel');
+  if (el) el.classList.add('active');
+}
+function closeLegal() {
+  const el = document.getElementById('legal-panel');
+  if (el) el.classList.remove('active');
+}

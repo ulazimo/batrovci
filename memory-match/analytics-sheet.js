@@ -34,6 +34,39 @@ function getAnalyticsEndpoint() {
 }
 
 // ------------------------------------------------------------
+// CONSENT — the ToS / Privacy Policy accept gate. Must fire on first launch
+// BEFORE any personal data is collected (the username prompt + analytics), so
+// it wraps those first-run prompts: nothing runs until the player taps Accept.
+// Stored in its own localStorage key (survives a progress reset, like username).
+// ------------------------------------------------------------
+const MM_CONSENT_KEY = 'mm_consent_accepted';
+let consentOnAccept = null;   // callback to run once the player accepts
+
+function hasConsent() {
+  try { return localStorage.getItem(MM_CONSENT_KEY) === '1'; }
+  catch (e) { return false; }
+}
+
+// Show the consent gate if it hasn't been accepted, then run `onDone`. If it was
+// already accepted (or the overlay is missing), run `onDone` immediately.
+function maybeAskConsent(onDone) {
+  if (hasConsent()) { if (typeof onDone === 'function') onDone(); return; }
+  const el = document.getElementById('consent-prompt');
+  if (!el) { if (typeof onDone === 'function') onDone(); return; }
+  consentOnAccept = (typeof onDone === 'function') ? onDone : null;
+  el.classList.add('active');
+}
+
+function acceptConsent() {
+  try { localStorage.setItem(MM_CONSENT_KEY, '1'); } catch (e) {}
+  const el = document.getElementById('consent-prompt');
+  if (el) el.classList.remove('active');
+  const cb = consentOnAccept;
+  consentOnAccept = null;
+  if (typeof cb === 'function') cb();
+}
+
+// ------------------------------------------------------------
 // USERNAME — asked once per device, stored in its own localStorage key so it
 // survives a progress reset (it identifies the device/player, not the run).
 // ------------------------------------------------------------

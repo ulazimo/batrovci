@@ -1228,6 +1228,11 @@ body.bomb-aiming #board { touch-action: none; }
 .overlay-btn.btn-red   { background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.4);color:#e74c3c; }
 .overlay-btn.btn-red:hover { background:rgba(231,76,60,.25); }
 .overlay-btn.secondary { background:#2a2a4a;border:1px solid #3a3a6a; }
+/* Consent gate + legal links */
+.consent-box .consent-text { font-size:14px;line-height:1.5;color:#d8d8e8; }
+.consent-text a, .legal-links a { color:#c9a9ff;text-decoration:underline; }
+.legal-links { display:flex;flex-direction:column;gap:10px;width:100%; }
+.legal-links a { text-decoration:none;display:block; }
 
 /* Username prompt input (once-per-device welcome) */
 #username-input {
