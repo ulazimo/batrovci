@@ -348,11 +348,12 @@ function endTurn(manual, perfectSweep) {
   const toFlip = [];
   normalCards.forEach(idx => { if (!toRemove.includes(idx) && idx!==newSP) toFlip.push(idx); });
 
-  // Recall memory: a collect changes the board, so wipe memory and start fresh from the
-  // cards that stayed put (e.g. the mismatched card that broke the chain). A non-collect
-  // turn accumulates those revealed cards on top of everything seen since the last chain.
+  // Recall memory accumulates across the WHOLE match. A collect must NOT wipe it — it only
+  // FORGETS the slots it cleared (they refill with fresh, unseen cards); everything else the
+  // player has glimpsed stays remembered. A non-collect turn adds the revealed cards on top.
+  // (This mirrors the bomb-collect path — see removeRecall in bank.js.)
   const recallable = toFlip.filter(i => board[i] && !board[i].special);
-  if (willCollect) resetRecall();
+  if (willCollect) removeRecall(toRemove);
   addRecall(recallable);
   // Echo: keep the first card(s) visible instead of flipping back
   const echoProtected = new Set();

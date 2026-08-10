@@ -588,9 +588,15 @@ cards (specials live on the board; boosters are inventory buttons).
   `colorpick` (`DISABLED_BY_DEFAULT_BOOSTERS`, [settings.js:463](settings.js)).
 - **Capacity**: only the bombs are capped (Baby Bomb `max:3`, BIG Bomb `max:1`, both
   `startQty:0`) and show a `count/max` badge; everything else is uncapped.
-- **Recall** (🔄) re-reveals `lastRevealedCards` for **`RECALL_COST` = 10 coins**
-  ([endgame.js:29](endgame.js)) — it is *not* free — and is unlocked from a
-  configurable level. It is **the first tile in the booster tray**, prepended by
+- **Recall** (🔄) re-reveals `lastRevealedCards` for **`RECALL_COST` = 25 coins**
+  ([endgame.js](endgame.js)) — it is *not* free — and is unlocked from a
+  configurable level. `lastRevealedCards` accumulates **every card glimpsed since the
+  START of the match** (win-streak reveal, back-effects, chain-3 danger reveals,
+  mismatched chain cards, peek/booster reveals, and locked/iced/color-locked tiles
+  shown face-up by `revealLockedCards` once they unlock — fed in via `flushLockHide`).
+  A collect no longer wipes it: it only `removeRecall`s the slots it cleared (they
+  refill with fresh, unseen cards); only a level start (`resetRecall`) or a full board
+  reshuffle (`sweepRevealBoard`) clears it. It is **the first tile in the booster tray**, prepended by
   `initBoosters` — it is not a `BOOSTERS` entry, carries no `data-booster` (so
   `updateBoosterUI` skips it) and its enabled state comes from `updateRecallButton`.
   Because the tray is built once per `startGame`, changing the unlock level at

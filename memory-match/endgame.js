@@ -6,12 +6,17 @@
 // ============================================================
 
 // ============================================================
-// RECALL — re-reveal the cards seen since the last chain
+// RECALL — re-reveal every card the player has glimpsed this match
 // ============================================================
 // `lastRevealedCards` is a running memory of every face-down card the player has
-// glimpsed since the last chain that CLEARED cards: mismatched chain cards that
-// flipped back, chain-3 danger reveals, and freshly dropped cards. A collect resets
-// it (the board changed); everything else accumulates. Recall re-shows the lot.
+// glimpsed SINCE THE START OF THE MATCH: the Win Streak start reveal, back-effect
+// reveals, chain-3 danger reveals, mismatched chain cards that flipped back,
+// peek/booster reveals, and locked/iced/color-locked cards that were shown face-up
+// (revealLockedCards) and have since unlocked. It accumulates for the whole match —
+// a collect only FORGETS the slots it cleared (removeRecall), because those refill
+// with fresh, unseen cards; everything else stays remembered. Only a level start
+// (resetRecall) or a full board reshuffle (sweepRevealBoard) wipes it. Recall
+// re-shows the lot that's still face-down.
 function resetRecall() { lastRevealedCards = []; }
 function addRecall(indices) {
   if (!indices || !indices.length) return;
@@ -26,7 +31,7 @@ function removeRecall(indices) {
   lastRevealedCards = lastRevealedCards.filter(i => !drop.has(i));
 }
 
-const RECALL_COST = 10; // coins per use
+const RECALL_COST = 25; // coins per use
 function recallCards() {
   if (typeof tutorialAllowsRecall === 'function' && !tutorialAllowsRecall()) return; // FTUE: only during a useRecall step
   if (inputLocked || !lastRevealedCards.length) return;

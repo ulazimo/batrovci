@@ -879,15 +879,15 @@ const LEVEL15_STEPS = [
 // Colours for the part-2 chain are forced in step 5's onEnter (card 1 & the star 12 → green,
 // mismatch 3 → red; all outside the star pattern {2,6,7,8,10,11,13,14,16,17,18,22}) and the
 // front faces re-skinned in place. Auto colour-clear is suppressed so the 2-green chain waits
-// for the guided red bank. Recall costs 10 coins each use — step 1 tops the player up if short.
+// for the guided red bank. Recall costs 25 coins each use — step 1 tops the player up if short.
 // The part-2 bank uses advanceOnResolve so PART 2 only starts AFTER the star reveal has hidden.
 // ============================================================
 const LEVEL16_STEPS = [
   // ---- PART 1: Recall the Win Streak reveal ----
   { type: 'info', highlight: '#recall-btn',
     text: 'You just received a new Power-Up — Recall! It helps you remember cards that were previously opened. 🔄',
-    onEnter: () => tutorialEnsureCoins(20) },
-  { type: 'info', highlight: '#recall-btn', text: 'But at a cost — just 10 coins! 🪙' },
+    onEnter: () => tutorialEnsureCoins(50) },
+  { type: 'info', highlight: '#recall-btn', text: 'But at a cost — just 25 coins! 🪙' },
   { type: 'useRecall', text: 'Tap Recall to see the Win Streak cards again!' },
   { type: 'info', text: 'It can help you at the start of the match to Recall the cards from the Win Streak reveal! ✨' },
   // ---- PART 2: Recall a Back-effect reveal ----
@@ -904,7 +904,7 @@ const LEVEL16_STEPS = [
   { type: 'tapCard', card: 12 },
   { type: 'tapCard', card: 1 },
   { type: 'tapCard', card: 3, text: 'Now tap a card to collect the chain!', advanceOnResolve: true },
-  { type: 'info', text: 'It can also reveal all of the cards that were revealed from the previous turn! 👀' },
+  { type: 'info', text: 'It reveals every card you\'ve seen so far this match — not just the last turn! 👀' },
   { type: 'useRecall', text: 'Tap Recall to see them again!' },
 ];
 

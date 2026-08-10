@@ -483,6 +483,10 @@ function decorateLock(cell, card) {
 // rotateY(180)→0 flip. No-op when nothing is held. See pendingLockHide / revealLockedCards.
 function flushLockHide() {
   if (!pendingLockHide.size) return;
+  // These tiles were shown face-up by revealLockedCards while locked (plain lock / ice /
+  // color-lock) and have just unlocked — the player has seen their colour, so remember them
+  // for Recall before they flip face-down (they're normal face-down cards now).
+  if (typeof addRecall === 'function') addRecall([...pendingLockHide]);
   pendingLockHide.forEach(idx => { const el = getCardEl(idx); if (el) el.classList.remove('reveal-hold'); });
   pendingLockHide.clear();
 }

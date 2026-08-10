@@ -17,7 +17,7 @@ let board = [], score = 0, turns = 0;
 let chainColor = null, chainColors = new Set(), chainCards = [], specialsUsed = [], lastSelectedIdx = -1;
 let turnActive = false, inputLocked = false;
 let shieldCharges = 0, echoCharges = 0, spotlightMode = false, activeBooster = null;
-let lastRevealedCards = []; // accumulated cards seen since the last chain that cleared (for recall) — see resetRecall/addRecall
+let lastRevealedCards = []; // every card glimpsed since the START of the match (for recall) — see resetRecall/addRecall/removeRecall
 let pendingDangerReveal = []; // chain-3 danger tiles to flip up once the chain ends (chainDangerReveal rule)
 let pendingLockHide = new Set(); // just-unlocked cards (revealed face-up by revealLockedCards) held face-up until the turn's reveal beat, then flipped face-down together (flushLockHide)
 let bombColorClearOverride = null; // colours a bomb exhausted (all interactable cards gone) pre-refill — forces endTurn to at least collect them despite the bomb's own refill
