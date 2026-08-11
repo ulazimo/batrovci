@@ -994,6 +994,7 @@ function showLegal() {
   const el = document.getElementById('legal-panel');
   if (el) el.classList.add('active');
   syncVibrationToggle();
+  syncNotificationToggle();
 }
 function closeLegal() {
   const el = document.getElementById('legal-panel');
@@ -1014,4 +1015,20 @@ function toggleVibrations() {
   const on = HAPTICS.toggle();   // flips enabled + persists
   syncVibrationToggle();
   if (on) HAPTICS.fire('collect'); // a little confirmation tick when switching ON
+}
+
+// "Notifications" master switch in the player-facing Settings. Default ON; when
+// OFF, NOTIF never schedules anything and cancels any pending reminders. Turning
+// it ON asks for the OS permission lazily. Persists via NOTIF (mm_notifications).
+function syncNotificationToggle() {
+  const btn = document.getElementById('notification-toggle');
+  if (!btn || typeof NOTIF === 'undefined') return;
+  const on = NOTIF.isEnabled();
+  btn.classList.toggle('on', on);
+  btn.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+function toggleNotifications() {
+  if (typeof NOTIF === 'undefined') return;
+  NOTIF.toggle();   // flips enabled + persists (+ prompts for permission when ON)
+  syncNotificationToggle();
 }

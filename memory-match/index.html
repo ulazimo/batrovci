@@ -306,6 +306,10 @@
       <span class="settings-row-label">📳 Vibrations</span>
       <button class="setting-toggle on" id="vibration-toggle" role="switch" aria-checked="true" aria-label="Vibrations" onclick="event.stopPropagation();toggleVibrations()"></button>
     </div>
+    <div class="settings-row" onclick="toggleNotifications()">
+      <span class="settings-row-label">🔔 Notifications</span>
+      <button class="setting-toggle on" id="notification-toggle" role="switch" aria-checked="true" aria-label="Notifications" onclick="event.stopPropagation();toggleNotifications()"></button>
+    </div>
     <div class="legal-links">
       <a class="overlay-btn secondary" href="https://www.take2games.com/legal/en-US/" target="_blank" rel="noopener noreferrer">📄 Terms of Service</a>
       <a class="overlay-btn secondary" href="https://www.take2games.com/privacy/en-US/" target="_blank" rel="noopener noreferrer">🔒 Privacy Policy</a>
@@ -349,6 +353,7 @@
 <script src="state.js"></script>
 <script src="audio.js"></script>
 <script src="haptics.js"></script>
+<script src="notifications.js"></script>
 <script src="vfx.js"></script>
 <script src="reveal-skip.js"></script>
 <script src="progression.js"></script>

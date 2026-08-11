@@ -34,6 +34,10 @@
   buildLevelJumper();
   showHome();   // renders the lives pill (and its refill countdown) via renderLives()
 
+  // Local notifications: reconcile any pending reminder and wire the
+  // background/foreground daily-comeback nudge. No-op on web; never prompts here.
+  if (typeof NOTIF !== 'undefined') NOTIF.init();
+
   // Background OTA content refresh — writes the localStorage cache only; the new
   // bundle is applied on the next launch, never mid-session. Fire-and-forget.
   if (typeof refreshRemoteContent === 'function') refreshRemoteContent();

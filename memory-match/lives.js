@@ -40,6 +40,8 @@ function startLivesRefillTimer() {
   if (typeof saveJourneySnapshot === 'function') saveJourneySnapshot();
   saveProgress();
   scheduleLivesTick();
+  // Local notification for when the refill lands (native only; no-op on web).
+  if (typeof NOTIF !== 'undefined') NOTIF.onLivesDepleted(progress.livesRefillAt);
 }
 
 // Hand back a full set of lives and clear the countdown.
@@ -48,6 +50,8 @@ function completeLivesRefill() {
   delete progress.livesRefillAt;
   if (typeof saveJourneySnapshot === 'function') saveJourneySnapshot();
   saveProgress();
+  // Refill already landed — drop the "lives refilled" reminder if one is pending.
+  if (typeof NOTIF !== 'undefined') NOTIF.onLivesRefilled();
 }
 
 // Reconcile stored state with the wall clock: expire a finished countdown, and
