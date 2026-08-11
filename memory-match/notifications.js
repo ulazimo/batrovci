@@ -29,8 +29,8 @@
 // Player-facing master switch: the "Notifications" toggle in the home ⚙ Settings
 // (setEnabled / mm_notifications, default ON). When OFF, nothing is ever scheduled
 // and any pending notifications are cancelled. The OS permission prompt is asked
-// LAZILY at a natural moment (running out of lives, or flipping the toggle on) —
-// never on cold start.
+// automatically ONCE, on first app open (init), if not already decided — never from
+// the Settings toggle, running out of lives, or any other trigger.
 // ============================================================
 const NOTIF = (() => {
   const ENABLED_KEY = 'mm_notifications';
@@ -81,8 +81,8 @@ const NOTIF = (() => {
     catch (e) { return false; }
   }
 
-  // Check, and prompt if not yet decided. Only call from a natural, user-driven
-  // moment (toggle ON, running out of lives).
+  // Check, and prompt if not yet decided. Called once from init() on first open —
+  // the only place we ever prompt.
   async function request() {
     const LN = plugin();
     if (!LN) return false;
@@ -165,13 +165,14 @@ const NOTIF = (() => {
     setEnabled(on) {
       enabled = !!on;
       ls.set(ENABLED_KEY, on ? '1' : '0');
-      if (on) request().then(ok => { if (ok) { refresh(); rescheduleReminders(); } });
+      if (on) { refresh(); rescheduleReminders(); }
       else drop([ID_LIVES, ...SCHED_IDS]);
     },
     toggle() { this.setEnabled(!enabled); return enabled; },
 
-    // lives.js hooks — running out of lives is a natural moment to ask permission.
-    onLivesDepleted(at) { if (enabled && at) put([livesNote(at)], { prompt: true }); },
+    // lives.js hooks — schedule the lives reminder (prompt-free; permission was
+    // asked at first open).
+    onLivesDepleted(at) { if (enabled && at) put([livesNote(at)]); },
     onLivesRefilled() { drop([ID_LIVES]); },
 
     refresh,
@@ -180,12 +181,14 @@ const NOTIF = (() => {
     // lay down today's + the next 3 days' morning/evening reminders. Every
     // foreground return is another login, so it clears + reschedules again to keep
     // the rolling window current (and drop today's slots once they've passed).
-    // All prompt-free — never pops a permission dialog here.
+    // First open is also the ONE place we ask for OS permission (iOS shows the
+    // dialog only once; a later boot with an already-decided status re-runs this as
+    // a no-op). Foreground returns stay prompt-free.
     init() {
       const LN = plugin();
       if (!LN) return;   // web / desktop — nothing to do
-      refresh();
-      rescheduleReminders();
+      if (enabled) request().then(() => { refresh(); rescheduleReminders(); });
+      else { refresh(); rescheduleReminders(); }
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
           refresh();
