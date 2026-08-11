@@ -1271,22 +1271,6 @@ body.bomb-aiming #board { touch-action: none; }
 .shop-fab-label { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
 @keyframes shopFabBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
-/* Survey FAB — mirror of the Shop FAB on the RIGHT, in grey/blue. */
-#survey-fab {
-  position: absolute; right: 12px; z-index: 4; cursor: pointer; padding: 0;
-  top: calc(58px + env(safe-area-inset-top, 0px));
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  width: 52px; height: 52px; border-radius: 15px;
-  background: linear-gradient(135deg, #6a7a9c, #33405c);
-  border: 2px solid rgba(255,255,255,.30); color: #eaf0ff;
-  box-shadow: 0 4px 14px rgba(0,0,0,.4), 0 0 0 4px rgba(120,150,200,.15);
-  text-decoration: none;
-}
-#survey-fab:hover  { filter: brightness(1.1); }
-#survey-fab:active { transform: scale(.92); }
-.survey-fab-icon  { font-size: 20px; line-height: 1; }
-.survey-fab-label { font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
-
 /* Overlay box: taller + scrollable, the shop can hold several rows. */
 .shop-box { max-width: 380px; max-height: 90%; overflow-y: auto; gap: 10px; padding: 22px 20px; }
 .shop-header { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; }
