@@ -57,6 +57,18 @@
  *  (previousState = what the player was doing before buying: boot, prelevel,
  *   in-level, level-complete or level-failed. coinsBefore is the balance BEFORE
  *   the purchase; coinsAfter = coinsBefore - cost.)
+ *
+ *  'Logins' (one row per app launch — logged from boot.js after consent):
+ *    timestamp · username · user_id · is_registration · device_type ·
+ *    build_platform · country · network_connection_type · application_version ·
+ *    timezone · os_version · device_manufacturer · device_model · device_cpu_type ·
+ *    device_gpu_name · device_memory_size_mb · device_tier · screen_width_px ·
+ *    screen_height_px · screen_dpi
+ *  (is_registration is TRUE only on the first-ever launch of a device, when its
+ *   user_id is minted; every launch after is FALSE. Fields the platform can't
+ *   supply — most device_* fields on the web, plus device_cpu_type everywhere —
+ *   arrive blank. On the native app the Capacitor Device/App/Network plugins fill
+ *   manufacturer, model, os_version, app version and wifi/cellular.)
  */
 
 function doPost(e) {

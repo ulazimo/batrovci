@@ -46,6 +46,9 @@
   // personal data is collected. Only once the player accepts do we ask for a
   // username and start the FTUE (both sit over the hall).
   const startFirstRunPrompts = () => {
+    // Log this launch to the Logins sheet (registration on the first-ever launch,
+    // a login every time after). Runs post-consent, like all other collection.
+    if (typeof logLogin === 'function') logLogin();
     // First launch on this device → ask for a username (once). Sits over the hall.
     if (typeof maybeAskUsername === 'function') maybeAskUsername();
     // FTUE: spotlight Play on the home screen (no-op if the username prompt is up —

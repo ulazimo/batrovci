@@ -8,6 +8,7 @@
 // functions/consts and reads no shared engine state at load time, so its
 // position is convention, not a hard dependency. Callers all run later:
 //   • boot.js            → maybeAskUsername()  (once-per-device prompt)
+//   • boot.js            → logLogin()          (every launch → a Logins row)
 //   • level.js startGame → resetMatchStats()   (new match: clear counters + start clock)
 //   • boosters.js        → recordPowerUpUse()   (each power-up consumed)
 //   • endgame.js         → logLevelResult()     (win / fail → send a row)
@@ -194,6 +195,39 @@ function sendAnalytics(payload) {
   } catch (e) {}
 }
 
+// ------------------------------------------------------------
+// FIREBASE ANALYTICS — the SAME match-result row, sent as a custom GA4 event
+// ('level_result') so it lands in Firebase/GA4 next to the auto-collected
+// retention + playtime events (see the memory-match-firebase-analytics notes).
+// Two output paths, picked per fire (mirrors haptics.js / notifications.js):
+//   • NATIVE — the Capacitor @capacitor-firebase/analytics plugin
+//              (window.Capacitor.Plugins.FirebaseAnalytics.logEvent) — what ships.
+//   • WEB    — gtag('event', …) via the GA4 tag already loaded in index.html.
+// Fire-and-forget; never throws into the caller. GA4 caps string param values at
+// 100 chars and allows only string/number/boolean, so each value is coerced.
+// ------------------------------------------------------------
+const FIREBASE_LEVEL_EVENT = 'level_result';
+
+function firebaseAnalyticsPlugin() {
+  try { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FirebaseAnalytics) || null; }
+  catch (e) { return null; }
+}
+
+function fbParamValue(v) {
+  if (typeof v === 'number' || typeof v === 'boolean') return v;
+  return String(v == null ? '' : v).slice(0, 100);
+}
+
+function logFirebaseEvent(name, params) {
+  const clean = {};
+  Object.keys(params || {}).forEach(k => { clean[k] = fbParamValue(params[k]); });
+  const FA = firebaseAnalyticsPlugin();
+  if (FA && FA.logEvent) {
+    try { FA.logEvent({ name, params: clean }); } catch (e) {}
+  }
+  try { if (typeof gtag === 'function') gtag('event', name, clean); } catch (e) {}
+}
+
 // Build + send one row. `outcome` is 'complete' or 'fail'. Called from
 // levelWon() / levelFailed() in endgame.js.
 function logLevelResult(outcome) {
@@ -222,6 +256,7 @@ function logLevelResult(outcome) {
     durationSec:   matchDurationSeconds(),
   };
   sendAnalytics(payload);
+  logFirebaseEvent(FIREBASE_LEVEL_EVENT, payload);
 }
 
 // ------------------------------------------------------------
@@ -258,4 +293,204 @@ function logShopPurchase(id, qty, cost, coinsBefore) {
     coinsBefore:  coinsBefore,
     coinsAfter:   coinsBefore - cost,
   });
+}
+
+// ------------------------------------------------------------
+// LOGINS — one row per app launch, logged to its own 'Logins' tab (the Apps
+// Script routes on payload.sheet and auto-creates the tab + columns). Fired from
+// boot.js on every launch, but only AFTER the consent gate — it collects a
+// device fingerprint. The first launch on a device is the REGISTRATION row
+// (is_registration = true, when mm_user_id is minted); every launch after is a
+// login. Every field is best-effort: anything the platform can't provide (most
+// device_* fields on the web) is sent blank/null and the sheet shows it empty.
+// ------------------------------------------------------------
+const MM_USER_ID_KEY = 'mm_user_id';
+
+// A random id, preferring the crypto UUID; falls back for insecure contexts.
+function genUserId() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+  return 'u-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+// Stable per-device id. Returns { id, isNew } — isNew is true only the first time
+// (the launch we mint it), which is what flags a row as a registration.
+function getOrCreateUserId() {
+  try {
+    const existing = localStorage.getItem(MM_USER_ID_KEY);
+    if (existing) return { id: existing, isNew: false };
+    const id = genUserId();
+    localStorage.setItem(MM_USER_ID_KEY, id);
+    return { id: id, isNew: true };
+  } catch (e) {
+    // No storage (private mode): can't persist, so treat every launch as fresh.
+    return { id: genUserId(), isNew: true };
+  }
+}
+
+function getTimezone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; }
+  catch (e) { return ''; }
+}
+
+// Best-effort ISO-3166 country from the browser locale region (e.g. en-US → US).
+// No external lookup — approximate, and can disagree with the real location.
+function deriveCountry() {
+  try {
+    const loc = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+    if (loc && typeof Intl !== 'undefined' && Intl.Locale) {
+      try { const r = new Intl.Locale(loc).region; if (r) return r; } catch (e) {}
+    }
+    const m = /[-_]([A-Za-z]{2})\b/.exec(loc);
+    if (m) return m[1].toUpperCase();
+  } catch (e) {}
+  return '';
+}
+
+// Phone / Tablet / PC — UA + touch + screen-size heuristic.
+function deviceType() {
+  try {
+    const ua = navigator.userAgent || '';
+    const iPadDesktop = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    if (/iPad/.test(ua) || iPadDesktop) return 'Tablet';
+    if (/Android/.test(ua) && !/Mobile/.test(ua)) return 'Tablet';   // Android tablets drop "Mobile"
+    if (/Mobile|iPhone|iPod/.test(ua) || /Android/.test(ua)) return 'Phone';
+    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const minDim = Math.min((screen && screen.width) || 0, (screen && screen.height) || 0);
+    if (isTouch && minDim >= 600) return 'Tablet';
+    if (isTouch && minDim > 0) return 'Phone';
+    return 'PC';
+  } catch (e) { return ''; }
+}
+
+// Android / iOS from the UA (native overrides this via the Device plugin below).
+function buildPlatformWeb() {
+  try {
+    const ua = navigator.userAgent || '';
+    if (/Android/.test(ua)) return 'Android';
+    if (/iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'iOS';
+  } catch (e) {}
+  return '';
+}
+
+// WiFi / Mobile Data from the Network Information API (often empty on desktop;
+// the native Network plugin below is the reliable source on device).
+function connectionTypeWeb() {
+  try {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (c && c.type) {
+      if (c.type === 'wifi' || c.type === 'ethernet') return 'WiFi';
+      if (c.type === 'cellular') return 'Mobile Data';
+    }
+  } catch (e) {}
+  return '';
+}
+
+// OS + version parsed from the UA (native overrides via Device.getInfo().osVersion).
+function osVersionFromUA() {
+  try {
+    const ua = navigator.userAgent || '';
+    let m;
+    if ((m = /Android\s+([\d.]+)/.exec(ua))) return 'Android ' + m[1];
+    if ((m = /(?:iPhone|iPad|iPod).*?OS\s+([\d_]+)/.exec(ua))) return 'iOS ' + m[1].replace(/_/g, '.');
+    if ((m = /Windows NT\s+([\d.]+)/.exec(ua))) return 'Windows NT ' + m[1];
+    if ((m = /Mac OS X\s+([\d_]+)/.exec(ua))) return 'macOS ' + m[1].replace(/_/g, '.');
+    if (/CrOS/.test(ua)) return 'ChromeOS';
+    if (/Linux/.test(ua)) return 'Linux';
+  } catch (e) {}
+  return '';
+}
+
+// Unmasked WebGL renderer string — the closest thing the web exposes to a GPU name.
+function deviceGPU() {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return '';
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    if (ext) { const r = gl.getParameter(ext.UNMASKED_RENDERER_WEBGL); if (r) return String(r); }
+    const r2 = gl.getParameter(gl.RENDERER);
+    return r2 ? String(r2) : '';
+  } catch (e) { return ''; }
+}
+
+// Coarse low/mid/high tier from the memory + core-count hints (both approximate).
+function deviceTier() {
+  const mem = navigator.deviceMemory || 0;
+  const cores = navigator.hardwareConcurrency || 0;
+  if (!mem && !cores) return '';
+  if ((mem && mem <= 2) || (cores && cores <= 2)) return 'low';
+  if (mem >= 8 || cores >= 8) return 'high';
+  return 'mid';
+}
+
+// Gather the device fingerprint. Sync browser heuristics first, then let the
+// native Capacitor plugins (Device / App / Network) overwrite what they know
+// better. Returns keys in the requested column order.
+async function collectDeviceInfo() {
+  const dpr = window.devicePixelRatio || 1;
+  const sw = (screen && screen.width) || window.innerWidth || 0;
+  const sh = (screen && screen.height) || window.innerHeight || 0;
+  const memMb = (typeof navigator.deviceMemory === 'number') ? Math.round(navigator.deviceMemory * 1024) : null;
+
+  const d = {
+    device_type:             deviceType(),
+    build_platform:          buildPlatformWeb(),
+    country:                 deriveCountry(),
+    network_connection_type: connectionTypeWeb(),
+    application_version:     '',
+    timezone:                getTimezone(),
+    os_version:              osVersionFromUA(),
+    device_manufacturer:     '',            // native only (Device plugin)
+    device_model:            '',            // native only (Device plugin)
+    device_cpu_type:         '',            // not exposed to the web or the Device plugin
+    device_gpu_name:         deviceGPU(),
+    device_memory_size_mb:   memMb,
+    device_tier:             deviceTier(),
+    screen_width_px:         Math.round(sw * dpr) || null,
+    screen_height_px:        Math.round(sh * dpr) || null,
+    screen_dpi:              Math.round(96 * dpr) || null,
+  };
+
+  const plugins = (window.Capacitor && window.Capacitor.Plugins) || null;
+  if (plugins) {
+    if (plugins.Device && typeof plugins.Device.getInfo === 'function') {
+      try {
+        const di = await plugins.Device.getInfo();
+        if (di) {
+          if (di.manufacturer) d.device_manufacturer = di.manufacturer;
+          if (di.model) d.device_model = di.model;
+          if (di.osVersion) d.os_version = di.osVersion;
+          if (di.platform === 'ios') d.build_platform = 'iOS';
+          else if (di.platform === 'android') d.build_platform = 'Android';
+        }
+      } catch (e) {}
+    }
+    if (plugins.App && typeof plugins.App.getInfo === 'function') {
+      try { const ai = await plugins.App.getInfo(); if (ai && ai.version) d.application_version = ai.version; }
+      catch (e) {}
+    }
+    if (plugins.Network && typeof plugins.Network.getStatus === 'function') {
+      try {
+        const ns = await plugins.Network.getStatus();
+        if (ns && ns.connectionType === 'wifi') d.network_connection_type = 'WiFi';
+        else if (ns && ns.connectionType === 'cellular') d.network_connection_type = 'Mobile Data';
+      } catch (e) {}
+    }
+  }
+  return d;
+}
+
+// Build + send one Logins row. Fire-and-forget; called from boot() once per launch.
+async function logLogin() {
+  const uid = getOrCreateUserId();
+  let device;
+  try { device = await collectDeviceInfo(); } catch (e) { device = {}; }
+  const payload = Object.assign({
+    sheet:           'Logins',
+    timestamp:       new Date().toISOString(),
+    username:        getUsername() || '',
+    user_id:         uid.id,
+    is_registration: !!uid.isNew,
+  }, device);
+  sendAnalytics(payload);
 }
