@@ -19,8 +19,12 @@
 //   1. LIVES REFILL — anchored to progress.livesRefillAt (an absolute timestamp,
 //      see lives.js). Fired from startLivesRefillTimer() the moment lives hit 0;
 //      cancelled the instant they refill or the player returns to the app.
-//   2. DAILY COMEBACK — a +24h and +72h "come back" nudge, (re)scheduled every
-//      time the app is backgrounded and cleared when it returns to the foreground.
+//   2. DAILY REMINDERS — a morning (09:00) and an evening (17:30) local-time nudge
+//      for today (each slot only if it's still ahead) plus the next 3 days. This
+//      game has no account, so a "login" = a session start: they are re-scheduled
+//      on every boot AND every foreground return, clearing the prior batch first
+//      so re-opening never duplicates them. Copy rotates per day (8 distinct
+//      texts, morning/evening pools disjoint) so no two ever read the same.
 //
 // Player-facing master switch: the "Notifications" toggle in the home ⚙ Settings
 // (setEnabled / mm_notifications, default ON). When OFF, nothing is ever scheduled
@@ -32,11 +36,28 @@ const NOTIF = (() => {
   const ENABLED_KEY = 'mm_notifications';
 
   // Fixed IDs so a re-schedule replaces, rather than stacks, the same reminder.
-  const ID_LIVES   = 1001;
-  const ID_DAILY_1 = 1002;   // +24h
-  const ID_DAILY_2 = 1003;   // +72h
+  const ID_LIVES = 1001;
+  // Daily reminders: today..+3 days × {morning, evening} = 8 stable slots. Cancelling
+  // this whole range on each login is what stops re-opens from piling duplicates up.
+  const SCHED_IDS = [1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107];
 
-  const HOUR = 60 * 60 * 1000;
+  const MORNING_HOUR = 9,  MORNING_MIN = 0;    // 09:00 local time
+  const EVENING_HOUR = 17, EVENING_MIN = 30;   // 17:30 local time
+
+  // One distinct copy per day-slot (index = day offset 0..3), so every scheduled
+  // reminder reads differently. Morning and evening pools are disjoint ⇒ 8 texts.
+  const MORNING_TEXTS = [
+    { title: '☀️ Good morning', body: 'Wake up your brain with a round of Memory Match.' },
+    { title: '🧠 Rise & match', body: 'A quick puzzle is the perfect way to start the day.' },
+    { title: '☕ Morning warm-up', body: 'Sharpen your memory before things get busy.' },
+    { title: '🌅 New day, new levels', body: 'Give your brain a gentle wake-up with Memory Match.' },
+  ];
+  const EVENING_TEXTS = [
+    { title: '🎮 Ready for another level?', body: 'Unwind after work with a few matches.' },
+    { title: '🌙 Evening challenge', body: 'Clear your head with a round of Memory Match.' },
+    { title: '🔥 Keep your streak alive', body: 'Squeeze in a level before the day is done.' },
+    { title: '🏆 One more level?', body: 'Relax and match your way to a new best.' },
+  ];
 
   const ls = {
     get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
@@ -97,12 +118,34 @@ const NOTIF = (() => {
       schedule: { at: new Date(at) },
     };
   }
-  function dailyNotes() {
+  // Build the morning/evening reminders for today (only the slots still ahead of
+  // now) plus the next 3 days. Each day-slot gets its own stable id and its own copy.
+  function reminderNotes() {
     const now = Date.now();
-    return [
-      { id: ID_DAILY_1, title: 'Your puzzles miss you 🧩', body: 'Come back for a quick Memory Match round!', schedule: { at: new Date(now + 24 * HOUR) } },
-      { id: ID_DAILY_2, title: 'New matches await ✨',      body: "Don't lose your streak — play Memory Match!", schedule: { at: new Date(now + 72 * HOUR) } },
-    ];
+    const out = [];
+    for (let day = 0; day <= 3; day++) {
+      const morning = new Date();
+      morning.setDate(morning.getDate() + day);
+      morning.setHours(MORNING_HOUR, MORNING_MIN, 0, 0);
+      if (morning.getTime() > now) {
+        out.push({ id: SCHED_IDS[day * 2], ...MORNING_TEXTS[day], schedule: { at: morning } });
+      }
+      const evening = new Date();
+      evening.setDate(evening.getDate() + day);
+      evening.setHours(EVENING_HOUR, EVENING_MIN, 0, 0);
+      if (evening.getTime() > now) {
+        out.push({ id: SCHED_IDS[day * 2 + 1], ...EVENING_TEXTS[day], schedule: { at: evening } });
+      }
+    }
+    return out;
+  }
+
+  // Clear the previous batch (so re-opening never duplicates) then lay down a fresh
+  // rolling window. Prompt-free: schedules only if permission is already granted.
+  async function rescheduleReminders() {
+    await drop(SCHED_IDS);
+    if (!enabled) return;
+    await put(reminderNotes());
   }
 
   // ── Reconcile ──────────────────────────────────────────────────────────────
@@ -122,8 +165,8 @@ const NOTIF = (() => {
     setEnabled(on) {
       enabled = !!on;
       ls.set(ENABLED_KEY, on ? '1' : '0');
-      if (on) request().then(ok => { if (ok) refresh(); });
-      else drop([ID_LIVES, ID_DAILY_1, ID_DAILY_2]);
+      if (on) request().then(ok => { if (ok) { refresh(); rescheduleReminders(); } });
+      else drop([ID_LIVES, ...SCHED_IDS]);
     },
     toggle() { this.setEnabled(!enabled); return enabled; },
 
@@ -133,18 +176,20 @@ const NOTIF = (() => {
 
     refresh,
 
-    // Called once from boot(). Reconciles pending reminders (silently) and wires
-    // the background/foreground handling for the daily-comeback nudge.
+    // Called once from boot(). Boot is a login: reconcile the lives reminder and
+    // lay down today's + the next 3 days' morning/evening reminders. Every
+    // foreground return is another login, so it clears + reschedules again to keep
+    // the rolling window current (and drop today's slots once they've passed).
+    // All prompt-free — never pops a permission dialog here.
     init() {
       const LN = plugin();
       if (!LN) return;   // web / desktop — nothing to do
-      granted().then(ok => { if (enabled && ok) refresh(); });
+      refresh();
+      rescheduleReminders();
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          if (enabled) put(dailyNotes());          // granted-only; never prompts while leaving
-        } else {
-          drop([ID_DAILY_1, ID_DAILY_2]);          // they're back — clear the comeback nudges
-          refresh();                                // and re-check the lives reminder
+        if (!document.hidden) {
+          refresh();
+          rescheduleReminders();
         }
       });
     },
