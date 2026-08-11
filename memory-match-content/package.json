@@ -1,0 +1,13 @@
+{
+  "name": "memory-match-content",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OTA level content for Memory Match (Cleaning XL) — assemble + deploy the level bundle to Firebase Hosting so levels update without an app-store release.",
+  "scripts": {
+    "assemble": "node assemble.mjs",
+    "deploy": "firebase deploy --only hosting",
+    "release": "node release.mjs",
+    "release:dry": "node release.mjs --dry-run"
+  }
+}

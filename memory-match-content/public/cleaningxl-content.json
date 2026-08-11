@@ -1,0 +1,9241 @@
+{
+  "contentVersion": 2,
+  "minApi": 1,
+  "cleaningxl": {
+    "levels": [
+      {
+        "id": 1,
+        "cols": 4,
+        "rows": 4,
+        "colorCount": 3,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            0,
+            1,
+            "red"
+          ],
+          [
+            1,
+            2,
+            "red"
+          ],
+          [
+            1,
+            3,
+            "red"
+          ],
+          [
+            1,
+            1,
+            "green"
+          ],
+          [
+            3,
+            1,
+            "green"
+          ],
+          [
+            3,
+            2,
+            "green"
+          ],
+          [
+            2,
+            2,
+            "green"
+          ],
+          [
+            2,
+            1,
+            "green"
+          ],
+          [
+            0,
+            2,
+            "blue"
+          ],
+          [
+            0,
+            3,
+            "blue"
+          ],
+          [
+            2,
+            3,
+            "blue"
+          ],
+          [
+            3,
+            3,
+            "blue"
+          ],
+          [
+            1,
+            0,
+            "blue"
+          ],
+          [
+            2,
+            0,
+            "blue"
+          ],
+          [
+            3,
+            0,
+            "blue"
+          ]
+        ]
+      },
+      {
+        "id": 2,
+        "cols": 4,
+        "rows": 4,
+        "colorCount": 3,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            1,
+            1,
+            "red"
+          ],
+          [
+            2,
+            2,
+            "blue"
+          ],
+          [
+            3,
+            2,
+            "blue"
+          ],
+          [
+            1,
+            2,
+            "green"
+          ],
+          [
+            2,
+            1,
+            "green"
+          ],
+          [
+            1,
+            0,
+            "green"
+          ],
+          [
+            2,
+            0,
+            "green"
+          ],
+          [
+            3,
+            0,
+            "green"
+          ],
+          [
+            3,
+            1,
+            "green"
+          ],
+          [
+            0,
+            1,
+            "green"
+          ],
+          [
+            1,
+            3,
+            "red"
+          ],
+          [
+            0,
+            0,
+            "blue"
+          ],
+          [
+            3,
+            3,
+            "red"
+          ],
+          [
+            2,
+            3,
+            "blue"
+          ],
+          [
+            0,
+            2,
+            "red"
+          ],
+          [
+            0,
+            3,
+            "red"
+          ]
+        ]
+      },
+      {
+        "id": 3,
+        "cols": 4,
+        "rows": 4,
+        "colorCount": 3,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "cols": 4,
+        "rows": 5,
+        "colorCount": 3,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            2,
+            0,
+            "green"
+          ],
+          [
+            3,
+            2,
+            "green"
+          ],
+          [
+            1,
+            2,
+            "green"
+          ],
+          [
+            4,
+            0,
+            "green"
+          ],
+          [
+            4,
+            1,
+            "green"
+          ]
+        ],
+        "colorCounts": {
+          "green": 7
+        }
+      },
+      {
+        "id": 5,
+        "cols": 4,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "cols": 5,
+        "rows": 10,
+        "colorCount": 2,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            9,
+            1
+          ],
+          [
+            9,
+            0
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            7,
+            0
+          ],
+          [
+            7,
+            1
+          ],
+          [
+            9,
+            3
+          ],
+          [
+            9,
+            4
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            8,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            4,
+            0,
+            "red"
+          ],
+          [
+            4,
+            1,
+            "red"
+          ],
+          [
+            4,
+            2,
+            "red"
+          ],
+          [
+            4,
+            3,
+            "red"
+          ],
+          [
+            4,
+            4,
+            "red"
+          ],
+          [
+            7,
+            2,
+            "red"
+          ],
+          [
+            8,
+            2,
+            "red"
+          ],
+          [
+            9,
+            2,
+            "red"
+          ],
+          [
+            8,
+            1,
+            "red"
+          ],
+          [
+            8,
+            3,
+            "red"
+          ],
+          [
+            5,
+            0,
+            "green"
+          ],
+          [
+            5,
+            1,
+            "green"
+          ],
+          [
+            5,
+            2,
+            "green"
+          ],
+          [
+            5,
+            3,
+            "green"
+          ],
+          [
+            5,
+            4,
+            "green"
+          ],
+          [
+            0,
+            2,
+            "green"
+          ],
+          [
+            1,
+            1,
+            "green"
+          ],
+          [
+            2,
+            2,
+            "green"
+          ],
+          [
+            1,
+            2,
+            "green"
+          ],
+          [
+            1,
+            3,
+            "green"
+          ]
+        ]
+      },
+      {
+        "id": 7,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            1,
+            0,
+            "red"
+          ],
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            0,
+            1,
+            "red"
+          ],
+          [
+            0,
+            2,
+            "red"
+          ],
+          [
+            0,
+            3,
+            "red"
+          ],
+          [
+            0,
+            4,
+            "red"
+          ],
+          [
+            1,
+            4,
+            "red"
+          ],
+          [
+            2,
+            2,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 8
+        }
+      },
+      {
+        "id": 8,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            4,
+            4,
+            "blue"
+          ],
+          [
+            4,
+            3,
+            "blue"
+          ],
+          [
+            4,
+            0,
+            "blue"
+          ],
+          [
+            4,
+            1,
+            "blue"
+          ],
+          [
+            0,
+            1,
+            "blue"
+          ],
+          [
+            0,
+            3,
+            "blue"
+          ],
+          [
+            1,
+            0,
+            "blue"
+          ],
+          [
+            1,
+            4,
+            "blue"
+          ],
+          [
+            3,
+            4,
+            "blue"
+          ],
+          [
+            3,
+            0,
+            "blue"
+          ]
+        ],
+        "colorCounts": {
+          "blue": 10
+        }
+      },
+      {
+        "id": 11,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            5,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            0,
+            0,
+            "blue"
+          ],
+          [
+            0,
+            1,
+            "blue"
+          ],
+          [
+            1,
+            1,
+            "blue"
+          ],
+          [
+            1,
+            0,
+            "blue"
+          ],
+          [
+            0,
+            3,
+            "yellow"
+          ],
+          [
+            0,
+            4,
+            "yellow"
+          ],
+          [
+            1,
+            4,
+            "yellow"
+          ],
+          [
+            1,
+            3,
+            "yellow"
+          ],
+          [
+            5,
+            0,
+            "red"
+          ],
+          [
+            5,
+            1,
+            "red"
+          ],
+          [
+            6,
+            0,
+            "red"
+          ],
+          [
+            6,
+            1,
+            "red"
+          ],
+          [
+            4,
+            2,
+            "red"
+          ],
+          [
+            5,
+            3,
+            "green"
+          ],
+          [
+            6,
+            3,
+            "green"
+          ],
+          [
+            6,
+            4,
+            "green"
+          ],
+          [
+            5,
+            4,
+            "green"
+          ],
+          [
+            3,
+            3,
+            "green"
+          ],
+          [
+            3,
+            1,
+            "blue"
+          ],
+          [
+            2,
+            2,
+            "yellow"
+          ]
+        ]
+      },
+      {
+        "id": 12,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            3,
+            0,
+            "green"
+          ],
+          [
+            3,
+            4,
+            "green"
+          ],
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            1,
+            0,
+            "red"
+          ],
+          [
+            2,
+            0,
+            "red"
+          ],
+          [
+            4,
+            0,
+            "red"
+          ],
+          [
+            5,
+            0,
+            "red"
+          ],
+          [
+            6,
+            0,
+            "red"
+          ],
+          [
+            6,
+            4,
+            "red"
+          ],
+          [
+            5,
+            4,
+            "red"
+          ],
+          [
+            4,
+            4,
+            "red"
+          ],
+          [
+            2,
+            4,
+            "red"
+          ],
+          [
+            0,
+            4,
+            "red"
+          ],
+          [
+            1,
+            4,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 12,
+          "green": 2
+        },
+        "backEffects": [
+          [
+            3,
+            0,
+            "column"
+          ],
+          [
+            3,
+            4,
+            "column"
+          ]
+        ]
+      },
+      {
+        "id": 16,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            2,
+            2,
+            "star"
+          ],
+          [
+            4,
+            4,
+            "cross"
+          ],
+          [
+            4,
+            0,
+            "cross"
+          ],
+          [
+            0,
+            0,
+            "cross"
+          ],
+          [
+            0,
+            4,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 17,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            2,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            3,
+            0
+          ]
+        ],
+        "backEffects": [
+          [
+            3,
+            2,
+            "cross"
+          ],
+          [
+            6,
+            2,
+            "row"
+          ]
+        ]
+      },
+      {
+        "id": 18,
+        "cols": 7,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "backEffects": [
+          [
+            2,
+            6,
+            "circle"
+          ],
+          [
+            2,
+            0,
+            "circle"
+          ]
+        ]
+      },
+      {
+        "id": 19,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 14,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            3,
+            0
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            4,
+            2
+          ]
+        ],
+        "colorCounts": {
+          "yellow": 3
+        },
+        "backEffects": [
+          [
+            0,
+            4,
+            "column"
+          ],
+          [
+            7,
+            0,
+            "column"
+          ],
+          [
+            6,
+            0,
+            "column"
+          ]
+        ]
+      },
+      {
+        "id": 20,
+        "cols": 7,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            3,
+            5
+          ]
+        ],
+        "backEffects": [
+          [
+            6,
+            3,
+            "row"
+          ],
+          [
+            0,
+            3,
+            "row"
+          ],
+          [
+            3,
+            6,
+            "column"
+          ],
+          [
+            3,
+            0,
+            "column"
+          ]
+        ]
+      },
+      {
+        "id": 21,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            1,
+            1,
+            "cross"
+          ],
+          [
+            4,
+            4,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 22,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            5,
+            2
+          ]
+        ],
+        "colorCounts": {
+          "orange": 9
+        },
+        "backEffects": [
+          [
+            3,
+            2,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 23,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 13,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            2,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            5,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            4,
+            1,
+            "column"
+          ],
+          [
+            1,
+            4,
+            "row"
+          ]
+        ]
+      },
+      {
+        "id": 24,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 6,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ]
+      },
+      {
+        "id": 25,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            2,
+            2,
+            "red"
+          ],
+          [
+            2,
+            1,
+            "red"
+          ],
+          [
+            1,
+            2,
+            "yellow"
+          ],
+          [
+            3,
+            2,
+            "blue"
+          ]
+        ]
+      },
+      {
+        "id": 26,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "colors": [
+          [
+            3,
+            2,
+            "blue"
+          ],
+          [
+            2,
+            1,
+            "blue"
+          ],
+          [
+            1,
+            2,
+            "blue"
+          ],
+          [
+            2,
+            3,
+            "blue"
+          ]
+        ],
+        "colorCounts": {
+          "blue": 4
+        },
+        "backEffects": [
+          [
+            1,
+            4,
+            "cross"
+          ],
+          [
+            1,
+            0,
+            "cross"
+          ],
+          [
+            3,
+            0,
+            "cross"
+          ],
+          [
+            3,
+            4,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 27,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            2
+          ]
+        ]
+      },
+      {
+        "id": 28,
+        "cols": 5,
+        "rows": 9,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            5,
+            2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            7,
+            2
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            3
+          ]
+        ],
+        "disabled": [
+          [
+            8,
+            1
+          ],
+          [
+            8,
+            0
+          ],
+          [
+            7,
+            0
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            8,
+            4
+          ],
+          [
+            8,
+            3
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            8,
+            2
+          ],
+          [
+            7,
+            1
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            4,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            5,
+            2,
+            "red"
+          ],
+          [
+            6,
+            2,
+            "red"
+          ],
+          [
+            7,
+            2,
+            "red"
+          ],
+          [
+            6,
+            1,
+            "red"
+          ],
+          [
+            6,
+            3,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 5
+        }
+      },
+      {
+        "id": 29,
+        "cols": 4,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            3,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ]
+        ]
+      },
+      {
+        "id": 30,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            4,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            1,
+            0,
+            "red"
+          ],
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            0,
+            1,
+            "red"
+          ],
+          [
+            0,
+            3,
+            "green"
+          ],
+          [
+            0,
+            4,
+            "green"
+          ],
+          [
+            1,
+            4,
+            "green"
+          ],
+          [
+            3,
+            0,
+            "blue"
+          ],
+          [
+            4,
+            0,
+            "blue"
+          ],
+          [
+            4,
+            1,
+            "blue"
+          ],
+          [
+            4,
+            3,
+            "yellow"
+          ],
+          [
+            4,
+            4,
+            "yellow"
+          ],
+          [
+            3,
+            4,
+            "yellow"
+          ]
+        ],
+        "colorCounts": {
+          "orange": 5
+        },
+        "backEffects": [
+          [
+            2,
+            2,
+            "star"
+          ]
+        ]
+      },
+      {
+        "id": 31,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            5
+          ]
+        ]
+      },
+      {
+        "id": 32,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 6,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ]
+        ]
+      },
+      {
+        "id": 33,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 23,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ]
+      },
+      {
+        "id": 34,
+        "cols": 6,
+        "rows": 8,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            5
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            7,
+            1
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            6,
+            5
+          ]
+        ],
+        "disabled": [
+          [
+            7,
+            2
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ]
+        ]
+      },
+      {
+        "id": 35,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "disabled": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            0,
+            1,
+            "red"
+          ],
+          [
+            0,
+            2,
+            "blue"
+          ],
+          [
+            0,
+            3,
+            "yellow"
+          ],
+          [
+            1,
+            2,
+            "green"
+          ]
+        ],
+        "colorCounts": {
+          "red": 9
+        },
+        "backEffects": [
+          [
+            4,
+            2,
+            "row"
+          ]
+        ]
+      },
+      {
+        "id": 36,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            2,
+            2
+          ],
+          [
+            4,
+            2,
+            2
+          ],
+          [
+            2,
+            4,
+            3
+          ],
+          [
+            2,
+            0,
+            3
+          ]
+        ]
+      },
+      {
+        "id": 37,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2,
+            4
+          ]
+        ]
+      },
+      {
+        "id": 38,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            6,
+            0,
+            2
+          ],
+          [
+            0,
+            4,
+            2
+          ],
+          [
+            6,
+            4,
+            2
+          ],
+          [
+            0,
+            0,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            0,
+            2,
+            "row"
+          ],
+          [
+            6,
+            2,
+            "row"
+          ],
+          [
+            3,
+            4,
+            "column"
+          ],
+          [
+            3,
+            0,
+            "column"
+          ]
+        ]
+      },
+      {
+        "id": 39,
+        "cols": 4,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            4,
+            1,
+            2
+          ],
+          [
+            4,
+            2,
+            2
+          ],
+          [
+            1,
+            2,
+            2
+          ],
+          [
+            1,
+            1,
+            2
+          ]
+        ],
+        "disabled": [
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            0,
+            3,
+            "red"
+          ],
+          [
+            5,
+            0,
+            "red"
+          ],
+          [
+            5,
+            3,
+            "red"
+          ],
+          [
+            4,
+            1,
+            "red"
+          ],
+          [
+            4,
+            2,
+            "red"
+          ],
+          [
+            1,
+            1,
+            "red"
+          ],
+          [
+            1,
+            2,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 8
+        }
+      },
+      {
+        "id": 40,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            2,
+            3
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            0,
+            2
+          ],
+          [
+            1,
+            4,
+            2
+          ]
+        ]
+      },
+      {
+        "id": 41,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 10,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "disabled": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      {
+        "id": 42,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            4,
+            2
+          ],
+          [
+            4,
+            4,
+            2
+          ],
+          [
+            4,
+            0,
+            2
+          ],
+          [
+            1,
+            0,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            1,
+            2,
+            "circle"
+          ],
+          [
+            4,
+            2,
+            "circle"
+          ]
+        ]
+      },
+      {
+        "id": 43,
+        "cols": 4,
+        "rows": 4,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            1,
+            1,
+            2
+          ],
+          [
+            1,
+            2,
+            2
+          ],
+          [
+            2,
+            1,
+            2
+          ],
+          [
+            2,
+            2,
+            2
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -1,
+            "color": "red"
+          },
+          {
+            "r": 1,
+            "c": 2,
+            "layer": -1,
+            "color": "red"
+          },
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "color": "red"
+          },
+          {
+            "r": 2,
+            "c": 1,
+            "layer": -1,
+            "color": "red"
+          }
+        ]
+      },
+      {
+        "id": 44,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 35,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            6,
+            0
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "stacks": [
+          [
+            2,
+            2,
+            2
+          ],
+          [
+            3,
+            1,
+            2
+          ],
+          [
+            3,
+            3,
+            2
+          ],
+          [
+            4,
+            2,
+            2
+          ],
+          [
+            3,
+            2,
+            3
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "cross"
+          }
+        ]
+      },
+      {
+        "id": 45,
+        "cols": 6,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            6,
+            0
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        "disabled": [
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "stacks": [
+          [
+            4,
+            0,
+            2
+          ],
+          [
+            2,
+            0,
+            2
+          ],
+          [
+            3,
+            1,
+            2
+          ],
+          [
+            3,
+            4,
+            2
+          ],
+          [
+            2,
+            5,
+            2
+          ],
+          [
+            4,
+            5,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            3,
+            5,
+            "star"
+          ],
+          [
+            3,
+            0,
+            "star"
+          ]
+        ]
+      },
+      {
+        "id": 46,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 6,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            3,
+            2,
+            3
+          ],
+          [
+            3,
+            4,
+            3
+          ],
+          [
+            3,
+            0,
+            3
+          ],
+          [
+            0,
+            2,
+            3
+          ],
+          [
+            6,
+            2,
+            3
+          ]
+        ],
+        "backEffects": [
+          [
+            3,
+            3,
+            "row"
+          ],
+          [
+            3,
+            1,
+            "row"
+          ],
+          [
+            2,
+            2,
+            "column"
+          ],
+          [
+            4,
+            2,
+            "column"
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "column"
+          },
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -2,
+            "backEffect": "row"
+          }
+        ]
+      },
+      {
+        "id": 47,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            2,
+            3
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            2
+          ]
+        ],
+        "disabled": [
+          [
+            4,
+            2
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "stacks": [
+          [
+            2,
+            2,
+            4
+          ]
+        ]
+      },
+      {
+        "id": 48,
+        "cols": 4,
+        "rows": 4,
+        "colorCount": 4,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            3,
+            3
+          ],
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            1,
+            3
+          ],
+          [
+            2,
+            2,
+            3
+          ],
+          [
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            0,
+            3
+          ],
+          [
+            1,
+            1,
+            3
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -1,
+            "backEffect": "circle"
+          },
+          {
+            "r": 1,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "circle"
+          },
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "circle"
+          },
+          {
+            "r": 2,
+            "c": 1,
+            "layer": -1,
+            "backEffect": "circle"
+          },
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -2,
+            "backEffect": "circle"
+          },
+          {
+            "r": 1,
+            "c": 2,
+            "layer": -2,
+            "backEffect": "circle"
+          },
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -2,
+            "backEffect": "circle"
+          },
+          {
+            "r": 2,
+            "c": 1,
+            "layer": -2,
+            "backEffect": "circle"
+          }
+        ]
+      },
+      {
+        "id": 49,
+        "cols": 7,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ]
+        ],
+        "disabled": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            0,
+            6
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            1,
+            6
+          ]
+        ],
+        "stacks": [
+          [
+            1,
+            0,
+            2
+          ],
+          [
+            2,
+            1,
+            2
+          ],
+          [
+            3,
+            2,
+            2
+          ],
+          [
+            4,
+            3,
+            2
+          ],
+          [
+            5,
+            4,
+            2
+          ],
+          [
+            6,
+            5,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            5,
+            3,
+            "cross"
+          ],
+          [
+            3,
+            1,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 50,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            4,
+            0,
+            3
+          ],
+          [
+            2,
+            0,
+            3
+          ],
+          [
+            0,
+            0,
+            3
+          ],
+          [
+            0,
+            2,
+            3
+          ],
+          [
+            0,
+            4,
+            3
+          ],
+          [
+            2,
+            4,
+            3
+          ],
+          [
+            4,
+            4,
+            3
+          ],
+          [
+            4,
+            2,
+            3
+          ]
+        ],
+        "disabled": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "stacks": [
+          [
+            4,
+            3,
+            2
+          ],
+          [
+            3,
+            4,
+            2
+          ],
+          [
+            1,
+            4,
+            2
+          ],
+          [
+            0,
+            3,
+            2
+          ],
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            1,
+            0,
+            2
+          ],
+          [
+            4,
+            1,
+            2
+          ],
+          [
+            3,
+            0,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            4,
+            0,
+            "red"
+          ],
+          [
+            4,
+            2,
+            "red"
+          ],
+          [
+            4,
+            4,
+            "red"
+          ],
+          [
+            2,
+            4,
+            "red"
+          ],
+          [
+            2,
+            0,
+            "red"
+          ],
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            0,
+            2,
+            "red"
+          ],
+          [
+            0,
+            4,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 8
+        }
+      },
+      {
+        "id": 51,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 35,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "beneath": [
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "circle"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 1
+          }
+        ]
+      },
+      {
+        "id": 52,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 1,
+            "layer": -2,
+            "color": "blue"
+          },
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -2,
+            "color": "blue"
+          },
+          {
+            "r": 3,
+            "c": 3,
+            "layer": -2,
+            "color": "blue"
+          },
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -2,
+            "color": "blue"
+          },
+          {
+            "r": 1,
+            "c": 3,
+            "layer": -2,
+            "color": "blue"
+          },
+          {
+            "r": 1,
+            "c": 2,
+            "layer": -2,
+            "color": "blue"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "refills": 2
+          },
+          {
+            "cells": [
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 2
+          }
+        ]
+      },
+      {
+        "id": 53,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            3,
+            2,
+            4
+          ]
+        ],
+        "disabled": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            2,
+            4
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "cross"
+          },
+          {
+            "r": 3,
+            "c": 3,
+            "layer": -2,
+            "backEffect": "cross"
+          },
+          {
+            "r": 4,
+            "c": 2,
+            "layer": -3,
+            "backEffect": "cross"
+          },
+          {
+            "r": 3,
+            "c": 1,
+            "layer": -4,
+            "backEffect": "cross"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "refills": 4
+          }
+        ]
+      },
+      {
+        "id": 54,
+        "cols": 4,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 35,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            2,
+            2,
+            "circle"
+          ],
+          [
+            3,
+            1,
+            "circle"
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "refills": 2
+          },
+          {
+            "cells": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                2
+              ]
+            ],
+            "refills": 2
+          }
+        ]
+      },
+      {
+        "id": 55,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 45,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            3,
+            2,
+            2
+          ]
+        ],
+        "stacks": [
+          [
+            3,
+            1,
+            2
+          ],
+          [
+            3,
+            3,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            3,
+            2,
+            "column"
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "star"
+          },
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -2,
+            "backEffect": "column"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                0,
+                2
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                5,
+                2
+              ],
+              [
+                6,
+                2
+              ]
+            ],
+            "refills": 2
+          }
+        ]
+      },
+      {
+        "id": 56,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "refills": 2
+          },
+          {
+            "cells": [
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ],
+              [
+                0,
+                4
+              ]
+            ],
+            "refills": 2
+          },
+          {
+            "cells": [
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "refills": 2
+          },
+          {
+            "cells": [
+              [
+                3,
+                0
+              ],
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "refills": 2
+          }
+        ]
+      },
+      {
+        "id": 57,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "star"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "refills": 1
+          }
+        ]
+      },
+      {
+        "id": 58,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "disabled": [
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            5
+          ]
+        ],
+        "backEffects": [
+          [
+            5,
+            2,
+            "row"
+          ],
+          [
+            5,
+            3,
+            "column"
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 1,
+            "layer": -1,
+            "backEffect": "circle"
+          },
+          {
+            "r": 3,
+            "c": 4,
+            "layer": -1,
+            "backEffect": "circle"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                3,
+                4
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 1
+          }
+        ]
+      },
+      {
+        "id": 59,
+        "cols": 7,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            3,
+            3
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            0,
+            3,
+            "row"
+          ],
+          [
+            4,
+            3,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 60,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 2,
+        "turns": 5,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            3
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            3,
+            1,
+            "red"
+          ],
+          [
+            3,
+            2,
+            "red"
+          ],
+          [
+            4,
+            2,
+            "red"
+          ],
+          [
+            3,
+            3,
+            "red"
+          ],
+          [
+            2,
+            2,
+            "red"
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                2
+              ]
+            ],
+            "threshold": 5
+          }
+        ]
+      },
+      {
+        "id": 61,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 10,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            0,
+            1,
+            "red"
+          ],
+          [
+            1,
+            1,
+            "red"
+          ],
+          [
+            1,
+            0,
+            "red"
+          ],
+          [
+            0,
+            3,
+            "green"
+          ],
+          [
+            0,
+            4,
+            "green"
+          ],
+          [
+            1,
+            4,
+            "green"
+          ],
+          [
+            1,
+            3,
+            "green"
+          ],
+          [
+            3,
+            3,
+            "blue"
+          ],
+          [
+            3,
+            4,
+            "blue"
+          ],
+          [
+            4,
+            4,
+            "blue"
+          ],
+          [
+            4,
+            3,
+            "blue"
+          ],
+          [
+            3,
+            0,
+            "yellow"
+          ],
+          [
+            3,
+            1,
+            "yellow"
+          ],
+          [
+            4,
+            1,
+            "yellow"
+          ],
+          [
+            4,
+            0,
+            "yellow"
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                0,
+                4
+              ],
+              [
+                1,
+                4
+              ]
+            ],
+            "threshold": 4
+          },
+          {
+            "cells": [
+              [
+                3,
+                3
+              ],
+              [
+                3,
+                4
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                4,
+                3
+              ]
+            ],
+            "threshold": 4
+          },
+          {
+            "cells": [
+              [
+                3,
+                0
+              ],
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "threshold": 4
+          }
+        ]
+      },
+      {
+        "id": 62,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            3,
+            0
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                4
+              ],
+              [
+                6,
+                4
+              ],
+              [
+                6,
+                2
+              ],
+              [
+                6,
+                1
+              ],
+              [
+                6,
+                0
+              ],
+              [
+                5,
+                0
+              ],
+              [
+                5,
+                1
+              ],
+              [
+                5,
+                2
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "threshold": 5
+          }
+        ]
+      },
+      {
+        "id": 63,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 35,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                3,
+                4
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 2
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ],
+              [
+                0,
+                4
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                0
+              ]
+            ],
+            "threshold": 27
+          }
+        ]
+      },
+      {
+        "id": 64,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            2,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            1,
+            1,
+            "yellow"
+          ],
+          [
+            2,
+            1,
+            "yellow"
+          ],
+          [
+            3,
+            1,
+            "yellow"
+          ],
+          [
+            3,
+            3,
+            "yellow"
+          ],
+          [
+            2,
+            3,
+            "yellow"
+          ],
+          [
+            1,
+            3,
+            "yellow"
+          ]
+        ],
+        "colorCounts": {
+          "yellow": 6
+        },
+        "ice": [
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                2,
+                1
+              ]
+            ],
+            "threshold": 16
+          }
+        ]
+      },
+      {
+        "id": 65,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "colors": [
+          [
+            1,
+            1,
+            "orange"
+          ],
+          [
+            3,
+            1,
+            "orange"
+          ],
+          [
+            2,
+            1,
+            "orange"
+          ],
+          [
+            5,
+            1,
+            "orange"
+          ],
+          [
+            4,
+            1,
+            "orange"
+          ],
+          [
+            1,
+            3,
+            "orange"
+          ],
+          [
+            2,
+            3,
+            "orange"
+          ],
+          [
+            3,
+            3,
+            "orange"
+          ],
+          [
+            4,
+            3,
+            "orange"
+          ],
+          [
+            5,
+            3,
+            "orange"
+          ]
+        ],
+        "backEffects": [
+          [
+            3,
+            4,
+            "column"
+          ],
+          [
+            3,
+            2,
+            "column"
+          ],
+          [
+            3,
+            0,
+            "column"
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                5,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                5,
+                3
+              ]
+            ],
+            "threshold": 5
+          }
+        ]
+      },
+      {
+        "id": 66,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            1,
+            1,
+            2
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            3,
+            3,
+            2
+          ],
+          [
+            3,
+            1,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            1,
+            2,
+            "orange"
+          ],
+          [
+            2,
+            2,
+            "orange"
+          ],
+          [
+            3,
+            2,
+            "orange"
+          ],
+          [
+            2,
+            1,
+            "orange"
+          ],
+          [
+            2,
+            3,
+            "orange"
+          ]
+        ],
+        "backEffects": [
+          [
+            0,
+            2,
+            "row"
+          ],
+          [
+            4,
+            2,
+            "row"
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -1,
+            "color": "orange"
+          },
+          {
+            "r": 3,
+            "c": 1,
+            "layer": -1,
+            "color": "orange"
+          },
+          {
+            "r": 3,
+            "c": 3,
+            "layer": -1,
+            "color": "orange"
+          },
+          {
+            "r": 1,
+            "c": 3,
+            "layer": -1,
+            "color": "orange"
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "threshold": 20
+          }
+        ]
+      },
+      {
+        "id": 67,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            4,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "colors": [
+          [
+            5,
+            0,
+            "red"
+          ],
+          [
+            4,
+            1,
+            "red"
+          ],
+          [
+            3,
+            2,
+            "red"
+          ],
+          [
+            2,
+            3,
+            "red"
+          ],
+          [
+            1,
+            4,
+            "red"
+          ],
+          [
+            0,
+            5,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 6
+        },
+        "ice": [
+          {
+            "cells": [
+              [
+                4,
+                1
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                5,
+                0
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                3,
+                2
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                2,
+                3
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                1,
+                4
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                0,
+                5
+              ]
+            ],
+            "threshold": 5
+          }
+        ]
+      },
+      {
+        "id": 68,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2,
+            4
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                3,
+                3
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                1,
+                3
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                1,
+                1
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                3,
+                1
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                2,
+                4
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                4,
+                2
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                2,
+                0
+              ]
+            ],
+            "threshold": 5
+          },
+          {
+            "cells": [
+              [
+                0,
+                2
+              ]
+            ],
+            "threshold": 5
+          }
+        ]
+      },
+      {
+        "id": 69,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            3,
+            2,
+            3
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -1,
+            "backEffect": "star"
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                6,
+                0
+              ],
+              [
+                6,
+                1
+              ],
+              [
+                6,
+                2
+              ],
+              [
+                6,
+                3
+              ],
+              [
+                6,
+                4
+              ]
+            ],
+            "threshold": 30
+          },
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                4
+              ]
+            ],
+            "threshold": 25
+          }
+        ]
+      },
+      {
+        "id": 70,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 10,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            3,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            4,
+            3
+          ]
+        ],
+        "colors": [
+          [
+            1,
+            1,
+            "blue"
+          ],
+          [
+            1,
+            2,
+            "blue"
+          ],
+          [
+            1,
+            3,
+            "blue"
+          ],
+          [
+            2,
+            3,
+            "blue"
+          ],
+          [
+            2,
+            2,
+            "blue"
+          ],
+          [
+            2,
+            1,
+            "blue"
+          ],
+          [
+            3,
+            1,
+            "blue"
+          ],
+          [
+            3,
+            2,
+            "blue"
+          ],
+          [
+            3,
+            3,
+            "blue"
+          ],
+          [
+            5,
+            1,
+            "red"
+          ],
+          [
+            5,
+            2,
+            "red"
+          ],
+          [
+            5,
+            3,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 3,
+          "blue": 9
+        },
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                1
+              ]
+            ],
+            "color": "red",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": 71,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ],
+              [
+                0,
+                4
+              ]
+            ],
+            "color": "yellow",
+            "count": 3
+          },
+          {
+            "cells": [
+              [
+                3,
+                0
+              ],
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "color": "blue",
+            "count": 3
+          }
+        ]
+      },
+      {
+        "id": 72,
+        "cols": 5,
+        "rows": 7,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            3,
+            2,
+            "red"
+          ],
+          [
+            5,
+            1,
+            "red"
+          ],
+          [
+            5,
+            2,
+            "red"
+          ],
+          [
+            5,
+            3,
+            "red"
+          ],
+          [
+            3,
+            1,
+            "red"
+          ],
+          [
+            3,
+            3,
+            "red"
+          ]
+        ],
+        "colorCounts": {
+          "red": 6
+        },
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "color": "green",
+            "count": 5
+          },
+          {
+            "cells": [
+              [
+                5,
+                3
+              ],
+              [
+                5,
+                2
+              ],
+              [
+                5,
+                1
+              ]
+            ],
+            "color": "blue",
+            "count": 5
+          },
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "color": "red",
+            "count": 6
+          }
+        ]
+      },
+      {
+        "id": 73,
+        "cols": 5,
+        "rows": 8,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            7,
+            0
+          ],
+          [
+            7,
+            1
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            7,
+            4
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            6,
+            4
+          ]
+        ],
+        "colors": [
+          [
+            1,
+            1,
+            "yellow"
+          ],
+          [
+            3,
+            1,
+            "yellow"
+          ],
+          [
+            2,
+            1,
+            "yellow"
+          ],
+          [
+            1,
+            2,
+            "yellow"
+          ],
+          [
+            3,
+            2,
+            "yellow"
+          ],
+          [
+            3,
+            3,
+            "yellow"
+          ],
+          [
+            1,
+            3,
+            "yellow"
+          ],
+          [
+            2,
+            2,
+            "yellow"
+          ],
+          [
+            2,
+            3,
+            "yellow"
+          ]
+        ],
+        "colorCounts": {
+          "yellow": 9
+        },
+        "ice": [
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "threshold": 20
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                5,
+                2
+              ],
+              [
+                6,
+                2
+              ],
+              [
+                7,
+                2
+              ],
+              [
+                6,
+                1
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "color": "yellow",
+            "count": 9
+          }
+        ]
+      },
+      {
+        "id": 74,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 15,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "colors": [
+          [
+            4,
+            4,
+            "red"
+          ],
+          [
+            0,
+            4,
+            "red"
+          ],
+          [
+            0,
+            0,
+            "red"
+          ],
+          [
+            4,
+            0,
+            "red"
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "color": "red",
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 75,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 20,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            0,
+            3
+          ]
+        ],
+        "colors": [
+          [
+            1,
+            0,
+            "blue"
+          ],
+          [
+            1,
+            1,
+            "blue"
+          ],
+          [
+            1,
+            2,
+            "blue"
+          ],
+          [
+            1,
+            3,
+            "blue"
+          ],
+          [
+            1,
+            4,
+            "blue"
+          ]
+        ],
+        "colorCounts": {
+          "blue": 5,
+          "orange": 5
+        },
+        "backEffects": [
+          [
+            3,
+            2,
+            "star"
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -2,
+            "color": "orange"
+          },
+          {
+            "r": 4,
+            "c": 2,
+            "layer": -2,
+            "color": "orange",
+            "lockCount": 1
+          },
+          {
+            "r": 3,
+            "c": 1,
+            "layer": -2,
+            "color": "orange",
+            "lockCount": 1
+          },
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -2,
+            "color": "orange",
+            "lockCount": 1
+          },
+          {
+            "r": 3,
+            "c": 3,
+            "layer": -2,
+            "color": "orange",
+            "lockCount": 1
+          },
+          {
+            "r": 2,
+            "c": 1,
+            "layer": -2,
+            "color": "green"
+          },
+          {
+            "r": 2,
+            "c": 3,
+            "layer": -2,
+            "color": "green"
+          },
+          {
+            "r": 4,
+            "c": 3,
+            "layer": -2,
+            "color": "green"
+          },
+          {
+            "r": 4,
+            "c": 1,
+            "layer": -2,
+            "color": "green"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ]
+            ],
+            "refills": 2
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ]
+            ],
+            "color": "orange",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 76,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 35,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            1,
+            1,
+            3
+          ],
+          [
+            1,
+            3,
+            3
+          ],
+          [
+            3,
+            1,
+            3
+          ],
+          [
+            3,
+            3,
+            3
+          ]
+        ],
+        "backEffects": [
+          [
+            2,
+            2,
+            "cross"
+          ],
+          [
+            0,
+            2,
+            "row"
+          ]
+        ]
+      },
+      {
+        "id": 77,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 28,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                4,
+                2
+              ]
+            ],
+            "refills": 1
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                1,
+                4
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "threshold": 8
+          }
+        ]
+      },
+      {
+        "id": 78,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 23,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            3,
+            3,
+            3
+          ],
+          [
+            4,
+            4,
+            2
+          ],
+          [
+            4,
+            3,
+            2
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "color": "red",
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 79,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 21,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            4,
+            2
+          ],
+          [
+            5,
+            0,
+            2
+          ],
+          [
+            5,
+            4,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            2
+          ]
+        ],
+        "backEffects": [
+          [
+            1,
+            2,
+            "column"
+          ],
+          [
+            4,
+            2,
+            "circle"
+          ]
+        ]
+      },
+      {
+        "id": 80,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "beneath": [
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "color": "green"
+          },
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -1,
+            "color": "green"
+          },
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -2,
+            "color": "blue"
+          },
+          {
+            "r": 3,
+            "c": 2,
+            "layer": -2,
+            "color": "blue"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ]
+            ],
+            "refills": 2
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "threshold": 6
+          }
+        ]
+      },
+      {
+        "id": 81,
+        "cols": 6,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 23,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            2,
+            3,
+            "star"
+          ],
+          [
+            4,
+            5,
+            "row"
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "color": "yellow",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 82,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 19,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            2,
+            2
+          ],
+          [
+            0,
+            4
+          ]
+        ],
+        "stacks": [
+          [
+            1,
+            1,
+            3
+          ],
+          [
+            3,
+            3,
+            3
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -1,
+            "lockCount": 1
+          },
+          {
+            "r": 3,
+            "c": 3,
+            "layer": -1,
+            "lockCount": 1
+          }
+        ]
+      },
+      {
+        "id": 83,
+        "cols": 6,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 1
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ]
+            ],
+            "color": "blue",
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 84,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 23,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0,
+            2
+          ],
+          [
+            5,
+            5,
+            2
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            5,
+            0
+          ]
+        ],
+        "backEffects": [
+          [
+            1,
+            3,
+            "cross"
+          ],
+          [
+            4,
+            2,
+            "column"
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "threshold": 12
+          }
+        ]
+      },
+      {
+        "id": 85,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 26,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            1,
+            4,
+            3
+          ],
+          [
+            4,
+            1,
+            3
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                3,
+                3
+              ],
+              [
+                3,
+                4
+              ],
+              [
+                4,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "refills": 1
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "color": "red",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 86,
+        "cols": 7,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 31,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            0,
+            0,
+            "row"
+          ],
+          [
+            0,
+            6,
+            "column"
+          ],
+          [
+            2,
+            3,
+            "star"
+          ],
+          [
+            4,
+            0,
+            "circle"
+          ],
+          [
+            4,
+            6,
+            "cross"
+          ]
+        ]
+      },
+      {
+        "id": 87,
+        "cols": 5,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 24,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                2
+              ]
+            ],
+            "threshold": 8
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "color": "red",
+            "count": 4
+          },
+          {
+            "cells": [
+              [
+                5,
+                4
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "color": "green",
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 88,
+        "cols": 6,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 24,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            5
+          ]
+        ],
+        "stacks": [
+          [
+            2,
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            3
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "color": "blue"
+          },
+          {
+            "r": 2,
+            "c": 3,
+            "layer": -1,
+            "color": "blue"
+          },
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -2,
+            "color": "green"
+          },
+          {
+            "r": 2,
+            "c": 3,
+            "layer": -2,
+            "color": "green"
+          }
+        ]
+      },
+      {
+        "id": 89,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 34,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            5,
+            0,
+            "circle"
+          ],
+          [
+            5,
+            5,
+            "star"
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 1
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "threshold": 6
+          }
+        ]
+      },
+      {
+        "id": 90,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 26,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            5,
+            5,
+            2
+          ],
+          [
+            4,
+            4
+          ]
+        ],
+        "stacks": [
+          [
+            3,
+            3,
+            3
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "color": "yellow",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 91,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 34,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 2
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "threshold": 6
+          },
+          {
+            "cells": [
+              [
+                5,
+                5
+              ],
+              [
+                5,
+                4
+              ],
+              [
+                4,
+                5
+              ]
+            ],
+            "threshold": 14
+          }
+        ]
+      },
+      {
+        "id": 92,
+        "cols": 5,
+        "rows": 5,
+        "colorCount": 4,
+        "turns": 26,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            1,
+            1,
+            4
+          ],
+          [
+            1,
+            3,
+            4
+          ],
+          [
+            3,
+            1,
+            4
+          ],
+          [
+            3,
+            3,
+            4
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 1,
+            "c": 1,
+            "layer": -2,
+            "lockCount": 1
+          },
+          {
+            "r": 1,
+            "c": 3,
+            "layer": -2,
+            "lockCount": 1
+          },
+          {
+            "r": 3,
+            "c": 1,
+            "layer": -2,
+            "lockCount": 1
+          },
+          {
+            "r": 3,
+            "c": 3,
+            "layer": -2,
+            "lockCount": 1
+          }
+        ]
+      },
+      {
+        "id": 93,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 34,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            2,
+            5,
+            "column"
+          ],
+          [
+            5,
+            0,
+            "row"
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                3
+              ]
+            ],
+            "refills": 1
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ]
+            ],
+            "color": "blue",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 94,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 4,
+        "turns": 30,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            5
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            5
+          ]
+        ],
+        "colors": [
+          [
+            0,
+            1,
+            "red"
+          ],
+          [
+            0,
+            4,
+            "red"
+          ],
+          [
+            5,
+            1,
+            "red"
+          ],
+          [
+            5,
+            4,
+            "red"
+          ]
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "threshold": 10
+          }
+        ]
+      },
+      {
+        "id": 95,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 21,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            5,
+            0,
+            2
+          ],
+          [
+            5,
+            5,
+            2
+          ]
+        ],
+        "stacks": [
+          [
+            3,
+            3,
+            3
+          ]
+        ],
+        "backEffects": [
+          [
+            4,
+            2,
+            "cross"
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "refills": 1
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                0,
+                5
+              ],
+              [
+                1,
+                5
+              ]
+            ],
+            "threshold": 10
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "color": "red",
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 96,
+        "cols": 7,
+        "rows": 5,
+        "colorCount": 5,
+        "turns": 37,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "backEffects": [
+          [
+            2,
+            3,
+            "star"
+          ],
+          [
+            0,
+            6,
+            "row"
+          ],
+          [
+            4,
+            6,
+            "column"
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "color": "green",
+            "count": 4
+          }
+        ]
+      },
+      {
+        "id": 97,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 41,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "stacks": [
+          [
+            0,
+            0,
+            3
+          ],
+          [
+            5,
+            5,
+            3
+          ]
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                2,
+                2
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "refills": 2
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                0,
+                5
+              ],
+              [
+                5,
+                0
+              ]
+            ],
+            "threshold": 12
+          }
+        ]
+      },
+      {
+        "id": 98,
+        "cols": 6,
+        "rows": 6,
+        "colorCount": 5,
+        "turns": 22,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ]
+        ],
+        "backEffects": [
+          [
+            5,
+            0,
+            "circle"
+          ],
+          [
+            5,
+            5,
+            "circle"
+          ]
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                4
+              ],
+              [
+                0,
+                5
+              ]
+            ],
+            "color": "blue",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 99,
+        "cols": 6,
+        "rows": 7,
+        "colorCount": 5,
+        "turns": 25,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "locked": [
+          [
+            3,
+            0,
+            2
+          ],
+          [
+            3,
+            5,
+            2
+          ]
+        ],
+        "stacks": [
+          [
+            2,
+            2,
+            3
+          ],
+          [
+            4,
+            3,
+            3
+          ]
+        ],
+        "backEffects": [
+          [
+            2,
+            3,
+            "star"
+          ],
+          [
+            4,
+            2,
+            "circle"
+          ]
+        ],
+        "beneath": [
+          {
+            "r": 2,
+            "c": 2,
+            "layer": -1,
+            "lockCount": 1
+          }
+        ],
+        "elevators": [
+          {
+            "cells": [
+              [
+                5,
+                2
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                6,
+                2
+              ],
+              [
+                6,
+                3
+              ]
+            ],
+            "refills": 2
+          }
+        ],
+        "ice": [
+          {
+            "cells": [
+              [
+                6,
+                0
+              ],
+              [
+                6,
+                5
+              ]
+            ],
+            "threshold": 16
+          }
+        ],
+        "colorLocks": [
+          {
+            "cells": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "color": "red",
+            "count": 5
+          },
+          {
+            "cells": [
+              [
+                0,
+                5
+              ],
+              [
+                0,
+                4
+              ],
+              [
+                1,
+                5
+              ]
+            ],
+            "color": "green",
+            "count": 5
+          }
+        ]
+      },
+      {
+        "id": 100,
+        "cols": 7,
+        "rows": 6,
+        "colorCount": 1,
+        "turns": 1,
+        "clearBoard": true,
+        "deck": 0,
+        "goals": [
+          {
+            "type": "clearAll"
+          }
+        ],
+        "disabled": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            3
+          ],
+          [
+            0,
+            6
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            0
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            4,
+            1
+          ]
+        ],
+        "colorCounts": {
+          "red": 27
+        }
+      }
+    ],
+    "progression": {
+      "winStreakStartLevel": 11,
+      "deploySpecialsStartLevel": 1000,
+      "recallStartLevel": 16,
+      "sweepRevealStartLevel": 1000,
+      "levelRewards": [
+        {
+          "afterLevel": 1,
+          "boosterId": "peek",
+          "qty": 3
+        },
+        {
+          "afterLevel": 3,
+          "boosterId": "random3",
+          "qty": 3
+        },
+        {
+          "afterLevel": 6,
+          "boosterId": "peek",
+          "qty": 1
+        },
+        {
+          "afterLevel": 9,
+          "boosterId": "pluscolor",
+          "qty": 10
+        },
+        {
+          "afterLevel": 11,
+          "boosterId": "peek",
+          "qty": 2
+        },
+        {
+          "afterLevel": 20,
+          "boosterId": "pluscolor",
+          "qty": 1
+        },
+        {
+          "afterLevel": 25,
+          "boosterId": "random3",
+          "qty": 1
+        },
+        {
+          "afterLevel": 28,
+          "boosterId": "random3",
+          "qty": 1
+        },
+        {
+          "afterLevel": 34,
+          "boosterId": "pluscolor",
+          "qty": 1
+        },
+        {
+          "afterLevel": 41,
+          "boosterId": "pluscolor",
+          "qty": 1
+        },
+        {
+          "afterLevel": 46,
+          "boosterId": "peek",
+          "qty": 2
+        },
+        {
+          "afterLevel": 50,
+          "boosterId": "pluscolor",
+          "qty": 1
+        },
+        {
+          "afterLevel": 59,
+          "boosterId": "random3",
+          "qty": 1
+        },
+        {
+          "afterLevel": 69,
+          "boosterId": "pluscolor",
+          "qty": 1
+        },
+        {
+          "afterLevel": 75,
+          "boosterId": "pluscolor",
+          "qty": 1
+        },
+        {
+          "afterLevel": 84,
+          "boosterId": "random3",
+          "qty": 1
+        },
+        {
+          "afterLevel": 95,
+          "boosterId": "peek",
+          "qty": 2
+        },
+        {
+          "afterLevel": 99,
+          "boosterId": "pluscolor",
+          "qty": 1
+        }
+      ]
+    },
+    "boardArt": {
+      "1": {
+        "item": "carpet",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
+      },
+      "2": {
+        "item": "shelf",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
+      },
+      "3": {
+        "item": "bed",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.85
+      },
+      "4": {
+        "item": "rockinghorse",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "5": {
+        "item": "globe",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "6": {
+        "item": "teddybear",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "7": {
+        "item": "oillamp",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "8": {
+        "item": "trunk",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "9": {
+        "item": "kettle",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "10": {
+        "item": "pie",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "11": {
+        "item": "mixingbowl",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "12": {
+        "item": "jamjars",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "13": {
+        "item": "cat",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "14": {
+        "item": "wateringcan",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "15": {
+        "item": "orchid",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "16": {
+        "item": "claypots",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "17": {
+        "item": "trowelgloves",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "18": {
+        "item": "cloche",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "19": {
+        "item": "gramophone",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "20": {
+        "item": "cello",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "21": {
+        "item": "metronome",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "22": {
+        "item": "sheetmusic",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "23": {
+        "item": "accordion",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "24": {
+        "item": "toytrain",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "25": {
+        "item": "tinrobot",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "26": {
+        "item": "kite",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "27": {
+        "item": "jackinthebox",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.9
+      },
+      "28": {
+        "item": "toolbox",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "29": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "readinglamp"
+      },
+      "30": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "bookstack"
+      },
+      "31": {
+        "item": "inkwell",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "32": {
+        "item": "hourglass",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "33": {
+        "item": "telescope",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "34": {
+        "item": "palette",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "35": {
+        "item": "paintpots",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "36": {
+        "item": "brushjar",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "37": {
+        "item": "claybust",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "38": {
+        "item": "easel",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "39": {
+        "item": "yarnbasket",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "40": {
+        "item": "sewingmachine",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "41": {
+        "item": "pincushion",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "42": {
+        "item": "threadspools",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "43": {
+        "item": "quiltstack",
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82
+      },
+      "44": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "chessset"
+      },
+      "45": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "dicetower"
+      },
+      "46": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cardsdeck"
+      },
+      "47": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "jigsawbox"
+      },
+      "48": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "dominoes"
+      },
+      "49": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "marbleset"
+      },
+      "50": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "yoyo"
+      },
+      "51": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "rubikscube"
+      },
+      "52": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "typewriter"
+      },
+      "53": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "letterbundle"
+      },
+      "54": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "fountainpen"
+      },
+      "55": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "deskclock"
+      },
+      "56": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "candlestick"
+      },
+      "57": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "paperweight"
+      },
+      "58": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "magnifyingglass"
+      },
+      "59": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "musicbox"
+      },
+      "60": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "nightlight"
+      },
+      "61": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "blocks"
+      },
+      "62": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "plushbunny"
+      },
+      "63": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "rattle"
+      },
+      "64": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "babyshoes"
+      },
+      "65": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "winebottles"
+      },
+      "66": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "decanter"
+      },
+      "67": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cheesewheel"
+      },
+      "68": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "corkscrew"
+      },
+      "69": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "grapebasket"
+      },
+      "70": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cellarlantern"
+      },
+      "71": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "oldledger"
+      },
+      "72": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "teaset"
+      },
+      "73": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "birdcage"
+      },
+      "74": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "parasol"
+      },
+      "75": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "croquetset"
+      },
+      "76": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "sundial"
+      },
+      "77": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "gardenhat"
+      },
+      "78": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "pocketwatch"
+      },
+      "79": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "trinketbox"
+      },
+      "80": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "mantelclock"
+      },
+      "81": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "compass"
+      },
+      "82": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "mapscroll"
+      },
+      "83": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "stampalbum"
+      },
+      "84": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "antiquekey"
+      },
+      "85": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "icecreamsundae"
+      },
+      "86": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cupcakestand"
+      },
+      "87": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "milkshake"
+      },
+      "88": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "candyjar"
+      },
+      "89": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "popcornbox"
+      },
+      "90": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "lollipopjar"
+      },
+      "91": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "cottoncandy"
+      },
+      "92": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "weddingrings"
+      },
+      "93": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "bridalbouquet"
+      },
+      "94": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "veiltiara"
+      },
+      "95": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "unitycandle"
+      },
+      "96": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "guestbook"
+      },
+      "97": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "champagneflutes"
+      },
+      "98": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "weddingcake"
+      },
+      "99": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "confettibasket"
+      },
+      "100": {
+        "cx": 0.5,
+        "cy": 0.5,
+        "h": 0.82,
+        "item": "weddingbells"
+      }
+    }
+  }
+}

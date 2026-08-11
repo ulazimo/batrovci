@@ -12,6 +12,9 @@
   // Default to the main journey (the Music Hall campaign). Players never see the
   // journey picker; devs can still switch journeys from Settings.
   if (!progress.progressionStyle) progress.progressionStyle = MAIN_JOURNEY;
+  // Over-the-air levels: apply the best cached remote bundle (only if newer than
+  // this build) BEFORE the engine reads LEVELS_CLEANINGXL. Falls back to bundled.
+  if (typeof applyBestContentAtBoot === 'function') applyBestContentAtBoot();
   applyProgression(progress.progressionStyle);
   restoreJourneySnapshot(progress.progressionStyle);
 
@@ -30,6 +33,10 @@
   buildTestModePanel();
   buildLevelJumper();
   showHome();   // renders the lives pill (and its refill countdown) via renderLives()
+
+  // Background OTA content refresh — writes the localStorage cache only; the new
+  // bundle is applied on the next launch, never mid-session. Fire-and-forget.
+  if (typeof refreshRemoteContent === 'function') refreshRemoteContent();
 
   // First launch → the ToS / Privacy consent gate MUST come first, before any
   // personal data is collected. Only once the player accepts do we ask for a
