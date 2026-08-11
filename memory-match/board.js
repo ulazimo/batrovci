@@ -298,6 +298,7 @@ function breakLockLayer(idx) {
   }
   // Final layer broken → fully unlock.
   card.locked = false;
+  HAPTICS.obstacleBreak(); // #6 — the lock is gone; tell the player the board changed
   // Shatter the visible lock overlay as it goes (revealLockedCards) instead of snapping it away
   // — animate the existing .lock-fill out, then remove it (revealing the card colour underneath).
   // With the rule off there's no overlay, so decorateLock just clears the card's lock state.
@@ -616,6 +617,7 @@ function breakIceArea(area) {
   area.broken = true;
   const cells = [...area.cells];
   SFX.boom();
+  HAPTICS.obstacleBreak(); // #6 — ice shattered
   if (typeof spawnIceShards === 'function') spawnIceShards(cells);
   cells.forEach(i => { const f = boardEl.children[i]?.querySelector('.ice-fill'); if (f) f.classList.add('ice-breaking'); });
   setTimeout(() => {
@@ -701,6 +703,7 @@ function breakColorLockArea(area) {
   area.broken = true;
   const cells = [...area.cells];
   SFX.boom();
+  HAPTICS.obstacleBreak(); // #6 — colour-lock opened
   if (typeof spawnParticles === 'function') spawnParticles(cells, area.color);
   cells.forEach(i => { const f = boardEl.children[i]?.querySelector('.color-lock-fill'); if (f) f.classList.add('cl-breaking'); });
   setTimeout(() => {

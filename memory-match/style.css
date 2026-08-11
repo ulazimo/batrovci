@@ -1416,6 +1416,18 @@ body.bomb-aiming #board { touch-action: none; }
 }
 .setting-toggle.on { background:#2ecc71; }
 .setting-toggle.on::after { left:18px;background:#fff; }
+
+/* Player-facing Settings (legal-panel) rows: a labelled toggle above the legal links. */
+.settings-row {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+  padding:12px 16px;margin-bottom:14px;border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+}
+.settings-row:hover { background:rgba(255,255,255,.09); }
+.settings-row-label { font-size:16px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px; }
+.settings-row .setting-toggle { width:48px;height:28px;border-radius:14px; }
+.settings-row .setting-toggle::after { width:24px;height:24px; }
+.settings-row .setting-toggle.on::after { left:22px; }
 .qty-control { display:flex;align-items:center;gap:2px; }
 .qty-btn {
   width:24px;height:24px;border-radius:6px;border:1px solid #3a3a6a;

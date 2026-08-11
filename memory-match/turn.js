@@ -624,6 +624,8 @@ function placeNewCards(toRemove, skip) {
     elevatorAreas.forEach(area => {
       if (area.refillsLeft <= 0 || !area.cells.every(i => board[i] === null)) return;
       area.refillsLeft--;
+      HAPTICS.elevator(); // #7 — small bump as a fresh batch rises
+
       // This batch surfaces at layer -(refills - refillsLeft): -1 for the first refill, -2 next…
       const layer = -(area.refills - area.refillsLeft);
       area.cells.forEach(i => {

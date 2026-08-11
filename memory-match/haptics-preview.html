@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Memory Match — Haptics Preview</title>
+<style>
+  :root { --bg:#0d0820; --card:#1b1436; --card2:#241a45; --line:#3a2d63; --ink:#efeaff; --dim:#a99fd0; --accent:#a78bfa; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:radial-gradient(1200px 600px at 50% -10%,#20143f,#0d0820); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; -webkit-tap-highlight-color:transparent; padding:20px 14px 60px; }
+  .wrap { max-width:640px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  .sub { color:var(--dim); font-size:13px; margin:0 0 16px; }
+  .status { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
+  .pill { font-size:12px; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); }
+  .pill.ok { border-color:#2f7d5b; background:#12351f; color:#8ff0be; }
+  .pill.no { border-color:#7d3a3a; background:#361414; color:#f7b3b3; }
+  .note { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13px; color:var(--dim); line-height:1.5; margin:0 0 18px; }
+  .note b { color:var(--ink); }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
+  .controls button { flex:1 1 auto; }
+  button { font:inherit; color:var(--ink); background:var(--card2); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; cursor:pointer; transition:transform .05s, background .15s, border-color .15s; }
+  button:hover { border-color:var(--accent); }
+  button:active { transform:scale(.97); }
+  button.tgl.on { background:#2c1f52; border-color:var(--accent); color:#e9deff; }
+  .grid { display:flex; flex-direction:column; gap:10px; }
+  .row { display:grid; grid-template-columns:34px 1fr auto; align-items:center; gap:12px;
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--c,#38bdf8); border-radius:12px; padding:10px 12px; }
+  .num { font-variant-numeric:tabular-nums; font-weight:700; color:var(--c,#38bdf8); text-align:center; font-size:15px; }
+  .meta .t { font-size:14px; font-weight:600; }
+  .meta .d { font-size:12px; color:var(--dim); margin-top:2px; }
+  .meta code { color:#c9bdf5; font-size:11px; background:#170f30; padding:1px 5px; border-radius:5px; }
+  .fire { min-width:64px; }
+  .fire b { display:block; font-size:10px; font-weight:600; color:var(--dim); margin-top:1px; }
+  #log { margin-top:20px; background:#0a0618; border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:#b9aee6; height:130px; overflow:auto; }
+  #log div { padding:1px 0; opacity:.5; }
+  #log div:last-child { opacity:1; color:#e9deff; }
+  .foot { color:var(--dim); font-size:12px; margin-top:16px; text-align:center; }
+  .foot a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔈 Haptics Preview</h1>
+  <p class="sub">Memory Match — every haptic cue, on demand. Also loads in-game via the debug overlay.</p>
+
+  <div class="status" id="status"></div>
+
+  <div class="note">
+    <b>How to feel / see these:</b> On an <b>Android phone (Chrome)</b> each button really vibrates.
+    On <b>desktop and iOS Safari</b> the Web Vibration API is a no-op — so watch the <b>screen-edge pulse</b>
+    and the chip in the corner (the exact overlay you get in-game). In the shipped app, <b>Capacitor Haptics</b>
+    drives the Taptic Engine for real Light/Medium/Heavy + Success/Error feedback.
+  </div>
+
+  <div class="controls">
+    <button class="tgl on" id="btn-debug">Overlay: ON</button>
+    <button class="tgl on" id="btn-enabled">Vibration: ON</button>
+    <button id="btn-all">▶ Play all in sequence</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div id="log"><div>ready.</div></div>
+  <p class="foot">Tip: append <a href="?">?haptics-debug=1</a> to any game URL to see these fire during real play.</p>
+</div>
+
+<script src="haptics.js"></script>
+<script>
+  // The 13 requested events, in order, mapped to the cue each fires. Some cues serve
+  // several triggers (obstacleBreak → lock/ice/colour-lock; peek → tap + long-press).
+  const EVENTS = [
+    { n:1,  cue:'collect',       t:'Collect cards',            d:'A card flies into the Collection — soft, subtle.' },
+    { n:2,  cue:'colorClear',    t:'Colour cleared',           d:'Every card of a colour is gone — a bit stronger.' },
+    { n:3,  cue:'homeReveal',    t:'Home-screen reveal',       d:'The item pops in on the home hall after a win — celebratory.' },
+    { n:4,  cue:'bomb',          t:'Bomb lands',               d:'Small / Big bomb dropping — strong thump.' },
+    { n:5,  cue:'backEffect',    t:'Back-effect slam',         d:'Back-effect deploys with the slam — softer than the bomb.' },
+    { n:6,  cue:'obstacleBreak', t:'Lock / Ice / Colour-lock', d:'A lock fully breaks, ice shatters, or a colour-lock opens.' },
+    { n:7,  cue:'elevator',      t:'Elevator rises',           d:'A fresh batch surfaces — small bump.' },
+    { n:8,  cue:'peek',          t:'Peek used',                d:'Peek reveals a card (also fires for long-press peek) — subtle.' },
+    { n:9,  cue:'random3',       t:'Random 3 (per card)',      d:'One weak tick per card as the three flip up.', burst:3 },
+    { n:10, cue:'plusColor',     t:'+1 Colour',                d:'Opens another card of the chain colour — light.' },
+    { n:11, cue:'streakCard',    t:'Win-streak reveal (per card)', d:'The WEAKEST cue — one per card, in sync with the reveal.', burst:5 },
+    { n:12, cue:'fail',          t:'Level failed',             d:'Negative shake pattern.' },
+    { n:13, cue:'win',           t:'Level beaten',             d:'Positive celebratory pattern.' },
+  ];
+  const TONE_COLOR = { selection:'#818cf8', light:'#38bdf8', medium:'#fbbf24', heavy:'#f87171', success:'#34d399', reveal:'#a78bfa', error:'#ef4444' };
+
+  // Force the overlay + vibration on so desktop/iOS previews are visible, but remember the
+  // player's real preference and restore it on exit — opening this page shouldn't silently
+  // leave the in-game debug overlay on or un-mute haptics.
+  const _prevDebug = HAPTICS.isDebug(), _prevEnabled = HAPTICS.isEnabled();
+  HAPTICS.setDebug(true);
+  HAPTICS.setEnabled(true);
+  window.addEventListener('pagehide', () => { HAPTICS.setDebug(_prevDebug); HAPTICS.setEnabled(_prevEnabled); });
+
+  const log = msg => {
+    const el = document.getElementById('log');
+    const d = document.createElement('div');
+    d.textContent = '• ' + msg;
+    el.appendChild(d); el.scrollTop = el.scrollHeight;
+    while (el.children.length > 60) el.removeChild(el.firstChild);
+  };
+
+  // Support pills
+  (function () {
+    const s = HAPTICS.supported();
+    const box = document.getElementById('status');
+    const mk = (label, ok, txt) => `<span class="pill ${ok ? 'ok' : 'no'}">${label}: ${txt}</span>`;
+    box.innerHTML =
+      mk('Capacitor Haptics', s.native, s.native ? 'available' : 'not in browser') +
+      mk('navigator.vibrate', s.web, s.web ? 'supported' : 'unsupported here');
+  })();
+
+  function fireCue(cue, burst) {
+    if (!burst || burst < 2) { HAPTICS.fire(cue); log('fire ' + cue); return; }
+    let i = 0;
+    log('burst ×' + burst + ' ' + cue);
+    const step = () => { HAPTICS.fire(cue); if (++i < burst) setTimeout(step, 90); };
+    step();
+  }
+
+  // Build rows
+  const grid = document.getElementById('grid');
+  EVENTS.forEach(ev => {
+    const cue = HAPTICS.cues[ev.cue];
+    const color = TONE_COLOR[cue.tone] || '#38bdf8';
+    const pat = Array.isArray(cue.web) ? '[' + cue.web.join(',') + ']' : cue.web + 'ms';
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.setProperty('--c', color);
+    row.innerHTML =
+      `<div class="num">${ev.n}</div>` +
+      `<div class="meta"><div class="t">${ev.t}</div><div class="d">${ev.d} <code>${ev.cue}</code> <code>${pat}</code></div></div>` +
+      `<button class="fire">Fire${ev.burst ? '<b>×' + ev.burst + '</b>' : ''}</button>`;
+    row.querySelector('.fire').addEventListener('click', () => fireCue(ev.cue, ev.burst));
+    grid.appendChild(row);
+  });
+
+  // Controls
+  const bd = document.getElementById('btn-debug');
+  bd.addEventListener('click', () => { const on = HAPTICS.toggleDebug(); bd.textContent = 'Overlay: ' + (on ? 'ON' : 'OFF'); bd.classList.toggle('on', on); });
+  const be = document.getElementById('btn-enabled');
+  be.addEventListener('click', () => { const on = HAPTICS.toggle(); be.textContent = 'Vibration: ' + (on ? 'ON' : 'OFF'); be.classList.toggle('on', on); log('vibration ' + (on ? 'on' : 'off')); });
+  document.getElementById('btn-all').addEventListener('click', () => {
+    log('play all…');
+    EVENTS.forEach((ev, i) => setTimeout(() => fireCue(ev.cue, ev.burst), i * 650));
+  });
+</script>
+</body>
+</html>

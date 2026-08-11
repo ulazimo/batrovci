@@ -387,12 +387,15 @@ function renderHall(hallIdx, opts = {}) {
 
   if (pending.length) {
     _revealTimer = setTimeout(() => {
+      let revealedAny = false;
       pending.forEach(p => {
         if (!p.spot.isConnected) return;          // hall changed before the reveal — skip
         p.spot.classList.add('new');
         p.spot.insertAdjacentHTML('afterbegin', revealedInnerHTML(p.hall, p.slot));
         if (!progress.seenInstruments.includes(p.levelIdx)) progress.seenInstruments.push(p.levelIdx);
+        revealedAny = true;
       });
+      if (revealedAny) HAPTICS.homeReveal(); // #3 — the item pops in on the home screen after a win
       if (typeof saveProgress === 'function') saveProgress();
     }, REVEAL_APPEAR_DELAY);
   }
@@ -674,11 +677,24 @@ function buildTestModePanel() {
     document.body.appendChild(panel);
   }
   const on = isTestMode();
+  const hOn = (typeof HAPTICS !== 'undefined') && HAPTICS.isDebug();
   panel.innerHTML =
     '<span class="tm-label">Test Mode<small>dev · browser only</small></span>' +
     `<button class="tm-btn${on ? ' on' : ''}" onclick="toggleTestMode()">` +
     `${on ? '✓ Test Mode ON' : 'Enable Test Mode'}</button>` +
-    '<span class="tm-hint">Shows Settings ⚙, the level map and the in-game Fill / Finish buttons.</span>';
+    '<span class="tm-hint">Shows Settings ⚙, the level map and the in-game Fill / Finish buttons.</span>' +
+    `<button class="tm-btn${hOn ? ' on' : ''}" onclick="toggleHapticsDebug()">` +
+    `${hOn ? '✓ Haptics debug ON' : 'Haptics debug'}</button>` +
+    '<span class="tm-hint">Flashes a chip + screen pulse whenever a haptic fires (so you can preview them on desktop / iOS, where vibration is a no-op).</span>';
+}
+
+// Toggle the haptics debug overlay from the Test Mode panel. Separate localStorage key
+// from Test Mode — it describes the browser you're previewing in.
+function toggleHapticsDebug() {
+  if (typeof HAPTICS === 'undefined') return;
+  HAPTICS.toggleDebug();
+  HAPTICS.homeReveal(); // fire one so you immediately see (and, on Android, feel) the effect
+  buildTestModePanel();
 }
 
 function jumpToLevel(i) {

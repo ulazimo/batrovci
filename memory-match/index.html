@@ -302,6 +302,10 @@
 <div id="legal-panel" class="overlay-screen">
   <div class="overlay-box">
     <h2>⚙ Settings</h2>
+    <div class="settings-row" onclick="toggleVibrations()">
+      <span class="settings-row-label">📳 Vibrations</span>
+      <button class="setting-toggle on" id="vibration-toggle" role="switch" aria-checked="true" aria-label="Vibrations" onclick="event.stopPropagation();toggleVibrations()"></button>
+    </div>
     <div class="legal-links">
       <a class="overlay-btn secondary" href="https://www.take2games.com/legal/en-US/" target="_blank" rel="noopener noreferrer">📄 Terms of Service</a>
       <a class="overlay-btn secondary" href="https://www.take2games.com/privacy/en-US/" target="_blank" rel="noopener noreferrer">🔒 Privacy Policy</a>
@@ -344,6 +348,7 @@
      All files share one global namespace (classic scripts). See CLAUDE.md §3/§12. -->
 <script src="state.js"></script>
 <script src="audio.js"></script>
+<script src="haptics.js"></script>
 <script src="vfx.js"></script>
 <script src="reveal-skip.js"></script>
 <script src="progression.js"></script>

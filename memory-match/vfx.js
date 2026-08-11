@@ -127,6 +127,7 @@ function spawnLockShards(indices, count) {
 // [{ idx, effect }] — one large floating icon per collected back-effect card.
 function slamBackEffectIcons(fired) {
   if (!fired || !fired.length) return;
+  HAPTICS.backEffect(); // #5 — softer than the bomb, timed to the slam
   fired.forEach(({ idx, effect }) => {
     const cell = boardEl.children[idx];
     if (!cell) return;
@@ -234,6 +235,7 @@ function flyCardsToGoal(indices, ptsTotal, cb) {
       setTimeout(() => {
         SFX.ding(i);
         SFX.shepard(i);
+        HAPTICS.collect(); // #1 — soft tick for EACH card as it lands in the Collection (staggered)
         clone.classList.add('burst');
         setTimeout(() => clone.remove(), 300);
 
@@ -516,6 +518,7 @@ function hideSweepBanner(cb) { hideBoardBanner(cb); }
 // locks input and auto-dismisses, so it rides alongside the collect animation.
 function showColorClearBanner(colors) {
   if (!colors || !colors.length) return;
+  HAPTICS.colorClear(); // #2 — a bit stronger than a plain collect
   const hex = c => (COLOR_HEX[c] || '#fff');
   const names = colors.map(c => `<span style="color:${hex(c)}">${c.toUpperCase()}</span>`).join(' + ');
   const prev = boardContainerEl.querySelector('.color-clear-banner');
@@ -643,6 +646,7 @@ function revealEntireBoard(onComplete) {
     const c = board[idx]; if (!c) return;
     c.flipped = true;
     const el = getCardEl(idx); if (el) el.classList.add('flipped');
+    HAPTICS.streakTick(); // #11 — the weakest cue, one per card, in sync with the reveal
   } }));
   runSkippableReveal(steps, revealMs, () => {
     list.forEach(idx => {

@@ -133,6 +133,7 @@ function detonateBombAt(index, bombType) {
   }
 
   SFX.boom();
+  HAPTICS.bomb(); // #4 — strong thump as the Small/Big bomb lands
   const centerCell = boardEl.children[index];
   if (centerCell) spawnBombVFX(centerCell);
   shakeBoard();

@@ -205,6 +205,7 @@ function levelWon() {
 // tutorial can defer it until after its closing reward box.
 function winVisualFinish() {
   SFX.win();
+  HAPTICS.win(); // #13 — positive celebratory pattern
   launchConfetti();
 
   // If this level shows instrument/animal art behind the board, HIGHLIGHT it
@@ -308,6 +309,7 @@ function levelFailed(reason) {
   }
   showBoardBanner('fail', '💔 LEVEL FAILED', failBannerSub);
   SFX.fail();
+  HAPTICS.fail(); // #12 — negative shake pattern
   shakeBoard();
   setTimeout(() => hideBoardBanner(() => showFailOverlay(hadStreak, reason)), 1800);
 }

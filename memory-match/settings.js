@@ -993,8 +993,25 @@ function closeSettings() {
 function showLegal() {
   const el = document.getElementById('legal-panel');
   if (el) el.classList.add('active');
+  syncVibrationToggle();
 }
 function closeLegal() {
   const el = document.getElementById('legal-panel');
   if (el) el.classList.remove('active');
+}
+
+// "Vibrations" master switch in the player-facing Settings. Default ON; when OFF,
+// HAPTICS.fire() is a hard no-op (no buzz, no visual). Persists via HAPTICS (mm_haptics).
+function syncVibrationToggle() {
+  const btn = document.getElementById('vibration-toggle');
+  if (!btn || typeof HAPTICS === 'undefined') return;
+  const on = HAPTICS.isEnabled();
+  btn.classList.toggle('on', on);
+  btn.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+function toggleVibrations() {
+  if (typeof HAPTICS === 'undefined') return;
+  const on = HAPTICS.toggle();   // flips enabled + persists
+  syncVibrationToggle();
+  if (on) HAPTICS.fire('collect'); // a little confirmation tick when switching ON
 }

@@ -345,6 +345,7 @@ function executePeek(index) {
   const el = getCardEl(index);
   if (el) { el.classList.add('flipped', 'reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
   SFX.cardFlip();
+  HAPTICS.peek(); // #8 — subtle tick when Peek reveals a card (also fires for long-press peek)
 
   // Check if it matches active chain color
   const matchesChain = turnActive && (card.color === chainColor || (getRule('coloredBombs') && chainColors.has(card.color)));
@@ -492,6 +493,7 @@ function executeRandom3() {
     const el = getCardEl(idx);
     if (el) { el.classList.add('flipped','reveal-flash'); el.addEventListener('animationend', () => el.classList.remove('reveal-flash'), {once:true}); }
     SFX.cardFlip();
+    HAPTICS.random3Tick(); // #9 — subtle per-card feedback during the staggered reveal
     if (matches(idx) && !chainCards.includes(idx)) {
       chainCards.push(idx); lastSelectedIdx = idx; SFX.shepard(chainCards.length + specialsUsed.length - 1);
       SFX.match();
@@ -556,6 +558,7 @@ function executePlusColor() {
     if (f !== undefined) { pick = f; if (typeof setForcedReveal === 'function') setForcedReveal(forced.filter(i => i !== f)); }
   }
   if (pick === undefined) { refundPlusColor(`No hidden ${color} cards found`); return; }
+  HAPTICS.plusColor(); // #10 — +1 Colour successfully opened another card of the colour
 
   const matchesChain = turnActive && (color === chainColor || (getRule('coloredBombs') && chainColors.has(color)));
   if (!matchesChain) { boosterReveal([pick]); return; }
