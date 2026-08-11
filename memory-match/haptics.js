@@ -68,6 +68,9 @@ const HAPTICS = (() => {
     fail:          { web: [50, 45, 50, 45, 80],  native: ['notification', 'ERROR'],   tone: 'error',     label: 'Level failed' },
     // 13 — Level beaten: positive
     win:           { web: [20, 55, 32, 55, 60],  native: ['notification', 'SUCCESS'], tone: 'success',   label: 'Level won' },
+    // Recall re-reveals your remembered cards (costs coins): a light reveal tick, fired
+    // once for the whole batch (the cards all flash at once, so no per-card stagger).
+    recall:        { web: 16,                    native: ['impact', 'LIGHT'],         tone: 'light',     label: 'Recall' },
   };
 
   // ── Native (Capacitor) path ───────────────────────────────────────────────

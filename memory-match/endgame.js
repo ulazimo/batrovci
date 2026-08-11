@@ -45,6 +45,7 @@ function recallCards() {
     burstCoinsDown(RECALL_COST, document.querySelector('#level-banner .coin-pill'));
   }
   SFX.booster();
+  HAPTICS.recall(); // light reveal tick when Recall flashes your remembered cards
   inputLocked = true;
   targets.forEach(idx => {
     board[idx].flipped = true;
