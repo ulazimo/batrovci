@@ -1142,7 +1142,7 @@ LEVELS_CLEANINGXL = [
     "cols": 5,
     "rows": 7,
     "colorCount": 4,
-    "turns": 15,
+    "turns": 14,
     "clearBoard": true,
     "deck": 0,
     "goals": [
@@ -1388,7 +1388,7 @@ LEVELS_CLEANINGXL = [
     "cols": 6,
     "rows": 6,
     "colorCount": 4,
-    "turns": 15,
+    "turns": 13,
     "clearBoard": true,
     "deck": 0,
     "goals": [
