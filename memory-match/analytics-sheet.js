@@ -9,6 +9,7 @@
 // position is convention, not a hard dependency. Callers all run later:
 //   • boot.js            → maybeAskUsername()  (once-per-device prompt)
 //   • boot.js            → logLogin()          (every launch → a Logins row)
+//   • boot.js            → startSessionTracking() (one Sessions row per foreground span)
 //   • level.js startGame → resetMatchStats()   (new match: clear counters + start clock)
 //   • boosters.js        → recordPowerUpUse()   (each power-up consumed)
 //   • endgame.js         → logLevelResult()     (win / fail → send a row)
@@ -121,6 +122,7 @@ function resetMatchStats() {
   matchTurnsTaken = 0;
   matchTurnsRefunded = 0;
   matchStartedAt = Date.now();
+  recordSessionLevel();   // count this match toward the current session's levelsPlayed
 }
 
 // Wall-clock seconds from pressing Play until the win/fail is declared. A
@@ -493,4 +495,131 @@ async function logLogin() {
     is_registration: !!uid.isNew,
   }, device);
   sendAnalytics(payload);
+}
+
+// ------------------------------------------------------------
+// SESSIONS — one row per play session, logged to its own 'Sessions' tab (the
+// Apps Script routes on payload.sheet and auto-creates the tab + columns).
+//
+// A "session" is a contiguous span the app is in the foreground — NOT a match
+// (that's `durationSec` in the Results tab). It spans home, several levels, shop.
+//
+// WHY IT FINALIZES ON RESUME, NOT ON BACKGROUND: background timers are throttled/
+// killed on mobile, so we can't reliably send when the app goes away. Instead the
+// live session state is persisted to localStorage and refreshed as the player
+// plays; the row is SENT on the next foreground/launch, where timers work. This
+// also gives the "merge if back within N seconds" behaviour for free:
+//   • return within SESSION_GRACE_MS  → resume the SAME session (a quick app-switch
+//     doesn't split it, and the backgrounded gap isn't counted).
+//   • return after the grace window   → finalize the old session (send its row,
+//     end = last active moment) and start a fresh one.
+// Tradeoff: a session is only sent once the user comes back, so a session that is
+// never returned to isn't logged (unavoidable client-side). durationSec excludes
+// backgrounded time because `last` is only advanced while the app is foregrounded.
+//
+// Sits behind the same consent gate as logLogin — it's timing tied to user_id.
+// ------------------------------------------------------------
+const MM_SESSION_KEY = 'mm_session';
+const SESSION_GRACE_MS = 30000;     // ≤ this gap on resume = same session
+const SESSION_HEARTBEAT_MS = 20000; // how often we refresh `last` while foregrounded
+
+let currentSession = null;          // { start, last, levels } — mirrored to localStorage
+let sessionHeartbeat = null;        // setInterval handle
+let sessionTrackingStarted = false; // guard against double-init
+
+function loadStoredSession() {
+  try { const raw = localStorage.getItem(MM_SESSION_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+function saveSession(s) {
+  try { localStorage.setItem(MM_SESSION_KEY, JSON.stringify(s)); } catch (e) {}
+}
+
+// Advance the current session's "last active" stamp. Called on a heartbeat and on
+// every background/hide, so a finalized session's end time is accurate to the last
+// foreground moment. No-op if tracking hasn't started.
+function touchSession() {
+  if (!currentSession) return;
+  currentSession.last = Date.now();
+  saveSession(currentSession);
+}
+
+// Count one match toward the live session (called from resetMatchStats).
+function recordSessionLevel() {
+  if (!currentSession) return;
+  currentSession.levels = (currentSession.levels || 0) + 1;
+  saveSession(currentSession);
+}
+
+// Build + send one Sessions row for a finished session. Fire-and-forget.
+function finalizeSession(s) {
+  if (!s || !s.start) return;
+  const uid = getOrCreateUserId();
+  sendAnalytics({
+    sheet:        'Sessions',
+    timestamp:    new Date(s.start).toISOString(),   // when the session began
+    username:     getUsername() || '',
+    user_id:      uid.id,
+    sessionStart: new Date(s.start).toISOString(),
+    sessionEnd:   new Date(s.last).toISOString(),
+    durationSec:  Math.max(0, Math.round((s.last - s.start) / 1000)),
+    levelsPlayed: s.levels || 0,
+  });
+}
+
+// Decide whether we're continuing a session or starting a new one. Run on launch
+// and on every return to the foreground. A stored session within the grace window
+// resumes; anything older is finalized (sent) and replaced.
+function reconcileSession() {
+  const now = Date.now();
+  const s = loadStoredSession();
+  if (s && s.start && (now - s.last) <= SESSION_GRACE_MS) {
+    s.last = now;
+    currentSession = s;
+  } else {
+    if (s && s.start) finalizeSession(s);
+    currentSession = { start: now, last: now, levels: 0 };
+  }
+  saveSession(currentSession);
+}
+
+function startSessionHeartbeat() {
+  if (sessionHeartbeat) return;
+  sessionHeartbeat = setInterval(() => {
+    // Only advance `last` while foregrounded, so backgrounded time isn't counted.
+    if (document.visibilityState === 'visible') touchSession();
+  }, SESSION_HEARTBEAT_MS);
+}
+function stopSessionHeartbeat() {
+  if (sessionHeartbeat) { clearInterval(sessionHeartbeat); sessionHeartbeat = null; }
+}
+
+function onSessionForeground() { reconcileSession(); startSessionHeartbeat(); }
+function onSessionBackground() { touchSession(); stopSessionHeartbeat(); }
+
+// Begin session tracking. Called once from boot() after the consent gate. Wires the
+// three signals no single one of which is reliable on mobile: page visibility,
+// pagehide, and the native Capacitor App appStateChange.
+function startSessionTracking() {
+  if (sessionTrackingStarted) return;
+  sessionTrackingStarted = true;
+
+  reconcileSession();          // resume or open a session for this launch
+  startSessionHeartbeat();
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') onSessionBackground();
+    else onSessionForeground();
+  });
+  window.addEventListener('pagehide', onSessionBackground);
+
+  try {
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (App && typeof App.addListener === 'function') {
+      App.addListener('appStateChange', (state) => {
+        if (state && state.isActive) onSessionForeground();
+        else onSessionBackground();
+      });
+    }
+  } catch (e) {}
 }

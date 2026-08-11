@@ -49,6 +49,9 @@
     // Log this launch to the Logins sheet (registration on the first-ever launch,
     // a login every time after). Runs post-consent, like all other collection.
     if (typeof logLogin === 'function') logLogin();
+    // Begin play-session tracking (one Sessions row per foreground span). Also
+    // post-consent — it's timing tied to the user_id.
+    if (typeof startSessionTracking === 'function') startSessionTracking();
     // First launch on this device → ask for a username (once). Sits over the hall.
     if (typeof maybeAskUsername === 'function') maybeAskUsername();
     // FTUE: spotlight Play on the home screen (no-op if the username prompt is up —

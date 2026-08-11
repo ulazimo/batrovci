@@ -69,6 +69,15 @@
  *   supply — most device_* fields on the web, plus device_cpu_type everywhere —
  *   arrive blank. On the native app the Capacitor Device/App/Network plugins fill
  *   manufacturer, model, os_version, app version and wifi/cellular.)
+ *
+ *  'Sessions' (one row per play session — logged from analytics-sheet.js):
+ *    timestamp · username · user_id · sessionStart · sessionEnd · durationSec ·
+ *    levelsPlayed
+ *  (a session is a contiguous FOREGROUND span — not a match. It's finalized on the
+ *   NEXT foreground/launch, not when the app backgrounds, because background timers
+ *   are unreliable on mobile. Returning within a 30s grace window resumes the same
+ *   session; a longer gap starts a new one. durationSec excludes backgrounded time,
+ *   and a session never returned to is not logged.)
  */
 
 function doPost(e) {
