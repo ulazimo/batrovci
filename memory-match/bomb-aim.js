@@ -18,6 +18,12 @@ let bombAim = null;
 let bombAimGhostEl = null;
 let bombAimSwallowClick = false;
 
+// The drag ghost floats this many px ABOVE the pointer so the finger doesn't
+// cover the bomb. The blast silhouette / drop tile is hit-tested against the
+// icon's centre (pointer y minus this), not the finger, so the indicator lands
+// where the bomb icon visually sits. Both uses must share this value.
+const BOMB_AIM_Y_OFFSET = 46;
+
 function isBombAiming() { return !!bombAim; }
 
 // The board's own click handler calls this so the synthetic click that
@@ -97,7 +103,7 @@ function cancelBombAim() { endBombAim(); if (typeof tutorialOnBombAimCancel === 
 function onBombAimPointerMove(e) {
   if (!bombAim || !bombAim.pressing) return;
   moveGhost(e.clientX, e.clientY);
-  const idx = bombTileFromPoint(e.clientX, e.clientY);
+  const idx = bombTileFromPoint(e.clientX, e.clientY - BOMB_AIM_Y_OFFSET);
   bombAim.index = idx;
   renderBombSilhouette(idx);
 }
@@ -110,8 +116,9 @@ function onBombAimPointerUp(e) {
 
   if (e.type === 'pointercancel') { cancelBombAim(); return; }
 
-  // Resolve the drop tile from where the pointer was actually released.
-  const idx = bombTileFromPoint(e.clientX, e.clientY);
+  // Resolve the drop tile from the icon's centre (offset above the pointer),
+  // matching the silhouette the player saw during the drag.
+  const idx = bombTileFromPoint(e.clientX, e.clientY - BOMB_AIM_Y_OFFSET);
   if (boardEl.contains(e.target) || idx >= 0) markBombClickSwallow();
 
   if (isValidBombCenter(idx)) { commitBombAim(idx); return; }
@@ -203,7 +210,7 @@ function createBombGhost(type) {
 function moveGhost(x, y) {
   if (!bombAimGhostEl) return;
   bombAimGhostEl.style.left = x + 'px';
-  bombAimGhostEl.style.top = (y - 46) + 'px';
+  bombAimGhostEl.style.top = (y - BOMB_AIM_Y_OFFSET) + 'px';
   bombAimGhostEl.classList.add('visible');
 }
 function removeBombGhost() { if (bombAimGhostEl) { bombAimGhostEl.remove(); bombAimGhostEl = null; } }
